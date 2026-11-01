@@ -27,6 +27,12 @@ Recorded 2026-10-29. Implemented on `develop` for 1.10.0 the same day, together 
 - [x] Explain rollback/recovery failures and where the preserved backup/log can be found. Do not offer a rollback target unless its backup is usable.
 - [x] Keep launch and gameplay responsive; prompt at a suitable menu boundary, without silently restarting or interrupting active play. *Background thread; prompts wait for the main menu with no other message open. "Quit now" is the player's choice.*
 
+## Approval of time-passing actions (`Models/MultiplayerApprovalContext.cs`)
+
+Added 2026-11-01 at the user's request; not started.
+
+- [ ] Make the approval for short rests and other actions that pass time (combined wait and long rest, learning or scribing spells, Mark Deity, rituals, spells and powers of a minute or more) look exactly like the game's own long rest approval or fast travel approval. Today it uses plain message boxes (`Gui.GuiService.ShowMessage`: "Waiting for approval", the approval request and "busy" messages). The game's approvals go through `NetworkingManager.RequestVoteAsync` and `LocalCommandManager.AnswerVote` and show `MultiplayerVoteModal` (`MultiplayerFastTravelVoteModal` for fast travel), which lists every player with their vote status (`PlayerVoteStatusItem`). Reuse that screen or a copy of its prefab rather than imitating it, keep the request on Photon event code 172 and the existing rules (nobody is asked during combat or a cutscene; the action waits on the asking computer until everyone approves), and check controller navigation and long translations.
+
 ## Acceptance checks
 
 - [ ] Localize new text using the existing translation system and check long translations, readability and controller navigation. *Texts are in all 10 languages (machine translations); not yet read in game.*
