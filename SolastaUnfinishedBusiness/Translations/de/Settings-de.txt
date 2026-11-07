@@ -25,6 +25,7 @@ ModUi/&AddToStore={0} hinzufügen
 ModUi/&Advanced=<color=#F0DAA0>Erweitert:</color> <b><i><color=#C04040E0>[Neustart erforderlich]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ACHTUNG:</color></b> Diese Einstellungen erfordern, dass der Spieler diesen Mod installiert hat
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Alle Spieler in Erzählsequenzen zulassen</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=Bei Gruppen mit 4 oder weniger Helden in Zwischensequenzen die Reihenfolge des Spiels beibehalten <i><color=#F0DAA0>[sonst steht jede Gruppe nach Größe, die Kleinsten in der Mitte der vorderen Reihe]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=Erlaubt Verbündeten, <b>GloomStalker</b> in natürlicher Dunkelheit wahrzunehmen
 ModUi/&AllowAnyClassToWearSylvanArmor=Erlaubt jeder Klasse, <color=#D89555>Sylvan-Rüstung</color> oder <color=#D89555>Lichtbringer-Kleidung</color> zu tragen
 ModUi/&AllowBladeCantripsToUseReach=Erlaube <color=#D89555>Blade Cantrips</color>, eine Reichweite statt 5 Fuß zu verwenden.

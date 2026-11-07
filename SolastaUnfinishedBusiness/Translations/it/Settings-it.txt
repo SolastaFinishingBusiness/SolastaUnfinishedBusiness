@@ -25,6 +25,7 @@ ModUi/&AddToStore=Aggiungi {0}
 ModUi/&Advanced=<color=#F0DAA0>Avanzato:</color> <b><i><color=#C04040E0>[Richiede riavvio]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENZIONE:</color></b> Queste impostazioni richiederanno che il giocatore abbia installato questa mod
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Consenti a tutti i giocatori di partecipare alle sequenze narrative</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=Mantieni l'ordine del gioco per i gruppi di 4 o meno nelle scene <i><color=#F0DAA0>[altrimenti ogni gruppo si dispone per altezza, i più bassi al centro della prima fila]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=Consenti agli alleati di percepire <b>GloomStalker</b> quando si trovano nell'oscurità naturale
 ModUi/&AllowAnyClassToWearSylvanArmor=Consenti a qualsiasi classe di indossare <color=#D89555>Armatura silvana</color> o <color=#D89555>Vestiti del Portatore di Luce</color>
 ModUi/&AllowBladeCantripsToUseReach=Consenti a <color=#D89555>Trucchetti Lama</color> di usare la portata invece di 5 piedi

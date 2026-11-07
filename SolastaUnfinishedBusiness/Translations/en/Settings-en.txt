@@ -20,6 +20,7 @@ ModUi/&Advanced=<color=#F0DAA0>Advanced:</color> <b><i><color=#C04040E0>[Require
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENTION:</color></b> These settings will require the player to have this mod installed
 ModUi/&AllMagicThrownReturn=All magic thrown weapons return to the thrower <b><i><color=#C04040E0>[Requires Restart To Remove]</color></i></b>
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Allow all players on narrative sequences</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=Keep the game's order for parties of 4 or fewer in cutscenes <i><color=#F0DAA0>[otherwise every party stands by height, the shortest at the centre of the front row]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=Allow allies to perceive <b>GloomStalker</b> when in natural darkness
 ModUi/&AllowAnyClassToWearSylvanArmor=Allow any class to wear <color=#D89555>Sylvan Armor</color> or <color=#D89555>Lightbringer Clothes</color>
 ModUi/&AllowBladeCantripsToUseReach=Allow <color=#D89555>Blade Cantrips</color> to use reach instead of 5ft

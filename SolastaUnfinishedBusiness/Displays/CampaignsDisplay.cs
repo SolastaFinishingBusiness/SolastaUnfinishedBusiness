@@ -105,6 +105,14 @@ internal static class CampaignsDisplay
             }
         }
 
+        // Cutscenes put every party in height order (MultiplayerContext.PlaceExtraHeroes); this keeps the game's own order for
+        // parties of up to 4. Off by default (user direction, 2026-11-07), so the sort is on wherever the mod is installed.
+        toggle = Main.Settings.DisableCutsceneHeightOrderSmallParties;
+        if (UI.Toggle(Gui.Localize("ModUi/&DisableCutsceneHeightOrderSmallParties"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.DisableCutsceneHeightOrderSmallParties = toggle;
+        }
+
         UI.Label();
 
         toggle = Main.Settings.AddPickPocketableLoot;

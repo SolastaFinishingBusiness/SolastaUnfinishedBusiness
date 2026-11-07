@@ -25,6 +25,7 @@ ModUi/&AddToStore=Ajouter {0}
 ModUi/&Advanced=<color=#F0DAA0>Avancé :</color> <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENTION :</color></b> Ces paramètres nécessiteront que le joueur ait installé ce mod
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Autoriser tous les joueurs sur les séquences narratives</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=Conserver l'ordre du jeu pour les groupes de 4 ou moins dans les cinématiques <i><color=#F0DAA0>[sinon, chaque groupe se place par taille, les plus petits au centre du premier rang]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=Permettre aux alliés de percevoir <b>GloomStalker</b> lorsqu'ils sont dans l'obscurité naturelle
 ModUi/&AllowAnyClassToWearSylvanArmor=Autoriser n'importe quelle classe à porter une <color=#D89555>armure sylvestre</color> ou des <color=#D89555>vêtements de porteur de lumière</color>
 ModUi/&AllowBladeCantripsToUseReach=Autoriser les <color=#D89555>sorties de lame</color> à utiliser la portée au lieu de 1,50 m

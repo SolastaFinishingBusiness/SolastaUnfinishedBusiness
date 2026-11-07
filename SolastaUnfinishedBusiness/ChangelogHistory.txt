@@ -2,6 +2,7 @@ Unreleased:
 - Respec: a character's Cells Travelled, Earned XP and Hit Accuracy stats are now kept, like their other campaign stats. They went back to 0.
 - Hero tooltip: Cells Traveled now shows the number of cells, like the end-of-adventure screen. It showed a distance, at 1/25 of the real one.
 - Respec: a party whose heroes have all respecced can no longer long rest a second time the same day.
+- Cutscenes: with more than 4 heroes the whole party now stands together, with the shortest heroes in front (the shortest at the centre) and the tallest in a staggered row just behind, which turns with the party, each of them seen through a gap in the front row. Before, in scenes with a second stage heroes 5 and 6 began far away, out of the scene (for example at the meeting with Kythaela), and when a scene moved the party they could be left behind or end up standing inside another hero. Close-ups follow the speaker to where they stand, and rear heroes turn their heads to the camera during answer prompts. Parties of 4 or fewer stand in the same height order on the game's own markers; Gameplay > Campaigns > "Keep the game's order for parties of 4 or fewer in cutscenes" (off by default) turns that off. Who speaks and who rolls isn't changed by any of this. Tested in single player in Coparann only; not tested in multiplayer.
 
 1.13.0:
 - Multiplayer, the desyncs where computers number new game objects differently: fixed the causes found so far, so the numbers no longer drift apart in these cases. All players need this version and should start from the same save.

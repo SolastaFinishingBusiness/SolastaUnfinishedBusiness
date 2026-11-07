@@ -227,6 +227,7 @@ public class Settings : UnityModManager.ModSettings
     public int MultiplyTheExperienceGainedBy { get; set; } = 100;
     public int OverridePartySize { get; set; } = ToolsContext.GamePartySize;
     public bool AllowAllPlayersOnNarrativeSequences { get; set; }
+    public bool DisableCutsceneHeightOrderSmallParties { get; set; }
     public bool AddPickPocketableLoot { get; set; }
     public bool PickPocketNonHostiles { get; set; }
     public bool EnemySpellcastersDropScribedSpellbooks { get; set; }

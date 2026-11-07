@@ -51,10 +51,10 @@ public static class NarrativeDirectionManagerPatcher
     public static class PrepareCharacters_Patch
     {
         [UsedImplicitly]
-        public static void Postfix(NarrativeDirectionManager __instance, NarrativeSequence narrativeSequence)
+        public static void Postfix(NarrativeSequence narrativeSequence)
         {
-            //PATCH: places heroes 5 and 6 behind the authored 4 player markers (MULTIPLAYER)
-            MultiplayerContext.PlaceExtraHeroes(__instance, narrativeSequence);
+            //PATCH: places every hero past the 4th behind the 4 authored seats (PARTYSIZE)
+            MultiplayerContext.PlaceExtraHeroes(narrativeSequence);
         }
     }
 

@@ -25,6 +25,7 @@ ModUi/&AddToStore=Добавить {0}
 ModUi/&Advanced=<color=#F0DAA0>Продвинутый:</color> <b><i><color=#C04040E0>[Необходим перезапуск]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ВНИМАНИЕ:</color></b> Для этих настроек необходимо, чтобы у игрока был установлен этот мод
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Позволить всем игрокам участвовать в нарративных последовательностях</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=Сохранять порядок игры для отрядов из 4 или меньше героев в сценах <i><color=#F0DAA0>[иначе каждый отряд встаёт по росту, самые низкие в центре первого ряда]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=Позволить союзникам замечать <b>Сумрачного охотника</b> в естественной темноте
 ModUi/&AllowAnyClassToWearSylvanArmor=Позволить всем классам носить <color=#D89555>Доспехи Сильвана</color> или <color=#D89555>Одежды Несущего свет</color>
 ModUi/&AllowBladeCantripsToUseReach=Позволить <color=#D89555>Заговорам клинков</color> использовать досягаемость персонажа вместо обычных 5 футов

@@ -25,6 +25,7 @@ ModUi/&AddToStore=添加 {0}
 ModUi/&Advanced=<color=#F0DAA0>高级：</color> <b><i><color=#C04040E0>[需要重启]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>注意：</color></b>这些设置需要玩家安装此模组
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ 允许所有玩家参与叙事序列</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=过场动画中4人或更少的队伍保持游戏原有顺序 <i><color=#F0DAA0>[否则所有队伍按身高站位，最矮的站在前排中间]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=允许盟友在自然黑暗中感知<b>GloomStalker</b>
 ModUi/&AllowAnyClassToWearSylvanArmor=允许任何职业穿戴<color=#D89555>木精灵护甲</color>或<color=#D89555>光明使者服饰</color>
 ModUi/&AllowBladeCantripsToUseReach=允许<color=#D89555>剑类戏法</color>使用触及范围，而不是 5 尺

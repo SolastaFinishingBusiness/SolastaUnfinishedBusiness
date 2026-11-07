@@ -25,6 +25,7 @@ ModUi/&AddToStore={0} を追加
 ModUi/&Advanced=<color=#F0DAA0>詳細:</color> <b><i><color=#C04040E0>[再起動が必要]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>注意:</color></b> これらの設定を行うには、プレイヤーがこのMODをインストールしている必要があります。
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ ナラティブ シーケンスですべてのプレイヤーを許可する</i>
+ModUi/&DisableCutsceneHeightOrderSmallParties=カットシーンで4人以下のパーティーはゲーム本来の並び順を維持する <i><color=#F0DAA0>[オフの場合、すべてのパーティーが身長順に並び、最も背の低いキャラクターが前列中央に立ちます]</color></i>
 ModUi/&AllowAlliesToPerceiveRangerGloomStalkerInNaturalDarkness=自然の暗闇にいるときに味方が<b>GloomStalker</b>を感知できるようにする
 ModUi/&AllowAnyClassToWearSylvanArmor=どのクラスでも <color=#D89555>シルヴァンアーマー</color> または <color=#D89555>ライトブリンガー服</color> を着用できるようにします
 ModUi/&AllowBladeCantripsToUseReach=<color=#D89555>ブレード・カントリップ</color>が5フィートではなくリーチを使用できるようにする
