@@ -164,7 +164,7 @@ internal static class ForcedMovementContext
             if (solverSteps.Count > 0 && solverSteps[solverSteps.Count - 1] == destination)
             {
                 solverSteps.RemoveAt(solverSteps.Count - 1);
-                Keep(target, start, destination, solverSteps, distance, reverse);
+                Keep(target, start, destination, solverSteps, sourceCenter, distance, reverse);
             }
 
             return;
@@ -221,13 +221,19 @@ internal static class ForcedMovementContext
             return;
         }
 
-        Keep(target, start, destination, cells, distance, reverse);
+        Keep(target, start, destination, cells, sourceCenter, distance, reverse);
     }
 
     private static void Keep(
-        GameLocationCharacter target, int3 start, int3 destination, List<int3> cells, int distance, bool reverse)
+        GameLocationCharacter target,
+        int3 start,
+        int3 destination,
+        List<int3> cells,
+        Vector3 sourceCenter,
+        int distance,
+        bool reverse)
     {
-        Solved[target] = new Route(start, destination, cells);
+        Solved[target] = new Route(start, destination, cells, sourceCenter, distance, reverse);
 
         if (IsLogOn)
         {
@@ -270,10 +276,109 @@ internal static class ForcedMovementContext
 
         Active.Remove(character);
 
-        if (action.ActionParams != null && Bound.TryGetValue(action.ActionParams, out var route))
+        if (action.ActionParams == null || !Bound.TryGetValue(action.ActionParams, out var route))
         {
-            Bound.Remove(action.ActionParams);
+            return;
+        }
+
+        Bound.Remove(action.ActionParams);
+
+        // The creature isn't where this push was worked out from: a push queued ahead of it has moved it since.
+        if (character.LocationPosition != route.Start)
+        {
+            route = WorkOutAgain(action.ActionParams, character, route);
+        }
+
+        if (route != null)
+        {
             Active.Add(character, route);
+        }
+    }
+
+    // A queued push kept the destination worked out when it was made (issue #33). The game works every push of a cast
+    // out as its beam hits, before any of them has moved the creature, and runs them one after another. So with two
+    // beams of Eldritch Blast and Repelling Blast on one creature, both pushes had the same destination: the first
+    // moved the creature 2 cells and the second found it already there and did nothing. That is why Repelling Blast
+    // only ever pushed once. A pull worked out before a push ran (Grasp of Hadar with Repelling Blast) likewise ran
+    // to a destination that made no sense from where the push had left the creature.
+    //
+    // So a push that starts from another cell than it was worked out from is worked out again, from the cell the
+    // creature is really on, with the same source point, distance and direction, and the action is given that
+    // destination before it reads it. Each beam's push then carries on from where the one before left the creature,
+    // and still stops at walls and other creatures, since it is the same solver that decides.
+    //
+    // Returns the route of the new push, or null when there is nowhere to go from here.
+    private static Route WorkOutAgain(
+        CharacterActionParams actionParams, GameLocationCharacter character, Route route)
+    {
+        var environmentService = ServiceRepository.GetService<IGameLocationEnvironmentService>();
+        var positioningService = ServiceRepository.GetService<IGameLocationPositioningService>();
+
+        // without the services the push runs as the game queued it; BeforeMoveCommitted then uses the straight line
+        if (environmentService == null || positioningService == null || actionParams.Positions.Count == 0)
+        {
+            return route;
+        }
+
+        var from = character.LocationPosition;
+
+        // A push for this creature that an ApplyMotionForm call in progress has worked out and not queued yet. Not
+        // expected while a push action starts, but the solve below must not lose it.
+        Solved.TryGetValue(character, out var waiting);
+
+        // the solve is recorded like any push that is really made (Record only records inside this scope)
+        _motionFormDepth++;
+
+        try
+        {
+            var moves = environmentService.ComputePushDestination(
+                route.SourceCenter, character, route.Distance, route.Reverse, positioningService,
+                out var destination, out _);
+
+            if (!moves || destination == from)
+            {
+                // Blocked from here (a wall or a creature right behind, or a pull that has already brought it next
+                // to the source). The action is pointed at the cell the creature is on, which the game's push takes
+                // as "nothing to do", instead of running to the stale destination.
+                actionParams.Positions[0] = from;
+
+                if (IsLogOn)
+                {
+                    Log($"{Name(character)} starts from {Cell(from)}, not {Cell(route.Start)} as worked out; " +
+                        "nowhere to go from there, so this move does nothing");
+                }
+
+                return null;
+            }
+
+            // what Record kept for this solve: the same start and destination, with the cells in between
+            if (!Solved.TryGetValue(character, out var fresh) || fresh.Destination != destination)
+            {
+                fresh = new Route(from, destination, [], route.SourceCenter, route.Distance, route.Reverse);
+            }
+
+            actionParams.Positions[0] = destination;
+
+            if (IsLogOn)
+            {
+                Log($"{Name(character)} starts from {Cell(from)}, not {Cell(route.Start)} as worked out; " +
+                    $"worked out again: {Cell(from)} -> {Cell(destination)}");
+            }
+
+            return fresh;
+        }
+        finally
+        {
+            _motionFormDepth--;
+
+            if (waiting != null)
+            {
+                Solved[character] = waiting;
+            }
+            else
+            {
+                Solved.Remove(character);
+            }
         }
     }
 
@@ -319,11 +424,10 @@ internal static class ForcedMovementContext
         // solver's cells are the ones it goes through.
         //
         // Not always (Codex's second review of PR #31): the game works a push out when it is made but runs it later,
-        // from wherever the creature is by then, to the destination it worked out. A creature pushed two cells away
-        // and then pulled by a pull worked out before that push ran (Repelling Blast and Grasp of Hadar on one
-        // cast) is pulled from its new cell, across four cells instead of two. The game moves it there in one
-        // straight move, so the cells it goes through are those on the straight line. No solver checked them, as
-        // none checked the move the game makes.
+        // from wherever the creature is by then. Since issue #33 such a push is worked out again when it starts
+        // (WorkOutAgain), so its route starts where the creature is. What is left for this branch is a push that
+        // couldn't be worked out again and runs as the game queued it: one straight move to the old destination,
+        // whose cells are those on the straight line. No solver checked them, as none checked that move.
         var start = character.LocationPosition;
         var cells = start == route.Start ? route.Cells : StraightLine(start, destination);
 
@@ -518,10 +622,16 @@ internal static class ForcedMovementContext
             : $"[ForcedMove] {message}");
     }
 
-    private sealed class Route(int3 start, int3 destination, List<int3> cells)
+    private sealed class Route(
+        int3 start, int3 destination, List<int3> cells, Vector3 sourceCenter, int distance, bool reverse)
     {
         internal int3 Start { get; } = start;
         internal int3 Destination { get; } = destination;
         internal List<int3> Cells { get; } = cells;
+
+        // what the solver was asked, so the push can be worked out again from another cell (WorkOutAgain)
+        internal Vector3 SourceCenter { get; } = sourceCenter;
+        internal int Distance { get; } = distance;
+        internal bool Reverse { get; } = reverse;
     }
 }
