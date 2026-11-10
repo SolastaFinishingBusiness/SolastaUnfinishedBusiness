@@ -3,7 +3,7 @@
   <PropertyGroup>
     <LangVersion>13</LangVersion>
     <TargetFramework>net481</TargetFramework>
-    <AssemblyVersion>1.14.0</AssemblyVersion>
+    <AssemblyVersion>1.15.0</AssemblyVersion>
     <!-- the DLL's product version is the mod's version alone (user direction, 2026-11-02: a release carries neither
          "-dev" nor the commit); without this the SDK wrote "1.0.0+<commit>". Development builds add the commit below. -->
     <InformationalVersion>$(AssemblyVersion)</InformationalVersion>
