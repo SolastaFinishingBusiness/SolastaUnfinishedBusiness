@@ -222,6 +222,7 @@ ModUi/&EnablePotionsBonusAction2024=보너스 액션으로 <color=#D89555>물약
 ModUi/&EnablePreparedSpellsTables2024=모든 <color=#D89555>주문자</color>가 새로 준비된 주문표 <i><color=#F0DAA0>[바드, 성직자, 드루이드, 성기사, 레인저, 마법사, 마법사]</color></i>를 사용할 수 있도록 합니다.
 ModUi/&EnableProneAction=<color=#D89555>엎드려 넘어짐</color> 동작을 활성화하세요 <i><color=#F0DAA0>[비용 없이 엎드려 넘어질 수 있습니다]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=위/아래 축에서도 푸시 및 풀 모션 효과를 작동하도록 설정
+ModUi/&PushOrPullOncePerHit=크리처를 움직이는 주문이나 능력이 명중할 때마다 한 번씩 밀거나 끌기 <i><color=#F0DAA0>[Repelling Blast는 명중한 Eldritch Blast 광선마다 한 번 밀고, 하다르의 손아귀는 광선마다 한 번 끕니다. 끄면 한 번의 시전에서 첫 번째 밀기나 끌기만 크리처를 움직입니다]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=<color=#D89555>레인저</color>가 모든 전투 스타일을 선택할 수 있도록 허용 <i><color=#F0DAA0>[대형 무기 전투 및 보호 추가]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=레벨 2에서 <color=#D89555>탐험가 기민함</color> 활성화 <i><color=#F0DAA0>[레인저 기술 전문 지식 1개 획득, 언어 2개 학습]</color></i>
 ModUi/&EnableRangerExpertise2024=레벨 9에서 <color=#D89555>전문성</color>을 활성화하세요 <i><color=#F0DAA0>[레인저 기술 전문성 2개 획득]</color></i>

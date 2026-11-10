@@ -502,6 +502,14 @@ internal static class RulesDisplay
             }
         }
 
+        // one push or pull for each hit of a cast, e.g. Repelling Blast per Eldritch Blast beam (issue #33). Read when
+        // a push starts (ForcedMovementContext.PushStarting), so it needs no restart and no switch function.
+        toggle = Main.Settings.PushOrPullOncePerHit;
+        if (UI.Toggle(Gui.Localize("ModUi/&PushOrPullOncePerHit"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.PushOrPullOncePerHit = toggle;
+        }
+
         toggle = Main.Settings.FullyControlConjurations;
         if (UI.Toggle(Gui.Localize("ModUi/&FullyControlConjurations"), ref toggle, UI.AutoWidth()))
         {

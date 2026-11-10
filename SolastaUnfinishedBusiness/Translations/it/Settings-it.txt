@@ -222,6 +222,7 @@ ModUi/&EnablePotionsBonusAction2024=Abilita bere <color=#D89555>Pozioni</color> 
 ModUi/&EnablePreparedSpellsTables2024=Abilita tutti i <color=#D89555>incantatori</color> a usare le nuove tabelle degli incantesimi preparati <i><color=#F0DAA0>[Bardo, Chierico, Druido, Paladino, Ranger, Stregone, Mago]</color></i>
 ModUi/&EnableProneAction=Abilita l'azione <color=#D89555>Cadi prono</color> <i><color=#F0DAA0>[puoi cadere prono senza alcun costo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Abilita gli effetti di movimento push e pull per funzionare anche sull'asse su/giù
+ModUi/&PushOrPullOncePerHit=Spingere o tirare una creatura una volta per ogni colpo di un incantesimo o potere che la muove <i><color=#F0DAA0>[Repelling Blast spinge una volta per ogni raggio di Eldritch Blast che colpisce, e Presa di Hadar tira una volta per ciascuno; se disattivato, solo la prima spinta o trazione di un lancio muove la creatura]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Consenti al <color=#D89555>Ranger</color> di scegliere qualsiasi stile di combattimento <i><color=#F0DAA0>[aggiunge Combattimento con Arma Grande e Protezione]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Abilita <color=#D89555>Esploratore esperto</color> al livello 2 <i><color=#F0DAA0>[ottieni una competenza nelle abilità Ranger e impara 2 lingue]</color></i>
 ModUi/&EnableRangerExpertise2024=Abilita <color=#D89555>Competenza</color> al livello 9 <i><color=#F0DAA0>[ottieni due competenze sulle abilità Ranger]</color></i>
