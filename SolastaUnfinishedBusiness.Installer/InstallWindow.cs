@@ -9,13 +9,13 @@ using System.Windows.Forms;
 
 namespace SolastaUnfinishedBusiness.Installer;
 
-// The small window the helper shows from the moment the game closes until it has started the game again (user
-// direction, 2026-11-10). Before it, the helper ran hidden: for the half minute to a minute between Restart and the
-// game coming back nothing was on screen, while Steam showed the game as still running (STOP; see
-// evidence/updater-steam-state), so a player couldn't tell the update was being installed, or that Solasta would start
-// again by itself. The window names the current step (waiting for the game to exit, installing or restoring, starting
+// The small window the helper shows from the moment the game closes its window until the game it starts again is in
+// front (user direction, 2026-11-10; when exactly: Program.WaitForExit and Program.WaitForGameWindow). Before it,
+// the helper ran hidden: for the half minute to a minute between Restart and the game coming back nothing was on
+// screen, while Steam showed the game as still running (STOP, seen in a test on 2026-11-09), so a player couldn't tell
+// the update was being installed, or that Solasta would start again by itself. The window names the current step (waiting for the game to exit, installing or restoring, starting
 // Solasta), says not to start or stop the game meanwhile, and shows a moving bar, since the steps have no measurable
-// progress. It has no buttons or close box; the helper closes it once the game it started has a window, or shortly
+// progress. It has no buttons or close box; the helper closes it once the game it started is in front, or shortly
 // after if it couldn't start one. Closing it with Alt+F4 only removes the window: the install carries on.
 //
 // It runs on its own STA thread, so the install on the main thread is never held up by the window, and every call from

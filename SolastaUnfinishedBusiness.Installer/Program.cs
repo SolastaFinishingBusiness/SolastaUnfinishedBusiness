@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using SolastaUnfinishedBusiness.Models;
 
@@ -32,11 +33,15 @@ internal static class Program
         string status;
         var message = string.Empty;
         var transaction = Get(options, "transaction");
-        var window = InstallWindow.Open(Get(options, "texts"), Log);
+        InstallWindow window = null;
 
         try
         {
-            WaitForExit(Get(options, "pid"));
+            // The game starts this program as soon as the update is downloaded and verified, before the player
+            // chooses Restart or Later, so the window opens only once the game is on its way out (tested 2026-11-10:
+            // opened at once, it sat over the game's Restart prompt, and after Later it would stay for the session)
+            WaitForExit(Get(options, "pid"), () => window ??= InstallWindow.Open(Get(options, "texts"), Log));
+            window ??= InstallWindow.Open(Get(options, "texts"), Log);
             window?.ShowStep("working");
 
             var mode = Get(options, "mode");
@@ -115,9 +120,15 @@ internal static class Program
         return status is "installed" or "rolledback" ? 0 : 1;
     }
 
-    // Keeps the install window up until the game it started shows its own window (up to 60 s: the game's splash
-    // appears within seconds), so there is never a gap with nothing on screen. Without a game, a failed install's
-    // message stays readable for a few seconds instead. Nothing to wait for when there is no window.
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    // Keeps the install window up until the game it started is in front, so there is never a gap with nothing on
+    // screen. The game's process has a main window within about 3 s, but in the 2026-11-10 test nothing of the game
+    // showed for several seconds after that, so closing on the handle alone left the desktop bare in between.
+    // Closes when the game's window is the foreground window; else 15 s after its window appeared (a game started in
+    // the background may never come to the front); else after 60 s. Without a game, a failed install's message stays
+    // readable for a few seconds instead. Nothing to wait for when there is no window. Logs what it saw.
     private static void WaitForGameWindow(Process game, bool hasWindow)
     {
         if (!hasWindow)
@@ -132,21 +143,41 @@ internal static class Program
             return;
         }
 
-        var deadline = DateTime.Now.AddSeconds(60);
+        var started = DateTime.Now;
+        DateTime? windowAt = null;
 
         try
         {
-            while (DateTime.Now < deadline && !game.HasExited)
+            while ((DateTime.Now - started).TotalSeconds < 60 && !game.HasExited)
             {
                 game.Refresh();
 
-                if (game.MainWindowHandle != IntPtr.Zero)
+                var handle = game.MainWindowHandle;
+
+                if (handle != IntPtr.Zero && windowAt == null)
                 {
+                    windowAt = DateTime.Now;
+                    Log($"The game's window appeared after {(windowAt.Value - started).TotalSeconds:0.0} s");
+                }
+
+                if (handle != IntPtr.Zero && GetForegroundWindow() == handle)
+                {
+                    Log($"The game came to the front after {(DateTime.Now - started).TotalSeconds:0.0} s");
+
+                    return;
+                }
+
+                if (windowAt != null && (DateTime.Now - windowAt.Value).TotalSeconds >= 15)
+                {
+                    Log("The game's window didn't come to the front within 15 s");
+
                     return;
                 }
 
                 Thread.Sleep(250);
             }
+
+            Log(game.HasExited ? "The started game ended" : "No game window within 60 s");
         }
         catch (Exception e)
         {
@@ -179,7 +210,11 @@ internal static class Program
         return options.TryGetValue(key, out var value) ? value : string.Empty;
     }
 
-    private static void WaitForExit(string pid)
+    // Waits for the game to exit. onClosing runs once the game is closing: its window, seen while it ran, has gone
+    // (Unity removes it at quit, while the process can take another half minute to end, e.g. through the known quit
+    // crash and its dump), or the process ended. Polled twice a second, which costs nothing while the player keeps
+    // playing after Later.
+    private static void WaitForExit(string pid, Action onClosing)
     {
         if (!int.TryParse(pid, out var id))
         {
@@ -189,9 +224,31 @@ internal static class Program
         try
         {
             using var process = Process.GetProcessById(id);
+            var windowSeen = false;
+            var closingReported = false;
 
             Log($"Waiting for process {id} to exit");
-            process.WaitForExit();
+
+            while (!process.WaitForExit(500))
+            {
+                if (closingReported)
+                {
+                    continue;
+                }
+
+                process.Refresh();
+
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    windowSeen = true;
+                }
+                else if (windowSeen)
+                {
+                    Log($"Process {id} closed its window");
+                    closingReported = true;
+                    onClosing();
+                }
+            }
         }
         catch (ArgumentException)
         {

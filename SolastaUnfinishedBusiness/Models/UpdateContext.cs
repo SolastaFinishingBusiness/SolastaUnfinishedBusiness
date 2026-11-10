@@ -469,7 +469,7 @@ internal static class UpdateContext
     }
 
     // Unity Mod Manager reads Info.json, then loads the DLL through its own cached copy, named only by the DLL file's
-    // time (SolastaUnfinishedBusiness.dll.<id>.cache; evidence/updater-stale-dll). Whatever the cause, when the code
+    // time (SolastaUnfinishedBusiness.dll.<id>.cache, read from UMM 0.27.10). Whatever the cause, when the code
     // that runs isn't the version Info.json names, everything that shows the version (the mod manager, the lobby, the
     // update result) is wrong, and multiplayer goes out of sync with players who run the real build. A player once saw
     // 1.14.0 and desynced until a full restart (2026-11-08). This says so at the main menu and in the log; the version
@@ -549,9 +549,10 @@ internal static class UpdateContext
             WriteInstallerTexts(texts, mode, version);
             arguments.AddRange(["--texts", texts]);
 
-            // not hidden: from this version the helper shows a small window while the game is closed, so the player
-            // can see the update being installed and that Solasta starts again by itself (Steam shows the game as
-            // running, STOP, the whole time; evidence/updater-steam-state). CreateNoWindow only concerns consoles.
+            // not hidden: from this version the helper shows a small window once the game has closed its window (not
+            // before: this runs before the player picks Restart or Later), so the player can see the update being
+            // installed and that Solasta starts again by itself (Steam shows the game as running, STOP, the whole
+            // time, as a test on 2026-11-09 showed). CreateNoWindow only concerns consoles.
             Process.Start(new ProcessStartInfo(copy,
                 string.Join(" ", arguments.Select(x => "\"" + x.TrimEnd('\\') + "\"")))
             {
