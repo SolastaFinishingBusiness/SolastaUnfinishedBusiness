@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using SolastaUnfinishedBusiness.Models;
 
@@ -14,6 +15,9 @@ namespace SolastaUnfinishedBusiness.Installer;
 // mod reports that result, so a started installer never counts as an installed update.
 //   --pid <game process> --mode install|rollback --target <mod folder> --transaction <backup folder>
 //   [--source <staged mod folder>] --result <result file> --log <log file> [--relaunch <game executable>]
+//   [--texts <window texts>]
+// While it works it shows InstallWindow. Mods older than this helper started their own (hidden, textless) copy, so the
+// window appears from the first update made by a version that contains it.
 internal static class Program
 {
     private const int Attempts = 5;
@@ -29,10 +33,30 @@ internal static class Program
         string status;
         var message = string.Empty;
         var transaction = Get(options, "transaction");
+        InstallWindow window = null;
 
         try
         {
-            WaitForExit(Get(options, "pid"));
+            // The game starts this program as soon as the update is downloaded and verified, before the player
+            // chooses Restart or Later, so the window opens only once the game is on its way out (tested 2026-11-10:
+            // opened at once, it sat over the game's Restart prompt, and after Later it would stay for the session)
+            // one attempt only: a window that failed to open isn't tried again
+            var windowTried = false;
+
+            void OpenWindow()
+            {
+                if (windowTried)
+                {
+                    return;
+                }
+
+                windowTried = true;
+                window = InstallWindow.Open(Get(options, "texts"), Get(options, "mode"), Log);
+            }
+
+            WaitForExit(Get(options, "pid"), OpenWindow);
+            OpenWindow();
+            window?.ShowStep("working");
 
             var mode = Get(options, "mode");
             var target = Get(options, "target");
@@ -85,6 +109,8 @@ internal static class Program
         }
 
         Log($"Result: {status}");
+        // the details are the game's to show (its next start reports the result); the window only says it failed
+        window?.ShowStep(status is "installed" or "rolledback" ? "starting" : "failed");
         WriteResult(Get(options, "result"), new Dictionary<string, string>
         {
             ["status"] = status,
@@ -98,9 +124,194 @@ internal static class Program
             ["time"] = DateTime.Now.ToString("s")
         });
 
-        Relaunch(Get(options, "relaunch"));
+        using (var game = Relaunch(Get(options, "relaunch")))
+        {
+            WaitForGameWindow(game, Get(options, "relaunch"), window);
+        }
+
+        window?.CloseWindow();
 
         return status is "installed" or "rolledback" ? 0 : 1;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    // Keeps the install window up until the game it started is showing, so there is never a gap with nothing on
+    // screen. The game's process has its main window (UnityWndClass) within about 3 s, but in one 2026-11-10 test
+    // nothing of the game showed for about 7 s after that, so closing on the handle alone left the desktop bare.
+    // Closes when the game's window is the foreground window; else 15 s after its window appeared; else after 60 s.
+    // In practice the 15 s rule is the one that closes it: when the old game's window goes, Windows gives the focus to
+    // the shell, so neither this program nor the game it starts may take the foreground (Windows' foreground lock),
+    // and the game stays drawn on top without becoming the foreground window (seen in the second 2026-11-10 test,
+    // where the game covered the screen 1 s after its window appeared). This window then just sits behind the game
+    // until it closes. Nothing to wait for when there is no window. Logs what it saw. Waits are measured with a
+    // Stopwatch, so a clock change can't stretch or cut them (Codex's full review of PR #30).
+    // When no game comes up, the window says so, tells the player to press OK and start Solasta from Steam, and stays
+    // until it's closed or 10 minutes pass (it used to close after 5 s showing "Starting Solasta…"; Codex's review of
+    // PR #30). That covers a game that couldn't be started at all, and one that ended without ever showing a window
+    // when no other Solasta took its place within 20 s. A quick exit alone isn't a failure: when Steam has to start the
+    // game itself, the game quits at once and Steam starts a new one, which is then watched instead.
+    private static void WaitForGameWindow(Process game, string executable, InstallWindow window)
+    {
+        if (window == null)
+        {
+            return;
+        }
+
+        if (game == null)
+        {
+            ShowNotStarted(window);
+
+            return;
+        }
+
+        if (WatchGame(game) != GameOutcome.EndedWithoutWindow)
+        {
+            return;
+        }
+
+        using var replacement = WaitForOtherGame(Path.GetFileNameWithoutExtension(executable), game.Id,
+            TimeSpan.FromSeconds(20));
+
+        if (replacement != null)
+        {
+            Log($"Another Solasta started (pid {replacement.Id}); watching it instead");
+
+            if (WatchGame(replacement) != GameOutcome.EndedWithoutWindow)
+            {
+                return;
+            }
+        }
+
+        Log("No Solasta came up after the restart");
+        ShowNotStarted(window);
+    }
+
+    private enum GameOutcome
+    {
+        Showing,
+        EndedWithoutWindow,
+        NoWindowYet
+    }
+
+    // the started game until it shows (front, or 15 s after its window appeared), ends, or 60 s pass.
+    // EndedWithoutWindow means it ended before being confirmed showing, even if it had a window handle.
+    private static GameOutcome WatchGame(Process game)
+    {
+        var clock = Stopwatch.StartNew();
+        TimeSpan? windowAt = null;
+
+        try
+        {
+            while (clock.Elapsed.TotalSeconds < 60 && !game.HasExited)
+            {
+                if (!TryGetMainWindow(game, out var handle))
+                {
+                    break;
+                }
+
+                if (handle == IntPtr.Zero)
+                {
+                    // A window that went away again doesn't count: the game removes its window before it ends (its
+                    // quit and crash teardown), so the 15 s rule restarts from the next window, if any (Codex's
+                    // review of 599b8644: a game whose window had gone, still alive at 15 s, passed as showing).
+                    if (windowAt != null)
+                    {
+                        Log($"The game's window went away after {clock.Elapsed.TotalSeconds:0.0} s");
+                        windowAt = null;
+                    }
+
+                    Thread.Sleep(250);
+
+                    continue;
+                }
+
+                if (windowAt == null)
+                {
+                    windowAt = clock.Elapsed;
+                    Log($"The game's window appeared after {windowAt.Value.TotalSeconds:0.0} s");
+                }
+
+                if (GetForegroundWindow() == handle)
+                {
+                    Log($"The game came to the front after {clock.Elapsed.TotalSeconds:0.0} s");
+
+                    return GameOutcome.Showing;
+                }
+
+                // a window present now, for 15 s without a break
+                if ((clock.Elapsed - windowAt.Value).TotalSeconds >= 15)
+                {
+                    Log("The game's window didn't come to the front within 15 s");
+
+                    return GameOutcome.Showing;
+                }
+
+                Thread.Sleep(250);
+            }
+
+            // Any exit before the game was confirmed showing (front, or 15 s after its window appeared) counts as not
+            // shown, window handle or not: the handle exists seconds before anything of the game is on screen (about 7 s
+            // in the first 2026-11-10 round), so a crash in between left the player with nothing (Codex's review of
+            // abbbd937). The caller then looks for Steam's relaunch before saying the game couldn't be started.
+            if (game.HasExited || !TryGetMainWindow(game, out _))
+            {
+                Log(windowAt == null
+                    ? "The started game ended without a window"
+                    : $"The started game ended {(clock.Elapsed - windowAt.Value).TotalSeconds:0.0} s after its window appeared");
+
+                return GameOutcome.EndedWithoutWindow;
+            }
+
+            Log("No game window within 60 s");
+
+            return GameOutcome.NoWindowYet;
+        }
+        catch (Exception e)
+        {
+            Log($"Couldn't watch the started game: {e.Message}");
+
+            return GameOutcome.NoWindowYet;
+        }
+    }
+
+    // another process of the game's executable than the one that ended (Steam's own launch), or null if none appears
+    private static Process WaitForOtherGame(string processName, int endedId, TimeSpan timeout)
+    {
+        var clock = Stopwatch.StartNew();
+
+        while (clock.Elapsed < timeout)
+        {
+            var others = Process.GetProcessesByName(processName);
+            var found = others.FirstOrDefault(x => x.Id != endedId);
+
+            foreach (var other in others.Where(x => x != found))
+            {
+                other.Dispose();
+            }
+
+            if (found != null)
+            {
+                return found;
+            }
+
+            Thread.Sleep(500);
+        }
+
+        Log($"No other {processName} within {timeout.TotalSeconds:0} s");
+
+        return null;
+    }
+
+    private static void ShowNotStarted(InstallWindow window)
+    {
+        window.ShowStep("notstarted");
+
+        if (!window.WaitUntilClosed(TimeSpan.FromMinutes(10)))
+        {
+            Log("Nobody closed the 'not started' message within 10 minutes");
+        }
     }
 
     // the installed files are as they were before this attempt: it stopped before changing any (its journal is
@@ -128,7 +339,33 @@ internal static class Program
         return options.TryGetValue(key, out var value) ? value : string.Empty;
     }
 
-    private static void WaitForExit(string pid)
+    // The process's main window, or IntPtr.Zero while it has none. False when the process ended meanwhile: on .NET
+    // Framework, MainWindowHandle with no window falls back to reading the process's information, which throws
+    // InvalidOperationException once the process is gone (Codex's review of PR #30). That happens when the game closes
+    // its window and exits within one poll; left uncaught, it reached Main's install-failure handler and skipped a
+    // valid update.
+    private static bool TryGetMainWindow(Process process, out IntPtr handle)
+    {
+        try
+        {
+            process.Refresh();
+            handle = process.MainWindowHandle;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            handle = IntPtr.Zero;
+
+            return false;
+        }
+    }
+
+    // Waits for the game to exit. onClosing runs once the game is closing: its window, seen while it ran, has gone
+    // (Unity removes it at quit, while the process can take another half minute to end, e.g. through the known quit
+    // crash and its dump), or the process ended. Polled twice a second, which costs nothing while the player keeps
+    // playing after Later.
+    private static void WaitForExit(string pid, Action onClosing)
     {
         if (!int.TryParse(pid, out var id))
         {
@@ -138,9 +375,35 @@ internal static class Program
         try
         {
             using var process = Process.GetProcessById(id);
+            var windowSeen = false;
+            var closingReported = false;
 
             Log($"Waiting for process {id} to exit");
-            process.WaitForExit();
+
+            while (!process.WaitForExit(500))
+            {
+                if (closingReported)
+                {
+                    continue;
+                }
+
+                if (!TryGetMainWindow(process, out var handle))
+                {
+                    // the process ended since WaitForExit(500) returned: the next WaitForExit ends the loop
+                    continue;
+                }
+
+                if (handle != IntPtr.Zero)
+                {
+                    windowSeen = true;
+                }
+                else if (windowSeen)
+                {
+                    Log($"Process {id} closed its window");
+                    closingReported = true;
+                    onClosing();
+                }
+            }
         }
         catch (ArgumentException)
         {
@@ -201,11 +464,12 @@ internal static class Program
     // started with them ran without Unity Mod Manager or any mod (found testing the 1.10.0 to 1.11.0 update). Setting a
     // child's environment needs UseShellExecute false; the working directory stays the game's folder, which Doorstop's
     // relative target_assembly path in doorstop_config.ini depends on.
-    private static void Relaunch(string executable)
+    // returns the started game (for WaitForGameWindow; the caller disposes it), or null when none was started
+    private static Process Relaunch(string executable)
     {
         if (string.IsNullOrEmpty(executable) || !File.Exists(executable))
         {
-            return;
+            return null;
         }
 
         try
@@ -219,11 +483,14 @@ internal static class Program
             var removed = RemoveDoorstopVariables(start);
 
             Log($"Starting {executable}" + (removed.Count > 0 ? $" without {string.Join(", ", removed)}" : string.Empty));
-            Process.Start(start)?.Dispose();
+
+            return Process.Start(start);
         }
         catch (Exception e)
         {
             Log($"Couldn't start the game: {e.Message}");
+
+            return null;
         }
     }
 

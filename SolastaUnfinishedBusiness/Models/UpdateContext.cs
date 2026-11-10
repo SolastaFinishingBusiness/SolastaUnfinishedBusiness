@@ -90,6 +90,40 @@ internal static class UpdateContext
         Failed
     }
 
+    // The version of the code actually running: the build version compiled into this DLL (the project file's
+    // FbComputeBuildVersion target, the same string as the built Info.json's "Version", "-dev.<commit>" included).
+    // Unity Mod Manager's version, and everything shown from it, comes from Info.json, which can be newer than the DLL
+    // that was loaded (see CheckLoadedVersion). Null or empty means the mark is missing. This code is only ever built
+    // with the target, so that isn't a normal case: a build made some other way, or a damaged file. It is treated as
+    // an error, not as a match (user direction, 2026-11-10).
+    [CanBeNull]
+    internal static string LoadedBuildVersion { get; } = ReadLoadedBuildVersion();
+
+    private static string ReadLoadedBuildVersion()
+    {
+        try
+        {
+            var value = typeof(UpdateContext).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                .Cast<System.Reflection.AssemblyMetadataAttribute>()
+                .FirstOrDefault(x => x.Key == "FbBuildVersion")?.Value;
+
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+        catch (Exception e)
+        {
+            // a static initializer must never throw (it would break the whole updater); the null is reported instead
+            Debug.LogError($"[SolastaUnfinishedBusiness] Couldn't read the DLL's build version: {e.Message}");
+
+            return null;
+        }
+    }
+
+    // What this game tells other players it runs: the loaded code's version. Without the mark, Info.json's version
+    // with "?unverified" after it, so it never equals a real build and the other players' version warning shows it.
+    internal static string RunningVersion =>
+        LoadedBuildVersion ?? Main.ModVersion + MultiplayerSessionContext.UnverifiedSuffix;
+
     internal static void Load()
     {
         var infoPayload = File.ReadAllText(Path.Combine(Main.ModFolder, "Info.json"));
@@ -102,6 +136,7 @@ internal static class UpdateContext
         UnityEngine.Object.DontDestroyOnLoad(driver);
         driver.AddComponent<Driver>();
 
+        CheckLoadedVersion();
         ReportInstallResult();
         Previous = FindRollbackTarget();
         CustomModels.AlertIfModelsNotFound();
@@ -454,6 +489,36 @@ internal static class UpdateContext
         }
     }
 
+    // Unity Mod Manager reads Info.json, then loads the DLL through its own cached copy, named only by the DLL file's
+    // time (SolastaUnfinishedBusiness.dll.<id>.cache, read from UMM 0.27.10). Whatever the cause, when the code
+    // that runs isn't the version Info.json names, everything that shows the version (the mod manager, the lobby, the
+    // update result) is wrong, and multiplayer goes out of sync with players who run the real build. A player once saw
+    // 1.14.0 and desynced until a full restart (2026-11-08). This says so at the main menu and in the log; the version
+    // published to other players is the loaded one (MultiplayerSessionContext.BuildVersion), so they see it too.
+    private static void CheckLoadedVersion()
+    {
+        if (LoadedBuildVersion == null)
+        {
+            // the check can't be made, which is itself a fault (see LoadedBuildVersion), so say so rather than pass
+            Main.Error($"The loaded DLL has no build version, so it can't be checked against Info.json ({Main.ModVersion})");
+            PendingPrompts.Add(() => ShowMessage(
+                Gui.Format("Message/&UpdateLoadedVersionUnknown", Main.ModVersion),
+                "Message/&MessageOkTitle", severity: MessageModal.Severity.Serious3));
+
+            return;
+        }
+
+        if (LoadedBuildVersion == Main.ModVersion)
+        {
+            return;
+        }
+
+        Main.Error($"Info.json says {Main.ModVersion}, but the loaded DLL is {LoadedBuildVersion}; restart the game");
+        PendingPrompts.Add(() => ShowMessage(
+            Gui.Format("Message/&UpdateLoadedVersionMismatch", Main.ModVersion, LoadedBuildVersion),
+            "Message/&MessageOkTitle", severity: MessageModal.Severity.Serious3));
+    }
+
     // reason is a term (from the background checks) or a system message
     private static void Fail(string version, string reason)
     {
@@ -510,10 +575,30 @@ internal static class UpdateContext
                 arguments.AddRange(["--source", staged]);
             }
 
+            // the helper's window texts, in the game's language (the helper can't read the mod's translations). Best
+            // effort: if the file can't be written, the helper still starts and shows its English texts. Letting the
+            // exception through made StartInstaller fail, and the caller then installed (or rolled back) in place while
+            // the game was running (Codex's review of PR #30).
+            var texts = Path.Combine(folder, "texts.txt");
+
+            try
+            {
+                WriteInstallerTexts(texts, mode, version);
+                arguments.AddRange(["--texts", texts]);
+            }
+            catch (Exception e)
+            {
+                Main.Error($"Couldn't write the update helper's texts, so it shows them in English: {e.Message}");
+            }
+
+            // not hidden: from this version the helper shows a small window once the game has closed its window (not
+            // before: this runs before the player picks Restart or Later), so the player can see the update being
+            // installed and that Solasta starts again by itself (Steam shows the game as running, STOP, the whole
+            // time, as a test on 2026-11-09 showed). CreateNoWindow only concerns consoles.
             Process.Start(new ProcessStartInfo(copy,
                 string.Join(" ", arguments.Select(x => "\"" + x.TrimEnd('\\') + "\"")))
             {
-                UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden
+                UseShellExecute = false, CreateNoWindow = true
             });
 
             Main.Info($"Update helper started ({mode} {version}); it acts after the game exits");
@@ -526,6 +611,31 @@ internal static class UpdateContext
 
             return false;
         }
+    }
+
+    // key=value lines, UTF-8, read by the helper's InstallWindow; line breaks inside a text are written as "\n". The
+    // version is filled in here, so the helper only shows the texts. A missing or unreadable file makes it use English.
+    private static void WriteInstallerTexts(string path, string mode, string version)
+    {
+        string Line(string key, string text) => key + "=" + text.Replace("\r", string.Empty).Replace("\n", "\\n");
+
+        var okLabel = Gui.Localize("Message/&MessageOkTitle");
+
+        File.WriteAllLines(path,
+        [
+            Line("title", Gui.Localize("Message/&UpdateInstallerTitle")),
+            Line("waiting", Gui.Localize("Message/&UpdateInstallerWaiting")),
+            Line("working", Gui.Format(mode == "rollback"
+                ? "Message/&UpdateInstallerRollingBack"
+                : "Message/&UpdateInstallerInstalling", version)),
+            Line("starting", Gui.Localize("Message/&UpdateInstallerStarting")),
+            Line("failed", Gui.Localize("Message/&UpdateInstallerFailed")),
+            Line("hint", Gui.Localize("Message/&UpdateInstallerHint")),
+            Line("notstarted", Gui.Localize("Message/&UpdateInstallerNotStarted")),
+            // names the window's own button ({0}), which must be pressed before Steam offers Play again
+            Line("notstartedhint", Gui.Format("Message/&UpdateInstallerNotStartedHint", okLabel)),
+            Line("close", okLabel)
+        ], new System.Text.UTF8Encoding(false));
     }
 
     #endregion
@@ -559,23 +669,36 @@ internal static class UpdateContext
 
         string Value(string key) => result.TryGetValue(key, out var value) ? value : string.Empty;
 
+        // The version the helper installed or rolled back to (--version). An install or a rollback is only confirmed
+        // when this game runs exactly that version AND Info.json names it: the requested, installed and loaded
+        // versions all agree. Before, an install only compared the requested and loaded versions, so a different
+        // Info.json showed the mismatch warning next to a success message, and every rollback counted as a success
+        // (Codex's review of PR #30). A DLL without its build mark can't be confirmed at all.
         var version = Value("version");
-        var message = Value("status") switch
+        var status = Value("status");
+        var confirmed = LoadedBuildVersion != null && version == LoadedBuildVersion && version == InstalledVersion;
+        // what runs, for the mismatch message: the loaded version, with Info.json's when they differ
+        var running = LoadedBuildVersion == null
+            ? InstalledVersion + MultiplayerSessionContext.UnverifiedSuffix
+            : LoadedBuildVersion == InstalledVersion
+                ? LoadedBuildVersion
+                : $"{LoadedBuildVersion} (Info.json: {InstalledVersion})";
+        var message = status switch
         {
-            "installed" when version == InstalledVersion => Gui.Format("Message/&UpdateResultInstalled", version),
-            "installed" => Gui.Format("Message/&UpdateResultMismatch", version, InstalledVersion, Value("log")),
+            "installed" when confirmed => Gui.Format("Message/&UpdateResultInstalled", version),
+            "rolledback" when confirmed => Gui.Format("Message/&UpdateResultRolledBack", version),
+            "installed" or "rolledback" =>
+                Gui.Format("Message/&UpdateResultMismatch", version, running, Value("log")),
             "failed" when Value("restored") == "yes" =>
                 Gui.Format("Message/&UpdateResultFailedRestored", version, Value("message"), Value("transaction"),
                     Value("log")),
             "failed" => Gui.Format("Message/&UpdateResultFailed", version, Value("message"), Value("transaction"),
                 Value("log")),
-            "rolledback" => Gui.Format("Message/&UpdateResultRolledBack", InstalledVersion),
             _ => Gui.Format("Message/&UpdateResultRollbackFailed", Value("message"), Value("transaction"),
                 Value("log"))
         };
 
-        var succeeded = (Value("status") == "installed" && version == InstalledVersion) ||
-                        Value("status") == "rolledback";
+        var succeeded = status is "installed" or "rolledback" && confirmed;
 
         PendingPrompts.Add(() => ShowMessage(message, "Message/&MessageOkTitle",
             severity: succeeded ? MessageModal.Severity.Informative1 : MessageModal.Severity.Serious3));

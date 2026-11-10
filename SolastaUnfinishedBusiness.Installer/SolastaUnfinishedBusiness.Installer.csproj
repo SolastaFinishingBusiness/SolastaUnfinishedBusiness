@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <Reference Include="System.Xml.Linq" />
+    <!-- InstallWindow: the window shown while the update is installed -->
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
     <Compile Include="../SolastaUnfinishedBusiness/Models/ModInstallTransaction.cs" Link="ModInstallTransaction.cs" />
   </ItemGroup>
 

@@ -103,7 +103,7 @@ internal static class MultiplayerDisplay
                 text += $" · {MultiplayerFpsContext.DescribeFps(player)}";
             }
 
-            UI.Label(version == MultiplayerSessionContext.BuildVersion
+            UI.Label(MultiplayerSessionContext.IsSameVerifiedBuild(version)
                 ? $"    <color=#80C080>{text}</color>"
                 : $"    <color=#E06060>{text}</color>");
         }

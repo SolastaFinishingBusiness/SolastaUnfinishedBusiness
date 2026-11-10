@@ -333,7 +333,7 @@
              AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
       <Source ParameterType="System.String" Required="true" />
-      <Destination ParameterType="System.String" Required="true" />
+      <Destination ParameterType="System.String" />
       <Development ParameterType="System.Boolean" />
       <Commit ParameterType="System.String" />
       <BuildVersion ParameterType="System.String" Output="true" />
@@ -350,21 +350,43 @@
         BuildVersion = Development
             ? version + "-dev." + (commit.Length >= 8 ? commit.Substring(0, 8) : "unknown")
             : version;
-        File.WriteAllText(Destination,
-            key.Replace(text, m => m.Groups[1].Value + BuildVersion + m.Groups[3].Value, 1));
+
+        // without a destination it only works the version out (FbComputeBuildVersion, before compiling)
+        if (!string.IsNullOrEmpty(Destination))
+        {
+            File.WriteAllText(Destination,
+                key.Replace(text, m => m.Groups[1].Value + BuildVersion + m.Groups[3].Value, 1));
+        }
       ]]></Code>
     </Task>
   </UsingTask>
 
-  <Target Name="StampBuildVersion" AfterTargets="CopyFilesToOutputDirectory">
+  <!-- The same build version, worked out before compiling and compiled into the DLL as
+       [AssemblyMetadata("FbBuildVersion", ...)]. Unity Mod Manager shows and the multiplayer version check used to
+       publish only Info.json's version, which says what is installed, not which DLL the game loaded. At startup
+       UpdateContext compares the two, so a game still running older code under a newer Info.json says so (user
+       direction, 2026-11-10, after a player's game showed 1.14.0 and desynced until a restart). Runs before the SDK
+       collects the assembly attributes; the generated AssemblyInfo is rebuilt whenever the value changes. -->
+  <Target Name="FbComputeBuildVersion" BeforeTargets="GetAssemblyAttributes">
     <Exec Condition="'$(FbDevelopment)'=='true'" Command="git rev-parse HEAD" ConsoleToMSBuild="true"
           WorkingDirectory="$(MSBuildProjectDirectory)" StandardOutputImportance="low" ContinueOnError="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="FbBuildCommit" />
     </Exec>
-    <StampBuildVersionTask Source="$(MSBuildProjectDirectory)/Info.json" Destination="$(OutDir)Info.json"
+    <StampBuildVersionTask Source="$(MSBuildProjectDirectory)/Info.json"
                            Development="$(FbDevelopment.Equals('true'))" Commit="$(FbBuildCommit)">
       <Output TaskParameter="BuildVersion" PropertyName="FbBuildVersion" />
     </StampBuildVersionTask>
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>FbBuildVersion</_Parameter1>
+        <_Parameter2>$(FbBuildVersion)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="StampBuildVersion" AfterTargets="CopyFilesToOutputDirectory" DependsOnTargets="FbComputeBuildVersion">
+    <StampBuildVersionTask Source="$(MSBuildProjectDirectory)/Info.json" Destination="$(OutDir)Info.json"
+                           Development="$(FbDevelopment.Equals('true'))" Commit="$(FbBuildCommit)" />
     <Message Importance="high" Text="Finishing Business build version: $(FbBuildVersion)" />
   </Target>
 
