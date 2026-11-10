@@ -829,6 +829,7 @@ Message/&UpdateInstallerStarting=Iniciando o Solasta…
 Message/&UpdateInstallerFailed=Algo deu errado. O Solasta vai reiniciar e mostrar o que aconteceu.
 Message/&UpdateInstallerHint=O Solasta vai reiniciar sozinho quando terminar. Não o inicie nem o pare na Steam até lá.
 Message/&UpdateLoadedVersionMismatch=O %ModName% {0} está instalado, mas este jogo ainda está executando a versão {1}. Feche o Solasta e inicie-o de novo antes de jogar: no multijogador, jogadores com versões diferentes perdem a sincronia.
+Message/&UpdateLoadedVersionUnknown=Esta cópia do %ModName% não tem versão de compilação, então o jogo não consegue verificar se está executando a versão instalada {0}. Compilações oficiais sempre têm uma: reinstale o mod pela página de versões. No multijogador, os outros jogadores verão sua versão como não verificada.
 Message/&RemakeOldCharacterAccept=Refazer
 Message/&RemakeOldCharacterDescription=Refazer <b>{0}</b>?\n\n{1}\n\nA criação de personagem abre preenchida com nome, aparência, voz, retrato, raça e antecedente. Classe, valores de atributo e todas as escolhas seguintes são feitas de novo.
 Message/&RemakeOldCharacterDetails=Raça: {0}\nAntecedente: {1}\nVersão antiga: {2}

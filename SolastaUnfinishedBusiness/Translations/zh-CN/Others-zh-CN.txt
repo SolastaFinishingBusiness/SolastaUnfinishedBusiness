@@ -828,6 +828,7 @@ Message/&UpdateInstallerStarting=正在启动 Solasta…
 Message/&UpdateInstallerFailed=出现问题。Solasta 将重新启动并显示发生了什么。
 Message/&UpdateInstallerHint=完成后 Solasta 会自动重新启动。在此之前，请不要在 Steam 中启动或停止它。
 Message/&UpdateLoadedVersionMismatch=已安装 %ModName% {0}，但本游戏仍在运行版本 {1}。请在游戏前退出 Solasta 并重新启动：在多人游戏中，版本不同的玩家会失去同步。
+Message/&UpdateLoadedVersionUnknown=此 %ModName% 副本没有构建版本，因此游戏无法确认正在运行已安装的版本 {0}。官方构建总会带有构建版本：请从发布页面重新安装模组。在多人游戏中，其他玩家会看到你的版本未经验证。
 Message/&RemakeOldCharacterAccept=重新制作
 Message/&RemakeOldCharacterDescription=重新制作<b>{0}</b>？\n\n{1}\n\n角色创建将预先填入其名字、外貌、声音、肖像、种族和背景。职业、属性值以及之后的每个选择都需重新进行。
 Message/&RemakeOldCharacterDetails=种族：{0}\n背景：{1}\n旧版本：{2}

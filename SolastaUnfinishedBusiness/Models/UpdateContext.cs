@@ -92,16 +92,36 @@ internal static class UpdateContext
 
     // The version of the code actually running: the build version compiled into this DLL (the project file's
     // FbComputeBuildVersion target, the same string as the built Info.json's "Version", "-dev.<commit>" included).
-    // Null only for a DLL built without that target. Unity Mod Manager's version, and everything shown from it, comes
-    // from Info.json, which can be newer than the DLL that was loaded (see CheckLoadedVersion).
+    // Unity Mod Manager's version, and everything shown from it, comes from Info.json, which can be newer than the DLL
+    // that was loaded (see CheckLoadedVersion). Null or empty means the mark is missing. This code is only ever built
+    // with the target, so that isn't a normal case: a build made some other way, or a damaged file. It is treated as
+    // an error, not as a match (user direction, 2026-11-10).
     [CanBeNull]
-    internal static string LoadedBuildVersion { get; } = typeof(UpdateContext).Assembly
-        .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
-        .Cast<System.Reflection.AssemblyMetadataAttribute>()
-        .FirstOrDefault(x => x.Key == "FbBuildVersion")?.Value;
+    internal static string LoadedBuildVersion { get; } = ReadLoadedBuildVersion();
 
-    // what to report as running: the loaded code's version, or Info.json's for a DLL without the mark
-    internal static string RunningVersion => LoadedBuildVersion ?? Main.ModVersion;
+    private static string ReadLoadedBuildVersion()
+    {
+        try
+        {
+            var value = typeof(UpdateContext).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                .Cast<System.Reflection.AssemblyMetadataAttribute>()
+                .FirstOrDefault(x => x.Key == "FbBuildVersion")?.Value;
+
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+        catch (Exception e)
+        {
+            // a static initializer must never throw (it would break the whole updater); the null is reported instead
+            Debug.LogError($"[SolastaUnfinishedBusiness] Couldn't read the DLL's build version: {e.Message}");
+
+            return null;
+        }
+    }
+
+    // What this game tells other players it runs: the loaded code's version. Without the mark, Info.json's version
+    // with "?unverified" after it, so it never equals a real build and the other players' version warning shows it.
+    internal static string RunningVersion => LoadedBuildVersion ?? Main.ModVersion + "?unverified";
 
     internal static void Load()
     {
@@ -476,7 +496,18 @@ internal static class UpdateContext
     // published to other players is the loaded one (MultiplayerSessionContext.BuildVersion), so they see it too.
     private static void CheckLoadedVersion()
     {
-        if (LoadedBuildVersion == null || LoadedBuildVersion == Main.ModVersion)
+        if (LoadedBuildVersion == null)
+        {
+            // the check can't be made, which is itself a fault (see LoadedBuildVersion), so say so rather than pass
+            Main.Error($"The loaded DLL has no build version, so it can't be checked against Info.json ({Main.ModVersion})");
+            PendingPrompts.Add(() => ShowMessage(
+                Gui.Format("Message/&UpdateLoadedVersionUnknown", Main.ModVersion),
+                "Message/&MessageOkTitle", severity: MessageModal.Severity.Serious3));
+
+            return;
+        }
+
+        if (LoadedBuildVersion == Main.ModVersion)
         {
             return;
         }
@@ -623,8 +654,9 @@ internal static class UpdateContext
 
         var version = Value("version");
         // compared with the code that is running, not only Info.json: an update counts as installed only when this
-        // game runs it (see CheckLoadedVersion)
-        var running = LoadedBuildVersion ?? InstalledVersion;
+        // game runs it (see CheckLoadedVersion). Without the DLL's mark that can't be confirmed, so it is reported as
+        // a mismatch naming the unverified version.
+        var running = LoadedBuildVersion ?? InstalledVersion + "?unverified";
         var message = Value("status") switch
         {
             "installed" when version == running => Gui.Format("Message/&UpdateResultInstalled", version),

@@ -46,7 +46,8 @@ internal static class MultiplayerSessionContext
     // every numbered release is a unique build (the release workflow refuses a version that was already released),
     // so the version alone tells builds apart
     // the version of the code this game runs (the DLL's build mark), which equals Info.json's except when the game
-    // loaded an older DLL than the installed Info.json names; then the other players' version warnings show it
+    // loaded an older DLL than the installed Info.json names, or "<Info.json version>?unverified" when the DLL has no
+    // mark; either way the other players' version warnings show it
     internal static string BuildVersion => UpdateContext.RunningVersion;
 
     private static string HostSettingsFile => Path.Combine(Main.SettingsFolder, $"{HostSettingsName}.xml");
