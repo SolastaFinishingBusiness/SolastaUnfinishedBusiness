@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=过期的能力和法术效果 <i><color=#F0DAA0>[�
 ModUi/&LogPerception=察觉 <i><color=#F0DAA0>[在日志中记录察觉请求和检定]</color></i>
 ModUi/&LogAiMoves=AI 移动 <i><color=#F0DAA0>[多人游戏：每个 AI 控制角色的移动目标或指定的格子，以及其选择的停止格子；每场战斗最多 200 行]</color></i>
 ModUi/&LogEncounterPopup=旅途遭遇窗口 <i><color=#F0DAA0>[打开、关闭和点击时，以及窗口打开期间的读档、退出或断线]</color></i>
+ModUi/&LogForcedMovement=穿过区域的强制移动 <i><color=#F0DAA0>[每次超过一格的推离或拉近：经过的格子、生物在每一格所处的区域，以及前后的生命值；每次启动最多 300 行]</color></i>
 ModUi/&MultiplayerMenu=多人游戏
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>最小行动延迟（帧刻）</color> <i><color=#F0DAA0>[游戏默认4，只在所有人的延迟都允许时使用]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>移动</color> <i><color=#F0DAA0>[仅限多人游戏，单人游戏保持游戏规则]</color></i><color=#F0DAA0>:</color>

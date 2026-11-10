@@ -148,6 +148,14 @@ public static class CharacterActionPatcher
                     CustomReactionsContext.ReadReadyActionPreferredCantrip(__instance.actionParams);
                     break;
 
+                //PATCH: forced movement through areas (issue #32): from here on this push's cells, if it has any,
+                // are the ones used when the creature's move is committed; a push without any clears what an
+                // earlier, interrupted push may have left
+                case CharacterActionPushed:
+                case CharacterActionPushedCustom:
+                    ForcedMovementContext.PushStarting(__instance);
+                    break;
+
                 case CharacterActionMoveStepBase characterActionMoveStepBase:
                     OtherFeats.NotifyFeatStealth(characterActionMoveStepBase);
 
@@ -223,6 +231,9 @@ public static class CharacterActionPatcher
                 case CharacterActionPushed:
                 case CharacterActionPushedCustom:
                 {
+                    //PATCH: forced movement through areas (issue #32): the push is over, its cells are done with
+                    ForcedMovementContext.PushEnded(actingCharacter);
+
                     yield return CircleOfTheWildfire.HandleCauterizingFlamesBehavior(actingCharacter);
 
                     GrappleContext.ValidateGrappleAfterMotion(actingCharacter);

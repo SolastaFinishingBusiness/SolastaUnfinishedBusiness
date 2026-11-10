@@ -30,6 +30,23 @@ namespace SolastaUnfinishedBusiness.Patches;
 [UsedImplicitly]
 public static class GameLocationCharacterPatcher
 {
+    //PATCH: forced movement through areas (issue #29, ForcedMovementContext). FinishMoveTo is where a move changes the
+    // creature's cell. A push does it once, from its start straight to its landing cell, so areas in between never
+    // acted on the creature. Just before that change, a pushed creature is stepped through the cells its push goes
+    // through, for area effects only. Every other move (walking, teleports) returns at once. The game's method is
+    // skipped only if an area's effect moved the creature elsewhere meanwhile (see BeforeMoveCommitted).
+    [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.FinishMoveTo))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FinishMoveTo_Patch
+    {
+        [UsedImplicitly]
+        public static bool Prefix(GameLocationCharacter __instance, int3 destination)
+        {
+            return ForcedMovementContext.BeforeMoveCommitted(__instance, destination);
+        }
+    }
+
     //PATCH: supports IForceLightingState
     [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.LightingState), MethodType.Getter)]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Models;
 using TA;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -43,6 +44,24 @@ public static class GameLocationPositioningManagerPatcher
             return oldPosition != newPosition
                    || oldSize.minExtent != newSize.minExtent
                    || oldSize.maxExtent != newSize.maxExtent;
+        }
+    }
+
+    //PATCH: forced movement through areas (issue #29, ForcedMovementContext). FinalizeNewPosition is the second half of
+    // CharacterMoved: armor class, the auras the creature carries, the OccupationChanged event (areas, pressure plates,
+    // trap volumes, sight, the AI) and the footing check that starts a fall. While a pushed creature is stepped through
+    // the cells between its start and its landing cell, only the first half must run (the occupant lists and the
+    // creature's cell); the areas are then worked out by a direct call. Everything else happens once, for the landing
+    // cell, as before. The flag is only raised around those CharacterMoved calls.
+    [HarmonyPatch(typeof(GameLocationPositioningManager), nameof(GameLocationPositioningManager.FinalizeNewPosition))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FinalizeNewPosition_Patch
+    {
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !ForcedMovementContext.SkipFinalizeNewPosition;
         }
     }
 }

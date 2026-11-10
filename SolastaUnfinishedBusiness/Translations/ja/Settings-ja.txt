@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=古くなったパワーと呪文の効果 <i><color
 ModUi/&LogPerception=知覚 <i><color=#F0DAA0>[知覚の要求と判定をログに記録します]</color></i>
 ModUi/&LogAiMoves=AIの移動 <i><color=#F0DAA0>[マルチプレイ：AI操作のキャラクターの移動先や対象マスと、選んだ停止マス。1戦闘あたり最大200行]</color></i>
 ModUi/&LogEncounterPopup=移動中の遭遇ウィンドウ <i><color=#F0DAA0>[開閉とクリック、および表示中のロード・終了・切断]</color></i>
+ModUi/&LogForcedMovement=範囲を通る強制移動 <i><color=#F0DAA0>[2マス以上の押し出し・引き寄せごとに、通過したマス、各マスでクリーチャーがいる範囲、前後のヒット・ポイント。1回の起動あたり最大300行]</color></i>
 ModUi/&MultiplayerMenu=マルチプレイ
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>最小の行動遅延（ティック）</color> <i><color=#F0DAA0>[ゲームの既定値4、全員のpingが許す場合のみ使用]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>移動</color> <i><color=#F0DAA0>[マルチプレイのみ、シングルプレイはゲームのルールのまま]</color></i><color=#F0DAA0>:</color>

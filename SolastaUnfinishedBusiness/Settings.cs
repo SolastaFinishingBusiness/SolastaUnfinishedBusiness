@@ -191,6 +191,7 @@ public class Settings : UnityModManager.ModSettings
     public bool LogPerception { get; set; } = true;
     public bool LogAiMoves { get; set; } = true;
     public bool LogEncounterPopup { get; set; } = true;
+    public bool LogForcedMovement { get; set; } = true;
 
     // Gameplay - Multiplayer
     //
