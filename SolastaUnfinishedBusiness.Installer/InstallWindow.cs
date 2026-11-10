@@ -31,11 +31,16 @@ internal sealed class InstallWindow : Form
     private readonly Button _close;
     private readonly ManualResetEventSlim _ready = new(false);
     private readonly ManualResetEventSlim _closed = new(false);
+    private readonly bool _rollback;
     private bool _closeShown;
 
-    private InstallWindow(IReadOnlyDictionary<string, string> texts)
+    // set by Open when it gave up waiting: the window then closes as soon as it shows
+    private volatile bool _abandoned;
+
+    private InstallWindow(IReadOnlyDictionary<string, string> texts, string mode)
     {
         Texts = texts;
+        _rollback = mode == "rollback";
         Text = Get("title");
         FormBorderStyle = FormBorderStyle.FixedDialog;
         ControlBox = false;
@@ -96,6 +101,7 @@ internal sealed class InstallWindow : Form
         ["title"] = "Finishing Business update",
         ["waiting"] = "Waiting for Solasta to close…",
         ["working"] = "Installing the update…",
+        ["restoring"] = "Restoring the previous version…",
         ["starting"] = "Starting Solasta…",
         ["failed"] = "Something went wrong. Solasta will start again and show what happened.",
         ["hint"] = "Solasta will start again by itself. Please don't start or stop it in Steam until then.",
@@ -109,16 +115,30 @@ internal sealed class InstallWindow : Form
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr handle, int command);
 
+    // the game's text for the key, else the English fallback; "working" falls back by mode, so a rollback without its
+    // texts says it is restoring, not installing (Codex's full review of PR #30)
     private string Get(string key)
     {
-        return Texts.TryGetValue(key, out var text) && !string.IsNullOrWhiteSpace(text) ? text : Fallback[key];
+        if (Texts.TryGetValue(key, out var text) && !string.IsNullOrWhiteSpace(text))
+        {
+            return text;
+        }
+
+        return key == "working" && _rollback ? Fallback["restoring"] : Fallback[key];
     }
 
-    // Opens the window on its own thread and waits (briefly) until it is up. Returns null if it couldn't be shown.
-    internal static InstallWindow Open(string textsFile, Action<string> log)
+    // Opens the window on its own thread and waits (briefly) until it is on screen. Returns the window only once it
+    // has actually been shown with its message loop running; otherwise null, and the helper carries on without one.
+    // Before, a window that was constructed but never shown (its thread failed, or it was still starting after 5 s)
+    // was returned anyway: every Post to it was dropped, so the "not started" message never appeared while the helper
+    // waited up to 10 minutes for an OK nobody could see, with Steam showing STOP all along (Codex's full review of
+    // PR #30). A window that shows up after the wait gave up closes itself at once (_abandoned), and _closed is set
+    // whenever the window's thread ends, so a waiter is never left hanging on a window that is gone.
+    internal static InstallWindow Open(string textsFile, string mode, Action<string> log)
     {
         var texts = ReadTexts(textsFile, log);
         InstallWindow window = null;
+        var settled = new ManualResetEventSlim(false); // shown, or the thread ended
 
         try
         {
@@ -127,20 +147,32 @@ internal sealed class InstallWindow : Form
                 try
                 {
                     Application.EnableVisualStyles();
-                    window = new InstallWindow(texts);
+                    window = new InstallWindow(texts, mode);
                     window.Shown += (_, _) =>
                     {
+                        if (window._abandoned)
+                        {
+                            window.Close();
+
+                            return;
+                        }
+
                         // the game started this program with a hidden-window hint in older versions; the first
                         // ShowWindow of a process can take that hint instead of showing, so show it once more
                         ShowWindow(window.Handle, SwShowNormal);
                         window._ready.Set();
+                        settled.Set();
                     };
                     Application.Run(window);
                 }
                 catch (Exception e)
                 {
                     log($"The install window failed: {e.Message}");
-                    window?._ready.Set();
+                }
+                finally
+                {
+                    window?._closed.Set();
+                    settled.Set();
                 }
             }) { IsBackground = true, Name = "InstallWindow" };
 
@@ -148,12 +180,22 @@ internal sealed class InstallWindow : Form
             thread.Start();
 
             // never wait long: the install mustn't depend on the window
-            for (var i = 0; i < 50 && (window == null || !window._ready.IsSet); i++)
+            settled.Wait(TimeSpan.FromSeconds(5));
+
+            if (window is { _ready.IsSet: true, IsDisposed: false } && !window._closed.IsSet)
             {
-                Thread.Sleep(100);
+                return window;
             }
 
-            return window is { IsDisposed: false } ? window : null;
+            log("The install window didn't open in time; carrying on without it");
+
+            if (window != null)
+            {
+                window._abandoned = true;
+                window.Post(window.Close);
+            }
+
+            return null;
         }
         catch (Exception e)
         {

@@ -40,8 +40,22 @@ internal static class Program
             // The game starts this program as soon as the update is downloaded and verified, before the player
             // chooses Restart or Later, so the window opens only once the game is on its way out (tested 2026-11-10:
             // opened at once, it sat over the game's Restart prompt, and after Later it would stay for the session)
-            WaitForExit(Get(options, "pid"), () => window ??= InstallWindow.Open(Get(options, "texts"), Log));
-            window ??= InstallWindow.Open(Get(options, "texts"), Log);
+            // one attempt only: a window that failed to open isn't tried again
+            var windowTried = false;
+
+            void OpenWindow()
+            {
+                if (windowTried)
+                {
+                    return;
+                }
+
+                windowTried = true;
+                window = InstallWindow.Open(Get(options, "texts"), Get(options, "mode"), Log);
+            }
+
+            WaitForExit(Get(options, "pid"), OpenWindow);
+            OpenWindow();
             window?.ShowStep("working");
 
             var mode = Get(options, "mode");
@@ -112,7 +126,7 @@ internal static class Program
 
         using (var game = Relaunch(Get(options, "relaunch")))
         {
-            WaitForGameWindow(game, window);
+            WaitForGameWindow(game, Get(options, "relaunch"), window);
         }
 
         window?.CloseWindow();
@@ -131,12 +145,14 @@ internal static class Program
     // the shell, so neither this program nor the game it starts may take the foreground (Windows' foreground lock),
     // and the game stays drawn on top without becoming the foreground window (seen in the second 2026-11-10 test,
     // where the game covered the screen 1 s after its window appeared). This window then just sits behind the game
-    // until it closes. Nothing to wait for when there is no window. Logs what it saw.
-    // Without a game (Relaunch couldn't start one: no executable, or Process.Start failed), the window says so, tells
-    // the player to start Solasta from Steam, and stays with an OK button until it's closed or 10 minutes pass. It used
-    // to close after 5 s showing "Starting Solasta…", leaving the player with no game and no word why (Codex's review
-    // of PR #30). A game that starts and quits at once isn't this case: Steam may be relaunching it.
-    private static void WaitForGameWindow(Process game, InstallWindow window)
+    // until it closes. Nothing to wait for when there is no window. Logs what it saw. Waits are measured with a
+    // Stopwatch, so a clock change can't stretch or cut them (Codex's full review of PR #30).
+    // When no game comes up, the window says so, tells the player to press OK and start Solasta from Steam, and stays
+    // until it's closed or 10 minutes pass (it used to close after 5 s showing "Starting Solasta…"; Codex's review of
+    // PR #30). That covers a game that couldn't be started at all, and one that ended without ever showing a window
+    // when no other Solasta took its place within 20 s. A quick exit alone isn't a failure: when Steam has to start the
+    // game itself, the game quits at once and Steam starts a new one, which is then watched instead.
+    private static void WaitForGameWindow(Process game, string executable, InstallWindow window)
     {
         if (window == null)
         {
@@ -145,22 +161,49 @@ internal static class Program
 
         if (game == null)
         {
-            window.ShowStep("notstarted");
-
-            if (!window.WaitUntilClosed(TimeSpan.FromMinutes(10)))
-            {
-                Log("Nobody closed the 'not started' message within 10 minutes");
-            }
+            ShowNotStarted(window);
 
             return;
         }
 
-        var started = DateTime.Now;
-        DateTime? windowAt = null;
+        if (WatchGame(game) != GameOutcome.EndedWithoutWindow)
+        {
+            return;
+        }
+
+        using var replacement = WaitForOtherGame(Path.GetFileNameWithoutExtension(executable), game.Id,
+            TimeSpan.FromSeconds(20));
+
+        if (replacement != null)
+        {
+            Log($"Another Solasta started (pid {replacement.Id}); watching it instead");
+
+            if (WatchGame(replacement) != GameOutcome.EndedWithoutWindow)
+            {
+                return;
+            }
+        }
+
+        Log("No Solasta came up after the restart");
+        ShowNotStarted(window);
+    }
+
+    private enum GameOutcome
+    {
+        Showing,
+        EndedWithoutWindow,
+        NoWindowYet
+    }
+
+    // the started game until it shows (front, or 15 s after its window appeared), ends, or 60 s pass
+    private static GameOutcome WatchGame(Process game)
+    {
+        var clock = Stopwatch.StartNew();
+        TimeSpan? windowAt = null;
 
         try
         {
-            while ((DateTime.Now - started).TotalSeconds < 60 && !game.HasExited)
+            while (clock.Elapsed.TotalSeconds < 60 && !game.HasExited)
             {
                 if (!TryGetMainWindow(game, out var handle))
                 {
@@ -169,32 +212,81 @@ internal static class Program
 
                 if (handle != IntPtr.Zero && windowAt == null)
                 {
-                    windowAt = DateTime.Now;
-                    Log($"The game's window appeared after {(windowAt.Value - started).TotalSeconds:0.0} s");
+                    windowAt = clock.Elapsed;
+                    Log($"The game's window appeared after {windowAt.Value.TotalSeconds:0.0} s");
                 }
 
                 if (handle != IntPtr.Zero && GetForegroundWindow() == handle)
                 {
-                    Log($"The game came to the front after {(DateTime.Now - started).TotalSeconds:0.0} s");
+                    Log($"The game came to the front after {clock.Elapsed.TotalSeconds:0.0} s");
 
-                    return;
+                    return GameOutcome.Showing;
                 }
 
-                if (windowAt != null && (DateTime.Now - windowAt.Value).TotalSeconds >= 15)
+                if (windowAt != null && (clock.Elapsed - windowAt.Value).TotalSeconds >= 15)
                 {
                     Log("The game's window didn't come to the front within 15 s");
 
-                    return;
+                    return GameOutcome.Showing;
                 }
 
                 Thread.Sleep(250);
             }
 
-            Log(game.HasExited ? "The started game ended" : "No game window within 60 s");
+            if (game.HasExited || !TryGetMainWindow(game, out _))
+            {
+                Log(windowAt == null ? "The started game ended without a window" : "The started game ended");
+
+                return windowAt == null ? GameOutcome.EndedWithoutWindow : GameOutcome.Showing;
+            }
+
+            Log("No game window within 60 s");
+
+            return GameOutcome.NoWindowYet;
         }
         catch (Exception e)
         {
             Log($"Couldn't watch the started game: {e.Message}");
+
+            return GameOutcome.NoWindowYet;
+        }
+    }
+
+    // another process of the game's executable than the one that ended (Steam's own launch), or null if none appears
+    private static Process WaitForOtherGame(string processName, int endedId, TimeSpan timeout)
+    {
+        var clock = Stopwatch.StartNew();
+
+        while (clock.Elapsed < timeout)
+        {
+            var others = Process.GetProcessesByName(processName);
+            var found = others.FirstOrDefault(x => x.Id != endedId);
+
+            foreach (var other in others.Where(x => x != found))
+            {
+                other.Dispose();
+            }
+
+            if (found != null)
+            {
+                return found;
+            }
+
+            Thread.Sleep(500);
+        }
+
+        Log($"No other {processName} within {timeout.TotalSeconds:0} s");
+
+        return null;
+    }
+
+    private static void ShowNotStarted(InstallWindow window)
+    {
+        window.ShowStep("notstarted");
+
+        if (!window.WaitUntilClosed(TimeSpan.FromMinutes(10)))
+        {
+            Log("Nobody closed the 'not started' message within 10 minutes");
         }
     }
 
