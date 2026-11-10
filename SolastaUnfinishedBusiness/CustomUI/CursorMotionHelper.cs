@@ -206,8 +206,22 @@ public class CursorMotionHelper : MonoBehaviour
 
         if (pushShift != int3.zero)
         {
-            helper.PlaceGhostWithoutPath(target, target.LocationPosition + pushShift, true);
+            // as in the single preview: a push that ends over a drop shows the fall, and the ghost is marked as
+            // not standing there
+            var pushedCell = target.LocationPosition + pushShift;
+            var fall = GetFallShift(target, pushedCell);
+            var willFall = fall != int3.zero;
+
+            helper.PlaceGhostWithoutPath(target, pushedCell, !willFall);
             helper.PlaceDropLine(start + side, pushEnd + side, true);
+
+            if (willFall)
+            {
+                // where the pull would then start from isn't known, so no pull line is drawn
+                helper.PlaceDropLine(pushEnd + side, pushEnd + side + fall.ToVector3(), false);
+
+                return;
+            }
         }
 
         // back from where the push ends to where the pull would leave the creature

@@ -187,7 +187,6 @@ public static class CharacterReactionItemPatcher
         }
     }
 
-    //TODO: check if still relevant - while this method wasn't touched, maybe sub-items are now disposed properly?
     [HarmonyPatch(typeof(CharacterReactionItem), nameof(CharacterReactionItem.Unbind))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -201,6 +200,7 @@ public static class CharacterReactionItemPatcher
         }
     }
 
+    //TODO: check if still relevant - while this method wasn't touched, maybe sub-items are now disposed properly?
     [HarmonyPatch(typeof(CharacterReactionItem), nameof(CharacterReactionItem.GetSelectedSubItem))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

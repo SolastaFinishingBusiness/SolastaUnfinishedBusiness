@@ -55,7 +55,7 @@ internal static class EldritchBlastMovePrompt
         rootLayout.childForceExpandWidth = true;
         rootLayout.childForceExpandHeight = false;
 
-        var state = new State { Request = request, Root = root };
+        var state = new State { Item = item, Request = request, Root = root };
         var labelSource = item.transform.Find("CharacterName");
 
         if (request.HasPush)
@@ -119,20 +119,37 @@ internal static class EldritchBlastMovePrompt
     }
 
     // Sends the answer. Every button is a "validated" answer: which button it was is part of the number.
+    // It follows what the game's own React button does, step by step (CharacterReactionItem.OnReactCb, then
+    // ReactionModal.OnReact), with the packed number in place of the selected sub-option: mark the item as answered,
+    // send the command, and let the modal check whether anything is still waiting. Without the first and the last
+    // step the modal would stay up, empty, and its timer could answer the same request a second time.
     private static void Answer(State state, int button)
     {
         var request = state.Request;
+        var item = state.Item;
 
-        if (request.Processed || !state.Root)
+        if (!state.Root || !item || item.CurrentState != CharacterReactionItem.ReactionState.Pending)
         {
             return;
         }
 
+        var packed = Pack(Cells(state.Push?.Slider), Cells(state.Pull?.Slider), state.PushFirst, button);
+
         // one answer only: the controls go at once, as the game's own buttons do
         state.Root.SetActive(false);
+        item.CurrentState = CharacterReactionItem.ReactionState.Reacted;
 
-        ServiceRepository.GetService<ICommandService>()?.ProcessReactionRequest(
-            request, true, Pack(Cells(state.Push?.Slider), Cells(state.Pull?.Slider), state.PushFirst, button));
+        if (!request.Processed)
+        {
+            ServiceRepository.GetService<ICommandService>()?.ProcessReactionRequest(request, true, packed);
+        }
+
+        var modal = Gui.GuiService?.GetScreen<ReactionModal>();
+
+        if (modal)
+        {
+            modal.CheckPanelRelevance();
+        }
     }
 
     private static void Refresh(State state)
@@ -431,6 +448,7 @@ internal static class EldritchBlastMovePrompt
     // what one shown prompt needs to remember between clicks; it lives only in the controls' own listeners
     private sealed class State
     {
+        internal CharacterReactionItem Item;
         internal Button OrderButton;
         internal SliderRow Pull;
         internal SliderRow Push;

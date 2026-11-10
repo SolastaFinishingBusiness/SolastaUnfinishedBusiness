@@ -38,8 +38,9 @@ internal static class EldritchBlastMoveContext
     // with a marker loads as plain "On" without the mod, and an old save has no marker.
     private const string AskMarkerPrefix = "FbAskInvocation:";
 
-    // A wait that never ends would hang the game, so it gives up after this many frames. Normal moves take far fewer.
-    private const int MaxQuietFrames = 1800;
+    // After this many frames of waiting for a creature to stop moving, one line is logged. The wait itself goes on:
+    // going ahead on a frame count would let computers with different frame rates act at different moments.
+    private const int SlowQuietFrames = 1800;
 
     private static readonly ConditionalWeakTable<CharacterAction, CastState> Casts = new();
     private static readonly ConditionalWeakTable<CharacterActionParams, Leg> Legs = new();
@@ -138,7 +139,7 @@ internal static class EldritchBlastMoveContext
         // set once the caster picked "for All": every later beam of the cast uses it without asking
         internal Decision? ForAll;
 
-        // creatures a beam of this cast has already been decided for (used when only the first move counts)
+        // creatures a beam of this cast has already hit (used when only the first beam on a creature moves it)
         internal readonly HashSet<ulong> DecidedTargets = [];
     }
 
@@ -148,6 +149,9 @@ internal static class EldritchBlastMoveContext
         internal bool HasPull;
         internal bool HasPush;
         internal Decision? Decision;
+
+        // set when this beam may not move the creature at all (see BeforeMove)
+        internal bool Suppressed;
     }
 
     // one queued action of a beam: the first or the second of its (at most two) moves
@@ -260,7 +264,26 @@ internal static class EldritchBlastMoveContext
         var beam = leg.Beam;
         var hero = caster.RulesetCharacter;
 
-        // A caster no player controls, or one with neither invocation on Ask, keeps today's behaviour untouched:
+        // With "Push or pull a creature once for each hit" off, only the first beam of a cast that hits a creature
+        // moves it. That goes for every caster, asked or not: before, a caster with both invocations simply On could
+        // still move the creature again with a later beam, because the game replays each queued move's stored
+        // destination. (In multiplayer the setting is the host's: clients play with the host's settings.)
+        if (!Main.Settings.PushOrPullOncePerHit)
+        {
+            if (leg.IsFirst && !beam.Cast.DecidedTargets.Add(target.Guid))
+            {
+                beam.Suppressed = true;
+            }
+
+            if (beam.Suppressed)
+            {
+                effectForms.RemoveAll(x => x.FormType == EffectForm.EffectFormType.Motion);
+
+                yield break;
+            }
+        }
+
+        // A caster no player controls, or one with neither invocation on Ask, is otherwise left as it was:
         // full distance, push then pull, no waiting.
         if (!IsManaged(caster, hero, beam))
         {
@@ -307,17 +330,22 @@ internal static class EldritchBlastMoveContext
     {
         var actions = ServiceRepository.GetService<IGameLocationActionService>();
 
-        for (var frame = 0; frame < MaxQuietFrames; frame++)
+        // It ends on game state alone (the creature's own actions and moves have finished), never on elapsed time,
+        // so every computer goes on from the same state. A creature that died or fell is quiet once that is over.
+        for (var frame = 0;; frame++)
         {
             if (!target.MoveInProgress && !target.Pushed && actions?.IsCharacterActing(target) != true)
             {
                 yield break;
             }
 
+            if (frame == SlowQuietFrames)
+            {
+                Main.Error($"EldritchBlastMove: still waiting for {target.Name} to stop moving.");
+            }
+
             yield return null;
         }
-
-        Main.Error($"EldritchBlastMove: {target.Name} was still moving after {MaxQuietFrames} frames; going on.");
     }
 
     private static IEnumerator Decide(
@@ -327,15 +355,6 @@ internal static class EldritchBlastMoveContext
         Beam beam)
     {
         var cast = beam.Cast;
-
-        // With "once for each hit" off, only the first move of a cast moves a creature: later beams on it do nothing
-        // and aren't asked about.
-        if (!Main.Settings.PushOrPullOncePerHit && !cast.DecidedTargets.Add(target.Guid))
-        {
-            beam.Decision = Decision.None;
-
-            yield break;
-        }
 
         if (cast.ForAll is { } forAll)
         {
