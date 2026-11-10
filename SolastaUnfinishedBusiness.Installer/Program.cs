@@ -211,20 +211,37 @@ internal static class Program
                     break;
                 }
 
-                if (handle != IntPtr.Zero && windowAt == null)
+                if (handle == IntPtr.Zero)
+                {
+                    // A window that went away again doesn't count: the game removes its window before it ends (its
+                    // quit and crash teardown), so the 15 s rule restarts from the next window, if any (Codex's
+                    // review of 599b8644: a game whose window had gone, still alive at 15 s, passed as showing).
+                    if (windowAt != null)
+                    {
+                        Log($"The game's window went away after {clock.Elapsed.TotalSeconds:0.0} s");
+                        windowAt = null;
+                    }
+
+                    Thread.Sleep(250);
+
+                    continue;
+                }
+
+                if (windowAt == null)
                 {
                     windowAt = clock.Elapsed;
                     Log($"The game's window appeared after {windowAt.Value.TotalSeconds:0.0} s");
                 }
 
-                if (handle != IntPtr.Zero && GetForegroundWindow() == handle)
+                if (GetForegroundWindow() == handle)
                 {
                     Log($"The game came to the front after {clock.Elapsed.TotalSeconds:0.0} s");
 
                     return GameOutcome.Showing;
                 }
 
-                if (windowAt != null && (clock.Elapsed - windowAt.Value).TotalSeconds >= 15)
+                // a window present now, for 15 s without a break
+                if ((clock.Elapsed - windowAt.Value).TotalSeconds >= 15)
                 {
                     Log("The game's window didn't come to the front within 15 s");
 
