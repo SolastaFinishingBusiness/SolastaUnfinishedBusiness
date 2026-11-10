@@ -14,6 +14,9 @@ namespace SolastaUnfinishedBusiness.Installer;
 // mod reports that result, so a started installer never counts as an installed update.
 //   --pid <game process> --mode install|rollback --target <mod folder> --transaction <backup folder>
 //   [--source <staged mod folder>] --result <result file> --log <log file> [--relaunch <game executable>]
+//   [--texts <window texts>]
+// While it works it shows InstallWindow. Mods older than this helper started their own (hidden, textless) copy, so the
+// window appears from the first update made by a version that contains it.
 internal static class Program
 {
     private const int Attempts = 5;
@@ -29,10 +32,12 @@ internal static class Program
         string status;
         var message = string.Empty;
         var transaction = Get(options, "transaction");
+        var window = InstallWindow.Open(Get(options, "texts"), Log);
 
         try
         {
             WaitForExit(Get(options, "pid"));
+            window?.ShowStep("working");
 
             var mode = Get(options, "mode");
             var target = Get(options, "target");
@@ -85,6 +90,8 @@ internal static class Program
         }
 
         Log($"Result: {status}");
+        // the details are the game's to show (its next start reports the result); the window only says it failed
+        window?.ShowStep(status is "installed" or "rolledback" ? "starting" : "failed");
         WriteResult(Get(options, "result"), new Dictionary<string, string>
         {
             ["status"] = status,
@@ -98,9 +105,53 @@ internal static class Program
             ["time"] = DateTime.Now.ToString("s")
         });
 
-        Relaunch(Get(options, "relaunch"));
+        using (var game = Relaunch(Get(options, "relaunch")))
+        {
+            WaitForGameWindow(game, window != null);
+        }
+
+        window?.CloseWindow();
 
         return status is "installed" or "rolledback" ? 0 : 1;
+    }
+
+    // Keeps the install window up until the game it started shows its own window (up to 60 s: the game's splash
+    // appears within seconds), so there is never a gap with nothing on screen. Without a game, a failed install's
+    // message stays readable for a few seconds instead. Nothing to wait for when there is no window.
+    private static void WaitForGameWindow(Process game, bool hasWindow)
+    {
+        if (!hasWindow)
+        {
+            return;
+        }
+
+        if (game == null)
+        {
+            Thread.Sleep(5000);
+
+            return;
+        }
+
+        var deadline = DateTime.Now.AddSeconds(60);
+
+        try
+        {
+            while (DateTime.Now < deadline && !game.HasExited)
+            {
+                game.Refresh();
+
+                if (game.MainWindowHandle != IntPtr.Zero)
+                {
+                    return;
+                }
+
+                Thread.Sleep(250);
+            }
+        }
+        catch (Exception e)
+        {
+            Log($"Couldn't watch the started game: {e.Message}");
+        }
     }
 
     // the installed files are as they were before this attempt: it stopped before changing any (its journal is
@@ -201,11 +252,12 @@ internal static class Program
     // started with them ran without Unity Mod Manager or any mod (found testing the 1.10.0 to 1.11.0 update). Setting a
     // child's environment needs UseShellExecute false; the working directory stays the game's folder, which Doorstop's
     // relative target_assembly path in doorstop_config.ini depends on.
-    private static void Relaunch(string executable)
+    // returns the started game (for WaitForGameWindow; the caller disposes it), or null when none was started
+    private static Process Relaunch(string executable)
     {
         if (string.IsNullOrEmpty(executable) || !File.Exists(executable))
         {
-            return;
+            return null;
         }
 
         try
@@ -219,11 +271,14 @@ internal static class Program
             var removed = RemoveDoorstopVariables(start);
 
             Log($"Starting {executable}" + (removed.Count > 0 ? $" without {string.Join(", ", removed)}" : string.Empty));
-            Process.Start(start)?.Dispose();
+
+            return Process.Start(start);
         }
         catch (Exception e)
         {
             Log($"Couldn't start the game: {e.Message}");
+
+            return null;
         }
     }
 
