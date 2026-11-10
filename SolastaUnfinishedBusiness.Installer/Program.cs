@@ -123,12 +123,16 @@ internal static class Program
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 
-    // Keeps the install window up until the game it started is in front, so there is never a gap with nothing on
-    // screen. The game's process has a main window within about 3 s, but in the 2026-11-10 test nothing of the game
-    // showed for several seconds after that, so closing on the handle alone left the desktop bare in between.
-    // Closes when the game's window is the foreground window; else 15 s after its window appeared (a game started in
-    // the background may never come to the front); else after 60 s. Without a game, a failed install's message stays
-    // readable for a few seconds instead. Nothing to wait for when there is no window. Logs what it saw.
+    // Keeps the install window up until the game it started is showing, so there is never a gap with nothing on
+    // screen. The game's process has its main window (UnityWndClass) within about 3 s, but in one 2026-11-10 test
+    // nothing of the game showed for about 7 s after that, so closing on the handle alone left the desktop bare.
+    // Closes when the game's window is the foreground window; else 15 s after its window appeared; else after 60 s.
+    // In practice the 15 s rule is the one that closes it: when the old game's window goes, Windows gives the focus to
+    // the shell, so neither this program nor the game it starts may take the foreground (Windows' foreground lock),
+    // and the game stays drawn on top without becoming the foreground window (seen in the second 2026-11-10 test,
+    // where the game covered the screen 1 s after its window appeared). This window then just sits behind the game
+    // until it closes. Without a game, a failed install's message stays readable for a few seconds instead. Nothing to
+    // wait for when there is no window. Logs what it saw.
     private static void WaitForGameWindow(Process game, bool hasWindow)
     {
         if (!hasWindow)
