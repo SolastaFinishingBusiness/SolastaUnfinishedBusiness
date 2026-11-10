@@ -11,7 +11,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 ///     The controls of the Eldritch Blast move prompt (issue #37), built into the game's reaction item when it shows
 ///     a <see cref="ReactionRequestEldritchBlastMove" />:
 ///     <list type="bullet">
-///         <item>a slider with the stops 0, 5 and 10 feet for each invocation that takes part in the beam;</item>
+///         <item>
+///             a slider with the stops 0, 5 and 10 feet for each invocation that takes part in the beam, copied from
+///             the game's settings screen;
+///         </item>
 ///         <item>a button that swaps the order, when both take part;</item>
 ///         <item>Submit and Skip, and below them Submit for All and Skip for All.</item>
 ///     </list>
@@ -204,25 +207,22 @@ internal static class EldritchBlastMovePrompt
         name.enableWordWrapping = false;
         name.overflowMode = TextOverflowModes.Ellipsis;
 
-        // Unity's stock slider, with flat colours in place of sprites
-        var sliderObject = DefaultControls.CreateSlider(new DefaultControls.Resources());
+        var sliderObject = CreateSlider(row);
 
-        sliderObject.name = "Slider";
-        sliderObject.transform.SetParent(row, false);
+        var sliderLayout = sliderObject.GetComponent<LayoutElement>();
 
-        var sliderLayout = sliderObject.AddComponent<LayoutElement>();
+        if (!sliderLayout)
+        {
+            sliderLayout = sliderObject.AddComponent<LayoutElement>();
+        }
 
         sliderLayout.minWidth = 110f;
         sliderLayout.preferredWidth = 130f;
         sliderLayout.flexibleWidth = 1f;
-        sliderLayout.minHeight = 20f;
-        sliderLayout.preferredHeight = 20f;
+        sliderLayout.minHeight = 24f;
+        sliderLayout.preferredHeight = 24f;
 
         var slider = sliderObject.GetComponent<Slider>();
-
-        Paint(sliderObject.transform, "Background", Track);
-        Paint(sliderObject.transform, "Fill Area/Fill", Accent);
-        Paint(sliderObject.transform, "Handle Slide Area/Handle", Knob);
 
         slider.minValue = 0f;
         slider.maxValue = EldritchBlastMoveContext.MaxCells;
@@ -235,6 +235,71 @@ internal static class EldritchBlastMovePrompt
         value.enableWordWrapping = false;
 
         return new SliderRow { Slider = slider, Value = value };
+    }
+
+    // The slider of the game's own settings screen (a gauge and a knob), so the prompt looks like the rest of the
+    // game. Each settings tab holds the prefab of a whole slider row; the brightness row of the colour calibration
+    // screen is another copy of it. Only the row's "Slider" child is kept. If neither can be found, a plain Unity
+    // slider with flat colours is used, so the prompt always works.
+    private static GameObject CreateSlider(Transform parent)
+    {
+        var source = FindGameSlider();
+
+        if (!source)
+        {
+            var plain = DefaultControls.CreateSlider(new DefaultControls.Resources());
+
+            plain.name = "Slider";
+            plain.transform.SetParent(parent, false);
+            Paint(plain.transform, "Background", Track);
+            Paint(plain.transform, "Fill Area/Fill", Accent);
+            Paint(plain.transform, "Handle Slide Area/Handle", Knob);
+
+            return plain;
+        }
+
+        // copied under an inactive holder so none of the copy's components start up before they are changed
+        var holder = new GameObject("FbHolder");
+
+        holder.SetActive(false);
+
+        var copy = Object.Instantiate(source.gameObject, holder.transform, false);
+
+        copy.name = "Slider";
+
+        // this component ties the slider to a row of the settings screen
+        foreach (var control in copy.GetComponentsInChildren<GuiSettingControl>(true))
+        {
+            Object.DestroyImmediate(control);
+        }
+
+        // a fresh event: the original's is wired in the prefab to the settings row that owned it
+        copy.GetComponent<Slider>().onValueChanged = new Slider.SliderEvent();
+
+        copy.transform.SetParent(parent, false);
+        copy.SetActive(true);
+        Object.Destroy(holder);
+
+        return copy;
+    }
+
+    private static Slider FindGameSlider()
+    {
+        // includes objects that aren't in the scene or are inactive, such as the settings screen while it is closed
+        foreach (var panel in Resources.FindObjectsOfTypeAll<SettingsTabPanel>())
+        {
+            var prefab = panel ? panel.settingSliderPrefab : null;
+            var item = prefab ? prefab.GetComponent<SettingSliderItem>() : null;
+
+            if (item && item.Slider)
+            {
+                return item.Slider;
+            }
+        }
+
+        var calibration = Gui.GuiService?.GetScreen<ColorCalibrationModal>();
+
+        return calibration && calibration.brightnessSlider ? calibration.brightnessSlider.Slider : null;
     }
 
     private static void Paint(Transform parent, string path, Color color)
