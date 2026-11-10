@@ -160,8 +160,8 @@ internal static class ForcedMovementContext
 
         if (solverSteps != null)
         {
-            // every accepted cell in order, the last being the destination
-            if (solverSteps.Count > 1 && solverSteps[solverSteps.Count - 1] == destination)
+            // every accepted cell in order, the last being the destination (alone, for a push of one cell)
+            if (solverSteps.Count > 0 && solverSteps[solverSteps.Count - 1] == destination)
             {
                 solverSteps.RemoveAt(solverSteps.Count - 1);
                 Keep(target, start, destination, solverSteps, distance, reverse);
@@ -214,8 +214,9 @@ internal static class ForcedMovementContext
             _solvingSteps = false;
         }
 
-        // a push of one cell has nothing in between
-        if (!complete || cells.Count == 0)
+        // A push of one cell has nothing in between and is kept all the same: by the time it runs the creature may
+        // stand somewhere else, and the move may be longer (see BeforeMoveCommitted).
+        if (!complete)
         {
             return;
         }
@@ -307,9 +308,26 @@ internal static class ForcedMovementContext
         // used once, whatever happens below
         Active.Remove(character);
 
-        // Not the move that was recorded: the creature has moved since, or this move goes somewhere else. The cells
-        // would be wrong, so do nothing and let the game handle the landing cell as before.
-        if (route.Start != character.LocationPosition || route.Destination != destination)
+        // Not the move that was recorded: it goes somewhere else. Do nothing and let the game handle the landing cell
+        // as before.
+        if (route.Destination != destination)
+        {
+            return true;
+        }
+
+        // Where the creature really is now. Usually where it stood when the push was worked out, and then the
+        // solver's cells are the ones it goes through.
+        //
+        // Not always (Codex's second review of PR #31): the game works a push out when it is made but runs it later,
+        // from wherever the creature is by then, to the destination it worked out. A creature pushed two cells away
+        // and then pulled by a pull worked out before that push ran (Repelling Blast and Grasp of Hadar on one
+        // cast) is pulled from its new cell, across four cells instead of two. The game moves it there in one
+        // straight move, so the cells it goes through are those on the straight line. No solver checked them, as
+        // none checked the move the game makes.
+        var start = character.LocationPosition;
+        var cells = start == route.Start ? route.Cells : StraightLine(start, destination);
+
+        if (cells.Count == 0)
         {
             return true;
         }
@@ -323,12 +341,18 @@ internal static class ForcedMovementContext
             return true;
         }
 
-        var current = route.Start;
+        if (IsLogOn && start != route.Start)
+        {
+            Log($"{Name(character)} starts from {Cell(start)}, not {Cell(route.Start)} as worked out; " +
+                $"straight to {Cell(destination)} through {string.Join(" ", cells.Select(Cell))}");
+        }
+
+        var current = start;
         bool displaced;
 
         try
         {
-            displaced = StepThrough(character, route, positioningService, environmentManager, ref current);
+            displaced = StepThrough(character, cells, positioningService, environmentManager, ref current);
         }
         catch (Exception exception)
         {
@@ -357,24 +381,48 @@ internal static class ForcedMovementContext
         // Put the creature back on the cell it started from, in the occupant lists only. FinishMoveTo then makes the
         // real move from start to landing cell exactly as before this change: one Moved event with the true start,
         // one FinalizeNewPosition for the landing cell, and the areas there worked out from what the steps left.
-        if (current != route.Start)
+        if (current != start)
         {
-            MoveOccupant(positioningService, character, current, route.Start);
+            MoveOccupant(positioningService, character, current, start);
         }
 
         return true;
     }
 
-    // Steps the creature through the route's cells. Returns true if an area's effect moved the creature itself.
+    // The cells strictly between two cells on the straight line from one to the other: as many steps as the longest
+    // axis is long, each axis advancing in proportion. Whole numbers only (halves round away from zero), so every
+    // computer gets the same cells.
+    private static List<int3> StraightLine(int3 from, int3 to)
+    {
+        var cells = new List<int3>();
+        var delta = to - from;
+        var steps = Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y), Mathf.Abs(delta.z));
+
+        for (var step = 1; step < steps; step++)
+        {
+            cells.Add(from + new int3(
+                Part(delta.x, step, steps), Part(delta.y, step, steps), Part(delta.z, step, steps)));
+        }
+
+        return cells;
+
+        // length * step / steps, rounded to the nearest whole number
+        static int Part(int length, int step, int steps)
+        {
+            return ((2 * length * step) + (length < 0 ? -steps : steps)) / (2 * steps);
+        }
+    }
+
+    // Steps the creature through the given cells. Returns true if an area's effect moved the creature itself.
     // "current" is kept up to date for the caller, also when this throws.
     private static bool StepThrough(
         GameLocationCharacter character,
-        Route route,
+        List<int3> cells,
         IGameLocationPositioningService positioningService,
         GameLocationEnvironmentManager environmentManager,
         ref int3 current)
     {
-        foreach (var cell in route.Cells)
+        foreach (var cell in cells)
         {
             // A creature that died or dropped on an earlier cell is not affected by the cells after it. Only the
             // steps it completed count. Its body still ends on the landing cell: the push is one animation, already
