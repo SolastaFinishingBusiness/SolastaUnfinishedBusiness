@@ -222,6 +222,7 @@ ModUi/&EnablePotionsBonusAction2024=Habilitar beber <color=#D89555>Poções</col
 ModUi/&EnablePreparedSpellsTables2024=Permitir que todos os <color=#D89555>Conjuradores</color> usem novas tabelas de magias preparadas <i><color=#F0DAA0>[Bardo, Clérigo, Druida, Paladino, Patrulheiro, Feiticeiro, Mago]</color></i>
 ModUi/&EnableProneAction=Habilite a ação <color=#D89555>Cair de bruços</color> <i><color=#F0DAA0>[você pode cair de bruços sem nenhum custo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Habilitar efeitos de movimento de empurrar e puxar para também funcionarem no eixo para cima/baixo
+ModUi/&PushOrPullOncePerHit=Empurrar ou puxar uma criatura uma vez para cada acerto de uma magia ou poder que a mova <i><color=#F0DAA0>[Explosão Repulsiva empurra uma vez para cada raio de Raio Místico que acerta, e Domínio de Hadar puxa uma vez para cada um; desativado, apenas o primeiro empurrão ou puxão de uma conjuração move a criatura]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Permitir que <color=#D89555>Patrulheiro</color> escolha qualquer estilo de luta <i><color=#F0DAA0>[adiciona Luta com Arma Grande e Proteção]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Habilite <color=#D89555>Explorador Hábil</color> no nível 2 <i><color=#F0DAA0>[obtenha uma especialização em habilidades de Patrulheiro e aprenda 2 idiomas]</color></i>
 ModUi/&EnableRangerExpertise2024=Habilite <color=#D89555>Expertise</color> no nível 9 <i><color=#F0DAA0>[obtenha duas expertises em habilidades de Ranger]</color></i>

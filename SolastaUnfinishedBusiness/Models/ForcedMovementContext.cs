@@ -284,7 +284,10 @@ internal static class ForcedMovementContext
         Bound.Remove(action.ActionParams);
 
         // The creature isn't where this push was worked out from: a push queued ahead of it has moved it since.
-        if (character.LocationPosition != route.Start)
+        // With the setting off (Gameplay > Rules, on by default) the push runs as the game queued it, to its old
+        // destination: for two beams of Repelling Blast that means the second push does nothing, as in the game
+        // without this change.
+        if (Main.Settings.PushOrPullOncePerHit && character.LocationPosition != route.Start)
         {
             route = WorkOutAgain(action.ActionParams, character, route);
         }
@@ -426,8 +429,9 @@ internal static class ForcedMovementContext
         // Not always (Codex's second review of PR #31): the game works a push out when it is made but runs it later,
         // from wherever the creature is by then. Since issue #33 such a push is worked out again when it starts
         // (WorkOutAgain), so its route starts where the creature is. What is left for this branch is a push that
-        // couldn't be worked out again and runs as the game queued it: one straight move to the old destination,
-        // whose cells are those on the straight line. No solver checked them, as none checked that move.
+        // wasn't worked out again (the setting is off, or it couldn't be) and runs as the game queued it: one
+        // straight move to the old destination, whose cells are those on the straight line. No solver checked
+        // them, as none checked that move.
         var start = character.LocationPosition;
         var cells = start == route.Start ? route.Cells : StraightLine(start, destination);
 

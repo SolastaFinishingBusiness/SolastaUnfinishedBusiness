@@ -160,6 +160,11 @@ public class Settings : UnityModManager.ModSettings
     public bool AllowFlightSuspend { get; set; }
     public bool FlightSuspendWingedBoots { get; set; }
     [Tag(Type = TagType.T2014)] public bool EnablePullPushOnVerticalDirection { get; set; }
+
+    // Issue #33: a creature pushed or pulled more than once in a cast is moved each time (Repelling Blast once per
+    // Eldritch Blast beam). Off: as the game does it, where only the first push of a cast moves the creature. On by
+    // default (user, 2026-11-10: "a toggleable option in the mod settings, with the default set to true").
+    public bool PushOrPullOncePerHit { get; set; } = true;
     [Tag(Type = TagType.T2014)] public bool FullyControlConjurations { get; set; }
     public bool EnableHigherGroundRules { get; set; }
     [Tag(Type = TagType.T2024)] public bool EnableSurprisedToEnforceDisadvantage { get; set; }

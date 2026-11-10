@@ -222,6 +222,7 @@ ModUi/&EnablePotionsBonusAction2024=Habilitar beber <color=#D89555>Pociones</col
 ModUi/&EnablePreparedSpellsTables2024=Permitir que todos los <color=#D89555>lanzadores de conjuros</color> utilicen las nuevas tablas de conjuros preparadas <i><color=#F0DAA0>[Bardo, Clérigo, Druida, Paladín, Explorador, Hechicero, Mago]</color></i>
 ModUi/&EnableProneAction=Habilita la acción <color=#D89555>Caer boca abajo</color> <i><color=#F0DAA0>[puedes caer boca abajo sin costo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Habilite los efectos de movimiento de empujar y tirar para que funcionen también en el eje arriba/abajo
+ModUi/&PushOrPullOncePerHit=Empujar o arrastrar a una criatura una vez por cada impacto de un conjuro o poder que la mueva <i><color=#F0DAA0>[Repelling Blast empuja una vez por cada rayo de Eldritch Blast que impacta, y Agarre de Hadar arrastra una vez por cada uno; desactivado, solo el primer empujón o arrastre de un lanzamiento mueve a la criatura]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Permitir que <color=#D89555>Explorador</color> elija cualquier estilo de lucha <i><color=#F0DAA0>[añade Lucha con arma grande y Protección]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Habilita <color=#D89555>Explorador hábil</color> en el nivel 2 <i><color=#F0DAA0>[obtén una experiencia en habilidades de explorador y aprende 2 idiomas]</color></i>
 ModUi/&EnableRangerExpertise2024=Habilita la <color=#D89555>Experiencia</color> en el nivel 9 <i><color=#F0DAA0>[obtén dos especializaciones en habilidades de Explorador]</color></i>

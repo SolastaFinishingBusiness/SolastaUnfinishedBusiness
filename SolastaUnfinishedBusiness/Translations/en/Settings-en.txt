@@ -223,6 +223,7 @@ ModUi/&EnablePotionsBonusAction2024=Enable drinking <color=#D89555>Potions</colo
 ModUi/&EnablePreparedSpellsTables2024=Enable all <color=#D89555>Casters</color> to use new prepared spells tables <i><color=#F0DAA0>[Bard, Cleric, Druid, Paladin, Ranger, Sorcerer, Wizard]</color></i>
 ModUi/&EnableProneAction=Enable the <color=#D89555>Fall Prone</color> action <i><color=#F0DAA0>[you can fall prone at no cost]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Enable push and pull motion effects to also work on up/down axis
+ModUi/&PushOrPullOncePerHit=Push or pull a creature once for each hit of a spell or power that moves it <i><color=#F0DAA0>[Repelling Blast pushes once for each beam of Eldritch Blast that hits, and Grasp of Hadar pulls once for each; when off, only the first push or pull of a cast moves the creature]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Enable <color=#D89555>Deft Explorer</color> at level 2 <i><color=#F0DAA0>[get one expertise on Ranger skills, and learn 2 languages]</color></i>
 ModUi/&EnableRangerExpertise2024=Enable <color=#D89555>Expertise</color> at level 9 <i><color=#F0DAA0>[get two expertises on Ranger skills]</color></i>
 ModUi/&EnableRangerFavoredEnemy2024=Swap <color=#D89555>Favored Enemy</color>, and <color=#D89555>Favored Terrain</color> with <color=#D89555>Favored Enemy</color> 5e 2024 version
