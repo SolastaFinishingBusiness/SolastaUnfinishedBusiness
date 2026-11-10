@@ -9,6 +9,7 @@ using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Interfaces;
+using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -194,6 +195,12 @@ public static class CharacterActionSpendPowerPatcher
                     // BEGIN PATCH
 
                     var effectForms = effectDescription.EffectForms.DeepCopy();
+
+                    //PATCH: Repelling Blast and Grasp of Hadar set to Ask: wait for the creature's previous move,
+                    // ask the caster about this beam if it isn't decided yet, and set this action's own copy of the
+                    // move to the chosen distance and direction (issue #37). Does nothing for any other power.
+                    yield return EldritchBlastMoveContext.BeforeMove(
+                        battleManager, __instance, actingCharacter, target, effectForms);
 
                     //PATCH: support for `IMagicEffectBeforeHitConfirmedOnEnemy`
                     // should also happen outside battles

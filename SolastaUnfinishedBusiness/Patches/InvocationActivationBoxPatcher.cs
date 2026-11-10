@@ -6,6 +6,7 @@ using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.CustomUI;
+using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
 using UnityEngine.UI;
 using static RuleDefinitions;
@@ -267,6 +268,84 @@ public static class InvocationActivationBoxPatcher
         }
     }
 
+    private const string AskGroupName = "FbAskGroup";
+
+    // the Ask state's own colour in the Invocations popup, apart from On's orange and Off's red
+    private static readonly Color AskColor = new(128 / 255f, 200 / 255f, 232 / 255f, 1f);
+
+    //PATCH: Repelling Blast and Grasp of Hadar have a third state, Ask (issue #37). The game's box has one group
+    // for "active" and one for "inactive" (an icon and a text each). Ask gets a third, copied from the active one,
+    // with its own icon, text and colour; it is shown in place of the active group, which the game shows for Ask
+    // because the invocation is still active.
+    private static void RefreshAskGroup(InvocationActivationBox box)
+    {
+        var existing = box.rectTransform.Find(AskGroupName);
+        var invocation = box.Invocation;
+        var ask = invocation != null &&
+                  EldritchBlastMoveContext.IsAsk(box.activator, invocation.InvocationDefinition);
+
+        if (!ask)
+        {
+            // boxes are reused: a box that showed Ask for one invocation may now show another
+            if (existing)
+            {
+                existing.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
+        var group = existing ? existing.gameObject : CreateAskGroup(box);
+
+        box.activeGroup.gameObject.SetActive(false);
+        group.SetActive(true);
+    }
+
+    private static GameObject CreateAskGroup(InvocationActivationBox box)
+    {
+        var group = Object.Instantiate(box.activeGroup.gameObject, box.activeGroup.parent, false);
+
+        group.name = AskGroupName;
+
+        var icon = group.transform.Find("ActiveIcon")?.GetComponent<Image>();
+
+        if (icon)
+        {
+            // drawn white and tinted here, as the game does with its own active icon
+            icon.sprite = Sprites.GetOrCreateSprite("InvocationAsk", Properties.Resources.InvocationAsk, 32);
+            icon.color = AskColor;
+        }
+
+        var label = group.GetComponentInChildren<GuiLabel>(true);
+
+        if (label)
+        {
+            label.Text = Gui.Localize("Screen/&InvocationAskStateTitle");
+            label.TMP_Text.color = AskColor;
+        }
+
+        var tooltip = group.GetComponent<GuiTooltip>();
+
+        if (tooltip)
+        {
+            tooltip.Content = "Screen/&InvocationAskStateDescription";
+        }
+
+        return group;
+    }
+
+    [HarmonyPatch(typeof(InvocationActivationBox), nameof(InvocationActivationBox.RefreshActiveStatus))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class RefreshActiveStatus_Patch
+    {
+        [UsedImplicitly]
+        public static void Postfix(InvocationActivationBox __instance)
+        {
+            RefreshAskGroup(__instance);
+        }
+    }
+
     [HarmonyPatch(typeof(InvocationActivationBox), nameof(InvocationActivationBox.Unbind))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -277,6 +356,14 @@ public static class InvocationActivationBoxPatcher
         {
             //PATCH: clean up custom widgets added for power invocations
             DisablePowerUseSlots(__instance);
+
+            //PATCH: hide the Ask state's group before the box goes back to the pool (issue #37)
+            var askGroup = __instance.rectTransform.Find(AskGroupName);
+
+            if (askGroup)
+            {
+                askGroup.gameObject.SetActive(false);
+            }
         }
     }
 }
