@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=Efeitos de poderes e magias desatualizados <i><color
 ModUi/&LogPerception=Percepção <i><color=#F0DAA0>[pedidos e testes de percepção no registro]</color></i>
 ModUi/&LogAiMoves=Movimentos da IA <i><color=#F0DAA0>[multijogador: para onde cada personagem controlado pela IA se move ou quais casas mira, e a casa de parada escolhida; no máximo 200 linhas por combate]</color></i>
 ModUi/&LogEncounterPopup=Janela de encontro em viagem <i><color=#F0DAA0>[quando abre, fecha e é clicada, e carregamentos, saídas ou desconexões enquanto está aberta]</color></i>
+ModUi/&LogForcedMovement=Movimento forçado através de áreas <i><color=#F0DAA0>[cada empurrão ou puxão de mais de uma casa: as casas atravessadas, as áreas em que a criatura está em cada uma e seus pontos de vida antes e depois; no máximo 300 linhas por inicialização]</color></i>
 ModUi/&MultiplayerMenu=Multijogador
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>Atraso de ação mínimo em ticks</color> <i><color=#F0DAA0>[padrão do jogo 4, só usado quando todo ping permite]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>Movimento</color> <i><color=#F0DAA0>[só partidas multijogador, o modo solo mantém as regras do jogo]</color></i><color=#F0DAA0>:</color>

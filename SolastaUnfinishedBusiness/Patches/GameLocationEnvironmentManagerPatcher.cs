@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Behaviors;
+using SolastaUnfinishedBusiness.Models;
 using TA;
 using UnityEngine;
 using static RuleDefinitions;
@@ -136,6 +137,23 @@ public static class GameLocationEnvironmentManagerPatcher
                 sourceCenter, target, distance, reverse, positioningService, ref destination, ref direction);
 
             return false;
+        }
+
+        //PATCH: forced movement through areas (issue #29): keep the cells of a push that is really being made, so
+        // areas it goes through can act on the creature. Runs after either solver, the game's or the mod's above
+        // (a postfix runs even when the prefix skipped the game's method). Does nothing for previews.
+        [UsedImplicitly]
+        public static void Postfix(
+            bool __result,
+            Vector3 sourceCenter,
+            GameLocationCharacter target,
+            int distance,
+            bool reverse,
+            IGameLocationPositioningService positioningService,
+            ref int3 destination) // by reference like the Prefix above; only read here
+        {
+            ForcedMovementContext.Record(
+                __result, sourceCenter, target, distance, reverse, positioningService, destination);
         }
     }
 }

@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=Veraltete Effekte von Kräften und Zaubern <i><color
 ModUi/&LogPerception=Wahrnehmung <i><color=#F0DAA0>[Wahrnehmungsanfragen und -würfe im Protokoll]</color></i>
 ModUi/&LogAiMoves=KI-Bewegungen <i><color=#F0DAA0>[Mehrspieler: wohin sich jede KI-gesteuerte Figur bewegt oder welche Felder sie anvisiert, und das gewählte Haltefeld; höchstens 200 Zeilen pro Kampf]</color></i>
 ModUi/&LogEncounterPopup=Begegnungsfenster auf Reisen <i><color=#F0DAA0>[wann es sich öffnet, schließt und angeklickt wird, sowie Laden, Beenden oder Verbindungsabbrüche, während es offen ist]</color></i>
+ModUi/&LogForcedMovement=Erzwungene Bewegung durch Bereiche <i><color=#F0DAA0>[jeder Stoß oder Zug über mehr als ein Feld: die durchquerten Felder, die Bereiche, in denen sich die Kreatur dort jeweils befindet, und ihre Trefferpunkte davor und danach; höchstens 300 Zeilen pro Start]</color></i>
 ModUi/&MultiplayerMenu=Mehrspieler
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>Minimale Aktionsverzögerung in Ticks</color> <i><color=#F0DAA0>[Spielstandard 4, nur verwendet, wenn jeder Ping es erlaubt]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>Bewegung</color> <i><color=#F0DAA0>[nur Mehrspielerpartien, Einzelspieler behält die Spielregeln]</color></i><color=#F0DAA0>:</color>

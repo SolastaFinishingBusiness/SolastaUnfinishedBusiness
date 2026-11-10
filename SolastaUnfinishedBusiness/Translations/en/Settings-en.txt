@@ -531,6 +531,7 @@ ModUi/&LogStaleEffectChecks=Out-of-date power and spell effects <i><color=#F0DAA
 ModUi/&LogPerception=Perception <i><color=#F0DAA0>[perception requests and rolls in the log]</color></i>
 ModUi/&LogAiMoves=AI moves <i><color=#F0DAA0>[multiplayer: where each AI-controlled character moves or targets cells, and the stopping cell it chooses; at most 200 lines per battle]</color></i>
 ModUi/&LogEncounterPopup=Travel encounter popup <i><color=#F0DAA0>[when it opens, closes and is clicked, and loads, exits or disconnects while it's open]</color></i>
+ModUi/&LogForcedMovement=Forced movement through areas <i><color=#F0DAA0>[each push or pull of more than one cell: the cells it goes through, the areas the creature is in at each one and its hit points before and after; at most 300 lines per launch]</color></i>
 ModUi/&MultiplayerMenu=Multiplayer
 ModUi/&MultiplayerDescription=Fixes and changes for multiplayer. Every player must use the same mod build and the same settings, as the game runs the same simulation on every computer.
 ModUi/&MultiplayerAlwaysOnFixes=<color=#F0DAA0>Always applied:</color> Wild Magic random target uses the synced dice, the SHIFT choice of warlock or regular slots is sent to every computer with the cast, reaction or conversion, reaction timestamps are not stored in multiplayer, each hero gets one role per conversation, a hero never says two lines in a row for different roles, and heroes 5 and 6 get their own cutscene placement.

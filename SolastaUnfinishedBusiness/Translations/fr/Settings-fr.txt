@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=Effets de pouvoirs et de sorts périmés <i><color=#
 ModUi/&LogPerception=Perception <i><color=#F0DAA0>[demandes et jets de perception dans le journal]</color></i>
 ModUi/&LogAiMoves=Déplacements de l'IA <i><color=#F0DAA0>[multijoueur : où chaque personnage contrôlé par l'IA se déplace ou quelles cases il cible, et la case d'arrêt choisie ; au plus 200 lignes par combat]</color></i>
 ModUi/&LogEncounterPopup=Fenêtre de rencontre en voyage <i><color=#F0DAA0>[quand elle s'ouvre, se ferme et est cliquée, et les chargements, sorties ou déconnexions pendant qu'elle est ouverte]</color></i>
+ModUi/&LogForcedMovement=Déplacement forcé à travers des zones <i><color=#F0DAA0>[chaque poussée ou traction de plus d'une case : les cases traversées, les zones où se trouve la créature à chacune et ses points de vie avant et après ; au plus 300 lignes par lancement]</color></i>
 ModUi/&MultiplayerMenu=Multijoueur
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>Délai d'action minimum en ticks</color> <i><color=#F0DAA0>[4 par défaut dans le jeu, utilisé seulement quand chaque ping le permet]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>Déplacement</color> <i><color=#F0DAA0>[parties multijoueur uniquement, le solo garde les règles du jeu]</color></i><color=#F0DAA0>:</color>

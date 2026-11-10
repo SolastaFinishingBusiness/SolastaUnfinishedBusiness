@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=오래된 파워 및 주문 효과 <i><color=#F0DAA0
 ModUi/&LogPerception=지각 <i><color=#F0DAA0>[지각 요청과 굴림을 로그에 기록합니다]</color></i>
 ModUi/&LogAiMoves=AI 이동 <i><color=#F0DAA0>[멀티플레이: AI가 조종하는 캐릭터가 이동하거나 노리는 칸과 선택한 정지 칸. 전투당 최대 200줄]</color></i>
 ModUi/&LogEncounterPopup=이동 중 조우 창 <i><color=#F0DAA0>[열림, 닫힘, 클릭, 그리고 열려 있는 동안의 불러오기, 종료, 연결 끊김]</color></i>
+ModUi/&LogForcedMovement=영역을 지나는 강제 이동 <i><color=#F0DAA0>[두 칸 이상의 밀기나 끌기마다: 지나간 칸, 각 칸에서 크리처가 들어 있는 영역, 전후의 히트 포인트. 실행당 최대 300줄]</color></i>
 ModUi/&MultiplayerMenu=멀티플레이
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>최소 행동 지연(틱)</color> <i><color=#F0DAA0>[게임 기본값 4, 모두의 핑이 허용할 때만 사용]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>이동</color> <i><color=#F0DAA0>[멀티플레이 전용, 싱글 플레이는 게임 규칙 유지]</color></i><color=#F0DAA0>:</color>

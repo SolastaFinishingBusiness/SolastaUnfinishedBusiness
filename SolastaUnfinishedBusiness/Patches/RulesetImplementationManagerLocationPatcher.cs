@@ -172,6 +172,11 @@ public static class RulesetImplementationManagerLocationPatcher
         [UsedImplicitly]
         public static bool Prefix(EffectForm effectForm, RulesetImplementationDefinitions.ApplyFormsParams formsParams)
         {
+            //PATCH: forced movement through areas (issue #29): pushes worked out from here on, by the mod's code just
+            // below or by the game's own, have their cells recorded. First in this prefix so both are covered; the
+            // Finalizer below ends it however the method ends.
+            ForcedMovementContext.EnterMotionForm();
+
             //PATCH: support for `PushesFromEffectPoint`
             // allows push/grab motion effects to work relative to casting point, instead of caster's position
             // used for Grenadier's force grenades
@@ -192,6 +197,15 @@ public static class RulesetImplementationManagerLocationPatcher
         {
             GrappleContext.ValidateGrappleAfterMotion(GameLocationCharacter.GetFromActor(formsParams.sourceCharacter));
             GrappleContext.ValidateGrappleAfterMotion(GameLocationCharacter.GetFromActor(formsParams.targetCharacter));
+        }
+
+        //PATCH: forced movement through areas (issue #29): the end of what the Prefix started. A finalizer runs when
+        // the prefix skipped the game's method and when the method threw, so the count can't be left raised, which
+        // would let aiming previews be recorded as pushes.
+        [UsedImplicitly]
+        public static void Finalizer()
+        {
+            ForcedMovementContext.ExitMotionForm();
         }
 
         private static bool CustomSwap(

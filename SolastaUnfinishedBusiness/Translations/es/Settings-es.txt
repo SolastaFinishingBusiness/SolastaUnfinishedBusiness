@@ -574,6 +574,7 @@ ModUi/&LogStaleEffectChecks=Efectos de poderes y conjuros desactualizados <i><co
 ModUi/&LogPerception=Percepción <i><color=#F0DAA0>[solicitudes y tiradas de percepción en el registro]</color></i>
 ModUi/&LogAiMoves=Movimientos de la IA <i><color=#F0DAA0>[multijugador: adónde se mueve o qué casillas apunta cada personaje controlado por la IA, y la casilla donde decide detenerse; como máximo 200 líneas por combate]</color></i>
 ModUi/&LogEncounterPopup=Ventana de encuentro en viaje <i><color=#F0DAA0>[cuándo se abre, se cierra y se pulsa, y cargas, salidas o desconexiones mientras está abierta]</color></i>
+ModUi/&LogForcedMovement=Movimiento forzado a través de áreas <i><color=#F0DAA0>[cada empujón o arrastre de más de una casilla: las casillas que atraviesa, las áreas en las que está la criatura en cada una y sus puntos de golpe antes y después; como máximo 300 líneas por inicio]</color></i>
 ModUi/&MultiplayerMenu=Multijugador
 ModUi/&MultiplayerMinimumTickBuffer=<color=white>Retraso de acción mínimo en ticks</color> <i><color=#F0DAA0>[4 por defecto en el juego, solo se usa cuando todos los pings lo permiten]</color></i>
 ModUi/&MultiplayerMovementTitle=<color=#F0DAA0>Movimiento</color> <i><color=#F0DAA0>[solo partidas multijugador, el modo de un jugador conserva las reglas del juego]</color></i><color=#F0DAA0>:</color>

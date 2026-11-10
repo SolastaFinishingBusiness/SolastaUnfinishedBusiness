@@ -59,5 +59,12 @@ internal static class LoggingDisplay
         {
             Main.Settings.LogEncounterPopup = toggle;
         }
+
+        // the cells a push or pull goes through and what the areas there did (issue #29, ForcedMovementContext)
+        toggle = Main.Settings.LogForcedMovement;
+        if (UI.Toggle(Gui.Localize("ModUi/&LogForcedMovement"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.LogForcedMovement = toggle;
+        }
     }
 }
