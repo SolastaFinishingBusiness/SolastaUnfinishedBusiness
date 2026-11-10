@@ -26,8 +26,11 @@ internal sealed class InstallWindow : Form
     private const int SwShowNormal = 1;
 
     private readonly Label _status;
+    private readonly Label _hint;
     private readonly ProgressBar _bar;
+    private readonly Button _close;
     private readonly ManualResetEventSlim _ready = new(false);
+    private readonly ManualResetEventSlim _closed = new(false);
 
     private InstallWindow(IReadOnlyDictionary<string, string> texts)
     {
@@ -49,9 +52,14 @@ internal sealed class InstallWindow : Form
             Left = 20, Top = 48, Width = 420, Height = 18, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30
         };
 
-        var hint = new Label { Left = 20, Top = 78, Width = 420, Height = 56, Text = Get("hint") };
+        _hint = new Label { Left = 20, Top = 78, Width = 420, Height = 56, Text = Get("hint") };
 
-        Controls.AddRange([_status, _bar, hint]);
+        // only shown when the player has to act (ShowStep "notstarted"): the window then stays until it is closed
+        _close = new Button { Left = 340, Top = 146, Width = 100, Height = 28, Text = Get("close"), Visible = false };
+        _close.Click += (_, _) => Close();
+
+        Controls.AddRange([_status, _bar, _hint, _close]);
+        FormClosed += (_, _) => _closed.Set();
     }
 
     private IReadOnlyDictionary<string, string> Texts { get; }
@@ -64,7 +72,10 @@ internal sealed class InstallWindow : Form
         ["working"] = "Installing the update…",
         ["starting"] = "Starting Solasta…",
         ["failed"] = "Something went wrong. Solasta will start again and show what happened.",
-        ["hint"] = "Solasta will start again by itself. Please don't start or stop it in Steam until then."
+        ["hint"] = "Solasta will start again by itself. Please don't start or stop it in Steam until then.",
+        ["notstarted"] = "Solasta couldn't be started again.",
+        ["notstartedhint"] = "Please start Solasta from Steam. It will show how the update went.",
+        ["close"] = "OK"
     };
 
     [DllImport("user32.dll")]
@@ -154,21 +165,39 @@ internal sealed class InstallWindow : Form
         return texts;
     }
 
-    // the step shown: "waiting", "working", "starting" or "failed" (the failure also stops the moving bar)
+    // The step shown: "waiting", "working", "starting", "failed" or "notstarted". "failed" and "notstarted" stop the
+    // moving bar. "notstarted" (the helper couldn't start the game again; Codex's review of PR #30) also replaces the
+    // hint with what to do, and shows the OK button, since nothing else will follow on screen: see WaitUntilClosed.
     internal void ShowStep(string step)
     {
         Post(() =>
         {
             _status.Text = Get(step);
 
-            if (step != "failed")
+            if (step is not ("failed" or "notstarted"))
             {
                 return;
             }
 
             _bar.Style = ProgressBarStyle.Continuous;
             _bar.Value = _bar.Maximum;
+
+            if (step != "notstarted")
+            {
+                return;
+            }
+
+            _hint.Text = Get("notstartedhint");
+            ClientSize = new Size(ClientSize.Width, 190);
+            _close.Visible = true;
+            _close.Focus();
         });
+    }
+
+    // waits until the player closes the window (or the time runs out); false if it timed out
+    internal bool WaitUntilClosed(TimeSpan timeout)
+    {
+        return _closed.Wait(timeout);
     }
 
     internal void CloseWindow()

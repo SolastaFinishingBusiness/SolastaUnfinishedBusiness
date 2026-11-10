@@ -179,6 +179,18 @@ internal static class MultiplayerSessionContext
         return player.CustomProperties.TryGetValue(VersionKey, out var value) ? value as string : null;
     }
 
+    // marks a version this game couldn't verify (UpdateContext.RunningVersion: a DLL without its build mark)
+    internal const string UnverifiedSuffix = "?unverified";
+
+    // Whether a player's reported version counts as this game's build, for every version check (warnings, room list,
+    // player slots, the Multiplayer tab, votes). An unverified version never matches, not even an identical one: two
+    // DLLs without the mark beside the same Info.json would both report "<version>?unverified", and equal strings
+    // made the checks treat them as one build although their code can differ (Codex's review of PR #30).
+    internal static bool IsSameVerifiedBuild(string version)
+    {
+        return version != null && version == BuildVersion && !version.EndsWith(UnverifiedSuffix);
+    }
+
     internal static string DescribeVersion(string version)
     {
         return version ?? Gui.Localize("ModUi/&MultiplayerNoVersion");
@@ -208,7 +220,7 @@ internal static class MultiplayerSessionContext
             version = value as string;
         }
 
-        var color = version == BuildVersion ? "#80C080" : "#E06060";
+        var color = IsSameVerifiedBuild(version) ? "#80C080" : "#E06060";
 
         // official campaigns name themselves by a translation key, which the room list localizes; a key with the tag
         // added isn't a key any more and showed raw, so the tag goes after the localized name
@@ -302,7 +314,7 @@ internal static class MultiplayerSessionContext
             group.playerImageTooltip.Content = content;
         }
 
-        if (version == BuildVersion)
+        if (IsSameVerifiedBuild(version))
         {
             group.ResetPlayerNameColor();
         }
@@ -327,7 +339,7 @@ internal static class MultiplayerSessionContext
         {
             var version = GetPlayerVersion(player);
 
-            if (version == BuildVersion)
+            if (IsSameVerifiedBuild(version))
             {
                 continue;
             }

@@ -135,7 +135,7 @@ internal static class MultiplayerVoteContext
         else
         {
             var otherBuilds = PhotonNetwork.PlayerListOthers
-                .Where(x => MultiplayerSessionContext.GetPlayerVersion(x) != MultiplayerSessionContext.BuildVersion)
+                .Where(x => !MultiplayerSessionContext.IsSameVerifiedBuild(MultiplayerSessionContext.GetPlayerVersion(x)))
                 .Select(x => x.NickName)
                 .ToList();
 

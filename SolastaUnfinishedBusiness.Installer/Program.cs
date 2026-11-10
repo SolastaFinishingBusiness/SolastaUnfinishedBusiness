@@ -112,7 +112,7 @@ internal static class Program
 
         using (var game = Relaunch(Get(options, "relaunch")))
         {
-            WaitForGameWindow(game, window != null);
+            WaitForGameWindow(game, window);
         }
 
         window?.CloseWindow();
@@ -131,18 +131,26 @@ internal static class Program
     // the shell, so neither this program nor the game it starts may take the foreground (Windows' foreground lock),
     // and the game stays drawn on top without becoming the foreground window (seen in the second 2026-11-10 test,
     // where the game covered the screen 1 s after its window appeared). This window then just sits behind the game
-    // until it closes. Without a game, a failed install's message stays readable for a few seconds instead. Nothing to
-    // wait for when there is no window. Logs what it saw.
-    private static void WaitForGameWindow(Process game, bool hasWindow)
+    // until it closes. Nothing to wait for when there is no window. Logs what it saw.
+    // Without a game (Relaunch couldn't start one: no executable, or Process.Start failed), the window says so, tells
+    // the player to start Solasta from Steam, and stays with an OK button until it's closed or 10 minutes pass. It used
+    // to close after 5 s showing "Starting Solasta…", leaving the player with no game and no word why (Codex's review
+    // of PR #30). A game that starts and quits at once isn't this case: Steam may be relaunching it.
+    private static void WaitForGameWindow(Process game, InstallWindow window)
     {
-        if (!hasWindow)
+        if (window == null)
         {
             return;
         }
 
         if (game == null)
         {
-            Thread.Sleep(5000);
+            window.ShowStep("notstarted");
+
+            if (!window.WaitUntilClosed(TimeSpan.FromMinutes(10)))
+            {
+                Log("Nobody closed the 'not started' message within 10 minutes");
+            }
 
             return;
         }
@@ -154,9 +162,10 @@ internal static class Program
         {
             while ((DateTime.Now - started).TotalSeconds < 60 && !game.HasExited)
             {
-                game.Refresh();
-
-                var handle = game.MainWindowHandle;
+                if (!TryGetMainWindow(game, out var handle))
+                {
+                    break;
+                }
 
                 if (handle != IntPtr.Zero && windowAt == null)
                 {
@@ -214,6 +223,28 @@ internal static class Program
         return options.TryGetValue(key, out var value) ? value : string.Empty;
     }
 
+    // The process's main window, or IntPtr.Zero while it has none. False when the process ended meanwhile: on .NET
+    // Framework, MainWindowHandle with no window falls back to reading the process's information, which throws
+    // InvalidOperationException once the process is gone (Codex's review of PR #30). That happens when the game closes
+    // its window and exits within one poll; left uncaught, it reached Main's install-failure handler and skipped a
+    // valid update.
+    private static bool TryGetMainWindow(Process process, out IntPtr handle)
+    {
+        try
+        {
+            process.Refresh();
+            handle = process.MainWindowHandle;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            handle = IntPtr.Zero;
+
+            return false;
+        }
+    }
+
     // Waits for the game to exit. onClosing runs once the game is closing: its window, seen while it ran, has gone
     // (Unity removes it at quit, while the process can take another half minute to end, e.g. through the known quit
     // crash and its dump), or the process ended. Polled twice a second, which costs nothing while the player keeps
@@ -240,9 +271,13 @@ internal static class Program
                     continue;
                 }
 
-                process.Refresh();
+                if (!TryGetMainWindow(process, out var handle))
+                {
+                    // the process ended since WaitForExit(500) returned: the next WaitForExit ends the loop
+                    continue;
+                }
 
-                if (process.MainWindowHandle != IntPtr.Zero)
+                if (handle != IntPtr.Zero)
                 {
                     windowSeen = true;
                 }

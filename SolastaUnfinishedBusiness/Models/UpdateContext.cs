@@ -121,7 +121,8 @@ internal static class UpdateContext
 
     // What this game tells other players it runs: the loaded code's version. Without the mark, Info.json's version
     // with "?unverified" after it, so it never equals a real build and the other players' version warning shows it.
-    internal static string RunningVersion => LoadedBuildVersion ?? Main.ModVersion + "?unverified";
+    internal static string RunningVersion =>
+        LoadedBuildVersion ?? Main.ModVersion + MultiplayerSessionContext.UnverifiedSuffix;
 
     internal static void Load()
     {
@@ -574,11 +575,21 @@ internal static class UpdateContext
                 arguments.AddRange(["--source", staged]);
             }
 
-            // the helper's window texts, in the game's language (the helper can't read the mod's translations)
+            // the helper's window texts, in the game's language (the helper can't read the mod's translations). Best
+            // effort: if the file can't be written, the helper still starts and shows its English texts. Letting the
+            // exception through made StartInstaller fail, and the caller then installed (or rolled back) in place while
+            // the game was running (Codex's review of PR #30).
             var texts = Path.Combine(folder, "texts.txt");
 
-            WriteInstallerTexts(texts, mode, version);
-            arguments.AddRange(["--texts", texts]);
+            try
+            {
+                WriteInstallerTexts(texts, mode, version);
+                arguments.AddRange(["--texts", texts]);
+            }
+            catch (Exception e)
+            {
+                Main.Error($"Couldn't write the update helper's texts, so it shows them in English: {e.Message}");
+            }
 
             // not hidden: from this version the helper shows a small window once the game has closed its window (not
             // before: this runs before the player picks Restart or Later), so the player can see the update being
@@ -617,7 +628,10 @@ internal static class UpdateContext
                 : "Message/&UpdateInstallerInstalling", version)),
             Line("starting", Gui.Localize("Message/&UpdateInstallerStarting")),
             Line("failed", Gui.Localize("Message/&UpdateInstallerFailed")),
-            Line("hint", Gui.Localize("Message/&UpdateInstallerHint"))
+            Line("hint", Gui.Localize("Message/&UpdateInstallerHint")),
+            Line("notstarted", Gui.Localize("Message/&UpdateInstallerNotStarted")),
+            Line("notstartedhint", Gui.Localize("Message/&UpdateInstallerNotStartedHint")),
+            Line("close", Gui.Localize("Message/&MessageOkTitle"))
         ], new System.Text.UTF8Encoding(false));
     }
 
@@ -652,27 +666,36 @@ internal static class UpdateContext
 
         string Value(string key) => result.TryGetValue(key, out var value) ? value : string.Empty;
 
+        // The version the helper installed or rolled back to (--version). An install or a rollback is only confirmed
+        // when this game runs exactly that version AND Info.json names it: the requested, installed and loaded
+        // versions all agree. Before, an install only compared the requested and loaded versions, so a different
+        // Info.json showed the mismatch warning next to a success message, and every rollback counted as a success
+        // (Codex's review of PR #30). A DLL without its build mark can't be confirmed at all.
         var version = Value("version");
-        // compared with the code that is running, not only Info.json: an update counts as installed only when this
-        // game runs it (see CheckLoadedVersion). Without the DLL's mark that can't be confirmed, so it is reported as
-        // a mismatch naming the unverified version.
-        var running = LoadedBuildVersion ?? InstalledVersion + "?unverified";
-        var message = Value("status") switch
+        var status = Value("status");
+        var confirmed = LoadedBuildVersion != null && version == LoadedBuildVersion && version == InstalledVersion;
+        // what runs, for the mismatch message: the loaded version, with Info.json's when they differ
+        var running = LoadedBuildVersion == null
+            ? InstalledVersion + MultiplayerSessionContext.UnverifiedSuffix
+            : LoadedBuildVersion == InstalledVersion
+                ? LoadedBuildVersion
+                : $"{LoadedBuildVersion} (Info.json: {InstalledVersion})";
+        var message = status switch
         {
-            "installed" when version == running => Gui.Format("Message/&UpdateResultInstalled", version),
-            "installed" => Gui.Format("Message/&UpdateResultMismatch", version, running, Value("log")),
+            "installed" when confirmed => Gui.Format("Message/&UpdateResultInstalled", version),
+            "rolledback" when confirmed => Gui.Format("Message/&UpdateResultRolledBack", version),
+            "installed" or "rolledback" =>
+                Gui.Format("Message/&UpdateResultMismatch", version, running, Value("log")),
             "failed" when Value("restored") == "yes" =>
                 Gui.Format("Message/&UpdateResultFailedRestored", version, Value("message"), Value("transaction"),
                     Value("log")),
             "failed" => Gui.Format("Message/&UpdateResultFailed", version, Value("message"), Value("transaction"),
                 Value("log")),
-            "rolledback" => Gui.Format("Message/&UpdateResultRolledBack", InstalledVersion),
             _ => Gui.Format("Message/&UpdateResultRollbackFailed", Value("message"), Value("transaction"),
                 Value("log"))
         };
 
-        var succeeded = (Value("status") == "installed" && version == running) ||
-                        Value("status") == "rolledback";
+        var succeeded = status is "installed" or "rolledback" && confirmed;
 
         PendingPrompts.Add(() => ShowMessage(message, "Message/&MessageOkTitle",
             severity: succeeded ? MessageModal.Severity.Informative1 : MessageModal.Severity.Serious3));
