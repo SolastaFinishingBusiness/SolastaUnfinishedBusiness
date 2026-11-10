@@ -195,7 +195,8 @@ internal static class Program
         NoWindowYet
     }
 
-    // the started game until it shows (front, or 15 s after its window appeared), ends, or 60 s pass
+    // the started game until it shows (front, or 15 s after its window appeared), ends, or 60 s pass.
+    // EndedWithoutWindow means it ended before being confirmed showing, even if it had a window handle.
     private static GameOutcome WatchGame(Process game)
     {
         var clock = Stopwatch.StartNew();
@@ -233,11 +234,17 @@ internal static class Program
                 Thread.Sleep(250);
             }
 
+            // Any exit before the game was confirmed showing (front, or 15 s after its window appeared) counts as not
+            // shown, window handle or not: the handle exists seconds before anything of the game is on screen (about 7 s
+            // in the first 2026-11-10 round), so a crash in between left the player with nothing (Codex's review of
+            // abbbd937). The caller then looks for Steam's relaunch before saying the game couldn't be started.
             if (game.HasExited || !TryGetMainWindow(game, out _))
             {
-                Log(windowAt == null ? "The started game ended without a window" : "The started game ended");
+                Log(windowAt == null
+                    ? "The started game ended without a window"
+                    : $"The started game ended {(clock.Elapsed - windowAt.Value).TotalSeconds:0.0} s after its window appeared");
 
-                return windowAt == null ? GameOutcome.EndedWithoutWindow : GameOutcome.Showing;
+                return GameOutcome.EndedWithoutWindow;
             }
 
             Log("No game window within 60 s");

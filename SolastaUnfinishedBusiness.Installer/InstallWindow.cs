@@ -34,9 +34,6 @@ internal sealed class InstallWindow : Form
     private readonly bool _rollback;
     private bool _closeShown;
 
-    // set by Open when it gave up waiting: the window then closes as soon as it shows
-    private volatile bool _abandoned;
-
     private InstallWindow(IReadOnlyDictionary<string, string> texts, string mode)
     {
         Texts = texts;
@@ -132,13 +129,17 @@ internal sealed class InstallWindow : Form
     // Before, a window that was constructed but never shown (its thread failed, or it was still starting after 5 s)
     // was returned anyway: every Post to it was dropped, so the "not started" message never appeared while the helper
     // waited up to 10 minutes for an OK nobody could see, with Steam showing STOP all along (Codex's full review of
-    // PR #30). A window that shows up after the wait gave up closes itself at once (_abandoned), and _closed is set
+    // PR #30). A window that shows up after the wait gave up closes itself at once (abandoned), and _closed is set
     // whenever the window's thread ends, so a waiter is never left hanging on a window that is gone.
     internal static InstallWindow Open(string textsFile, string mode, Action<string> log)
     {
         var texts = ReadTexts(textsFile, log);
         InstallWindow window = null;
         var settled = new ManualResetEventSlim(false); // shown, or the thread ended
+        // Set when Open gives up. It lives outside the form: if building the form takes longer than the wait, there is
+        // no form yet to mark, and the late form would show "Waiting…" with no one updating or closing it (Codex's
+        // review of abbbd937). The thread checks it before running the form and again when it shows.
+        var abandoned = new CancellationTokenSource();
 
         try
         {
@@ -148,9 +149,15 @@ internal sealed class InstallWindow : Form
                 {
                     Application.EnableVisualStyles();
                     window = new InstallWindow(texts, mode);
+
+                    if (abandoned.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     window.Shown += (_, _) =>
                     {
-                        if (window._abandoned)
+                        if (abandoned.IsCancellationRequested)
                         {
                             window.Close();
 
@@ -188,12 +195,8 @@ internal sealed class InstallWindow : Form
             }
 
             log("The install window didn't open in time; carrying on without it");
-
-            if (window != null)
-            {
-                window._abandoned = true;
-                window.Post(window.Close);
-            }
+            abandoned.Cancel();
+            window?.Post(window.Close);
 
             return null;
         }
