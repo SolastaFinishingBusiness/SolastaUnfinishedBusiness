@@ -31,6 +31,7 @@ internal sealed class InstallWindow : Form
     private readonly Button _close;
     private readonly ManualResetEventSlim _ready = new(false);
     private readonly ManualResetEventSlim _closed = new(false);
+    private bool _closeShown;
 
     private InstallWindow(IReadOnlyDictionary<string, string> texts)
     {
@@ -46,20 +47,45 @@ internal sealed class InstallWindow : Form
         ClientSize = new Size(460, 150);
         Font = new Font("Segoe UI", 9.75f);
 
-        _status = new Label { Left = 20, Top = 18, Width = 420, Height = 24, Text = Get("waiting") };
+        // Both texts wrap at 420 px and take the height they need: the status lines were a fixed 24 px, and the failure
+        // text needs two lines in several languages, so its second line was cut off (Codex's re-review of PR #30,
+        // measured with TextRenderer). Relayout stacks everything under them whenever a text changes.
+        _status = new Label
+        {
+            Left = 20, Top = 18, AutoSize = true, MaximumSize = new Size(420, 0), Text = Get("waiting")
+        };
         _bar = new ProgressBar
         {
-            Left = 20, Top = 48, Width = 420, Height = 18, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30
+            Left = 20, Width = 420, Height = 18, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30
         };
-
-        _hint = new Label { Left = 20, Top = 78, Width = 420, Height = 56, Text = Get("hint") };
+        _hint = new Label { Left = 20, AutoSize = true, MaximumSize = new Size(420, 0), Text = Get("hint") };
 
         // only shown when the player has to act (ShowStep "notstarted"): the window then stays until it is closed
-        _close = new Button { Left = 340, Top = 146, Width = 100, Height = 28, Text = Get("close"), Visible = false };
+        _close = new Button { Left = 340, Width = 100, Height = 28, Text = Get("close"), Visible = false };
         _close.Click += (_, _) => Close();
 
         Controls.AddRange([_status, _bar, _hint, _close]);
         FormClosed += (_, _) => _closed.Set();
+        Relayout();
+    }
+
+    // status text, then the bar, then the hint, then the OK button when shown; the window's height follows
+    private void Relayout()
+    {
+        _bar.Top = _status.Bottom + 10;
+        _hint.Top = _bar.Bottom + 12;
+
+        var bottom = _hint.Bottom;
+
+        // its own flag, not _close.Visible: Control.Visible also reflects the parent, so it reads false whenever the
+        // window itself isn't on screen (yet)
+        if (_closeShown)
+        {
+            _close.Top = bottom + 12;
+            bottom = _close.Bottom;
+        }
+
+        ClientSize = new Size(ClientSize.Width, bottom + 16);
     }
 
     private IReadOnlyDictionary<string, string> Texts { get; }
@@ -74,7 +100,9 @@ internal sealed class InstallWindow : Form
         ["failed"] = "Something went wrong. Solasta will start again and show what happened.",
         ["hint"] = "Solasta will start again by itself. Please don't start or stop it in Steam until then.",
         ["notstarted"] = "Solasta couldn't be started again.",
-        ["notstartedhint"] = "Please start Solasta from Steam. It will show how the update went.",
+        // OK first: while this program runs, Steam counts the game as running and shows STOP, not Play (seen in a test
+        // on 2026-11-09; Codex's re-review of PR #30). The game's copy names its own localized OK button.
+        ["notstartedhint"] = "Press OK, then start Solasta from Steam. It will show how the update went.",
         ["close"] = "OK"
     };
 
@@ -174,23 +202,21 @@ internal sealed class InstallWindow : Form
         {
             _status.Text = Get(step);
 
-            if (step is not ("failed" or "notstarted"))
+            if (step is "failed" or "notstarted")
             {
-                return;
+                _bar.Style = ProgressBarStyle.Continuous;
+                _bar.Value = _bar.Maximum;
             }
 
-            _bar.Style = ProgressBarStyle.Continuous;
-            _bar.Value = _bar.Maximum;
-
-            if (step != "notstarted")
+            if (step == "notstarted")
             {
-                return;
+                _hint.Text = Get("notstartedhint");
+                _closeShown = true;
+                _close.Visible = true;
+                _close.Focus();
             }
 
-            _hint.Text = Get("notstartedhint");
-            ClientSize = new Size(ClientSize.Width, 190);
-            _close.Visible = true;
-            _close.Focus();
+            Relayout();
         });
     }
 

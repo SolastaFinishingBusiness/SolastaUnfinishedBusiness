@@ -619,6 +619,8 @@ internal static class UpdateContext
     {
         string Line(string key, string text) => key + "=" + text.Replace("\r", string.Empty).Replace("\n", "\\n");
 
+        var okLabel = Gui.Localize("Message/&MessageOkTitle");
+
         File.WriteAllLines(path,
         [
             Line("title", Gui.Localize("Message/&UpdateInstallerTitle")),
@@ -630,8 +632,9 @@ internal static class UpdateContext
             Line("failed", Gui.Localize("Message/&UpdateInstallerFailed")),
             Line("hint", Gui.Localize("Message/&UpdateInstallerHint")),
             Line("notstarted", Gui.Localize("Message/&UpdateInstallerNotStarted")),
-            Line("notstartedhint", Gui.Localize("Message/&UpdateInstallerNotStartedHint")),
-            Line("close", Gui.Localize("Message/&MessageOkTitle"))
+            // names the window's own button ({0}), which must be pressed before Steam offers Play again
+            Line("notstartedhint", Gui.Format("Message/&UpdateInstallerNotStartedHint", okLabel)),
+            Line("close", okLabel)
         ], new System.Text.UTF8Encoding(false));
     }
 
