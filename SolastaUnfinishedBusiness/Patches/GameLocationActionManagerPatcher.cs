@@ -8,6 +8,7 @@ using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Interfaces;
+using SolastaUnfinishedBusiness.Models;
 using TA.AI;
 using static RuleDefinitions;
 
@@ -16,6 +17,21 @@ namespace SolastaUnfinishedBusiness.Patches;
 [UsedImplicitly]
 public static class GameLocationActionManagerPatcher
 {
+    //PATCH: forced movement through areas (issue #32, ForcedMovementContext). A push worked out inside ApplyMotionForm
+    // is queued here right after. Its cells are tied to these parameters, so they stay with this push however long
+    // it waits and whatever other pushes are worked out for the same creature meanwhile.
+    [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.ExecuteAction))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class ExecuteAction_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(CharacterActionParams actionParams)
+        {
+            ForcedMovementContext.BindToAction(actionParams);
+        }
+    }
+
     [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.ReactToSpendSpellSlot))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

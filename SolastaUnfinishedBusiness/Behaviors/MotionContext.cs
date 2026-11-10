@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using TA;
 using UnityEngine;
@@ -22,7 +23,10 @@ internal static class MotionContext
         bool reverse,
         IGameLocationPositioningService positioningService,
         ref int3 destination,
-        ref Vector3 direction)
+        ref Vector3 direction,
+        // Forced movement through areas (issue #32): when given, every cell the target is moved to is added in
+        // order, the last being the destination. Reporting only; the result is the same with or without it.
+        List<int3> steps = null)
     {
         var targetCenter = new Vector3();
         positioningService.ComputeGravityCenterPosition(target, ref targetCenter);
@@ -78,6 +82,7 @@ internal static class MotionContext
             {
                 destination = position;
                 result = true;
+                steps?.Add(position);
             }
             else
             {

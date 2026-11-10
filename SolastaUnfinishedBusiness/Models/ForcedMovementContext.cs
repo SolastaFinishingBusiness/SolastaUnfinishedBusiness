@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using SolastaUnfinishedBusiness.Api.GameExtensions;
 using TA;
 using UnityEngine;
 
@@ -15,9 +17,9 @@ namespace SolastaUnfinishedBusiness.Models;
 // area through the map's occupant lists. So only the landing cell ever counted: a creature pushed two cells into Spike
 // Growth took one lot of damage instead of two, and one pushed right through an area to a clear cell took none.
 //
-// What this does. The cells a push goes through are recorded when the push is worked out (Record), and just before the
-// game changes the creature's cell to the landing cell (BeforeMoveCommitted, from FinishMoveTo) the creature is stepped
-// through those cells in order. Each step moves it in the occupant lists, exactly as the game does, and then runs the
+// What this does. The cells a push goes through are recorded when the push is worked out (Record) and tied to the push
+// action made for it (BindToAction, PushStarting). Just before the game changes the creature's cell to the landing cell
+// (BeforeMoveCommitted, from FinishMoveTo) the creature is stepped through those cells in order. Each step moves it in the occupant lists, exactly as the game does, and then runs the
 // game's own OccupationChanged for areas. The game's rules therefore decide everything, the same as for walking:
 // - entering an area applies its "on enter" effect once;
 // - each further cell inside applies its "on move" effect (Spike Growth, Mantle of Thorns);
@@ -46,10 +48,25 @@ internal static class ForcedMovementContext
     // "[ForcedMove]" lines per launch (Logging > "Forced movement through areas")
     private const int MaxLines = 300;
 
-    // The cells of the latest push worked out for each creature. Held weakly, so a creature that leaves the game takes
-    // its entry with it. An entry is only used if the push that commits starts and ends where it says (see
-    // BeforeMoveCommitted), and is replaced whenever a new push is worked out for the creature.
-    private static readonly ConditionalWeakTable<GameLocationCharacter, Route> Routes = new();
+    // A route goes through three places, so that it can only ever be used by the push it was worked out for (Codex's
+    // review of PR #31: one "latest route" per creature let a second push, worked out while the first was still on
+    // its way, replace or lose the first one's cells, depending on timing).
+    //
+    // 1. Solved: worked out inside the ApplyMotionForm call that is running, waiting for that same call to hand its
+    //    push to the action service. Emptied when the call ends, so nothing waits longer than that.
+    private static readonly Dictionary<GameLocationCharacter, Route> Solved = [];
+
+    // 2. Bound: tied to the parameters of the push action that was queued for it. The action may start much later,
+    //    or never; held weakly, so parameters that are dropped take the route with them.
+    private static readonly ConditionalWeakTable<CharacterActionParams, Route> Bound = new();
+
+    // 3. Active: the route of the push action that has started for a creature. Every push action that starts sets or
+    //    clears it (PushStarting), so a push without a route never inherits an earlier one's. Held weakly as well.
+    private static readonly ConditionalWeakTable<GameLocationCharacter, Route> Active = new();
+
+    // The cells the mod's own solver went through in the run that just ended, handed from the patch that ran it to
+    // Record (see TakeSolverSteps). Null when the game's solver ran.
+    private static List<int3> _solverSteps;
 
     // how many ApplyMotionForm calls are running (they don't nest in practice; a count is simply safe)
     private static int _motionFormDepth;
@@ -80,15 +97,34 @@ internal static class ForcedMovementContext
         {
             _motionFormDepth--;
         }
+
+        // whatever was worked out in this call and not handed to the action service was never made into a push
+        if (_motionFormDepth == 0)
+        {
+            Solved.Clear();
+            _solverSteps = null;
+        }
+    }
+
+    // For the patch that runs the mod's own solver (MotionContext.ComputePushDestination, used when vertical pushes and
+    // pulls are enabled): a list for the solver to put each cell it accepts in, or null when this run isn't recorded.
+    // The mod's solver can report its cells itself, which is exact for every distance it supports, including a pull
+    // onto the source's own cell (MotionContext.PullOntoCaster, Gravity Fissure), whose last step no plain distance
+    // asks for (Codex's review of PR #31).
+    internal static List<int3> TakeSolverSteps()
+    {
+        _solverSteps = _solvingSteps || _motionFormDepth == 0 ? null : [];
+
+        return _solverSteps;
     }
 
     // Called after every run of the push solver (GameLocationEnvironmentManager.ComputePushDestination with a world
     // position as its source, which the other two forms call; either the game's solver or the mod's vertical one).
     //
-    // The solver walks cell by cell and stops at the first cell the creature can't go to, but only reports where it
-    // ended. Both solvers decide each step from the steps before it alone, so the cell after k steps is what the same
-    // solver returns when asked for a distance of k. Asking for 1, 2, ... until the answer is the real destination
-    // gives the cells in between, including any slide along a wall, without copying either solver here.
+    // The mod's solver hands over the cells it went through (TakeSolverSteps). The game's solver only reports where it
+    // ended. It walks cell by cell, stops at the first cell the creature can't go to, and decides each step from the
+    // steps before it alone, so the cell after k steps is what it returns when asked for a distance of k. Asking for
+    // 1, 2, ... until the answer is the real destination gives the cells in between without copying the solver here.
     //
     // Only inside ApplyMotionForm: the solver also runs for aiming previews and for the AI's shove scoring, on one
     // computer only and for pushes that may never happen. Recording those could give two computers different cells.
@@ -106,14 +142,31 @@ internal static class ForcedMovementContext
             return;
         }
 
-        // a new push for this creature replaces whatever was recorded for it, also when it turns out to have no
-        // cells in between
-        Routes.Remove(target);
+        // the mod's solver, if it ran, left its cells here; taken at once so they can't be used for another run
+        var solverSteps = _solverSteps;
+
+        _solverSteps = null;
+
+        // a new push for this creature in the same call replaces the one before it, also when it turns out to have
+        // no cells in between
+        Solved.Remove(target);
 
         var start = target.LocationPosition;
 
         if (!result || destination == start)
         {
+            return;
+        }
+
+        if (solverSteps != null)
+        {
+            // every accepted cell in order, the last being the destination
+            if (solverSteps.Count > 1 && solverSteps[solverSteps.Count - 1] == destination)
+            {
+                solverSteps.RemoveAt(solverSteps.Count - 1);
+                Keep(target, start, destination, solverSteps, distance, reverse);
+            }
+
             return;
         }
 
@@ -146,9 +199,8 @@ internal static class ForcedMovementContext
                     break;
                 }
 
-                // No progress: the shorter push ends where an earlier one did without reaching the destination. That
-                // happens for a pull onto the caster's own cell (MotionContext.PullOntoCaster), whose last step no
-                // plain distance asks for. Such a push keeps the old behaviour: the landing cell only.
+                // No progress: the shorter push ends where an earlier one did without reaching the destination. Not
+                // expected from the game's solver; such a push would keep the old behaviour, the landing cell only.
                 if (cell == start || cells.Contains(cell))
                 {
                     break;
@@ -168,7 +220,13 @@ internal static class ForcedMovementContext
             return;
         }
 
-        Routes.Add(target, new Route(start, destination, cells));
+        Keep(target, start, destination, cells, distance, reverse);
+    }
+
+    private static void Keep(
+        GameLocationCharacter target, int3 start, int3 destination, List<int3> cells, int distance, bool reverse)
+    {
+        Solved[target] = new Route(start, destination, cells);
 
         if (IsLogOn)
         {
@@ -177,30 +235,83 @@ internal static class ForcedMovementContext
         }
     }
 
-    // Called at the start of GameLocationCharacter.FinishMoveTo, which is where a move changes the creature's cell.
-    // If this is the push recorded for the creature, step it through the cells in between first.
-    internal static void BeforeMoveCommitted(GameLocationCharacter character, int3 destination)
+    // Called when anything is handed to the action service (GameLocationActionManager.ExecuteAction). Inside
+    // ApplyMotionForm, a push action for a creature whose push was just worked out, going to that push's destination,
+    // is the push the route belongs to: the game and the mod both work a push out and queue it in one go.
+    internal static void BindToAction(CharacterActionParams actionParams)
     {
-        if (character == null || !Routes.TryGetValue(character, out var route))
+        if (_motionFormDepth == 0 ||
+            actionParams?.ActingCharacter is not { } character ||
+            actionParams.ActionDefinition?.Id is not
+                (ActionDefinitions.Id.Pushed or (ActionDefinitions.Id)ExtraActionId.PushedCustom) ||
+            !Solved.TryGetValue(character, out var route))
         {
             return;
         }
 
-        // Walking, teleports and everything else that isn't a push: leave the entry for the push it belongs to. (A
-        // push that is dropped before it moves, as queued pushes on one creature can be, also leaves it; it is
-        // replaced by the next push worked out for the creature, and is only ever used under the checks below.)
+        Solved.Remove(character);
+
+        if (actionParams.Positions.Count > 0 && actionParams.Positions[0] == route.Destination)
+        {
+            Bound.Remove(actionParams);
+            Bound.Add(actionParams, route);
+        }
+    }
+
+    // Called when a push action starts running (CharacterAction.Execute). From here to the end of this push, its route
+    // is the creature's, and only its: a push with no route clears what an earlier, interrupted push may have left.
+    internal static void PushStarting(CharacterAction action)
+    {
+        if (action?.ActingCharacter is not { } character)
+        {
+            return;
+        }
+
+        Active.Remove(character);
+
+        if (action.ActionParams != null && Bound.TryGetValue(action.ActionParams, out var route))
+        {
+            Bound.Remove(action.ActionParams);
+            Active.Add(character, route);
+        }
+    }
+
+    // Called when a push action has run to its end: nothing of it is left to commit.
+    internal static void PushEnded(GameLocationCharacter character)
+    {
+        if (character != null)
+        {
+            Active.Remove(character);
+        }
+    }
+
+    // Called at the start of GameLocationCharacter.FinishMoveTo, which is where a move changes the creature's cell.
+    // If this is the push whose route is active for the creature, step it through the cells in between first.
+    //
+    // Returns false when the game's FinishMoveTo must not run: an area's effect moved the creature somewhere else
+    // while it was being stepped through, so the push's landing cell is no longer where it goes.
+    internal static bool BeforeMoveCommitted(GameLocationCharacter character, int3 destination)
+    {
+        if (character == null || !Active.TryGetValue(character, out var route))
+        {
+            return true;
+        }
+
+        // Not a push committing (the creature walks or is teleported while a route is still active, which only an
+        // interrupted push can leave behind): not this route's move.
         if (!character.Pushed)
         {
-            return;
+            return true;
         }
 
-        Routes.Remove(character);
+        // used once, whatever happens below
+        Active.Remove(character);
 
-        // Not the push that was recorded: the creature has moved since, or this push goes somewhere else. The cells
+        // Not the move that was recorded: the creature has moved since, or this move goes somewhere else. The cells
         // would be wrong, so do nothing and let the game handle the landing cell as before.
         if (route.Start != character.LocationPosition || route.Destination != destination)
         {
-            return;
+            return true;
         }
 
         var positioningService = ServiceRepository.GetService<IGameLocationPositioningService>();
@@ -209,16 +320,66 @@ internal static class ForcedMovementContext
             ServiceRepository.GetService<IGameLocationEnvironmentService>()
                 is not GameLocationEnvironmentManager environmentManager)
         {
-            return;
+            return true;
         }
 
         var current = route.Start;
-        var displaced = false;
+        bool displaced;
 
+        try
+        {
+            displaced = StepThrough(character, route, positioningService, environmentManager, ref current);
+        }
+        catch (Exception exception)
+        {
+            // An area's effect threw. Whatever it applied stays applied and is not tried again; the push itself
+            // must still end properly, so the error is logged here and the move is committed below as usual. Left
+            // to travel up, it would stop FinishMoveTo with the creature registered on a cell in between.
+            Main.Error($"[ForcedMove] {Name(character)} at {Cell(current)}: {exception}");
+
+            displaced = character.LocationPosition != current;
+        }
+
+        if (displaced)
+        {
+            // The creature is where the effect put it, fully moved there by the game (a teleport runs its own
+            // FinishMoveTo, which also ends this move step). Committing the push's landing cell now would drag it
+            // back out, so the game's FinishMoveTo is skipped (Codex's review of PR #31).
+            if (IsLogOn)
+            {
+                Log($"{Name(character)} was moved to {Cell(character.LocationPosition)} by an area; " +
+                    $"the push to {Cell(destination)} is dropped");
+            }
+
+            return false;
+        }
+
+        // Put the creature back on the cell it started from, in the occupant lists only. FinishMoveTo then makes the
+        // real move from start to landing cell exactly as before this change: one Moved event with the true start,
+        // one FinalizeNewPosition for the landing cell, and the areas there worked out from what the steps left.
+        if (current != route.Start)
+        {
+            MoveOccupant(positioningService, character, current, route.Start);
+        }
+
+        return true;
+    }
+
+    // Steps the creature through the route's cells. Returns true if an area's effect moved the creature itself.
+    // "current" is kept up to date for the caller, also when this throws.
+    private static bool StepThrough(
+        GameLocationCharacter character,
+        Route route,
+        IGameLocationPositioningService positioningService,
+        GameLocationEnvironmentManager environmentManager,
+        ref int3 current)
+    {
         foreach (var cell in route.Cells)
         {
             // A creature that died or dropped on an earlier cell is not affected by the cells after it. Only the
-            // steps it completed count. (Its body still ends on the landing cell, where the animation takes it.)
+            // steps it completed count. Its body still ends on the landing cell: the push is one animation, already
+            // played to the end, so the body is drawn there, and committing an earlier cell would leave the game
+            // and the screen disagreeing about where it lies. A push also doesn't stop for a creature that drops.
             if (!CanBeAffected(character))
             {
                 if (IsLogOn)
@@ -246,22 +407,14 @@ internal static class ForcedMovementContext
             }
 
             // An area's effect moved the creature itself (a teleport, say). The recorded cells no longer describe
-            // where it is: stop, and don't put it back.
+            // where it is: stop.
             if (character.LocationPosition != cell)
             {
-                displaced = true;
-
-                break;
+                return true;
             }
         }
 
-        // Put the creature back on the cell it started from, in the occupant lists only. FinishMoveTo then makes the
-        // real move from start to landing cell exactly as before this change: one Moved event with the true start,
-        // one FinalizeNewPosition for the landing cell, and the areas there worked out from what the steps left.
-        if (!displaced && current != route.Start)
-        {
-            MoveOccupant(positioningService, character, current, route.Start);
-        }
+        return false;
     }
 
     // Changes the creature's cell in the map's occupant lists (which areas use to find creatures) and on the creature

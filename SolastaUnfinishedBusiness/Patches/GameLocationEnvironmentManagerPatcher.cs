@@ -133,15 +133,18 @@ public static class GameLocationEnvironmentManagerPatcher
             }
 
             //PATCH: allow push and pull motion effects to change vertical position of a target
+            // the list is only given for a push that is really being made (issue #32); the Postfix picks it up
             __result = MotionContext.ComputePushDestination(
-                sourceCenter, target, distance, reverse, positioningService, ref destination, ref direction);
+                sourceCenter, target, distance, reverse, positioningService, ref destination, ref direction,
+                ForcedMovementContext.TakeSolverSteps());
 
             return false;
         }
 
-        //PATCH: forced movement through areas (issue #29): keep the cells of a push that is really being made, so
+        //PATCH: forced movement through areas (issue #32): keep the cells of a push that is really being made, so
         // areas it goes through can act on the creature. Runs after either solver, the game's or the mod's above
-        // (a postfix runs even when the prefix skipped the game's method). Does nothing for previews.
+        // (a postfix runs even when the prefix skipped the game's method). Does nothing for previews. The mod's
+        // solver reports its cells itself; for the game's, they are worked out by asking it for shorter pushes.
         [UsedImplicitly]
         public static void Postfix(
             bool __result,
