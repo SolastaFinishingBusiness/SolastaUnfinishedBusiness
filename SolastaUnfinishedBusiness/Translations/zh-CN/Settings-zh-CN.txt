@@ -73,6 +73,7 @@ ModUi/&CriticalOption0=<color=#D89555><b>0</b></color>：游戏默认，掷任�
 ModUi/&CriticalOption1=<color=#D89555><b>1</b></color>：将伤害骰子的最大结果相加，并将其添加到攻击的伤害中<i><color=#F0DAA0>[XdY+(X*Y)+Z]</color></i>
 ModUi/&CriticalOption2=<color=#D89555><b>2</b></color>：继续重新掷出任何掷出最高可能结果的伤害骰子，并将其添加到总伤害中
 ModUi/&CriticalOption3=<color=#D89555><b>3</b></color>：将你的攻击总伤害加倍，而不是掷额外的骰子。<i><color=#F0DAA0>[(XdY+Z)*2]</color></i>
+ModUi/&DeferFallDuringEldritchBlastMoves=仅在一次魔能爆施放的最后一次推离或拉近结束后，才让生物坠落 <i><color=#F0DAA0>[使用斥力魔爆或哈达之攫时，被移到悬空处的生物会从该次施放最后一次移动结束的位置坠落，因此可以先把它拉回来；关闭时，一旦某次移动使它失去立足点，它就会立刻坠落]</color></i>
 ModUi/&DisableAutoEquip=禁用库存中的物品自动装备
 ModUi/&DisableCastSpellPreRequisitesOnModFeats=禁用 mod <color=#D89555>专长</color> 上的施法先决条件<b><i><color=#C04040E0>[需要重启]</color></i></b>
 ModUi/&DisableClassPrerequisitesOnModFeats=禁用<color=#D89555>功绩</color>的等级先决条件

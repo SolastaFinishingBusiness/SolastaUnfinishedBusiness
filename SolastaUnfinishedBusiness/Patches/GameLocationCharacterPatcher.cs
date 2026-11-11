@@ -47,6 +47,22 @@ public static class GameLocationCharacterPatcher
         }
     }
 
+    //PATCH: Eldritch Blast's pushes and pulls (issue #37, EldritchBlastFallContext, a setting). CheckCharacterFooting
+    // is the one place the game decides a creature falls. While more of an Eldritch Blast cast's pushes and pulls are
+    // still to come for a creature, the check is put off, so it falls from where the last of them leaves it. For any
+    // other creature, and with the setting off, the game's method runs as always.
+    [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.CheckCharacterFooting))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CheckCharacterFooting_Patch
+    {
+        [UsedImplicitly]
+        public static bool Prefix(GameLocationCharacter __instance, bool forceFeatherFall)
+        {
+            return EldritchBlastFallContext.BeforeFootingCheck(__instance, forceFeatherFall);
+        }
+    }
+
     //PATCH: supports IForceLightingState
     [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.LightingState), MethodType.Getter)]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

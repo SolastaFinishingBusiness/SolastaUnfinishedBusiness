@@ -134,13 +134,23 @@ internal static class EldritchBlastMoveContext
         internal static Decision None => new(0, 0, true);
     }
 
-    private sealed class CastState
+    /// <summary>What is kept for one cast of Eldritch Blast while its queued moves run.</summary>
+    internal sealed class CastState
     {
         // set once the caster picked "for All": every later beam of the cast uses it without asking
         internal Decision? ForAll;
 
         // creatures a beam of this cast has already hit (used when only the first beam on a creature moves it)
         internal readonly HashSet<ulong> DecidedTargets = [];
+
+        // who cast it: while this character is still acting, the cast's queued moves can still run
+        internal GameLocationCharacter Caster;
+
+        // Every queued move of the cast (the parameters of its spend-power action), and those that have applied
+        // their effect. The difference is what is still to come, which EldritchBlastFallContext needs to know
+        // whether a creature will be moved again before it may fall.
+        internal readonly List<CharacterActionParams> Legs = [];
+        internal readonly HashSet<CharacterActionParams> DoneLegs = [];
     }
 
     private sealed class Beam
@@ -210,19 +220,22 @@ internal static class EldritchBlastMoveContext
                 (pushIndex, pullIndex) = (pullIndex, pushIndex);
             }
 
-            var beam = new Beam
-            {
-                Cast = Casts.GetOrCreateValue(castAction), HasPush = pushIndex >= 0, HasPull = pullIndex >= 0
-            };
+            var cast = Casts.GetOrCreateValue(castAction);
+
+            cast.Caster ??= castAction.ActingCharacter;
+
+            var beam = new Beam { Cast = cast, HasPush = pushIndex >= 0, HasPull = pullIndex >= 0 };
 
             if (pushIndex >= 0)
             {
                 SetLeg(queued[pushIndex].ActionParams, new Leg { Beam = beam, IsFirst = true });
+                cast.Legs.Add(queued[pushIndex].ActionParams);
             }
 
             if (pullIndex >= 0)
             {
                 SetLeg(queued[pullIndex].ActionParams, new Leg { Beam = beam, IsFirst = pushIndex < 0 });
+                cast.Legs.Add(queued[pullIndex].ActionParams);
             }
         }
         catch (Exception e)
@@ -236,6 +249,17 @@ internal static class EldritchBlastMoveContext
     {
         Legs.Remove(actionParams);
         Legs.Add(actionParams, leg);
+    }
+
+    /// <summary>
+    ///     The cast a spend-power action belongs to, if that action is one of the moves <see cref="TagHit" /> noted
+    ///     (a Repelling Blast push or a Grasp of Hadar pull queued by a beam of Eldritch Blast that hit).
+    /// </summary>
+    internal static bool TryGetCast(CharacterActionParams actionParams, out CastState cast)
+    {
+        cast = actionParams != null && Legs.TryGetValue(actionParams, out var leg) ? leg.Beam.Cast : null;
+
+        return cast != null;
     }
 
     #endregion

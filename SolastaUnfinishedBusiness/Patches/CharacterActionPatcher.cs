@@ -154,6 +154,8 @@ public static class CharacterActionPatcher
                 case CharacterActionPushed:
                 case CharacterActionPushedCustom:
                     ForcedMovementContext.PushStarting(__instance);
+                    //PATCH: Eldritch Blast's pushes and pulls (issue #37): which of a held creature's pushes runs
+                    EldritchBlastFallContext.PushStarting(__instance);
                     break;
 
                 case CharacterActionMoveStepBase characterActionMoveStepBase:
@@ -233,6 +235,7 @@ public static class CharacterActionPatcher
                 {
                     //PATCH: forced movement through areas (issue #32): the push is over, its cells are done with
                     ForcedMovementContext.PushEnded(actingCharacter);
+                    EldritchBlastFallContext.PushEnded(__instance);
 
                     yield return CircleOfTheWildfire.HandleCauterizingFlamesBehavior(actingCharacter);
 
