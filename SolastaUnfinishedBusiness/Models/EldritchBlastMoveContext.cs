@@ -319,6 +319,15 @@ internal static class EldritchBlastMoveContext
         // The move is worked out from where the creature stands, so the one before it has to have finished.
         yield return WaitUntilQuiet(target);
 
+        // The creature is gone (an area it was moved through killed it and its body was removed, say): there is
+        // nothing left to ask about or to move, so this action applies no move and raises no prompt.
+        if (IsGone(target))
+        {
+            effectForms.RemoveAll(x => x.FormType == EffectForm.EffectFormType.Motion);
+
+            yield break;
+        }
+
         if (leg.IsFirst)
         {
             yield return Decide(battleManager, caster, target, beam);
@@ -352,15 +361,28 @@ internal static class EldritchBlastMoveContext
                (beam.HasPull && IsAsk(hero, InvocationsBuilders.GraspingBlast));
     }
 
+    // true for a creature the game has taken out of play: its body was destroyed or it has no rules side any more
+    private static bool IsGone(GameLocationCharacter target)
+    {
+        return !target.Valid || target.RulesetActor == null;
+    }
+
     private static IEnumerator WaitUntilQuiet(GameLocationCharacter target)
     {
-        var actions = ServiceRepository.GetService<IGameLocationActionService>();
+        var actions = ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;
 
         // It ends on game state alone (the creature's own actions and moves have finished), never on elapsed time,
         // so every computer goes on from the same state. A creature that died or fell is quiet once that is over.
+        //
+        // The game's own "is acting" isn't used: it looks the creature up in a table and throws when the creature
+        // is no longer in it, and the game takes a creature out of that table once it is removed from play, which
+        // can happen during this wait (Codex's review of 93555539). An error here would cut the move's action
+        // short. The mod's own test reads the same table safely, and a creature that is gone ends the wait.
         for (var frame = 0;; frame++)
         {
-            if (!target.MoveInProgress && !target.Pushed && actions?.IsCharacterActing(target) != true)
+            if (IsGone(target) ||
+                (!target.MoveInProgress && !target.Pushed &&
+                 !EldritchBlastFallContext.IsActing(actions, target)))
             {
                 yield break;
             }
@@ -390,7 +412,7 @@ internal static class EldritchBlastMoveContext
         }
 
         // nothing to move: no prompt, and nothing happens for this beam
-        if (target.RulesetActor == null)
+        if (IsGone(target))
         {
             beam.Decision = Decision.None;
 

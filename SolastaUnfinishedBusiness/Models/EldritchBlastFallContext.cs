@@ -18,8 +18,8 @@ namespace SolastaUnfinishedBusiness.Models;
 ///         drop, and a pull that would have brought it back onto the ledge came too late.
 ///     </para>
 ///     <para>
-///         What this changes, and nothing else: while more of the cast's moves on that creature are still to
-///         come, its footing check is put off. The last move's own check runs as the game makes it. If the last
+///         What this changes, and nothing else: while more of the cast's moves are still to come, for that
+///         creature or for another one the cast's other beams hit, its footing check is put off. The last move's own check runs as the game makes it. If the last
 ///         move doesn't happen (the caster chose no distance, the way was blocked, the cast was cut short), the
 ///         check that was put off is made as soon as the creature is at rest. Whether it then falls, how far, the
 ///         damage and any reaction to the fall are the game's, from where the creature really is. Areas crossed,
@@ -333,8 +333,14 @@ internal static class EldritchBlastFallContext
         }
     }
 
-    // Is another move of the cast still to come for the held creature? "running" is the push action that is
-    // running now, if the question is asked from inside it: it doesn't count as "to come".
+    // Is another move of the cast still to come? "running" is this creature's push action that is running now, if
+    // the question is asked from inside it: it doesn't count as "to come".
+    //
+    // The whole cast counts, not only the moves aimed at this creature (user, 2026-11-11: a creature's fall waits
+    // "until Eldritch Blast has finished", including the moves the remaining beams make on other creatures). So a
+    // creature left over a drop by the first beam stays there while a later beam pushes someone else, and its
+    // footing is judged after that. This holds whatever took its footing away meanwhile (the user's example: damage
+    // from an area breaks its concentration on Fly): the damage and the lost flight happen at once, the fall waits.
     private static bool MoreToCome(Hold hold, CharacterActionParams running)
     {
         if (hold.Pushes.Any(push => push != running))
@@ -351,7 +357,24 @@ internal static class EldritchBlastFallContext
                 continue;
             }
 
-            if (cast.Legs.Any(leg => !cast.DoneLegs.Contains(leg) && leg.TargetCharacters.Contains(hold.Target)))
+            // a queued move of the cast, for any creature, that hasn't applied its effect yet
+            if (cast.Legs.Any(leg => !cast.DoneLegs.Contains(leg)))
+            {
+                return true;
+            }
+        }
+
+        // A push of the same cast still queued or on its way for another creature. That creature is held too (a hold
+        // is made when a move is applied), and its hold shares the cast. Its own last push doesn't wait for this
+        // creature in turn: this one has no push left by then and stands still, so the two can't wait on each other.
+        foreach (var other in Holds.Values)
+        {
+            if (other == hold || !other.Casts.Any(hold.Casts.Contains))
+            {
+                continue;
+            }
+
+            if (other.Pushes.Count > 0 || other.Target.MoveInProgress || other.Target.Pushed)
             {
                 return true;
             }
@@ -400,8 +423,13 @@ internal static class EldritchBlastFallContext
     // Is the character doing anything, or about to? The game's own "is acting" reads the first table only and
     // assumes the character is in it. Actions waiting their turn are counted as well, so a creature between two
     // queued pushes is never taken to be at rest, whether or not the game starts the next one in the same step.
-    private static bool IsActing(GameLocationActionManager manager, GameLocationCharacter character)
+    internal static bool IsActing(GameLocationActionManager manager, GameLocationCharacter character)
     {
+        if (manager == null || character == null)
+        {
+            return false;
+        }
+
         if (manager.actionChainByCharacter != null &&
             manager.actionChainByCharacter.TryGetValue(character, out var slot) &&
             slot != null)
