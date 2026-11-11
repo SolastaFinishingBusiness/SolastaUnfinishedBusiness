@@ -26,6 +26,16 @@ namespace SolastaUnfinishedBusiness.Models;
 ///         prone, death and everything else keep their usual timing.
 ///     </para>
 ///     <para>
+///         The pose (user, 2026-11-11: "the creature should visibly move through each push and pull without
+///         entering the falling pose or waiting for it to end. Only play the fall at the end of the Eldritch
+///         Blast"). The game puts a pushed creature in its falling pose for the move and, on ground it can
+///         stand on, has it get up again after every single push or pull, waiting for that to finish. With the
+///         setting on, a push of the cast doesn't enter that pose (<see cref="SetFallingPose" />) and so has
+///         no getting up to wait for (<see cref="IsFallingOrLeftInAir" />): the creature travels as it stands.
+///         A real fall at the end starts its own falling pose, as every fall does. With the setting off no
+///         creature is held, so each push and pull plays the game's pose and recovery as before.
+///     </para>
+///     <para>
 ///         Multiplayer. Everything is decided from the game's own state (which queued moves have run, which push
 ///         actions are queued or running, whether the creature is acting) inside the game's action update, which
 ///         in multiplayer only runs on the shared fixed steps. The setting is the host's, like every setting.
@@ -130,6 +140,37 @@ internal static class EldritchBlastFallContext
         // still listed has ended without telling (it was stopped part way) or was dropped without ever running.
         hold.Pushes.RemoveRange(0, index);
         hold.Running = action.ActionParams;
+
+        // what is drawn for the creature, for SetFallingPose (looked up once per hold)
+        if (!hold.Graphics &&
+            ServiceRepository.GetService<IWorldLocationEntityFactoryService>() is { } factory &&
+            factory.TryFindWorldCharacter(character, out var worldCharacter) &&
+            worldCharacter)
+        {
+            hold.Graphics = worldCharacter.graphicsCharacter;
+        }
+    }
+
+    /// <summary>
+    ///     Stands in for the game's "enter the falling pose" at the start of a forced move
+    ///     (WorldLocationCharacter.AnimateMove). For a push of a held creature's cast the pose is not entered;
+    ///     anything else is passed on to the game unchanged. A creature that is really falling is never touched
+    ///     here: its fall sets the pose itself, elsewhere (AnimateFall).
+    /// </summary>
+    internal static void SetFallingPose(GraphicsCharacter graphics, bool value)
+    {
+        if (value && Holds.Count > 0 && graphics)
+        {
+            foreach (var hold in Holds.Values)
+            {
+                if (hold.Running != null && hold.Graphics == graphics && !hold.Target.Falling)
+                {
+                    return;
+                }
+            }
+        }
+
+        graphics.IsFalling = value;
     }
 
     /// <summary>Called when a push action has run to its end.</summary>
@@ -204,7 +245,21 @@ internal static class EldritchBlastFallContext
             return true;
         }
 
-        if (Holds.Count == 0 || !Holds.TryGetValue(character, out var hold) || !hold.Deferred)
+        if (Holds.Count == 0 || !Holds.TryGetValue(character, out var hold))
+        {
+            return false;
+        }
+
+        // A push of the cast is running for this creature: it never entered the falling pose (SetFallingPose), so
+        // there is no getting up, and no event for it, on any ground.
+        if (hold.Running != null)
+        {
+            return true;
+        }
+
+        // Any other push of a held creature (not one of the cast's) played the game's pose. Only a landing over a
+        // drop, with the fall put off, needs the wait skipped.
+        if (!hold.Deferred)
         {
             return false;
         }
@@ -396,6 +451,9 @@ internal static class EldritchBlastFallContext
 
         // the one of them that is running
         internal CharacterActionParams Running { get; set; }
+
+        // what the game draws for the creature (its animator is where the falling pose is switched on)
+        internal GraphicsCharacter Graphics { get; set; }
 
         // a footing check was put off and none has been made since
         internal bool Deferred { get; set; }
