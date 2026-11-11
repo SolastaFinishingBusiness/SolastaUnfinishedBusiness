@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=Passer pour tous
 Reaction/&EldritchBlastMoveOrder={0}, puis {1}
 Screen/&InvocationAskStateTitle=demander
 Screen/&InvocationAskStateDescription=Demande de combien déplacer la créature à chaque coup réussi.
+Reaction/&EldritchBlastMoveCell={0} case
+Reaction/&EldritchBlastMoveCells={0} cases

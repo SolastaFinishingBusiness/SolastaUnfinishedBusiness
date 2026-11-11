@@ -28,6 +28,9 @@ public class CursorMotionHelper : MonoBehaviour
 
     private readonly Dictionary<ulong, ActionChainHelper> _helpers = [];
     private Vector3 _actingCharacterCenter = Vector3.zero;
+
+    // the creature under the pointer while aiming, or 0
+    private ulong _hovered;
     private int3 _aimedPosition = int3.zero;
     private IGameLocationCharacterService _characterService;
 
@@ -115,6 +118,7 @@ public class CursorMotionHelper : MonoBehaviour
         }
 
         _gravityFissureTiles.Clear();
+        _hovered = 0;
         DestroyHelpers();
     }
 
@@ -163,7 +167,16 @@ public class CursorMotionHelper : MonoBehaviour
             return 1;
         }
 
-        return Math.Max(1, _selectionService.SelectedTargets.Count(t => t.Guid == target.Guid));
+        var beams = _selectionService.SelectedTargets.Count(t => t.Guid == target.Guid);
+
+        // The creature under the pointer would get the next beam too, while there is one left to aim: so a creature
+        // already picked once shows the move for two beams when it is hovered again (user, 2026-11-11).
+        if (_hovered == target.Guid && _cursor is CursorLocationSelectTarget { remainingTargets: > 0 })
+        {
+            beams++;
+        }
+
+        return Math.Max(1, beams);
     }
 
     // Repelling Blast and Grasp of Hadar together (issue #37): each beam pushes the creature and then pulls it
@@ -330,7 +343,28 @@ public class CursorMotionHelper : MonoBehaviour
     {
         if (character?.RulesetCharacter == null) { return; }
 
-        if (HasTarget(character.Guid)) { return; }
+        // which creature the pointer is on, for the per-beam preview
+        var wasHovered = _hovered == character.Guid;
+
+        if (mode == GameLocationCharacterSelection.HoverChangeMode.Add)
+        {
+            _hovered = character.Guid;
+        }
+        else if (wasHovered)
+        {
+            _hovered = 0;
+        }
+
+        if (HasTarget(character.Guid))
+        {
+            // already a target: its preview stays, but with a per-beam move it grows while hovered and shrinks back
+            if (_info is { PerBeam: true })
+            {
+                UpdateHelper(character);
+            }
+
+            return;
+        }
 
         // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
         switch (mode)

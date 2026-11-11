@@ -16,7 +16,7 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 ///             the game's settings screen;
 ///         </item>
 ///         <item>a button that swaps the order, when both take part;</item>
-///         <item>Submit and Skip, and below them Submit for All and Skip for All.</item>
+///         <item>Skip (red, left) and Submit (right), and below them Skip for All and Submit for All.</item>
 ///     </list>
 ///     The game's own React and Pass buttons are hidden while this shows. Every button answers the request through
 ///     the game's command service with the whole answer packed into the sub-option number, which is how it reaches
@@ -34,6 +34,10 @@ internal static class EldritchBlastMovePrompt
     private static readonly Color Accent = new(0.961f, 0.706f, 0.525f, 1f);
     private static readonly Color Track = new(0.16f, 0.17f, 0.18f, 1f);
     private static readonly Color Knob = new(0.93f, 0.93f, 0.93f, 1f);
+
+    // the red of the slash across the game's "inactive" invocation icon, and a lighter one for hovering
+    private static readonly Color SkipColor = new(231 / 255f, 97 / 255f, 99 / 255f, 1f);
+    private static readonly Color SkipHighlight = new(1f, 150 / 255f, 150 / 255f, 1f);
 
     /// <summary>Builds the controls into <paramref name="item" /> for <paramref name="request" />.</summary>
     internal static void Show(CharacterReactionItem item, ReactionRequestEldritchBlastMove request)
@@ -79,19 +83,20 @@ internal static class EldritchBlastMovePrompt
             });
         }
 
+        // Skip on the left, in red, and Submit on the right (user, 2026-11-11)
         var first = AddRow(root.transform);
 
+        PaintAsSkip(AddButton(first, item.PassButton.gameObject,
+            Gui.Localize("Reaction/&EldritchBlastMoveSkip"), () => Answer(state, ButtonSkip)));
         state.Submit = AddButton(first, item.ReactButton.gameObject,
             Gui.Localize("Reaction/&EldritchBlastMoveSubmit"), () => Answer(state, ButtonSubmit));
-        AddButton(first, item.PassButton.gameObject,
-            Gui.Localize("Reaction/&EldritchBlastMoveSkip"), () => Answer(state, ButtonSkip));
 
         var second = AddRow(root.transform);
 
+        PaintAsSkip(AddButton(second, item.PassButton.gameObject,
+            Gui.Localize("Reaction/&EldritchBlastMoveSkipForAll"), () => Answer(state, ButtonSkipForAll)));
         state.SubmitForAll = AddButton(second, item.ReactButton.gameObject,
             Gui.Localize("Reaction/&EldritchBlastMoveSubmitForAll"), () => Answer(state, ButtonSubmitForAll));
-        AddButton(second, item.PassButton.gameObject,
-            Gui.Localize("Reaction/&EldritchBlastMoveSkipForAll"), () => Answer(state, ButtonSkipForAll));
 
         stockButtons.gameObject.SetActive(false);
         Refresh(state);
@@ -158,7 +163,12 @@ internal static class EldritchBlastMovePrompt
         {
             if (row != null)
             {
-                row.Value.text = Gui.FormatDistance(Cells(row.Slider));
+                var cells = Cells(row.Slider);
+
+                // "0 cells", "1 cell", "2 cells" (user, 2026-11-11), not the game's cell symbol
+                row.Value.text = Gui.Format(
+                    cells == 1 ? "Reaction/&EldritchBlastMoveCell" : "Reaction/&EldritchBlastMoveCells",
+                    cells.ToString());
             }
         }
 
@@ -195,6 +205,43 @@ internal static class EldritchBlastMovePrompt
 
         group.alpha = enabled ? 1f : 0.35f;
         group.blocksRaycasts = enabled;
+    }
+
+    // The colours of a button that declines: the red of the game's own "inactive" mark. The button's two highlighter
+    // components repaint its text and frame on every hover, so the red goes into their colours, not only onto the
+    // text and the frame as they are now.
+    private static void PaintAsSkip(Button button)
+    {
+        if (!button)
+        {
+            return;
+        }
+
+        var text = button.GetComponent<GuiLabelHighlighter>();
+
+        if (text)
+        {
+            text.normalColor = SkipColor;
+            text.highlightColor = SkipHighlight;
+
+            if (text.targetLabel)
+            {
+                text.targetLabel.TMP_Text.color = SkipColor;
+            }
+        }
+
+        var frame = button.GetComponent<GuiImageHighlighter>();
+
+        if (frame)
+        {
+            frame.normalColor = SkipColor;
+            frame.highlightColor = SkipHighlight;
+
+            if (frame.targetImage)
+            {
+                frame.targetImage.color = SkipColor;
+            }
+        }
     }
 
     private static Transform AddRow(Transform parent)
@@ -250,7 +297,7 @@ internal static class EldritchBlastMovePrompt
         slider.value = EldritchBlastMoveContext.MaxCells;
         slider.onValueChanged.AddListener(_ => Refresh(state));
 
-        var value = AddLabel(row, labelSource, string.Empty, 60f, TextAlignmentOptions.MidlineRight);
+        var value = AddLabel(row, labelSource, string.Empty, 70f, TextAlignmentOptions.MidlineRight);
 
         value.enableWordWrapping = false;
 

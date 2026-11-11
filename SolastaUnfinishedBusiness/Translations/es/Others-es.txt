@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=Omitir todos
 Reaction/&EldritchBlastMoveOrder={0}, luego {1}
 Screen/&InvocationAskStateTitle=preguntar
 Screen/&InvocationAskStateDescription=Pregunta cuánto mover a la criatura en cada impacto.
+Reaction/&EldritchBlastMoveCell={0} casilla
+Reaction/&EldritchBlastMoveCells={0} casillas

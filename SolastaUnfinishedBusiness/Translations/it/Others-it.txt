@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=Salta tutti
 Reaction/&EldritchBlastMoveOrder={0}, poi {1}
 Screen/&InvocationAskStateTitle=chiedi
 Screen/&InvocationAskStateDescription=Chiede di quanto spostare la creatura a ogni colpo.
+Reaction/&EldritchBlastMoveCell={0} casella
+Reaction/&EldritchBlastMoveCells={0} caselle

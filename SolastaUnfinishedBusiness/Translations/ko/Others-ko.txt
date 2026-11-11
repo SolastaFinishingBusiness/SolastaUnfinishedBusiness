@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=모두 건너뛰기
 Reaction/&EldritchBlastMoveOrder={0}, 그다음 {1}
 Screen/&InvocationAskStateTitle=확인 요청
 Screen/&InvocationAskStateDescription=명중할 때마다 크리처를 얼마나 이동시킬지 묻습니다.
+Reaction/&EldritchBlastMoveCell={0}칸
+Reaction/&EldritchBlastMoveCells={0}칸

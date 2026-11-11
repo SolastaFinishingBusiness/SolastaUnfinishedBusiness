@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=全部跳过
 Reaction/&EldritchBlastMoveOrder={0}，然后{1}
 Screen/&InvocationAskStateTitle=询问
 Screen/&InvocationAskStateDescription=每次命中时询问将该生物移动多远。
+Reaction/&EldritchBlastMoveCell={0}格
+Reaction/&EldritchBlastMoveCells={0}格

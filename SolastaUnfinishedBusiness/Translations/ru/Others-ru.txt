@@ -853,3 +853,5 @@ Reaction/&EldritchBlastMoveSkipForAll=Пропустить все
 Reaction/&EldritchBlastMoveOrder={0}, затем {1}
 Screen/&InvocationAskStateTitle=запрос
 Screen/&InvocationAskStateDescription=Спрашивает при каждом попадании, насколько переместить существо.
+Reaction/&EldritchBlastMoveCell={0} кл.
+Reaction/&EldritchBlastMoveCells={0} кл.
