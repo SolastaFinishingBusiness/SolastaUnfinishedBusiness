@@ -20,7 +20,7 @@ namespace SolastaUnfinishedBusiness.Models;
 ///         the casting action (<see cref="TagHit" /> notes which queued actions belong to which beam, and puts the
 ///         push before the pull). After every beam is rolled the queued actions run one by one. Just before one
 ///         applies its move, <see cref="BeforeMove" /> waits until the creature has stopped moving, asks the caster if
-///         that beam hasn't been decided yet, and rewrites that action's own copy of the move.
+///         that beam hasn't been decided yet, and gives that action its own, changed copy of the move.
 ///     </para>
 ///     <para>
 ///         Multiplayer. Everything here runs on every computer and must do the same thing on each: whether to ask
@@ -244,7 +244,9 @@ internal static class EldritchBlastMoveContext
 
     /// <summary>
     ///     Called from the spend-power action just before it applies its effect forms to a target.
-    ///     <paramref name="effectForms" /> is that action's own copy, so changing it changes only this one move.
+    ///     <paramref name="effectForms" /> is that action's own list, so replacing or removing a form in it changes
+    ///     only this one move. The forms in it are shared with the power's definition and must not be changed in
+    ///     place (see <see cref="ApplyMove" />).
     /// </summary>
     internal static IEnumerator BeforeMove(
         GameLocationBattleManager battleManager,
@@ -407,26 +409,45 @@ internal static class EldritchBlastMoveContext
         }
     }
 
-    // Makes this action's copied forms carry exactly one move: a push or a pull of the given distance, or none.
+    // Makes this action's list of forms carry exactly one move: a push or a pull of the given distance, or none.
+    //
+    // The list is the action's own, but the forms in it are still the power definition's: the copy the spend-power
+    // action makes is a new list holding the same form objects. Changing a form in place therefore changed the
+    // invocation itself for the rest of the game session (seen in game: after one answer that swapped the order,
+    // Grasp of Hadar pushed). So the motion form is replaced in the list by a real copy, made with the game's own
+    // EffectForm.Copy, and only that copy is changed.
     private static void ApplyMove(List<EffectForm> effectForms, bool push, int cells)
     {
-        var motion = effectForms.FirstOrDefault(x => x.FormType == EffectForm.EffectFormType.Motion);
+        var index = effectForms.FindIndex(x => x.FormType == EffectForm.EffectFormType.Motion);
 
-        if (motion?.MotionForm == null)
+        if (index < 0 || effectForms[index].MotionForm == null)
         {
             return;
         }
 
         if (cells <= 0)
         {
-            effectForms.Remove(motion);
+            effectForms.RemoveAt(index);
 
             return;
         }
 
+        var original = effectForms[index];
+        var copy = new EffectForm();
+
+        copy.Copy(original);
+
+        // never the definition's own motion form, whatever Copy did with it
+        if (copy.motionForm == null || ReferenceEquals(copy.motionForm, original.MotionForm))
+        {
+            copy.motionForm = new MotionForm();
+            copy.motionForm.Copy(original.MotionForm);
+        }
+
         // the kind of move is taken from the invocation's own power, so this never invents a new kind of motion
-        motion.MotionForm.type = MotionTypeOf(push ? RepellingPower : GraspPower, motion.MotionForm.Type);
-        motion.MotionForm.distance = Math.Min(cells, MaxCells);
+        copy.motionForm.type = MotionTypeOf(push ? RepellingPower : GraspPower, original.MotionForm.Type);
+        copy.motionForm.distance = Math.Min(cells, MaxCells);
+        effectForms[index] = copy;
     }
 
     private static FeatureDefinitionPower RepellingPower =>

@@ -219,10 +219,13 @@ internal static class EldritchBlastMovePrompt
     private static SliderRow AddSliderRow(Transform parent, Transform labelSource, string title, State state)
     {
         var row = AddRow(parent);
-        var name = AddLabel(row, labelSource, title, 150f, TextAlignmentOptions.MidlineLeft);
+        // The name didn't show in game when it was set through the copied GuiLabel with an ellipsis overflow; the
+        // distance, set on the text component directly, did. So the name is set the same way.
+        var name = AddLabel(row, labelSource, string.Empty, 150f, TextAlignmentOptions.MidlineLeft);
 
         name.enableWordWrapping = false;
-        name.overflowMode = TextOverflowModes.Ellipsis;
+        name.overflowMode = TextOverflowModes.Overflow;
+        name.text = title;
 
         var sliderObject = CreateSlider(row);
 

@@ -197,8 +197,10 @@ public static class CharacterActionSpendPowerPatcher
                     var effectForms = effectDescription.EffectForms.DeepCopy();
 
                     //PATCH: Repelling Blast and Grasp of Hadar set to Ask: wait for the creature's previous move,
-                    // ask the caster about this beam if it isn't decided yet, and set this action's own copy of the
-                    // move to the chosen distance and direction (issue #37). Does nothing for any other power.
+                    // ask the caster about this beam if it isn't decided yet, and give this action a move of the
+                    // chosen distance and direction (issue #37). Does nothing for any other power. Note that
+                    // effectForms is a new list but its forms are the definition's own objects, so a form is replaced
+                    // by a copy there, never changed in place.
                     yield return EldritchBlastMoveContext.BeforeMove(
                         battleManager, __instance, actingCharacter, target, effectForms);
 
