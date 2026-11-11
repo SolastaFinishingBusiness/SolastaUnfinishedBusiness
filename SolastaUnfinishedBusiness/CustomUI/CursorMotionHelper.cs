@@ -176,6 +176,8 @@ public class CursorMotionHelper : MonoBehaviour
             beams++;
         }
 
+        // no upper limit: the count is whatever the spell being cast allows (two beams at level 5, more later, and
+        // possibly more still with other mods)
         return Math.Max(1, beams);
     }
 

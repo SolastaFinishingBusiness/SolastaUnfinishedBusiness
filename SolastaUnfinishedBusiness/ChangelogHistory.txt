@@ -1,7 +1,7 @@
 Unreleased:
 - Repelling Blast and Grasp of Hadar have a third state in the Invocations popup, after off and on: "prompt", shown with a light blue question mark. Click the invocation to go through off, on and prompt. With either on prompt, each beam of Eldritch Blast that hits asks, just before it moves the creature, how far Repelling Blast pushes and Grasp of Hadar pulls it (a slider each: 0, 5 or 10 feet) and which goes first. Submit moves the creature for that beam and Skip leaves it; Submit for All and Skip for All do the same for every remaining beam of the cast. A prompt that times out moves the full distance. Enemies and AI-controlled casters aren't asked.
 - Repelling Blast and Grasp of Hadar together: the push now always comes before the pull. It used to follow the order of the character's powers.
-- Eldritch Blast aiming preview: with Repelling Blast or Grasp of Hadar active, the preview now grows with the beams aimed at the same creature (10, 20, 30, 40 feet). With both active it shows the push and the pull that follows side by side; only the push was shown before.
+- Eldritch Blast aiming preview: with Repelling Blast or Grasp of Hadar active, the preview now grows by 10 feet for each beam aimed at the same creature, however many beams the cast has, and shows one more while a creature already picked is hovered. With both active it shows the push and the pull that follows side by side; only the push was shown before.
 - With "Push or pull a creature once for each hit" off, only the first beam of a cast that hits a creature now moves it. With both invocations on, a later beam could still move it again.
 - Not tested in game yet: all of the above; controller support for the prompt is still to come.
 
