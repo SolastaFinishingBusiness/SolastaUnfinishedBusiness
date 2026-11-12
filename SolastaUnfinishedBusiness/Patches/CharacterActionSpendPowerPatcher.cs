@@ -131,6 +131,14 @@ public static class CharacterActionSpendPowerPatcher
             {
                 var target = targets[i];
 
+                //PATCH: a queued Eldritch Blast move whose creature has been removed from play since it was
+                // queued does nothing for that creature (issue #37). Everything below reads the creature's rules
+                // side, which is gone. Does nothing for any other power.
+                if (EldritchBlastMoveContext.SkipGoneTarget(__instance, target))
+                {
+                    continue;
+                }
+
                 // These bool information must be store as a class member, as it is passed to HandleFailedSavingThrow
                 var hasBorrowedLuck =
                     target.RulesetActor.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionBorrowedLuck);
@@ -203,6 +211,14 @@ public static class CharacterActionSpendPowerPatcher
                     // by a copy there, never changed in place.
                     yield return EldritchBlastMoveContext.BeforeMove(
                         battleManager, __instance, actingCharacter, target, effectForms);
+
+                    //PATCH: BeforeMove may have waited (for the creature's previous move to end, for the caster's
+                    // answer), and the creature may have been removed from play during that wait: then nothing is
+                    // applied to it (issue #37). Does nothing for any other power.
+                    if (EldritchBlastMoveContext.SkipGoneTarget(__instance, target))
+                    {
+                        continue;
+                    }
 
                     //PATCH: support for `IMagicEffectBeforeHitConfirmedOnEnemy`
                     // should also happen outside battles

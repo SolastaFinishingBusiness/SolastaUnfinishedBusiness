@@ -367,6 +367,41 @@ internal static class EldritchBlastMoveContext
         return !target.Valid || target.RulesetActor == null;
     }
 
+    /// <summary>
+    ///     Called from the spend-power action for each of its targets, before it first touches the target and again
+    ///     after <see cref="BeforeMove" /> (which can wait a long time: for the creature's previous move, and for the
+    ///     caster's answer). True when the action is one of an Eldritch Blast cast's queued moves and the creature
+    ///     has been taken out of play meanwhile, for instance killed by an area an earlier move took it through
+    ///     and removed. The action must then leave that target alone: the rest of it reads the creature's rules
+    ///     side (hit points, conditions, where to show the impact), which no longer exists and would throw, cutting
+    ///     the whole action short (Codex's review of a8c25e62).
+    ///     <para>
+    ///         The move is also marked as no longer to come, so no other creature the cast has moved goes on
+    ///         waiting for it before it may fall (<see cref="EldritchBlastFallContext" />).
+    ///     </para>
+    ///     <para>
+    ///         Only the cast's own queued moves are covered. Any other power is left exactly as it was.
+    ///     </para>
+    /// </summary>
+    internal static bool SkipGoneTarget(CharacterActionSpendPower action, GameLocationCharacter target)
+    {
+        var actionParams = action?.ActionParams;
+
+        if (actionParams == null || !Legs.TryGetValue(actionParams, out var leg))
+        {
+            return false;
+        }
+
+        if (target != null && !IsGone(target))
+        {
+            return false;
+        }
+
+        leg.Beam.Cast.DoneLegs.Add(actionParams);
+
+        return true;
+    }
+
     private static IEnumerator WaitUntilQuiet(GameLocationCharacter target)
     {
         var actions = ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;
