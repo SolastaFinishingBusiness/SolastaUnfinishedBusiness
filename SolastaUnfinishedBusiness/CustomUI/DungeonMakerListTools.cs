@@ -11,7 +11,8 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 
 // Sorting and searching the Dungeon Maker's lists (issue #42; the alphabetical order comes from BlackguardRogue's
 // Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, and the
-// Cheats > Campaign Variables panel. Each of the three screens gets a small bar with
+// Cheats > Campaign Variables panel. Each of the three screens gets a bar on a row of its own, under its list and
+// as wide as it, with
 //
 //   a sort button      what the list is ordered by: the campaign's own order, the name, or a second key
 //                      (the title for content, the type for variables); a click goes to the next one
@@ -55,11 +56,15 @@ internal static class DungeonMakerListTools
     private const string DirectionName = "Direction";
     private const string SearchName = "Search";
 
-    // the bar's controls, in the units of the game's 1920 x 1080 interface
+    // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the two
+    // buttons leave of the bar's width
     private const float ButtonWidth = 150f;
-    private const float SearchWidth = 220f;
+    private const float SearchMinWidth = 160f;
     private const float ControlHeight = 34f;
     private const float Spacing = 6f;
+
+    // between the list and the bar
+    private const float Gap = 6f;
 
     // the rows of each table in the order the game bound them, i.e. the order of the list
     private static readonly ConditionalWeakTable<Transform, List<Transform>> BoundRows = new();
@@ -86,8 +91,9 @@ internal static class DungeonMakerListTools
 
     #region The view
 
-    // The game has just filled this table: remember its bound rows in the order they are in now.
-    internal static void Bound<TLine>(Transform table, Func<TLine, bool> isBound) where TLine : Component
+    // The game has just filled this table: remember its bound rows in the order they are in now. isBound says
+    // whether a child of the table is a row that holds an item (the screens keep unused pooled rows there too).
+    internal static void Bound(Transform table, Func<Transform, bool> isBound)
     {
         if (!table)
         {
@@ -102,7 +108,7 @@ internal static class DungeonMakerListTools
         {
             var child = table.GetChild(i);
 
-            if (child.TryGetComponent<TLine>(out var line) && isBound(line))
+            if (isBound(child))
             {
                 rows.Add(child);
             }
@@ -111,8 +117,8 @@ internal static class DungeonMakerListTools
 
     // Orders and filters the rows remembered for this table. name and second give a row's two sort keys; a row
     // is shown when its name or its second key contains the screen's search text.
-    internal static void Apply<TLine>(
-        Transform table, string screen, Func<TLine, string> name, Func<TLine, string> second) where TLine : Component
+    internal static void Apply(
+        Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second)
     {
         if (!table || !BoundRows.TryGetValue(table, out var rows) || rows.Count == 0)
         {
@@ -122,19 +128,17 @@ internal static class DungeonMakerListTools
         var search = Search(screen);
         var items = new List<Row>();
 
-        for (var i = 0; i < rows.Count; i++)
+        foreach (var row in rows)
         {
-            var row = rows[i];
-
             // a row the game has taken away since (released to its pool)
-            if (!row || row.parent != table || !row.TryGetComponent<TLine>(out var line))
+            if (!row || row.parent != table)
             {
                 continue;
             }
 
             items.Add(new Row
             {
-                Transform = row, Index = i, Name = name(line) ?? string.Empty, Second = second(line) ?? string.Empty
+                Transform = row, Name = name(row) ?? string.Empty, Second = second(row) ?? string.Empty
             });
         }
 
@@ -183,29 +187,32 @@ internal static class DungeonMakerListTools
     // Adds the bar to a screen if it isn't there yet and brings it up to date. Called each time the screen is
     // shown: the sort may have been changed on another screen, and the search starts empty.
     //   screen      the key of this screen's search text
-    //   sourcePath  a button of the screen to copy, from the screen's root; the bar goes first in that button's row
+    //   listPath    the scroll view that holds the list, from the screen's root; the bar takes a strip at its foot
+    //   sourcePath  a button of the screen to copy for the bar's two buttons, from the screen's root
     //   secondTerm  the text of the sort button for the second key ("Sort: title", "Sort: type")
     //   changed     the view changed: apply it to the screen's tables
-    internal static void Ensure(Transform root, string screen, string sourcePath, string secondTerm, Action changed)
+    internal static void Ensure(
+        Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed)
     {
         Searches[screen] = string.Empty;
 
+        var list = root ? root.Find(listPath) as RectTransform : null;
         var source = root ? root.Find(sourcePath) : null;
 
-        if (!source || !source.GetComponent<Button>())
+        if (!list || !source || !source.GetComponent<Button>())
         {
-            // a game update that moved the button: say so once, and leave the screen as it is
-            Problem($"Dungeon Maker list tools: no button at '{sourcePath}' on {(root ? root.name : "?")}.");
+            // a game update that moved them: say so once, and leave the screen as it is
+            Problem(
+                $"Dungeon Maker list tools: '{listPath}' or '{sourcePath}' not found on {(root ? root.name : "?")}.");
 
             return;
         }
 
-        var row = source.parent;
-        var bar = row.Find(BarName);
+        var bar = list.parent.Find(BarName);
 
         if (!bar)
         {
-            bar = AddBar(row, source.gameObject);
+            bar = AddBar(list, source.gameObject);
         }
 
         var sort = bar.Find(SortName)?.GetComponent<Button>();
@@ -272,18 +279,21 @@ internal static class DungeonMakerListTools
         Refresh();
     }
 
-    // The bar: a row of its own, first in the row of the button it was made from, holding two copies of that button
-    // and a copy of a text field. Built under an inactive holder so none of the copies' components start up before
-    // they are changed (as the mod's other copied controls are).
-    private static Transform AddBar(Transform row, GameObject sourceButton)
+    // The bar: a row of its own under the list. It takes the bottom strip of the rectangle the list's scroll view
+    // had, and the scroll view gives that strip up, so the bar is exactly as wide as the list and nothing else on
+    // the screen moves. It holds two copies of one of the screen's buttons and a copy of a text field, and is
+    // built under an inactive holder so none of the copies' components start up before they are changed (as the
+    // mod's other copied controls are).
+    private static Transform AddBar(RectTransform list, GameObject sourceButton)
     {
         var holder = new GameObject("FbHolder");
 
         holder.SetActive(false);
 
         var bar = new GameObject(BarName, typeof(RectTransform));
+        var rect = (RectTransform)bar.transform;
 
-        bar.transform.SetParent(holder.transform, false);
+        rect.SetParent(holder.transform, false);
 
         var layout = bar.AddComponent<HorizontalLayoutGroup>();
 
@@ -294,19 +304,22 @@ internal static class DungeonMakerListTools
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
 
-        // the row the bar sits in is a layout group too: tell it how much room the bar needs, and no more
-        var size = bar.AddComponent<LayoutElement>();
-
-        size.minWidth = size.preferredWidth = (2 * ButtonWidth) + SearchWidth + (2 * Spacing);
-        size.minHeight = size.preferredHeight = ControlHeight;
-        size.flexibleWidth = 0f;
-
         AddButton(bar.transform, sourceButton, SortName);
         AddButton(bar.transform, sourceButton, DirectionName);
         AddSearch(bar.transform);
 
-        bar.transform.SetParent(row, false);
-        bar.transform.SetAsFirstSibling();
+        // anchored like the scroll view from side to side, and to its bottom edge, ControlHeight tall
+        rect.SetParent(list.parent, false);
+        rect.SetSiblingIndex(list.GetSiblingIndex() + 1);
+        rect.anchorMin = new Vector2(list.anchorMin.x, list.anchorMin.y);
+        rect.anchorMax = new Vector2(list.anchorMax.x, list.anchorMin.y);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMin.y);
+        rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMin.y + ControlHeight);
+
+        // the scroll view's bottom edge moves up by the bar and a gap; its top stays where it is
+        list.offsetMin = new Vector2(list.offsetMin.x, list.offsetMin.y + ControlHeight + Gap);
+
         Object.Destroy(holder);
 
         return bar.transform;
@@ -353,20 +366,21 @@ internal static class DungeonMakerListTools
         }
 
         copy.GetComponent<Button>().interactable = true;
-        SetSize(copy, ButtonWidth);
+        SetSize(copy, ButtonWidth, false);
         copy.SetActive(true);
     }
 
-    // The search field is a copy of the campaign editor's title field: the game's own text field, with its font,
-    // frame and caret. The editor screen exists from the start of the game, shown or not.
+    // The search field is a copy of the campaign editor's "technical info" field: the game's own text field, with
+    // its font, frame, caret and a placeholder text. The editor screen exists from the start of the game, shown
+    // or not.
     private static void AddSearch(Transform bar)
     {
         var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
-        var source = editor ? editor.transform.Find("LeftPanel/TitleGroup/TitleInputField") : null;
+        var source = editor ? editor.transform.Find("LeftPanel/TechnicalInfoGroup/TextEditGroup") : null;
 
         if (!source || !source.GetComponent<TMP_InputField>())
         {
-            Problem("Dungeon Maker list tools: the campaign editor's title field was not found, so no search field.");
+            Problem("Dungeon Maker list tools: the campaign editor's text field was not found, so no search field.");
 
             return;
         }
@@ -377,7 +391,7 @@ internal static class DungeonMakerListTools
 
         var field = copy.GetComponent<TMP_InputField>();
 
-        // the original's events are wired in the prefab to the campaign's title
+        // the original's events are wired in the prefab to the campaign's technical info
         field.onValueChanged = new TMP_InputField.OnChangeEvent();
         field.onEndEdit = new TMP_InputField.SubmitEvent();
         field.onSubmit = new TMP_InputField.SubmitEvent();
@@ -388,17 +402,24 @@ internal static class DungeonMakerListTools
         field.interactable = true;
         field.SetTextWithoutNotify(string.Empty);
 
-        if (field.placeholder is TMP_Text placeholder)
+        // the placeholder is a game label, which writes its own text when it starts up: set it through the label
+        var placeholder = field.placeholder ? field.placeholder.GetComponent<GuiLabel>() : null;
+
+        if (placeholder)
         {
-            placeholder.text = Gui.Localize("ModUi/&DungeonMakerSearch");
-            placeholder.gameObject.SetActive(true);
+            placeholder.Text = Gui.Localize("ModUi/&DungeonMakerSearch");
+        }
+        else if (field.placeholder is TMP_Text text)
+        {
+            text.text = Gui.Localize("ModUi/&DungeonMakerSearch");
         }
 
-        SetSize(copy, SearchWidth);
+        SetSize(copy, SearchMinWidth, true);
         copy.SetActive(true);
     }
 
-    private static void SetSize(GameObject control, float width)
+    // a fixed width, or at least that width and all the room that is left
+    private static void SetSize(GameObject control, float width, bool stretch)
     {
         if (!control.TryGetComponent<LayoutElement>(out var layout))
         {
@@ -408,7 +429,7 @@ internal static class DungeonMakerListTools
         layout.ignoreLayout = false;
         layout.minWidth = layout.preferredWidth = width;
         layout.minHeight = layout.preferredHeight = ControlHeight;
-        layout.flexibleWidth = 0f;
+        layout.flexibleWidth = stretch ? 1f : 0f;
         layout.flexibleHeight = 0f;
     }
 
@@ -437,7 +458,6 @@ internal static class DungeonMakerListTools
 
     private sealed class Row
     {
-        internal int Index;
         internal string Name;
         internal string Second;
         internal Transform Transform;

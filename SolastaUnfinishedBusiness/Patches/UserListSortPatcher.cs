@@ -24,25 +24,51 @@ public static class UserListSortPatcher
     private const string Picker = "picker";
     private const string Cheats = "cheats";
 
+    // The item a row of the editor or the picker is bound to, or null for a row that holds none. Eleven of the
+    // editor's lists and the picker use UserContentLine or a class derived from it; the location list has a row
+    // class of its own.
+    private static UserContent ContentOf(Transform row)
+    {
+        return row.TryGetComponent<UserContentLine>(out var line) ? line.UserContent
+            : row.TryGetComponent<UserLocationLine>(out var location) ? location.UserLocation
+            : null;
+    }
+
+    private static bool HasContent(Transform row)
+    {
+        return ContentOf(row) != null;
+    }
+
     // a content row's two sort keys; the search looks in both
-    private static string ContentName(UserContentLine line)
+    private static string ContentName(Transform row)
     {
-        return line.UserContent?.InternalName;
+        return ContentOf(row)?.InternalName;
     }
 
-    private static string ContentTitle(UserContentLine line)
+    private static string ContentTitle(Transform row)
     {
-        return line.UserContent?.DisplayTitle;
+        return ContentOf(row)?.DisplayTitle;
     }
 
-    private static string VariableName(CampaignVariableLine line)
+    private static GameVariable VariableOf(Transform row)
     {
-        return line.GameVariable?.Name;
+        return row.TryGetComponent<CampaignVariableLine>(out var line) ? line.GameVariable : null;
     }
 
-    private static string VariableType(CampaignVariableLine line)
+    private static bool HasVariable(Transform row)
     {
-        return line.GameVariable?.Type.ToString();
+        return VariableOf(row) != null;
+    }
+
+    // a variable row's two sort keys
+    private static string VariableName(Transform row)
+    {
+        return VariableOf(row)?.Name;
+    }
+
+    private static string VariableType(Transform row)
+    {
+        return VariableOf(row)?.Type.ToString();
     }
 
     //PATCH: the view of the campaign editor's content lists. One patch for the twelve Refresh methods: each fills
@@ -95,7 +121,7 @@ public static class UserListSortPatcher
 
             var (table, _, _) = parts(__instance);
 
-            DungeonMakerListTools.Bound<UserContentLine>(table, x => x.UserContent != null);
+            DungeonMakerListTools.Bound(table, HasContent);
             ApplyTo(__instance, parts);
         }
 
@@ -107,7 +133,7 @@ public static class UserListSortPatcher
         {
             var (table, moveUp, moveDown) = parts(screen);
 
-            DungeonMakerListTools.Apply<UserContentLine>(table, Editor, ContentName, ContentTitle);
+            DungeonMakerListTools.Apply(table, Editor, ContentName, ContentTitle);
 
             if (DungeonMakerListTools.IsPlain(Editor))
             {
@@ -126,7 +152,7 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: the bar on the campaign editor, beside Import and Export above the content lists
+    //PATCH: the bar on the campaign editor, under the content lists (its buttons are copies of Import)
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -135,8 +161,8 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
-            DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/ExportGroup/ImportContentsButton",
-                "ModUi/&DungeonMakerSortTitle", () =>
+            DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/UserContentScrollview",
+                "RightPanel/ExportGroup/ImportContentsButton", "ModUi/&DungeonMakerSortTitle", () =>
                 {
                     // the rows already hold their items: the twelve lists are only ordered and filtered again,
                     // without the game binding everything anew at every letter typed
@@ -166,12 +192,12 @@ public static class UserListSortPatcher
         {
             var table = __instance.userVariablesTable;
 
-            DungeonMakerListTools.Bound<UserContentLine>(table, x => x.UserContent != null);
-            DungeonMakerListTools.Apply<UserContentLine>(table, Picker, ContentName, ContentTitle);
+            DungeonMakerListTools.Bound(table, HasContent);
+            DungeonMakerListTools.Apply(table, Picker, ContentName, ContentTitle);
         }
     }
 
-    //PATCH: the bar on the variable picker, beside Cancel
+    //PATCH: the bar on the variable picker, under its list (its buttons are copies of Cancel)
     [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -180,10 +206,9 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserVariableSelectionModal __instance)
         {
-            DungeonMakerListTools.Ensure(__instance.transform, Picker, "MainPanel/ButtonsBar/CancelButton",
-                "ModUi/&DungeonMakerSortTitle",
-                () => DungeonMakerListTools.Apply<UserContentLine>(
-                    __instance.userVariablesTable, Picker, ContentName, ContentTitle));
+            DungeonMakerListTools.Ensure(__instance.transform, Picker, "MainPanel/UserVariablesScrollview",
+                "MainPanel/ButtonsBar/CancelButton", "ModUi/&DungeonMakerSortTitle",
+                () => DungeonMakerListTools.Apply(__instance.userVariablesTable, Picker, ContentName, ContentTitle));
         }
     }
 
@@ -215,8 +240,7 @@ public static class UserListSortPatcher
                 yield break;
             }
 
-            DungeonMakerListTools.Bound<CampaignVariableLine>(
-                __instance.variableLinesTable, x => x.GameVariable != null);
+            DungeonMakerListTools.Bound(__instance.variableLinesTable, HasVariable);
             ApplyTo(__instance);
         }
 
@@ -224,12 +248,12 @@ public static class UserListSortPatcher
         {
             var table = panel.variableLinesTable;
 
-            DungeonMakerListTools.Apply<CampaignVariableLine>(table, Cheats, VariableName, VariableType);
+            DungeonMakerListTools.Apply(table, Cheats, VariableName, VariableType);
             LayoutRebuilder.ForceRebuildLayoutImmediate(table);
         }
     }
 
-    //PATCH: the bar on the Cheats > Campaign Variables panel, beside Close
+    //PATCH: the bar on the Cheats > Campaign Variables panel, under its list (its buttons are copies of Close)
     [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -238,8 +262,8 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(CampaignVariablesModal __instance)
         {
-            DungeonMakerListTools.Ensure(__instance.transform, Cheats, "MainPanel/ButtonsBar/CloseButton",
-                "ModUi/&DungeonMakerSortType",
+            DungeonMakerListTools.Ensure(__instance.transform, Cheats, "MainPanel/VariableLinesScrollview",
+                "MainPanel/ButtonsBar/CloseButton", "ModUi/&DungeonMakerSortType",
                 () => CampaignVariablesModal_EnumerateVariableLines.ApplyTo(__instance));
         }
     }
