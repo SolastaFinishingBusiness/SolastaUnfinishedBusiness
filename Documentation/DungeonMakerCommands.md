@@ -22,7 +22,7 @@ ends, so you can write the same name again later.
 | `Dialog_Trigger` | the name of an NPC or object | Its dialogue starts, as if a character had clicked it. |
 | `Roll_Trigger` | the name of a Roll Activator | The acting character rolls its check. |
 | `Teleport_Node` | the name of a Node | The acting character is teleported onto the Node's exact cell. |
-| `Teleport_PartyNode` | the name of a Node | The whole party is teleported there. |
+| `Teleport_PartyNode` | the name of a Node | The whole party, with its guests, is teleported there in formation. |
 
 - **Names.** For `Dialog_Trigger` you can use the name the player sees, the name you typed when creating the NPC, or
   the gadget's own name (such as `NpcDialog4`). For the others use the gadget's own name. Capital letters don't
@@ -64,9 +64,10 @@ the Roll Activator. Whoever walks in rolls.
 
 `Teleport_Node` works a little differently from the other commands.
 
-- **Who:** the character that caused the activation, and never another. Any character counts, a guest or an NPC
-  too, if the trigger reacts to them. Its state is not checked: unconscious, dying or dead, it is moved as it is.
-  It only has to be in the location still.
+- **Who:** the character that caused the activation, and never another. It must be a party member or a guest
+  travelling with the party. If an enemy or another NPC sets the trigger off, the command fails and nobody moves,
+  even with a party member standing in the same area. The character's state is not checked: unconscious, dying or
+  dead, it is moved as it is. It only has to be in the location still.
 - **Every activation is its own request.** Two characters stepping on two plates that both write the same Node
   name are both teleported, one after the other, in the order the activations happened. A new request does not
   replace one that is waiting. Writing an empty text cancels all that are waiting.
@@ -77,8 +78,12 @@ the Roll Activator. Whoever walks in rolls.
   there does not ask for a second teleport.
 
 Typical set-up: an Area Activator one cell large whose Variable Operation sets `Teleport_Node` to the name of a Node.
-Whoever walks onto that cell is moved to the Node. Use `Teleport_PartyNode` to move the whole party, placed in
-formation around the Node.
+Whoever walks onto that cell is moved to the Node.
+
+`Teleport_PartyNode` moves the whole party and the guests travelling with it, placed in formation around the Node,
+with summoned creatures following their owners. It needs no acting character, so a timer or a quest can use it. Its
+status is `Succeeded` only when every one of them is confirmed near the Node, and `Failed` if the game found no
+free cell for someone.
 
 ## Status
 

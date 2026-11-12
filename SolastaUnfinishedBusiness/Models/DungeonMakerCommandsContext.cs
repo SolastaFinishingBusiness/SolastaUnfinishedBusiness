@@ -17,7 +17,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //                        NPC's definition name, its internal unique name, or the gadget's own name.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
 //   Teleport_Node        the name of a Node gadget: the acting character is teleported onto its exact cell.
-//   Teleport_PartyNode   the name of a Node gadget: the whole party is teleported there.
+//   Teleport_PartyNode   the name of a Node gadget: the whole party, with the guests travelling with it, is
+//                        teleported there in formation. It is done when every one of them is confirmed near it.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
 //   Teleport_Node is the exception: every activation that writes it is a request of its own, and they are
 //   carried out one after the other in the order they were made (see "ONE-CHARACTER TELEPORT").
@@ -39,9 +40,10 @@ namespace SolastaUnfinishedBusiness.Models;
 //   Teleport_PartyNode needs nobody.
 //
 // ONE-CHARACTER TELEPORT (Teleport_Node), as specified in issue #42:
-//   - It moves the character that caused the activation and never another. Any character counts, a guest or an
-//     NPC too, and its state is not looked at: unconscious, dying or dead, it is moved as it is. It only has to
-//     be in the location still.
+//   - It moves the character that caused the activation and never another. Only a party member or a guest
+//     travelling with the party can cause it: an activation by an enemy or another NPC fails, and nobody moves,
+//     even with a party member standing in the same area. The character is moved in the state it is in
+//     (unconscious, dying or dead too), as long as it is still in the location.
 //   - Every activation makes its own request, even for the same Node; a new one does not replace one that is
 //     waiting. They are carried out in the order the game reported the activations, one per gadget update, each
 //     ended before the next character is placed.
@@ -131,8 +133,9 @@ internal static class DungeonMakerCommandsContext
     private const int MissingMaxLookups = 40;
     private const long MissingGraceSeconds = 5;
 
-    // a teleport worked when the watched character ends up within this many cells of the destination
+    // a party member has arrived when it stands within this many cells of the Node sideways, and this many in height
     private const int TeleportTolerance = 8;
+    private const int TeleportHeightTolerance = 3;
 
     // torches whose game object is not built yet are tried again on the next gadget updates, this often at most
     private const int TorchRetries = 30;
@@ -331,6 +334,7 @@ internal static class DungeonMakerCommandsContext
             var activation = new Activation
             {
                 MoverKnown = mover != null,
+                SoloTeleportEligible = CanTriggerSoloTeleport(mover),
                 MoverGuid = mover?.Guid ?? 0,
                 MoverName = mover?.Name,
                 // the party is put down together when a location is entered: no one character "walked in"
@@ -566,19 +570,22 @@ internal static class DungeonMakerCommandsContext
 
         // The characters the game handed the flow (it reuses these lists, so they only mean something for the
         // listener types below, which fill them for each activation). A roll or a dialogue is for a party member;
-        // a one-character teleport moves whoever caused it, so every character counts there.
+        // a solo teleport needs the original actor identified before checking eligibility.
         var anyCharacter = request.Kind == Kind.TeleportOne;
         var heroes = (operation.ActingCharacters ?? [])
             .Where(x => x != null && (anyCharacter || IsPartyMember(x)))
             .Select(x => x.Guid)
             .Distinct()
             .ToList();
+        // Keep all occupants when checking ambiguity. Filtering first could select a bystander.
+        var singleActorEligible = !anyCharacter || (heroes.Count == 1 &&
+            operation.ActingCharacters.Any(x => x != null && x.Guid == heroes[0] && CanTriggerSoloTeleport(x)));
         var who = anyCharacter ? "character" : "party member";
 
         switch (listener)
         {
             // something a character used: the game hands the flow exactly that character (GameGadget.Interact)
-            case GameGadgetListenerCharacterInteraction when heroes.Count == 1:
+            case GameGadgetListenerCharacterInteraction when heroes.Count == 1 && singleActorEligible:
                 request.ActorGuid = heroes[0];
                 request.ActorKnown = true;
                 break;
@@ -594,7 +601,7 @@ internal static class DungeonMakerCommandsContext
                 else if (activation.Group)
                 {
                     // arriving in the location or a party teleport: fine if only one of them is in it
-                    if (heroes.Count == 1)
+                    if (heroes.Count == 1 && singleActorEligible)
                     {
                         request.ActorGuid = heroes[0];
                         request.ActorKnown = true;
@@ -604,6 +611,10 @@ internal static class DungeonMakerCommandsContext
                         request.ActorProblem = $"'{gadgetName}' was activated by characters being placed " +
                                                $"together ({heroes.Count} {who}s in it), so no single one caused it";
                     }
+                }
+                else if (anyCharacter && activation.MoverKnown && !activation.SoloTeleportEligible)
+                {
+                    request.ActorProblem = "the triggering character was outside the party and guest rosters";
                 }
                 else if (activation.MoverKnown)
                 {
@@ -625,6 +636,14 @@ internal static class DungeonMakerCommandsContext
                       "activation (a timer, a variable or another event), which has no acting character";
                 break;
         }
+    }
+
+    private static bool CanTriggerSoloTeleport(GameLocationCharacter character)
+    {
+        var characters = ServiceRepository.GetService<IGameLocationCharacterService>();
+
+        return character != null && (characters?.PartyCharacters?.Contains(character) == true ||
+                                     characters?.GuestCharacters?.Contains(character) == true);
     }
 
     private static bool IsPartyMember(GameLocationCharacter character)
@@ -989,12 +1008,18 @@ internal static class DungeonMakerCommandsContext
         character.CheckCharacterFooting(false);
     }
 
-    // Teleport_PartyNode: the whole party, placed in formation around the Node by the game's Teleport functor.
+    // Teleport_PartyNode, as specified in issue #42: the party and the guests travelling with it, placed in
+    // formation around the Node by the game's Teleport functor. It needs no acting character.
     private static void StepPartyTeleport(Request request)
     {
-        var party = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters;
+        var characters = ServiceRepository.GetService<IGameLocationCharacterService>();
+        var party = (characters?.PartyCharacters ?? [])
+            .Concat(characters?.GuestCharacters ?? [])
+            .Where(x => x != null)
+            .Distinct()
+            .ToList();
 
-        if (party == null || party.Count == 0)
+        if (party.Count == 0)
         {
             Wait(request, "no party in this location yet");
 
@@ -1012,7 +1037,9 @@ internal static class DungeonMakerCommandsContext
         var parameters = new FunctorParametersDescription
         {
             Type = TeleportFunctor,
-            CharacterLookUpMethod = FunctorDefinitions.CharacterLookUpMethod.AllPartyMembers,
+            // the game's own look-up for "the party and its guests"; the functor moves summoned creatures to
+            // their owners itself
+            CharacterLookUpMethod = FunctorDefinitions.CharacterLookUpMethod.AllPartyMembersWithGuests,
             ActingCharacters = [..party],
             SourceGadget = node,
             playerPlacementMarkers = [node.transform]
@@ -1027,17 +1054,15 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        // the functor only writes a log line when it finds no free cell, so remember where one of the teleported
-        // characters stands, to tell afterwards whether anything moved
-        var watched = party[0];
-
-        request.WatchedGuid = watched.Guid;
-        request.WatchedFrom = watched.LocationPosition;
+        // The functor only writes a log line when it finds no free cell for someone, so everyone meant to travel
+        // is remembered, to check afterwards that each of them arrived.
+        request.Members = party.Select(x => x.Guid).ToList();
         request.Destination = ServiceRepository.GetService<IGameLocationPositioningService>()?
             .GetGridPositionFromWorldPosition(node.transform);
 
         MarkStarted(request);
-        Main.Info($"DM command {request.Variable}: teleporting the party to '{node.name}'.");
+        Main.Info(
+            $"DM command {request.Variable}: teleporting the party ({party.Count} with guests) to '{node.name}'.");
 
         // The request itself is the "source" the functor service tracks while the functor runs. The coroutine gets
         // its first step later in this same gadget update, when Tick goes over the started requests.
@@ -1066,15 +1091,38 @@ internal static class DungeonMakerCommandsContext
             }
             else if (request.Routine.IsFinished)
             {
-                var watched = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters?
-                    .FirstOrDefault(x => x != null && x.Guid == request.WatchedGuid);
+                // Done only when every member meant to travel is confirmed near the Node: in formation they stand
+                // around it, not on it, so "near" is a few cells to the sides and about the same height.
+                var missing = new List<string>();
 
-                if (watched != null && request.Destination is { } destination &&
-                    watched.LocationPosition.Equals(request.WatchedFrom) &&
-                    (Math.Abs(watched.LocationPosition.x - destination.x) > TeleportTolerance ||
-                     Math.Abs(watched.LocationPosition.z - destination.z) > TeleportTolerance))
+                if (request.Destination is { } destination)
                 {
-                    Finish(request, StatusFailed, "nobody moved: no free cell was found at the destination");
+                    foreach (var guid in request.Members ?? [])
+                    {
+                        var member = FindCharacter(guid);
+
+                        if (member == null)
+                        {
+                            missing.Add("a character that is gone");
+
+                            continue;
+                        }
+
+                        var at = member.LocationPosition;
+
+                        if (Math.Abs(at.x - destination.x) > TeleportTolerance ||
+                            Math.Abs(at.z - destination.z) > TeleportTolerance ||
+                            Math.Abs(at.y - destination.y) > TeleportHeightTolerance)
+                        {
+                            missing.Add($"{member.Name} at {at}");
+                        }
+                    }
+                }
+
+                if (missing.Count > 0)
+                {
+                    Finish(request, StatusFailed,
+                        $"{missing.Count} of {request.Members.Count} did not arrive near the destination ({string.Join(", ", missing)}): no free cell was found for them");
                 }
                 else
                 {
@@ -1640,8 +1688,9 @@ internal static class DungeonMakerCommandsContext
         internal string Target;
         internal int Ticks;
         internal string Variable;
-        internal TA.int3 WatchedFrom;
-        internal ulong WatchedGuid;
+
+        // party teleport: everyone meant to travel
+        internal List<ulong> Members;
     }
 
     // one activation of an Area Activator or pressure plate: the character whose move switched its trigger on
@@ -1651,6 +1700,7 @@ internal static class DungeonMakerCommandsContext
         internal bool Group;
         internal ulong MoverGuid;
         internal bool MoverKnown;
+        internal bool SoloTeleportEligible;
         internal string MoverName;
     }
 
