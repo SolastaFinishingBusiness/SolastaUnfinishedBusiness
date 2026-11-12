@@ -19,6 +19,7 @@ internal static class CustomReactionsContext
         MakeReactDefinition(ReactionRequestSpendBundlePower.Name);
         MakeReactDefinition(ReactionRequestSelectSmiteSpell.Name);
         MakeReactDefinition(ReactionRequestSelectSmiteSlot.Name);
+        MakeReactDefinition(ReactionRequestEldritchBlastMove.Name);
     }
 
     private static void MakeReactDefinition(string name)

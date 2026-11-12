@@ -9,6 +9,7 @@ using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Interfaces;
+using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -130,6 +131,14 @@ public static class CharacterActionSpendPowerPatcher
             {
                 var target = targets[i];
 
+                //PATCH: a queued Eldritch Blast move whose creature has been removed from play since it was
+                // queued does nothing for that creature (issue #37). Everything below reads the creature's rules
+                // side, which is gone. Does nothing for any other power.
+                if (EldritchBlastMoveContext.SkipGoneTarget(__instance, target))
+                {
+                    continue;
+                }
+
                 // These bool information must be store as a class member, as it is passed to HandleFailedSavingThrow
                 var hasBorrowedLuck =
                     target.RulesetActor.HasConditionOfTypeOrSubType(RuleDefinitions.ConditionBorrowedLuck);
@@ -194,6 +203,22 @@ public static class CharacterActionSpendPowerPatcher
                     // BEGIN PATCH
 
                     var effectForms = effectDescription.EffectForms.DeepCopy();
+
+                    //PATCH: Repelling Blast and Grasp of Hadar set to Ask: wait for the creature's previous move,
+                    // ask the caster about this beam if it isn't decided yet, and give this action a move of the
+                    // chosen distance and direction (issue #37). Does nothing for any other power. Note that
+                    // effectForms is a new list but its forms are the definition's own objects, so a form is replaced
+                    // by a copy there, never changed in place.
+                    yield return EldritchBlastMoveContext.BeforeMove(
+                        battleManager, __instance, actingCharacter, target, effectForms);
+
+                    //PATCH: BeforeMove may have waited (for the creature's previous move to end, for the caster's
+                    // answer), and the creature may have been removed from play during that wait: then nothing is
+                    // applied to it (issue #37). Does nothing for any other power.
+                    if (EldritchBlastMoveContext.SkipGoneTarget(__instance, target))
+                    {
+                        continue;
+                    }
 
                     //PATCH: support for `IMagicEffectBeforeHitConfirmedOnEnemy`
                     // should also happen outside battles
@@ -262,14 +287,29 @@ public static class CharacterActionSpendPowerPatcher
                     }
                     // END PATCH
 
-                    implementationService.ApplyEffectForms(
-                        effectForms,
-                        applyFormsParams,
-                        null,
-                        effectApplication: effectDescription.EffectApplication,
-                        filters: effectDescription.EffectFormFilters,
-                        damageAbsorbedByTemporaryHitPoints: out var damageAbsorbedByTemporaryHitPoints,
-                        terminateEffectOnTarget: out _);
+                    //PATCH: Eldritch Blast's pushes and pulls: a creature moved over a drop falls only after the
+                    // cast's last move on it (issue #37, EldritchBlastFallContext, a setting). From here the target
+                    // is held if this action is one of those moves, and the push its effect queues is noted as the
+                    // cast's. Does nothing for any other power, or with the setting off.
+                    EldritchBlastFallContext.EnterLeg(__instance, target);
+
+                    bool damageAbsorbedByTemporaryHitPoints;
+
+                    try
+                    {
+                        implementationService.ApplyEffectForms(
+                            effectForms,
+                            applyFormsParams,
+                            null,
+                            effectApplication: effectDescription.EffectApplication,
+                            filters: effectDescription.EffectFormFilters,
+                            damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
+                            terminateEffectOnTarget: out _);
+                    }
+                    finally
+                    {
+                        EldritchBlastFallContext.ExitLeg();
+                    }
 
                     //BUGFIX: vanilla doesn't handle triggers on enemy death
                     if (effectDamageForm != null)
@@ -329,8 +369,13 @@ public static class CharacterActionSpendPowerPatcher
                 }
             }
 
+            //PATCH: a queued Eldritch Blast move whose creature was removed from play (issue #37): the handlers
+            // below read each target's rules side, so they are given the targets without that creature. For any
+            // other power this is the same list as before.
+            var finishedTargets = EldritchBlastMoveContext.FinishedTargets(__instance, targets);
+
             //PATCH: support for `IMagicEffectFinishedOnMe`
-            foreach (var target in targets)
+            foreach (var target in finishedTargets)
             {
                 var rulesetTarget = target.RulesetCharacter;
 
@@ -343,7 +388,7 @@ public static class CharacterActionSpendPowerPatcher
                              .GetSubFeaturesByType<IMagicEffectFinishedOnMe>())
                 {
                     yield return magicEffectFinishedOnMe.OnMagicEffectFinishedOnMe(
-                        __instance, actingCharacter, target, targets);
+                        __instance, actingCharacter, target, finishedTargets);
                 }
             }
 
@@ -352,7 +397,7 @@ public static class CharacterActionSpendPowerPatcher
                          .GetSubFeaturesByType<IMagicEffectFinishedByMe>())
             {
                 yield return
-                    magicEffectFinishedByMe.OnMagicEffectFinishedByMe(__instance, actingCharacter, targets);
+                    magicEffectFinishedByMe.OnMagicEffectFinishedByMe(__instance, actingCharacter, finishedTargets);
             }
 
             //PATCH: support for `IMagicEffectFinishedByMeOrAlly`
@@ -370,7 +415,7 @@ public static class CharacterActionSpendPowerPatcher
                 {
                     yield return magicEffectFinishedByMeOrAlly
                         .OnMagicEffectFinishedByMeOrAlly(
-                            battleManager, __instance, actingCharacter, ally, targets);
+                            battleManager, __instance, actingCharacter, ally, finishedTargets);
                 }
             }
 

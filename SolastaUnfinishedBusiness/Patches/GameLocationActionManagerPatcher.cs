@@ -29,6 +29,25 @@ public static class GameLocationActionManagerPatcher
         public static void Prefix(CharacterActionParams actionParams)
         {
             ForcedMovementContext.BindToAction(actionParams);
+
+            //PATCH: Eldritch Blast's pushes and pulls: note the push a queued move of the cast makes (issue #37)
+            EldritchBlastFallContext.PushQueued(actionParams);
+        }
+    }
+
+    //PATCH: Eldritch Blast's pushes and pulls (issue #37, EldritchBlastFallContext, a setting): a creature whose
+    // fall was put off until the cast's last move on it is let go here, once it is at rest and nothing more is to
+    // come. UpdateImpl is where the game advances every character's actions, so this follows the same steps on
+    // every computer. Returns at once when no creature is held.
+    [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.UpdateImpl))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UpdateImpl_Patch
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameLocationActionManager __instance)
+        {
+            EldritchBlastFallContext.AfterActionUpdate(__instance);
         }
     }
 

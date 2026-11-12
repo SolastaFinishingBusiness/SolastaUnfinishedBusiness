@@ -28,6 +28,9 @@ public class CursorMotionHelper : MonoBehaviour
 
     private readonly Dictionary<ulong, ActionChainHelper> _helpers = [];
     private Vector3 _actingCharacterCenter = Vector3.zero;
+
+    // the creature under the pointer while aiming, or 0
+    private ulong _hovered;
     private int3 _aimedPosition = int3.zero;
     private IGameLocationCharacterService _characterService;
 
@@ -115,6 +118,7 @@ public class CursorMotionHelper : MonoBehaviour
         }
 
         _gravityFissureTiles.Clear();
+        _hovered = 0;
         DestroyHelpers();
     }
 
@@ -128,7 +132,14 @@ public class CursorMotionHelper : MonoBehaviour
 
         helper.Clear();
 
-        var shift = GetTargetShift(target);
+        if (_info is { PushThenPull: true })
+        {
+            UpdatePushThenPullHelper(helper, target);
+
+            return;
+        }
+
+        var shift = GetTargetShift(target, BeamsOn(target));
 
         if (shift == int3.zero) { return; }
 
@@ -143,6 +154,95 @@ public class CursorMotionHelper : MonoBehaviour
         if (willFall)
         {
             helper.PlaceDropLine(dst, dst + fall.ToVector3(), false);
+        }
+    }
+
+    // How many beams of the spell being aimed are on this creature: the game lets the same creature be picked
+    // several times. A creature that is only hovered counts as one. With "once for each hit" off, only the first
+    // push or pull of a cast moves a creature, so the preview stays at one.
+    private int BeamsOn(GameLocationCharacter target)
+    {
+        if (_info is not { PerBeam: true } || !Main.Settings.PushOrPullOncePerHit)
+        {
+            return 1;
+        }
+
+        var beams = _selectionService.SelectedTargets.Count(t => t.Guid == target.Guid);
+
+        // The creature under the pointer would get the next beam too, while there is one left to aim: so a creature
+        // already picked once shows the move for two beams when it is hovered again (user, 2026-11-11).
+        if (_hovered == target.Guid && _cursor is CursorLocationSelectTarget { remainingTargets: > 0 })
+        {
+            beams++;
+        }
+
+        // no upper limit: the count is whatever the spell being cast allows (two beams at level 5, more later, and
+        // possibly more still with other mods)
+        return Math.Max(1, beams);
+    }
+
+    // Repelling Blast and Grasp of Hadar together (issue #37): each beam pushes the creature and then pulls it
+    // back, so both moves are drawn, side by side. The push is worked out exactly and the ghost stands where it
+    // ends. The pull that follows can't be worked out from a cell the creature isn't in, so its line shows where
+    // a full pull from there would bring it: the same as one pull from where it stands now, shortened by the cells
+    // the push took it away. However many beams are aimed at the creature, one beam's push and pull are shown.
+    private void UpdatePushThenPullHelper(ActionChainHelper helper, GameLocationCharacter target)
+    {
+        var start = _positioningService.ComputeGravityCenterPosition(target);
+        var pushShift = int3.zero;
+
+        if (_envService.ComputePushDestination(
+                _actingCharacterCenter, target, _info!.Distance, false, _positioningService, out var pushCell, out _))
+        {
+            pushShift = pushCell - target.LocationPosition;
+        }
+
+        var pushedCells = Math.Max(Math.Abs(pushShift.x), Math.Max(Math.Abs(pushShift.y), Math.Abs(pushShift.z)));
+        var pullShift = int3.zero;
+        var pullCells = _info.Distance - pushedCells;
+
+        if (pullCells > 0 &&
+            _envService.ComputePushDestination(
+                _actingCharacterCenter, target, pullCells, true, _positioningService, out var pullCell, out _))
+        {
+            pullShift = pullCell - target.LocationPosition;
+        }
+
+        if (pushShift == int3.zero && pullShift == int3.zero) { return; }
+
+        var pushEnd = start + pushShift.ToVector3();
+        var pullEnd = start + pullShift.ToVector3();
+
+        // a small step sideways, at right angles to the line from the caster, so the two lines don't hide each other
+        var away = start - _actingCharacterCenter;
+        var side = Vector3.Cross(Vector3.up, away);
+
+        side = side.sqrMagnitude > 0.0001f ? side.normalized * 0.18f : new Vector3(0.18f, 0f, 0f);
+
+        if (pushShift != int3.zero)
+        {
+            // as in the single preview: a push that ends over a drop shows the fall, and the ghost is marked as
+            // not standing there
+            var pushedCell = target.LocationPosition + pushShift;
+            var fall = GetFallShift(target, pushedCell);
+            var willFall = fall != int3.zero;
+
+            helper.PlaceGhostWithoutPath(target, pushedCell, !willFall);
+            helper.PlaceDropLine(start + side, pushEnd + side, true);
+
+            if (willFall)
+            {
+                // where the pull would then start from isn't known, so no pull line is drawn
+                helper.PlaceDropLine(pushEnd + side, pushEnd + side + fall.ToVector3(), false);
+
+                return;
+            }
+        }
+
+        // back from where the push ends to where the pull would leave the creature
+        if (pushEnd != pullEnd)
+        {
+            helper.PlaceDropLine(pushEnd - side, pullEnd - side, true);
         }
     }
 
@@ -215,7 +315,10 @@ public class CursorMotionHelper : MonoBehaviour
         helpers.Do(DestroyHelper);
     }
 
-    private int3 GetTargetShift(GameLocationCharacter target)
+    // beams: how many times the move is made (Eldritch Blast with several beams on one creature). It is worked
+    // out as one longer move from where the creature stands; the real moves are made one beam at a time, each from
+    // where the last one left it, which can end differently next to an obstacle.
+    private int3 GetTargetShift(GameLocationCharacter target, int beams = 1)
     {
         if (_info == null) { return int3.zero; }
 
@@ -228,7 +331,7 @@ public class CursorMotionHelper : MonoBehaviour
         };
 
         var reverse = _info.Type == DirectionType.Pull;
-        var distance = _info.Distance;
+        var distance = _info.Distance * Math.Max(1, beams);
 
         if (_envService.ComputePushDestination(src, target, distance, reverse, _positioningService, out var dst, out _))
         {
@@ -242,7 +345,28 @@ public class CursorMotionHelper : MonoBehaviour
     {
         if (character?.RulesetCharacter == null) { return; }
 
-        if (HasTarget(character.Guid)) { return; }
+        // which creature the pointer is on, for the per-beam preview
+        var wasHovered = _hovered == character.Guid;
+
+        if (mode == GameLocationCharacterSelection.HoverChangeMode.Add)
+        {
+            _hovered = character.Guid;
+        }
+        else if (wasHovered)
+        {
+            _hovered = 0;
+        }
+
+        if (HasTarget(character.Guid))
+        {
+            // already a target: its preview stays, but with a per-beam move it grows while hovered and shrinks back
+            if (_info is { PerBeam: true })
+            {
+                UpdateHelper(character);
+            }
+
+            return;
+        }
 
         // ReSharper disable once SwitchStatementHandlesSomeKnownEnumValuesWithDefault
         switch (mode)
@@ -323,9 +447,20 @@ public class CursorMotionHelper : MonoBehaviour
                 UpdateHelper(character);
                 break;
             case GameLocationCharacterSelection.TargetChangeMode.Increase:
+                // another beam on the same creature: its preview grows (issue #37)
+                UpdateHelper(character);
                 break;
             case GameLocationCharacterSelection.TargetChangeMode.Deselect:
-                DestroyHelper(character.Guid);
+                // one of several beams taken off: the creature is still a target, with a shorter preview
+                if (_selectionService.SelectedTargets.Any(t => t.Guid == character.Guid))
+                {
+                    UpdateHelper(character);
+                }
+                else
+                {
+                    DestroyHelper(character.Guid);
+                }
+
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
@@ -373,14 +508,21 @@ public class CursorMotionHelper : MonoBehaviour
         //Process Eldritch Blast
         if (effect.Name == SpellDefinitions.EldritchBlast.Name)
         {
-            if (character.HasActiveInvocation(InvocationDefinitions.RepellingBlast))
-            {
-                return new MotionInfo { Distance = 2, Type = DirectionType.Push, FromOrigin = false };
-            }
+            var pushes = character.HasActiveInvocation(InvocationDefinitions.RepellingBlast);
+            var pulls = character.HasActiveInvocation(InvocationsBuilders.GraspingBlast);
 
-            return character.HasActiveInvocation(InvocationsBuilders.GraspingBlast)
-                ? new MotionInfo { Distance = 2, Type = DirectionType.Pull, FromOrigin = false }
-                : null;
+            if (!pushes && !pulls) { return null; }
+
+            // Each beam that hits moves the creature (issue #37). With one invocation the preview shows the
+            // furthest it could go for the beams aimed at it; with both, the push and the pull side by side.
+            return new MotionInfo
+            {
+                Distance = EldritchBlastMoveContext.MaxCells,
+                Type = pushes ? DirectionType.Push : DirectionType.Pull,
+                FromOrigin = false,
+                PerBeam = !(pushes && pulls),
+                PushThenPull = pushes && pulls
+            };
         }
 
         //Check Tempest Domain's Thunderous Strike
@@ -415,6 +557,12 @@ internal class MotionInfo
 {
     public int Distance;
     public bool FromOrigin;
+
+    // the move is made once for each beam aimed at the creature, so the preview is that many times as long
+    public bool PerBeam;
+
+    // a push followed by a pull, both drawn (Eldritch Blast with Repelling Blast and Grasp of Hadar)
+    public bool PushThenPull;
     public DirectionType Type;
 }
 

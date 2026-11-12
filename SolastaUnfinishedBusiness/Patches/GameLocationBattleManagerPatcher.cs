@@ -351,8 +351,12 @@ public static class GameLocationBattleManagerPatcher
 
         [UsedImplicitly]
         public static IEnumerator Postfix(
-            IEnumerator values)
+            IEnumerator values,
+            CharacterAction action)
         {
+            // how many powers were queued on the casting action before this hit was handled
+            var queuedBefore = action?.ResultingActions.Count ?? 0;
+
             //PATCH: support for `IReactionAttackModeRestriction`
             while (values.MoveNext())
             {
@@ -360,6 +364,10 @@ public static class GameLocationBattleManagerPatcher
             }
 
             RestrictReactionAttackMode.ReactionContext = (null, null, null, null, null);
+
+            //PATCH: the powers this hit queued are one beam of Eldritch Blast: note Repelling Blast's push and Grasp
+            // of Hadar's pull as a pair, push first, for the distance and order prompt (issue #37)
+            EldritchBlastMoveContext.TagHit(action, queuedBefore);
         }
     }
 

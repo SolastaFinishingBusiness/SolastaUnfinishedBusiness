@@ -52,9 +52,20 @@ public static class CharacterReactionItemPatcher
         {
             var request = __instance.ReactionRequest;
             var size = request is ReactionRequestWarcaster or ReactionRequestSpendBundlePower
-                or ReactionRequestSelectSmiteSpell
+                or ReactionRequestSelectSmiteSpell or ReactionRequestEldritchBlastMove
                 ? 400
                 : 290;
+
+            //PATCH: the Eldritch Blast move prompt has its own sliders and buttons (issue #37). Items are reused,
+            // so they are taken out again whenever the item shows anything else.
+            if (request is ReactionRequestEldritchBlastMove moveRequest)
+            {
+                EldritchBlastMovePrompt.Show(__instance, moveRequest);
+            }
+            else
+            {
+                EldritchBlastMovePrompt.Remove(__instance);
+            }
 
             __instance.GetComponent<RectTransform>()
                 .SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size);
@@ -173,6 +184,19 @@ public static class CharacterReactionItemPatcher
                     instance.Bind(spellRepertoire, slotLevel, text, interactable, subitemSelected);
                     break;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(CharacterReactionItem), nameof(CharacterReactionItem.Unbind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Unbind_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix([NotNull] CharacterReactionItem __instance)
+        {
+            //PATCH: take the Eldritch Blast move prompt's controls out of the item before it goes back to the pool
+            EldritchBlastMovePrompt.Remove(__instance);
         }
     }
 

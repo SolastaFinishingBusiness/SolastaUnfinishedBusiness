@@ -3,6 +3,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.CustomUI;
+using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Interfaces;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -72,15 +73,20 @@ public static class LocalCommandManagerPatcher
                 return false;
             }
 
-            invocation.Toggle();
-            // PATCH BEGIN
-            foreach (var toggledBehaviour in invocation.invocationDefinition.GrantedFeature
-                         .GetAllSubFeaturesOfType<IOnInvocationToggled>())
+            //PATCH: Repelling Blast and Grasp of Hadar have a third state, Ask (issue #37). Going from On to Ask
+            // doesn't flip the game's on/off value, so that step is handled there and skips the toggle below.
+            if (!EldritchBlastMoveContext.CycleState(rulesetCharacter, invocation))
             {
-                toggledBehaviour.OnInvocationToggled(character, invocation);
+                invocation.Toggle();
+                // PATCH BEGIN
+                foreach (var toggledBehaviour in invocation.invocationDefinition.GrantedFeature
+                             .GetAllSubFeaturesOfType<IOnInvocationToggled>())
+                {
+                    toggledBehaviour.OnInvocationToggled(character, invocation);
+                }
+                // PATCH END
             }
 
-            // PATCH END
             rulesetCharacter.RefreshAll();
 
             return false;

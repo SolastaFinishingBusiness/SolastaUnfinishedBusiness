@@ -165,6 +165,12 @@ public class Settings : UnityModManager.ModSettings
     // Eldritch Blast beam). Off: as the game does it, where only the first push of a cast moves the creature. On by
     // default (user, 2026-11-10: "a toggleable option in the mod settings, with the default set to true").
     public bool PushOrPullOncePerHit { get; set; } = true;
+
+    // Issue #37: a creature that Eldritch Blast's pushes and pulls (Repelling Blast, Grasp of Hadar) move over a
+    // drop falls only after the cast's last move on it, from where it then is. Off: it falls as soon as a move
+    // leaves it without footing, as the game does it. On by default (user, 2026-11-11: "make this fall handling a
+    // toggleable option as well (that is set to on). If it is off, the default behaviour should occur").
+    public bool DeferFallDuringEldritchBlastMoves { get; set; } = true;
     [Tag(Type = TagType.T2014)] public bool FullyControlConjurations { get; set; }
     public bool EnableHigherGroundRules { get; set; }
     [Tag(Type = TagType.T2024)] public bool EnableSurprisedToEnforceDisadvantage { get; set; }

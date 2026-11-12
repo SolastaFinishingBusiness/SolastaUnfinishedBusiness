@@ -510,6 +510,14 @@ internal static class RulesDisplay
             Main.Settings.PushOrPullOncePerHit = toggle;
         }
 
+        // a creature moved over a drop by Eldritch Blast's pushes and pulls falls after the cast's last move on it
+        // (issue #37). Read when a move is applied (EldritchBlastFallContext.EnterLeg): no restart, no switch function.
+        toggle = Main.Settings.DeferFallDuringEldritchBlastMoves;
+        if (UI.Toggle(Gui.Localize("ModUi/&DeferFallDuringEldritchBlastMoves"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.DeferFallDuringEldritchBlastMoves = toggle;
+        }
+
         toggle = Main.Settings.FullyControlConjurations;
         if (UI.Toggle(Gui.Localize("ModUi/&FullyControlConjurations"), ref toggle, UI.AutoWidth()))
         {
