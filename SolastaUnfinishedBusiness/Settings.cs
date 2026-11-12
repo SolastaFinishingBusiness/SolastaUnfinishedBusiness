@@ -384,6 +384,11 @@ public class Settings : UnityModManager.ModSettings
 
     public bool EnableLoggingInvalidReferencesInUserCampaigns { get; set; }
     public bool EnableSortingDungeonMakerAssets { get; set; }
+
+    // Dungeon Maker campaign commands (issue #42): campaign variables with reserved names read and move the clock,
+    // start dialogues and rolls, teleport and switch torches (Models/DungeonMakerCommandsContext.cs). On by default:
+    // a campaign that doesn't define those variables is not affected.
+    public bool EnableDungeonMakerVariableCommands { get; set; } = true;
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }
