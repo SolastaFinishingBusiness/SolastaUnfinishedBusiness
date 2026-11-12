@@ -1,229 +1,204 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
-// Alphabetizes every content list in the Dungeon Maker campaign editor, plus the variable picker popup and the
-// Cheats -> Campaign Variables panel (Ctrl+Shift+V, see the last patch in this file).
+// Alphabetical view of the Dungeon Maker's lists (issue #42, adapted from BlackguardRogue's Dungeon Maker tools):
+// the twelve content lists of the campaign editor, the variable picker, and the Cheats > Campaign Variables panel.
+// One setting for all three, off by default: Mod UI > Dungeon Maker > "Show the Dungeon Maker's lists in
+// alphabetical order" (Settings.SortDungeonMakerListsAlphabetically).
 //
-// Simple "always sort" behaviour (no manual override): each list is sorted by InternalName, case-insensitive and
-// stable, right before the game draws it. Both UIs bind line i to list[i] and keep the selection as an index,
-// so we sort the BACKING list (UserCampaign.UserXxx, a List<T> of UserContent) and remap the selected index.
-// Consequence: the editor's Up/Down arrows have no lasting effect, because the next redraw re-sorts.
+// It only changes what is SHOWN. The first version sorted the campaign's own lists (so the order was saved with the
+// campaign, and auto-start quests, which the game starts in list order, entered the journal in another order) and
+// sorted every read of the game's variable list. Here nothing but the order of the row objects on screen changes:
 //
-// Each list has its own small patch class (same attribute form the working variables patch used) on purpose:
-// Harmony in this game rejects [HarmonyPatch(typeof(X))] combined with TargetMethods().
+//   - All three screens fill their table the same way: row object i is bound to item i of the list, in list order.
+//   - Afterwards the row objects are put in alphabetical order among themselves (Transform.SetSiblingIndex), which is
+//     the order the table's layout draws them in.
+//   - Every row keeps the item it was bound to, and the game finds out what a click means from the row's item
+//     (list.IndexOf(line.UserContent)), not from the row's position. So select, edit, duplicate, delete and "pick"
+//     act on the item that was clicked, and the selection survives switching the setting.
+//   - On the next refresh the game binds row object i to item i again, whichever object that now is, and the rows
+//     are ordered again. With the setting off, that alone puts everything back in list order.
 //
-// NOTE: Quests are included. GameCampaign.AutostartUserQuests starts auto-start quests in LIST ORDER, so sorting
-// changes the order autostarted quests enter the journal. To leave quests alone, delete the "Quests" class below.
+// The order is by internal name, ignoring case; items with the same name keep their list order (a stable sort).
+// The editor's move up / move down arrows change the list order, which can't be seen in this view, so they are
+// switched off while it is on.
 internal static class UserListSorter
 {
-    private static readonly StringComparer Comparer = StringComparer.OrdinalIgnoreCase;
+    internal static bool Alphabetical => Main.Settings.SortDungeonMakerListsAlphabetically;
 
-    // sorts the backing list in place; returns the (possibly remapped) selected index
-    internal static int Sort<T>(string name, UserCampaign campaign, List<T> list, int selectedIndex)
-        where T : UserContent
+    // Orders the active row objects of a table by name. They are the table's first children (the screens keep
+    // unused pooled rows, switched off, after them), so the sorted rows take sibling positions 0, 1, 2...
+    internal static void SortRows<TLine>(Transform table, Func<TLine, string> name) where TLine : Component
     {
-        if (list == null || list.Count < 2)
-        {
-            return selectedIndex;
-        }
-
-        var sorted = list.OrderBy(x => x.InternalName ?? string.Empty, Comparer).ToList();
-
-        if (sorted.SequenceEqual(list))
-        {
-            return selectedIndex;
-        }
-
-        var selected = selectedIndex >= 0 && selectedIndex < list.Count ? list[selectedIndex] : null;
-
-        list.Clear();
-        list.AddRange(sorted);
-
-        Main.Info($"USERSORT {name}: sorted {sorted.Count} items in '{campaign?.InternalName}'.");
-
-        return selected == null ? selectedIndex : list.IndexOf(selected);
-    }
-}
-
-// Editor screen lists: each patch sorts its list right before the game (re)builds the lines.
-public static class UserListSortPatches
-{
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshBiomes")]
-    public static class Biomes
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedBiome)
-        {
-            ___selectedBiome = UserListSorter.Sort("Biomes", __instance.UserCampaign, __instance.UserCampaign?.UserBiomes, ___selectedBiome);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshDialogs")]
-    public static class Dialogs
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedDialog)
-        {
-            ___selectedDialog = UserListSorter.Sort("Dialogs", __instance.UserCampaign, __instance.UserCampaign?.UserDialogs, ___selectedDialog);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshEncounters")]
-    public static class Encounters
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedEncounter)
-        {
-            ___selectedEncounter = UserListSorter.Sort("Encounters", __instance.UserCampaign, __instance.UserCampaign?.UserEncounters, ___selectedEncounter);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshEncounterTables")]
-    public static class EncounterTables
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedEncounterTable)
-        {
-            ___selectedEncounterTable = UserListSorter.Sort("EncounterTables", __instance.UserCampaign, __instance.UserCampaign?.UserEncounterTables, ___selectedEncounterTable);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshItems")]
-    public static class Items
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedItem)
-        {
-            ___selectedItem = UserListSorter.Sort("Items", __instance.UserCampaign, __instance.UserCampaign?.UserItems, ___selectedItem);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshLocations")]
-    public static class Locations
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedLocation)
-        {
-            ___selectedLocation = UserListSorter.Sort("Locations", __instance.UserCampaign, __instance.UserCampaign?.UserLocations, ___selectedLocation);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshLootPacks")]
-    public static class LootPacks
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedLootPack)
-        {
-            ___selectedLootPack = UserListSorter.Sort("LootPacks", __instance.UserCampaign, __instance.UserCampaign?.UserLootPacks, ___selectedLootPack);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshMerchantInventories")]
-    public static class MerchantInventories
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedMerchantInventory)
-        {
-            ___selectedMerchantInventory = UserListSorter.Sort("MerchantInventories", __instance.UserCampaign, __instance.UserCampaign?.UserMerchantInventories, ___selectedMerchantInventory);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshMonsters")]
-    public static class Monsters
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedMonster)
-        {
-            ___selectedMonster = UserListSorter.Sort("Monsters", __instance.UserCampaign, __instance.UserCampaign?.UserMonsters, ___selectedMonster);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshNpcs")]
-    public static class Npcs
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedNpc)
-        {
-            ___selectedNpc = UserListSorter.Sort("Npcs", __instance.UserCampaign, __instance.UserCampaign?.UserNpcs, ___selectedNpc);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshQuests")]
-    public static class Quests
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedQuest)
-        {
-            ___selectedQuest = UserListSorter.Sort("Quests", __instance.UserCampaign, __instance.UserCampaign?.UserQuests, ___selectedQuest);
-        }
-    }
-
-    [UsedImplicitly]
-    [HarmonyPatch(typeof(UserCampaignEditorScreen), "RefreshVariables")]
-    public static class Variables
-    {
-        [UsedImplicitly]
-        public static void Prefix(UserCampaignEditorScreen __instance, ref int ___selectedVariable)
-        {
-            ___selectedVariable = UserListSorter.Sort("Variables", __instance.UserCampaign, __instance.UserCampaign?.UserVariables, ___selectedVariable);
-        }
-    }
-}
-
-// Variable picker popup: same sort (it shares the same backing list as the editor).
-[UsedImplicitly]
-[HarmonyPatch(typeof(UserVariableSelectionModal), "EnumerateLines")]
-public static class UserListSortVariablePickerPatcher
-{
-    [UsedImplicitly]
-    public static void Prefix(UserCampaign ___userCampaign, ref int ___selectedVariable)
-    {
-        ___selectedVariable = UserListSorter.Sort("Variables (picker)", ___userCampaign, ___userCampaign?.UserVariables,
-            ___selectedVariable);
-    }
-}
-
-// Cheats -> Campaign Variables panel (Ctrl+Shift+V).
-//
-// That panel is not one of the editor lists above. It shows IGameVariableService.ActiveVariables, and
-// GameVariableManager.get_ActiveVariables simply returns `new List<GameVariable>(activeVariables.Values)`: the order of a
-// dictionary. Nothing sorts it, so the order is just the order the variables were registered. It starts out alphabetical
-// (the campaign registers its variables in the order of the sorted editor list) but drifts as variables are registered
-// later, removed or re-registered (for example location-scoped ones when you enter or leave a location), because a
-// dictionary reuses freed slots. That is why the panel is sometimes alphabetical and sometimes not.
-//
-// The getter builds a brand-new list on every call, so sorting the returned list changes only what the caller sees:
-// the game's own dictionary is untouched. Variable names are dictionary keys, so they are unique and the order is
-// fully determined. Other readers of ActiveVariables (the debug overlay, and the code that registers variable-changed
-// listeners) only iterate it, so for them the order is irrelevant.
-[UsedImplicitly]
-[HarmonyPatch(typeof(GameVariableManager), nameof(GameVariableManager.ActiveVariables), MethodType.Getter)]
-public static class UserListSortActiveVariablesPatcher
-{
-    [UsedImplicitly]
-    public static void Postfix(List<GameVariable> __result)
-    {
-        if (__result == null || __result.Count < 2)
+        if (!Alphabetical || !table)
         {
             return;
         }
 
-        __result.Sort((x, y) => string.Compare(x?.Name, y?.Name, StringComparison.OrdinalIgnoreCase));
+        var rows = new List<KeyValuePair<Transform, string>>();
+
+        for (var i = 0; i < table.childCount; i++)
+        {
+            var child = table.GetChild(i);
+
+            if (child.gameObject.activeSelf && child.TryGetComponent<TLine>(out var line))
+            {
+                rows.Add(new KeyValuePair<Transform, string>(child, name(line) ?? string.Empty));
+            }
+        }
+
+        if (rows.Count < 2)
+        {
+            return;
+        }
+
+        // OrderBy is stable: rows with equal names stay in list order
+        var sorted = rows.OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase).ToList();
+
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            if (sorted[i].Key.GetSiblingIndex() != i)
+            {
+                sorted[i].Key.SetSiblingIndex(i);
+            }
+        }
+    }
+
+    // the setting was switched in the mod's menu: have the editor draw its lists again if it is open
+    internal static void SettingChanged()
+    {
+        var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
+
+        if (editor && editor.gameObject.activeInHierarchy)
+        {
+            editor.Dirty = true;
+        }
+    }
+}
+
+[UsedImplicitly]
+public static class UserListSortPatcher
+{
+    //PATCH: alphabetical view of the campaign editor's content lists. One patch for the twelve Refresh methods:
+    //each fills its own table and switches its own pair of move arrows.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserCampaignEditorScreen_RefreshLists
+    {
+        private static readonly Dictionary<string, Func<UserCampaignEditorScreen, (Transform, Button, Button)>> Lists =
+            new()
+            {
+                { "RefreshBiomes", x => (x.userBiomesTable, x.moveBiomeUpButton, x.moveBiomeDownButton) },
+                { "RefreshDialogs", x => (x.userDialogsTable, x.moveDialogUpButton, x.moveDialogDownButton) },
+                {
+                    "RefreshEncounters",
+                    x => (x.userEncountersTable, x.moveEncounterUpButton, x.moveEncounterDownButton)
+                },
+                {
+                    "RefreshEncounterTables",
+                    x => (x.userEncounterTablesTable, x.moveEncounterTableUpButton, x.moveEncounterTableDownButton)
+                },
+                { "RefreshItems", x => (x.userItemsTable, x.moveItemUpButton, x.moveItemDownButton) },
+                { "RefreshLocations", x => (x.userLocationsTable, x.moveLocationUpButton, x.moveLocationDownButton) },
+                { "RefreshLootPacks", x => (x.userLootPacksTable, x.moveLootPackUpButton, x.moveLootPackDownButton) },
+                {
+                    "RefreshMerchantInventories",
+                    x => (x.userMerchantInventoriesTable, x.moveMerchantInventoryUpButton,
+                        x.moveMerchantInventoryDownButton)
+                },
+                { "RefreshMonsters", x => (x.userMonstersTable, x.moveMonsterUpButton, x.moveMonsterDownButton) },
+                { "RefreshNpcs", x => (x.userNpcsTable, x.moveNpcUpButton, x.moveNpcDownButton) },
+                { "RefreshQuests", x => (x.userQuestsTable, x.moveQuestUpButton, x.moveQuestDownButton) },
+                { "RefreshVariables", x => (x.userVariablesTable, x.moveVariableUpButton, x.moveVariableDownButton) }
+            };
+
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            return Lists.Keys.Select(x => AccessTools.Method(typeof(UserCampaignEditorScreen), x));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignEditorScreen __instance, MethodBase __originalMethod)
+        {
+            if (!UserListSorter.Alphabetical || !Lists.TryGetValue(__originalMethod.Name, out var parts))
+            {
+                return;
+            }
+
+            var (table, moveUp, moveDown) = parts(__instance);
+
+            UserListSorter.SortRows<UserContentLine>(table, x => x.UserContent?.InternalName);
+
+            // The arrows swap neighbours in the list, which are not neighbours in this view. The game works out
+            // their state again on every refresh, so they come back by themselves when the setting is off.
+            if (moveUp)
+            {
+                moveUp.interactable = false;
+            }
+
+            if (moveDown)
+            {
+                moveDown.interactable = false;
+            }
+        }
+    }
+
+    //PATCH: alphabetical view of the variable picker (the popup that asks which campaign variable to use). Its
+    //Validate button reads the picked variable from the campaign's list by the index the row's item has there.
+    [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.EnumerateLines))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserVariableSelectionModal_EnumerateLines
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserVariableSelectionModal __instance)
+        {
+            UserListSorter.SortRows<UserContentLine>(__instance.userVariablesTable, x => x.UserContent?.InternalName);
+        }
+    }
+
+    //PATCH: alphabetical view of the Cheats > Campaign Variables panel. The game lists the variables in the order
+    //of its variable table, which starts out in campaign order and drifts as variables are registered and removed.
+    //The panel builds its rows over a few frames while it is still invisible, so they are ordered when it is done.
+    [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.EnumerateVariableLines))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CampaignVariablesModal_EnumerateVariableLines
+    {
+        [UsedImplicitly]
+        public static IEnumerator Postfix(IEnumerator values, CampaignVariablesModal __instance)
+        {
+            try
+            {
+                while (values.MoveNext())
+                {
+                    yield return values.Current;
+                }
+            }
+            finally
+            {
+                (values as IDisposable)?.Dispose();
+            }
+
+            if (!UserListSorter.Alphabetical || !__instance || !__instance.variableLinesTable)
+            {
+                yield break;
+            }
+
+            UserListSorter.SortRows<CampaignVariableLine>(__instance.variableLinesTable, x => x.GameVariable?.Name);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(__instance.variableLinesTable);
+        }
     }
 }

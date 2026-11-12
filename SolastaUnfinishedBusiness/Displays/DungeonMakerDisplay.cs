@@ -4,6 +4,7 @@ using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Api.ModKit;
 using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Models.TranslationServices;
+using SolastaUnfinishedBusiness.Patches;
 using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Displays;
@@ -80,6 +81,22 @@ internal static class DungeonMakerDisplay
         if (UI.Toggle(Gui.Localize("ModUi/&EnableSortingDungeonMakerAssets"), ref toggle))
         {
             Main.Settings.EnableSortingDungeonMakerAssets = toggle;
+        }
+
+        // an alphabetical view of the editor's lists, the variable picker and the cheat panel; the open editor is
+        // asked to draw its lists again so the switch shows at once
+        toggle = Main.Settings.SortDungeonMakerListsAlphabetically;
+        if (UI.Toggle(Gui.Localize("ModUi/&SortDungeonMakerListsAlphabetically"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.SortDungeonMakerListsAlphabetically = toggle;
+            UserListSorter.SettingChanged();
+        }
+
+        // campaign variables with reserved names act as commands (Models/DungeonMakerCommandsContext.cs)
+        toggle = Main.Settings.EnableDungeonMakerVariableCommands;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableDungeonMakerVariableCommands"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableDungeonMakerVariableCommands = toggle;
         }
 
         toggle = Main.Settings.AllowGadgetsAndPropsToBePlacedAnywhere;
