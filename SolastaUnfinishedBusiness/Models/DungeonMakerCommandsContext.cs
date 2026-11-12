@@ -18,7 +18,7 @@ namespace SolastaUnfinishedBusiness.Models;
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
 //   Teleport_Node        the name of a Node gadget: the acting character is teleported onto its exact cell.
 //   Teleport_PartyNode   the name of a Node gadget: the whole party, with the guests travelling with it, is
-//                        teleported there in formation. It is done when every one of them is confirmed near it.
+//                        teleported there in formation. It is done when the game has placed every one of them.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
 //   Teleport_Node is the exception: every activation that writes it is a request of its own, and they are
 //   carried out one after the other in the order they were made (see "ONE-CHARACTER TELEPORT").
@@ -133,10 +133,6 @@ internal static class DungeonMakerCommandsContext
     private const int MissingMaxLookups = 40;
     private const long MissingGraceSeconds = 5;
 
-    // a party member has arrived when it stands within this many cells of the Node sideways, and this many in height
-    private const int TeleportTolerance = 8;
-    private const int TeleportHeightTolerance = 3;
-
     // torches whose game object is not built yet are tried again on the next gadget updates, this often at most
     private const int TorchRetries = 30;
 
@@ -177,6 +173,9 @@ internal static class DungeonMakerCommandsContext
 
     // > 0 while this class writes a variable itself, so its own write is not taken as a request
     private static int _writing;
+
+    // the party teleport whose Teleport functor is being stepped right now, if any (see NoteCharacterTeleported)
+    private static Request _placing;
 
     // the Variable Operation functor that is running right now, if any (see BeginVariableOperation)
     private static FunctorParametersDescription _operation;
@@ -378,6 +377,19 @@ internal static class DungeonMakerCommandsContext
     internal static void BeginGroupMove()
     {
         _groupDepth++;
+    }
+
+    // GameLocationPositioningManager.TeleportCharacter, after it ran: the game has put a character on a cell.
+    // While a party teleport's functor is being stepped, this is the functor placing one of the travellers: it
+    // works out a free cell near the Node for each of them and calls TeleportCharacter with it, and makes no call
+    // for a character it finds no cell for (it only writes a log line). So the calls seen here are exactly the
+    // placements the game made, with the cells it chose.
+    internal static void NoteCharacterTeleported(GameLocationCharacter character, TA.int3 position)
+    {
+        if (_placing != null && character != null)
+        {
+            _placing.Placed[character.Guid] = position;
+        }
     }
 
     internal static void EndGroupMove()
@@ -1054,11 +1066,9 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        // The functor only writes a log line when it finds no free cell for someone, so everyone meant to travel
-        // is remembered, to check afterwards that each of them arrived.
-        request.Members = party.Select(x => x.Guid).ToList();
-        request.Destination = ServiceRepository.GetService<IGameLocationPositioningService>()?
-            .GetGridPositionFromWorldPosition(node.transform);
+        // Everyone meant to travel is remembered, to check afterwards that the game placed each of them. Summoned
+        // creatures are not on the list: the functor does not place them, it moves them to their owners.
+        request.Members = party.Where(x => !x.IsSummonedCreature).Select(x => x.Guid).ToList();
 
         MarkStarted(request);
         Main.Info(
@@ -1078,8 +1088,18 @@ internal static class DungeonMakerCommandsContext
     {
         if (request.Routine != null)
         {
-            // one step per gadget update, as the game does for a gadget's functors
-            request.Routine.Run();
+            // one step per gadget update, as the game does for a gadget's functors; the placements the functor
+            // makes during the step are noted for this request
+            _placing = request;
+
+            try
+            {
+                request.Routine.Run();
+            }
+            finally
+            {
+                _placing = null;
+            }
 
             if (request.Routine.LastException != null)
             {
@@ -1091,38 +1111,32 @@ internal static class DungeonMakerCommandsContext
             }
             else if (request.Routine.IsFinished)
             {
-                // Done only when every member meant to travel is confirmed near the Node: in formation they stand
-                // around it, not on it, so "near" is a few cells to the sides and about the same height.
+                // Done only when the game placed every member meant to travel, and each stands on the cell the
+                // game gave it. A member the functor found no free cell for was never placed.
                 var missing = new List<string>();
 
-                if (request.Destination is { } destination)
+                foreach (var guid in request.Members ?? [])
                 {
-                    foreach (var guid in request.Members ?? [])
+                    var member = FindCharacter(guid);
+
+                    if (member == null)
                     {
-                        var member = FindCharacter(guid);
-
-                        if (member == null)
-                        {
-                            missing.Add("a character that is gone");
-
-                            continue;
-                        }
-
-                        var at = member.LocationPosition;
-
-                        if (Math.Abs(at.x - destination.x) > TeleportTolerance ||
-                            Math.Abs(at.z - destination.z) > TeleportTolerance ||
-                            Math.Abs(at.y - destination.y) > TeleportHeightTolerance)
-                        {
-                            missing.Add($"{member.Name} at {at}");
-                        }
+                        missing.Add("a character that is gone");
+                    }
+                    else if (!request.Placed.TryGetValue(guid, out var cell))
+                    {
+                        missing.Add($"{member.Name} (no free cell found)");
+                    }
+                    else if (!member.LocationPosition.Equals(cell))
+                    {
+                        missing.Add($"{member.Name} (placed at {cell}, now at {member.LocationPosition})");
                     }
                 }
 
                 if (missing.Count > 0)
                 {
                     Finish(request, StatusFailed,
-                        $"{missing.Count} of {request.Members.Count} did not arrive near the destination ({string.Join(", ", missing)}): no free cell was found for them");
+                        $"{missing.Count} of {request.Members.Count} did not arrive: {string.Join(", ", missing)}");
                 }
                 else
                 {
@@ -1672,7 +1686,6 @@ internal static class DungeonMakerCommandsContext
         internal bool ActorKnown;
         internal string ActorName;
         internal string ActorProblem;
-        internal TA.int3? Destination;
         internal int Flow;
         internal GameGadget Gadget;
 
@@ -1689,8 +1702,9 @@ internal static class DungeonMakerCommandsContext
         internal int Ticks;
         internal string Variable;
 
-        // party teleport: everyone meant to travel
+        // party teleport: everyone meant to travel, and the cell the game put each of them on
         internal List<ulong> Members;
+        internal readonly Dictionary<ulong, TA.int3> Placed = [];
     }
 
     // one activation of an Area Activator or pressure plate: the character whose move switched its trigger on

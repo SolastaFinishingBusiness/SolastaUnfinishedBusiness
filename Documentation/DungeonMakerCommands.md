@@ -82,8 +82,8 @@ Whoever walks onto that cell is moved to the Node.
 
 `Teleport_PartyNode` moves the whole party and the guests travelling with it, placed in formation around the Node,
 with summoned creatures following their owners. It needs no acting character, so a timer or a quest can use it. Its
-status is `Succeeded` only when every one of them is confirmed near the Node, and `Failed` if the game found no
-free cell for someone.
+status is `Succeeded` only when the game has placed every one of them, and `Failed` if it found no free cell for
+someone; the log names who.
 
 ## Status
 

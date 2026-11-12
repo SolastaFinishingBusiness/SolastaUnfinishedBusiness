@@ -109,6 +109,20 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: see which characters the game places, and where, while a party teleport's functor runs: that is how
+    //the command knows that every traveller arrived
+    [HarmonyPatch(typeof(GameLocationPositioningManager), nameof(GameLocationPositioningManager.TeleportCharacter))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameLocationPositioningManager_TeleportCharacter
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameLocationCharacter character, TA.int3 newPosition)
+        {
+            DungeonMakerCommandsContext.NoteCharacterTeleported(character, newPosition);
+        }
+    }
+
     //PATCH: remember whose move made an Area Activator fire (the game passes the character that moved)
     [HarmonyPatch(typeof(GameGadgetListenerVolumetricTrigger),
         nameof(GameGadgetListenerVolumetricTrigger.OccupationChanged))]
