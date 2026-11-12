@@ -21,7 +21,7 @@ ends, so you can write the same name again later.
 |---|---|---|
 | `Dialog_Trigger` | the name of an NPC or object | Its dialogue starts, as if a character had clicked it. |
 | `Roll_Trigger` | the name of a Roll Activator | The acting character rolls its check. |
-| `Teleport_Node` | the name of a Node | The acting character is teleported there. |
+| `Teleport_Node` | the name of a Node | The acting character is teleported onto the Node's exact cell. |
 | `Teleport_PartyNode` | the name of a Node | The whole party is teleported there. |
 
 - **Names.** For `Dialog_Trigger` you can use the name the player sees, the name you typed when creating the NPC, or
@@ -33,7 +33,8 @@ ends, so you can write the same name again later.
 - **The dialogue or roll must exist.** Set it up on the NPC, object or Roll Activator as usual. The command only
   starts it another way. The gadget's own conditions still apply: while they are not met, the command waits.
 - **One at a time per variable.** Writing a new name while the earlier one is still waiting replaces it. Writing an
-  empty text cancels it. The four commands don't hold each other up.
+  empty text cancels it. The four commands don't hold each other up. `Teleport_Node` is the exception: see
+  "Teleporting one character" below.
 - **Waiting.** A command waits while a dialogue is playing, while its gadget is busy, or while its conditions are not
   met, for up to an hour of game time. What can never work (no gadget of that name, the wrong kind of gadget, no
   acting character) fails at once.
@@ -50,14 +51,34 @@ ends, so you can write the same name again later.
 | a timer, a variable or condition activator, a quest, a dialogue | none: the command fails and says so |
 
 - When several characters arrive at once (the party entering the location, a party teleport), nobody "walked in".
-  The command then only works if exactly one party member is in the area.
-- The character must still be a conscious party member in that location when the command runs.
+  The command then only works if exactly one character is in the area.
+- For `Roll_Trigger` the character must still be a conscious party member in that location when the command runs.
 - A game saved while one of these commands was waiting loads without its acting character, so the command fails after
   loading. `Dialog_Trigger` and `Teleport_PartyNode` are not affected.
 - `Dialog_Trigger` uses the acting character when there is one, otherwise the first conscious party member.
 
 Typical set-up for an automatic check: an Area Activator whose Variable Operation sets `Roll_Trigger` to the name of
 the Roll Activator. Whoever walks in rolls.
+
+## Teleporting one character
+
+`Teleport_Node` works a little differently from the other commands.
+
+- **Who:** the character that caused the activation, and never another. Any character counts, a guest or an NPC
+  too, if the trigger reacts to them. Its state is not checked: unconscious, dying or dead, it is moved as it is.
+  It only has to be in the location still.
+- **Every activation is its own request.** Two characters stepping on two plates that both write the same Node
+  name are both teleported, one after the other, in the order the activations happened. A new request does not
+  replace one that is waiting. Writing an empty text cancels all that are waiting.
+- **Where:** exactly on the Node's cell, at its height. No nearby free cell is looked for. So a character can arrive
+  on a cell another hero stands on, in mid-air or in a hazard. What follows is up to the game: over a hole the
+  character falls.
+- A pressure plate that stays held down is one press. A second character stepping on it while the first is still
+  there does not ask for a second teleport.
+
+Typical set-up: an Area Activator one cell large whose Variable Operation sets `Teleport_Node` to the name of a Node.
+Whoever walks onto that cell is moved to the Node. Use `Teleport_PartyNode` to move the whole party, placed in
+formation around the Node.
 
 ## Status
 

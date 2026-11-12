@@ -16,9 +16,11 @@ namespace SolastaUnfinishedBusiness.Models;
 //   Dialog_Trigger       the name of the NPC or object whose dialogue should start: the name the player sees, the
 //                        NPC's definition name, its internal unique name, or the gadget's own name.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
-//   Teleport_Node        the name of a Node gadget: the acting character is teleported there.
+//   Teleport_Node        the name of a Node gadget: the acting character is teleported onto its exact cell.
 //   Teleport_PartyNode   the name of a Node gadget: the whole party is teleported there.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
+//   Teleport_Node is the exception: every activation that writes it is a request of its own, and they are
+//   carried out one after the other in the order they were made (see "ONE-CHARACTER TELEPORT").
 //
 // STATUS (optional String variables named <command>_Status, e.g. Roll_Trigger_Status)
 //   Pending (waiting for something temporary), Running (handed to the game), Succeeded, Failed, Cancelled.
@@ -32,9 +34,22 @@ namespace SolastaUnfinishedBusiness.Models;
 //   - when a character interacts with something, it is that character;
 //   - anything else (a timer, a variable or condition activator, a quest step, a variable set from a dialogue, a
 //     save loaded while the command was waiting) has no acting character, so the command fails and says so.
-//   The character must still be a conscious party member in the same location when the command runs.
+//   For Roll_Trigger the character must still be a conscious party member in the location when the command runs.
 //   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member.
 //   Teleport_PartyNode needs nobody.
+//
+// ONE-CHARACTER TELEPORT (Teleport_Node), as specified in issue #42:
+//   - It moves the character that caused the activation and never another. Any character counts, a guest or an
+//     NPC too, and its state is not looked at: unconscious, dying or dead, it is moved as it is. It only has to
+//     be in the location still.
+//   - Every activation makes its own request, even for the same Node; a new one does not replace one that is
+//     waiting. They are carried out in the order the game reported the activations, one per gadget update, each
+//     ended before the next character is placed.
+//   - The character is put on the Node's exact cell, height included, with the game's own TeleportCharacter and
+//     none of its placement search: a cell another hero stands on, a cell with no floor and a hazard are all
+//     allowed, and no safer cell is substituted. Arrival is checked once, right there (the character's three
+//     coordinates). Only then is the character's footing checked, so a fall or a hazard follows as the game does
+//     it; a fall after arriving is not a failed teleport.
 //
 // TORCHES (Int: 1 = lit, 2 = out, 0 or missing = no opinion; strongest first)
 //   Torch_<gadget name>  one torch;   Torches_Lit  every torch in the location;
@@ -53,8 +68,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //     updated, and nothing depends on the clock ticking (it does not tick during a battle).
 //   - A dialogue or a roll is started with GameGadget.Interact, which only marks the gadget's flow as triggered;
 //     the game then runs the flow from its own gadget update, as after a click.
-//   - A teleport runs the game's own Teleport functor through the functor service as a coroutine, continued once
-//     per gadget update, the way a gadget runs its functors. It is never driven to its end in one go.
+//   - A party teleport runs the game's own Teleport functor through the functor service as a coroutine, continued
+//     once per gadget update, the way a gadget runs its functors. It is never driven to its end in one go.
 //   - Each command has its own state: one that waits or fails does not hold up or switch off the others.
 //   - What can pass is waited for (a dialogue playing, conditions not met yet), for an hour of game time at
 //     most. What can't work is ended at once with one log line saying why.
@@ -136,6 +151,9 @@ internal static class DungeonMakerCommandsContext
     // requests handed to the game and watched until they end
     private static readonly List<Request> Started = [];
 
+    // Teleport_Node requests, oldest first: one per activation, none replaced by a later one
+    private static readonly List<Request> SoloTeleports = [];
+
     // the serial of the newest request of each command variable: only that one may write the status variable
     private static readonly Dictionary<string, int> NewestSerial = [];
 
@@ -206,6 +224,7 @@ internal static class DungeonMakerCommandsContext
         }
 
         Started.RemoveAll(x => !ReferenceEquals(x.Location, location));
+        SoloTeleports.RemoveAll(x => !ReferenceEquals(x.Location, location));
         Torches.Clear();
         _torchLocation = null;
         _lastTorchReport = string.Empty;
@@ -220,7 +239,7 @@ internal static class DungeonMakerCommandsContext
         // acting character.
         foreach (var command in Commands)
         {
-            if (!Waiting.ContainsKey(command.Key) &&
+            if (!Waiting.ContainsKey(command.Key) && SoloTeleports.All(x => x.Variable != command.Key) &&
                 variables.TryFindVariable(command.Key, out var variable) && variable is
                 {
                     Type: GameVariableDefinitions.Type.String
@@ -255,19 +274,43 @@ internal static class DungeonMakerCommandsContext
 
     // FunctorVariableOperation.Execute, around each step of it: the game is running a gadget's Variable Operation.
     // The variable's "value changed" event fires inside it, and the functor's parameters say which gadget flow is
-    // writing, which is how a request learns its acting character.
-    internal static FunctorParametersDescription BeginVariableOperation(FunctorParametersDescription parameters)
+    // writing, which is how a request learns its acting character. The returned token goes back to
+    // EndVariableOperation.
+    internal static (FunctorParametersDescription, int) BeginVariableOperation(FunctorParametersDescription parameters)
     {
-        var previous = _operation;
+        var token = (_operation, _serial);
 
         _operation = parameters;
 
-        return previous;
+        return token;
     }
 
-    internal static void EndVariableOperation(FunctorParametersDescription previous)
+    internal static void EndVariableOperation((FunctorParametersDescription, int) token)
     {
+        var operation = _operation;
+        var (previous, serialBefore) = token;
+
         _operation = previous;
+
+        // The game raises "value changed" only when the value really changes. A second activation that writes the
+        // same Node name into Teleport_Node while the first request has not started yet (the variable still holds
+        // that name) would go unnoticed, and it is a request of its own. So when this operation wrote
+        // Teleport_Node and no request was taken while it ran, it is taken here.
+        if (operation?.StringParameter != TeleportNodeVariable || _serial != serialBefore || !Enabled ||
+            CurrentLocation == null)
+        {
+            return;
+        }
+
+        var variables = ServiceRepository.GetService<IGameVariableService>();
+
+        if (variables != null && variables.TryFindVariable(TeleportNodeVariable, out var variable) && variable is
+            {
+                Type: GameVariableDefinitions.Type.String
+            } && !string.IsNullOrEmpty(variable.StringValue))
+        {
+            Capture(Kind.TeleportOne, TeleportNodeVariable, variable.StringValue, operation);
+        }
     }
 
     // GameGadgetListenerVolumetricTrigger.OccupationChanged and GameGadgetListenerPressurePlate.OccupationChanged
@@ -388,6 +431,12 @@ internal static class DungeonMakerCommandsContext
             GuardedStep(Started[i], StepStarted);
         }
 
+        // one-character teleports: the oldest request only, so each one ends before the next character is placed
+        if (SoloTeleports.Count > 0)
+        {
+            GuardedStep(SoloTeleports[0], StepSoloTeleport);
+        }
+
         if (_torchesDirty)
         {
             _torchesDirty = false;
@@ -447,14 +496,23 @@ internal static class DungeonMakerCommandsContext
 
     #region Requests
 
-    // takes a write of a command variable: "" cancels what was waiting, anything else replaces it
+    // Takes a write of a command variable: "" cancels what was waiting, anything else replaces it. For
+    // Teleport_Node nothing is replaced: the request joins the queue.
     private static void Capture(Kind kind, string variableName, string value, FunctorParametersDescription operation)
     {
-        var replaced = Waiting.Remove(variableName);
+        var queued = kind == Kind.TeleportOne;
+        var replaced = !queued && Waiting.Remove(variableName);
 
         if (string.IsNullOrEmpty(value))
         {
-            if (replaced)
+            if (queued)
+            {
+                foreach (var waiting in SoloTeleports.ToArray())
+                {
+                    Finish(waiting, StatusCancelled, "the variable was cleared");
+                }
+            }
+            else if (replaced)
             {
                 WriteStatus(variableName, StatusCancelled);
                 Main.Info($"DM command {variableName}: cancelled.");
@@ -475,7 +533,16 @@ internal static class DungeonMakerCommandsContext
 
         ResolveActor(operation, request);
         NewestSerial[variableName] = request.Serial;
-        Waiting[variableName] = request;
+
+        if (queued)
+        {
+            SoloTeleports.Add(request);
+        }
+        else
+        {
+            Waiting[variableName] = request;
+        }
+
         WriteStatus(variableName, StatusPending);
     }
 
@@ -497,13 +564,16 @@ internal static class DungeonMakerCommandsContext
         var listener = listeners != null && index >= 0 && index < listeners.Count ? listeners[index] : null;
         var gadgetName = gadget?.UniqueNameId;
 
-        // the party members the game handed the flow (it reuses these lists, so they only mean something for the
-        // listener types below, which fill them for each activation)
+        // The characters the game handed the flow (it reuses these lists, so they only mean something for the
+        // listener types below, which fill them for each activation). A roll or a dialogue is for a party member;
+        // a one-character teleport moves whoever caused it, so every character counts there.
+        var anyCharacter = request.Kind == Kind.TeleportOne;
         var heroes = (operation.ActingCharacters ?? [])
-            .Where(IsPartyMember)
+            .Where(x => x != null && (anyCharacter || IsPartyMember(x)))
             .Select(x => x.Guid)
             .Distinct()
             .ToList();
+        var who = anyCharacter ? "character" : "party member";
 
         switch (listener)
         {
@@ -513,7 +583,7 @@ internal static class DungeonMakerCommandsContext
                 request.ActorKnown = true;
                 break;
             case GameGadgetListenerCharacterInteraction:
-                request.ActorProblem = $"the interaction with '{gadgetName}' has no single party member acting";
+                request.ActorProblem = $"the interaction with '{gadgetName}' has no single {who} acting";
                 break;
             case GameGadgetListenerVolumetricTrigger or GameGadgetListenerPressurePlate:
                 if (!_runs.TryGetValue(listener, out var activation))
@@ -523,7 +593,7 @@ internal static class DungeonMakerCommandsContext
                 }
                 else if (activation.Group)
                 {
-                    // arriving in the location or a party teleport: fine if only one party member is in it
+                    // arriving in the location or a party teleport: fine if only one of them is in it
                     if (heroes.Count == 1)
                     {
                         request.ActorGuid = heroes[0];
@@ -532,7 +602,7 @@ internal static class DungeonMakerCommandsContext
                     else
                     {
                         request.ActorProblem = $"'{gadgetName}' was activated by characters being placed " +
-                                               $"together ({heroes.Count} party members in it), so no single one caused it";
+                                               $"together ({heroes.Count} {who}s in it), so no single one caused it";
                     }
                 }
                 else if (activation.MoverKnown)
@@ -635,7 +705,7 @@ internal static class DungeonMakerCommandsContext
                 StepInteraction(request);
                 break;
             default:
-                StepTeleport(request);
+                StepPartyTeleport(request);
                 break;
         }
     }
@@ -782,37 +852,13 @@ internal static class DungeonMakerCommandsContext
 
     #region Teleport
 
-    private static void StepTeleport(Request request)
+    // Looks the destination up the way a Teleporter gadget finds it (by the gadget object's name), or by the
+    // gadget's unique name. Returns null when the request has to wait or has been ended.
+    private static WorldGadget FindDestination(Request request)
     {
-        var wholeParty = request.Kind == Kind.TeleportParty;
-        var party = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters;
-        GameLocationCharacter actor = null;
-
-        if (party == null || party.Count == 0)
-        {
-            Wait(request, "no party in this location yet");
-
-            return;
-        }
-
-        if (!wholeParty)
-        {
-            actor = ValidActor(request, out var problem);
-
-            if (actor == null)
-            {
-                Finish(request, StatusFailed,
-                    $"teleporting one character needs to know which, but {problem} (use {TeleportPartyVariable} for the whole party)");
-
-                return;
-            }
-        }
-
-        // the destination, found the way a Teleporter gadget finds it (by the gadget object's name), or by the
-        // gadget's unique name
         if (!LookupDue(request))
         {
-            return;
+            return null;
         }
 
         var nodes = WorldGadgets()
@@ -821,28 +867,153 @@ internal static class DungeonMakerCommandsContext
 
         switch (nodes.Count)
         {
+            case 1:
+                return nodes[0];
             case 0:
                 WaitMissing(request,
                     $"no gadget named '{request.Target}' in this location (set {ListVariable} to 2 to list them)");
 
-                return;
-            case > 1:
+                return null;
+            default:
                 Finish(request, StatusFailed,
                     $"{nodes.Count} gadgets are named '{request.Target}', so the destination can't be told");
 
-                return;
+                return null;
+        }
+    }
+
+    // A character of this location by its id, in whatever state: the party, guests, everyone else alive, the dead.
+    private static GameLocationCharacter FindCharacter(ulong guid)
+    {
+        var characters = ServiceRepository.GetService<IGameLocationCharacterService>();
+
+        if (characters == null)
+        {
+            return null;
         }
 
-        var node = nodes[0];
+        return new[]
+            {
+                characters.PartyCharacters, characters.GuestCharacters, characters.ValidCharacters,
+                characters.DeadCharacters
+            }
+            .Where(x => x != null)
+            .SelectMany(x => x)
+            .FirstOrDefault(x => x != null && x.Guid == guid);
+    }
+
+    // Teleport_Node: the head of the queue. See "ONE-CHARACTER TELEPORT" at the top of this file.
+    private static void StepSoloTeleport(Request request)
+    {
+        if (!ReferenceEquals(request.Location, CurrentLocation))
+        {
+            Finish(request, StatusCancelled, "the location changed");
+
+            return;
+        }
+
+        // temporary: a dialogue or cutscene is playing or about to
+        var narrative = ServiceRepository.GetService<INarrativeDirectionService>();
+
+        if (narrative != null && (narrative.IsSequenceInProgress || narrative.HasPendingSequence))
+        {
+            Wait(request, "a dialogue is in progress");
+
+            return;
+        }
+
+        if (!request.ActorKnown)
+        {
+            Finish(request, StatusFailed,
+                $"teleporting one character needs to know which, but {request.ActorProblem} (use {TeleportPartyVariable} for the whole party)");
+
+            return;
+        }
+
+        // the character that caused it, whatever its state: it only has to be here still
+        var character = FindCharacter(request.ActorGuid);
+
+        if (character == null)
+        {
+            Finish(request, StatusFailed,
+                $"{request.ActorName ?? "the character that caused it"} has left the location or been removed");
+
+            return;
+        }
+
+        var positioning = ServiceRepository.GetService<IGameLocationPositioningService>();
+
+        if (positioning == null)
+        {
+            Finish(request, StatusFailed, "the game's positioning service is not available");
+
+            return;
+        }
+
+        var node = FindDestination(request);
+
+        if (node == null)
+        {
+            return;
+        }
+
+        var destination = positioning.GetGridPositionFromWorldPosition(node.transform);
+
+        // from here the request is no longer waiting: its variable is cleared so the same name can be written again
+        SoloTeleports.Remove(request);
+        ClearVariable(request);
+        WriteStatus(request, StatusRunning);
+        Main.Info(
+            $"DM command {request.Variable}: teleporting {character.Name} to '{node.name}' at {destination}.");
+
+        // What the game's Teleport functor does before it moves a character, and the call it moves it with. The
+        // functor first searches for a free, safe cell near the marker; that search is left out on purpose, so
+        // the character lands on the cell itself.
+        ServiceRepository.GetService<IGameLocationActionService>()?
+            .StopCharacterActions(character, CharacterAction.InterruptionType.Kill, true);
+        positioning.TeleportCharacter(character, destination, character.Orientation);
+
+        // arrival is checked once, here, before anything that follows from standing on that cell
+        var arrived = character.LocationPosition;
+
+        if (!arrived.Equals(destination))
+        {
+            Finish(request, StatusFailed, $"{character.Name} was placed at {arrived}, not at {destination}");
+
+            return;
+        }
+
+        Finish(request, StatusSucceeded, null);
+
+        // now the cell's consequences: with no floor under it the character falls, as after any move
+        character.CheckCharacterFooting(false);
+    }
+
+    // Teleport_PartyNode: the whole party, placed in formation around the Node by the game's Teleport functor.
+    private static void StepPartyTeleport(Request request)
+    {
+        var party = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters;
+
+        if (party == null || party.Count == 0)
+        {
+            Wait(request, "no party in this location yet");
+
+            return;
+        }
+
+        var node = FindDestination(request);
+
+        if (node == null)
+        {
+            return;
+        }
 
         // the parameters a Teleporter gadget gives the game's Teleport functor
         var parameters = new FunctorParametersDescription
         {
             Type = TeleportFunctor,
-            CharacterLookUpMethod = wholeParty
-                ? FunctorDefinitions.CharacterLookUpMethod.AllPartyMembers
-                : FunctorDefinitions.CharacterLookUpMethod.InteractingCharacter,
-            ActingCharacters = wholeParty ? [..party] : [actor],
+            CharacterLookUpMethod = FunctorDefinitions.CharacterLookUpMethod.AllPartyMembers,
+            ActingCharacters = [..party],
             SourceGadget = node,
             playerPlacementMarkers = [node.transform]
         };
@@ -858,7 +1029,7 @@ internal static class DungeonMakerCommandsContext
 
         // the functor only writes a log line when it finds no free cell, so remember where one of the teleported
         // characters stands, to tell afterwards whether anything moved
-        var watched = wholeParty ? party[0] : actor;
+        var watched = party[0];
 
         request.WatchedGuid = watched.Guid;
         request.WatchedFrom = watched.LocationPosition;
@@ -866,9 +1037,7 @@ internal static class DungeonMakerCommandsContext
             .GetGridPositionFromWorldPosition(node.transform);
 
         MarkStarted(request);
-        Main.Info(wholeParty
-            ? $"DM command {request.Variable}: teleporting the party to '{node.name}'."
-            : $"DM command {request.Variable}: teleporting {actor.Name} to '{node.name}'.");
+        Main.Info($"DM command {request.Variable}: teleporting the party to '{node.name}'.");
 
         // The request itself is the "source" the functor service tracks while the functor runs. The coroutine gets
         // its first step later in this same gadget update, when Tick goes over the started requests.
@@ -1016,6 +1185,13 @@ internal static class DungeonMakerCommandsContext
         }
 
         Started.Remove(request);
+
+        if (SoloTeleports.Remove(request))
+        {
+            // it was still waiting in the queue
+            ClearVariable(request);
+        }
+
         WriteStatus(request, status);
 
         if (reason != null)
@@ -1028,7 +1204,7 @@ internal static class DungeonMakerCommandsContext
     // from the functor service's list of busy sources.
     private static void DropRequests()
     {
-        foreach (var request in Waiting.Values.ToArray())
+        foreach (var request in Waiting.Values.Concat(SoloTeleports).ToArray())
         {
             Finish(request, StatusCancelled, "the location was left");
         }
@@ -1173,10 +1349,12 @@ internal static class DungeonMakerCommandsContext
         WriteString(commandVariable + StatusSuffix, status);
     }
 
-    // a request that a newer one has replaced no longer speaks for the variable
+    // A request that a newer one has replaced no longer speaks for the variable. One-character teleports are not
+    // replaced, so each of them reports as it goes; the status variable shows the latest thing that happened.
     private static void WriteStatus(Request request, string status)
     {
-        if (NewestSerial.TryGetValue(request.Variable, out var newest) && newest == request.Serial)
+        if (request.Kind == Kind.TeleportOne ||
+            (NewestSerial.TryGetValue(request.Variable, out var newest) && newest == request.Serial))
         {
             WriteStatus(request.Variable, status);
         }

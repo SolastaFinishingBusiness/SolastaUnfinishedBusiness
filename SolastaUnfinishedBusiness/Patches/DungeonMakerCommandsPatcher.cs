@@ -40,7 +40,7 @@ public static class DungeonMakerCommandsPatcher
             {
                 while (true)
                 {
-                    var previous = DungeonMakerCommandsContext.BeginVariableOperation(functorParameters);
+                    var token = DungeonMakerCommandsContext.BeginVariableOperation(functorParameters);
                     bool more;
 
                     try
@@ -49,7 +49,7 @@ public static class DungeonMakerCommandsPatcher
                     }
                     finally
                     {
-                        DungeonMakerCommandsContext.EndVariableOperation(previous);
+                        DungeonMakerCommandsContext.EndVariableOperation(token);
                     }
 
                     if (!more)
