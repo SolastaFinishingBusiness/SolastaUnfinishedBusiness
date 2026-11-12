@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.CustomUI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,8 +14,9 @@ namespace SolastaUnfinishedBusiness.Patches;
 
 // Alphabetical view of the Dungeon Maker's lists (issue #42, adapted from BlackguardRogue's Dungeon Maker tools):
 // the twelve content lists of the campaign editor, the variable picker, and the Cheats > Campaign Variables panel.
-// One setting for all three, off by default: Mod UI > Dungeon Maker > "Show the Dungeon Maker's lists in
-// alphabetical order" (Settings.SortDungeonMakerListsAlphabetically).
+// One setting for all three, off by default (Settings.SortDungeonMakerListsAlphabetically). Each of the three
+// screens has a switch for it (CustomUI/DungeonMakerSortSwitch.cs), and it is also in Mod UI > Dungeon Maker as
+// "Show the Dungeon Maker's lists in alphabetical order".
 //
 // It only changes what is SHOWN. The first version sorted the campaign's own lists (so the order was saved with the
 // campaign, and auto-start quests, which the game starts in list order, entered the journal in another order) and
@@ -152,6 +154,50 @@ public static class UserListSortPatcher
             {
                 moveDown.interactable = false;
             }
+        }
+    }
+
+    //PATCH: the Default / Alphabetical switch on the three screens (CustomUI/DungeonMakerSortSwitch.cs). Each is
+    //added when its screen is shown, as a copy of a button of that screen, and redraws that screen's list.
+    [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnBeginShow))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserCampaignEditorScreen_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignEditorScreen __instance)
+        {
+            // beside Import and Export above the content lists; the screen refreshes every list when it is dirty
+            DungeonMakerSortSwitch.Ensure(__instance.transform, "RightPanel/ExportGroup/ImportContentsButton",
+                () => __instance.Dirty = true);
+        }
+    }
+
+    [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.OnBeginShow))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserVariableSelectionModal_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserVariableSelectionModal __instance)
+        {
+            // beside Cancel; filling the lines again binds them in list order, then the view orders them
+            DungeonMakerSortSwitch.Ensure(__instance.transform, "MainPanel/ButtonsBar/CancelButton",
+                __instance.EnumerateLines);
+        }
+    }
+
+    [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.OnBeginShow))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CampaignVariablesModal_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static void Postfix(CampaignVariablesModal __instance)
+        {
+            // beside Close; the panel builds its rows in a coroutine, as it does when it opens
+            DungeonMakerSortSwitch.Ensure(__instance.transform, "MainPanel/ButtonsBar/CloseButton",
+                () => __instance.StartCoroutine(__instance.EnumerateVariableLines()));
         }
     }
 
