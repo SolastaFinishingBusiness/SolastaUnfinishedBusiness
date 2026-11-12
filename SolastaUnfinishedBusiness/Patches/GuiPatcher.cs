@@ -99,6 +99,15 @@ public static class GuiPatcher
             List<TrendInfo> trends,
             bool ignoreZero)
         {
+            //PATCH: a Dungeon Maker custom weapon's typed-in damage bonus and the enhancement of the item it was
+            //made from are not listed when they cancel each other (issue #42). It is done here because this prefix
+            //writes the list instead of the game's formatter, so a second prefix on the same method would only
+            //run by the luck of patch order.
+            if (WeaponDamageDisplay.InDamageFormatter)
+            {
+                trends = WeaponDamageDisplay.WithoutCancellingPair(trends);
+            }
+
             foreach (var trend in trends
                          .Where(trend => trend.value != 0 || !ignoreZero))
             {
