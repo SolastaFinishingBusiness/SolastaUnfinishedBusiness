@@ -13,8 +13,10 @@ namespace SolastaUnfinishedBusiness.Models;
 // them, and a player without the mod, are unaffected.
 //
 // COMMAND VARIABLES (String; names are case-sensitive; the mod sets them back to "" when the command ends)
-//   Dialog_Trigger       the name of the NPC or object whose dialogue should start: the name the player sees, the
-//                        NPC's definition name, its internal unique name, or the gadget's own name.
+//   Dialog_Trigger       the name of the NPC or object whose dialogue should start: the gadget's own name, the
+//                        NPC's internal unique name, or the name or title the author gave the NPC in the Dungeon
+//                        Maker. Never a name as a player's language shows it: in multiplayer every computer has to
+//                        find the same gadget, whatever language it runs in.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
 //   Teleport_Node        the name of a Node gadget: the acting character is teleported onto its exact cell.
 //   Teleport_PartyNode   the name of a Node gadget: the whole party, with the guests travelling with it, is
@@ -96,6 +98,9 @@ internal static class DungeonMakerCommandsContext
     internal const string StatusSucceeded = "Succeeded";
     internal const string StatusFailed = "Failed";
     internal const string StatusCancelled = "Cancelled";
+
+    // the Dungeon Maker gadget a teleport's destination must be (GadgetBlueprint.Name)
+    private const string NodeBlueprint = "Node";
 
     // the game's functor names (FunctorManager's registrations)
     private const string TeleportFunctor = "Teleport";
@@ -859,7 +864,7 @@ internal static class DungeonMakerCommandsContext
     }
 
     // Gadgets the author's name can mean: a gadget's own name or its NPC's internal name first; if neither fits,
-    // an NPC's definition name, displayed name or title. More than one result means the name is ambiguous.
+    // the name or title the author gave the NPC. More than one result means the name is ambiguous.
     private static List<GameGadget> FindInteractionTargets(string name)
     {
         var gadgets = GadgetsById();
@@ -898,6 +903,13 @@ internal static class DungeonMakerCommandsContext
 
         switch (nodes.Count)
         {
+            // The game's own Teleporter takes any gadget of that name as its destination. A command names its
+            // destination in free text, so a slip could send characters to a door or a chest: only a Node is taken.
+            case 1 when nodes[0].UserGadget?.GadgetBlueprintName != NodeBlueprint:
+                Finish(request, StatusFailed,
+                    $"'{request.Target}' is a {nodes[0].UserGadget?.GadgetBlueprintName ?? "gadget of the game"}, not a Node");
+
+                return null;
             case 1:
                 return nodes[0];
             case 0:
@@ -1066,9 +1078,10 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        // Everyone meant to travel is remembered, to check afterwards that the game placed each of them. Summoned
-        // creatures are not on the list: the functor does not place them, it moves them to their owners.
-        request.Members = party.Where(x => !x.IsSummonedCreature).Select(x => x.Guid).ToList();
+        // Everyone meant to travel is remembered, to check afterwards that the game placed each of them. That
+        // includes summoned creatures: the functor takes them out of its own list and has them moved, as a group,
+        // to the first character it placed (TeleportSummonsToCharacter), which uses the same TeleportCharacter.
+        request.Members = party.Select(x => x.Guid).ToList();
 
         MarkStarted(request);
         Main.Info(
@@ -1271,12 +1284,17 @@ internal static class DungeonMakerCommandsContext
             Finish(request, StatusCancelled, "the location was left");
         }
 
+        // A started request has already cleared its variable; without this its status would say Running for as
+        // long as the campaign is played.
         foreach (var request in Started.ToArray())
         {
             if (request.Routine is { IsFinished: false })
             {
                 ServiceRepository.GetService<IFunctorService>()?.EmergencyReleaseSource(request);
             }
+
+            WriteStatus(request, StatusCancelled);
+            Main.Info($"DM command {request.Variable} '{request.Target}' cancelled: the location was left.");
         }
 
         Waiting.Clear();
@@ -1495,7 +1513,7 @@ internal static class DungeonMakerCommandsContext
             var npc = NpcNames.Of(entry.Key);
             var npcText = npc == null
                 ? "npc=(no spawned character bound)"
-                : $"npcDefinition='{npc.Definition}' npcDisplay='{npc.Display}' npcTitle='{npc.Title}'";
+                : $"npcDefinition='{npc.Definition}' npcTitle='{npc.Title}'";
             var kinds = gadget.activeListeners
                 .Where(l => l is GameGadgetListenerCharacterInteraction)
                 .Select(l => l.FunctorParams.Any(x => DialogFunctors.Contains(x.Type)) ? "dialogue"
@@ -1727,16 +1745,17 @@ internal static class DungeonMakerCommandsContext
         internal WorldGadget World;
     }
 
-    // the names an author may know an NPC by
+    // The names an author may know an NPC by. Both are the campaign's own data, the same on every computer: the
+    // name the game shows for a character can depend on the language the game runs in, and two players would then
+    // resolve the same command to different gadgets, or one of them to none.
     private sealed class NpcNames
     {
         internal string Definition = string.Empty; // MonsterDefinition.Name: what was typed when creating the NPC
-        internal string Display = string.Empty; // GuiCharacter.Name: what the UI shows
-        internal string Title = string.Empty; // the localized title
+        internal string Title = string.Empty; // its title as stored, not put through the game's translation
 
         internal bool Matches(string name)
         {
-            return Same(Definition, name) || Same(Display, name) || Same(Title, name);
+            return Same(Definition, name) || Same(Title, name);
         }
 
         // the NPC bound to this gadget, as the game binds them (GameLocationCharacter.BoundGadgetId is the key of
@@ -1757,10 +1776,7 @@ internal static class DungeonMakerCommandsContext
 
             return new NpcNames
             {
-                Definition = Safe(() => definition?.Name),
-                Display = Safe(() => new GuiCharacter(character).Name),
-                Title = Safe(() =>
-                    definition?.GuiPresentation == null ? null : Gui.Localize(definition.GuiPresentation.Title))
+                Definition = Safe(() => definition?.Name), Title = Safe(() => definition?.GuiPresentation?.Title)
             };
         }
 

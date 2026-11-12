@@ -24,9 +24,11 @@ ends, so you can write the same name again later.
 | `Teleport_Node` | the name of a Node | The acting character is teleported onto the Node's exact cell. |
 | `Teleport_PartyNode` | the name of a Node | The whole party, with its guests, is teleported there in formation. |
 
-- **Names.** For `Dialog_Trigger` you can use the name the player sees, the name you typed when creating the NPC, or
-  the gadget's own name (such as `NpcDialog4`). For the others use the gadget's own name. Capital letters don't
-  matter. If a name fits more than one gadget, the command fails and the log lists them.
+- **Names.** For `Dialog_Trigger` you can use the gadget's own name (such as `NpcDialog4`), or the name or title you
+  gave the NPC when creating it. For the others use the gadget's own name. Capital letters don't matter. If a name
+  fits more than one gadget, the command fails and the log lists them. A name as the game translates it for a
+  player's language is not looked at, so that every player's game finds the same gadget.
+- **Teleport destinations must be Nodes.** A name that belongs to another kind of gadget fails.
 - **Finding names.** Create an Int variable `Dialog_ListGadgets` and set it to `1`: the log lists the interactive
   gadgets of the location and whether each has a dialogue or a roll. Set it to `2` to list every gadget with its
   conditions, which is how you find Node and torch names.
@@ -81,9 +83,12 @@ Typical set-up: an Area Activator one cell large whose Variable Operation sets `
 Whoever walks onto that cell is moved to the Node.
 
 `Teleport_PartyNode` moves the whole party and the guests travelling with it, placed in formation around the Node,
-with summoned creatures following their owners. It needs no acting character, so a timer or a quest can use it. Its
-status is `Succeeded` only when the game has placed every one of them, and `Failed` if it found no free cell for
-someone; the log names who.
+with summoned creatures moved along with the party. It needs no acting character, so a timer or a quest can use it.
+Its status is `Succeeded` only when the game has placed every one of them, summoned creatures included, and `Failed`
+if it found no free cell for someone; the log names who.
+
+`Teleport_Node` moves the one character only. Whether that character's summoned creatures should follow is not
+decided yet; for now they stay where they are.
 
 ## Status
 
@@ -149,8 +154,9 @@ yourself to reset it.
 | `Clock_SkipToDay` | a campaign day, 1 to 180 days ahead | 00:00 of that day (numbered like `Clock_CampaignDay`) |
 | `Clock_SkipToHour` | 1 to 23, or 24 for midnight | that hour, today or tomorrow if it has passed |
 
-- Requests written together are **one skip to one destination**, worked out in the order of the table. So
-  `Clock_SkipToDay` 5 with `Clock_SkipToHour` 9 ends on day 5 at 09:00.
+- Requests written together are **one skip to one destination**, worked out in the order of the table. With
+  `Clock_SkipToDay`, the hour is an hour of that day: `Clock_SkipToDay` 5 with `Clock_SkipToHour` 9 ends on day 5
+  at 09:00, and with `Clock_SkipToHour` 24 on day 5 at 00:00.
 - A long skip advances a few hours at a time over a moment of play, so every dawn, new day and journal entry happens.
 - A skip can't be cancelled once written. Each has an optional status variable, such as `Clock_SkipHours_Status`.
 

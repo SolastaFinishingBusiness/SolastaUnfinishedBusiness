@@ -39,6 +39,13 @@ public static class UserListSortPatcher
         return ContentOf(row) != null;
     }
 
+    // is this the row the screen shows as selected?
+    private static bool IsSelected(Transform row)
+    {
+        return row.TryGetComponent<UserContentLine>(out var line) ? line.Selected
+            : row.TryGetComponent<UserLocationLine>(out var location) && location.Selected;
+    }
+
     // a content row's two sort keys; the search looks in both
     private static string ContentName(Transform row)
     {
@@ -78,32 +85,82 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class UserCampaignEditorScreen_RefreshLists
     {
-        internal static readonly Dictionary<string, Func<UserCampaignEditorScreen, (Transform, Button, Button)>>
-            Lists = new()
+        // per Refresh method: the list's table, its two move arrows, and how to clear its selection
+        internal static readonly Dictionary<string, ContentList> Lists = new()
+        {
             {
-                { "RefreshBiomes", x => (x.userBiomesTable, x.moveBiomeUpButton, x.moveBiomeDownButton) },
-                { "RefreshDialogs", x => (x.userDialogsTable, x.moveDialogUpButton, x.moveDialogDownButton) },
-                {
-                    "RefreshEncounters",
-                    x => (x.userEncountersTable, x.moveEncounterUpButton, x.moveEncounterDownButton)
-                },
-                {
-                    "RefreshEncounterTables",
-                    x => (x.userEncounterTablesTable, x.moveEncounterTableUpButton, x.moveEncounterTableDownButton)
-                },
-                { "RefreshItems", x => (x.userItemsTable, x.moveItemUpButton, x.moveItemDownButton) },
-                { "RefreshLocations", x => (x.userLocationsTable, x.moveLocationUpButton, x.moveLocationDownButton) },
-                { "RefreshLootPacks", x => (x.userLootPacksTable, x.moveLootPackUpButton, x.moveLootPackDownButton) },
-                {
-                    "RefreshMerchantInventories",
-                    x => (x.userMerchantInventoriesTable, x.moveMerchantInventoryUpButton,
-                        x.moveMerchantInventoryDownButton)
-                },
-                { "RefreshMonsters", x => (x.userMonstersTable, x.moveMonsterUpButton, x.moveMonsterDownButton) },
-                { "RefreshNpcs", x => (x.userNpcsTable, x.moveNpcUpButton, x.moveNpcDownButton) },
-                { "RefreshQuests", x => (x.userQuestsTable, x.moveQuestUpButton, x.moveQuestDownButton) },
-                { "RefreshVariables", x => (x.userVariablesTable, x.moveVariableUpButton, x.moveVariableDownButton) }
-            };
+                "RefreshBiomes",
+                new ContentList(x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
+                    x => x.selectedBiome = -1)
+            },
+            {
+                "RefreshDialogs",
+                new ContentList(x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
+                    x => x.selectedDialog = -1)
+            },
+            {
+                "RefreshEncounters",
+                new ContentList(x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
+                    x => x.selectedEncounter = -1)
+            },
+            {
+                "RefreshEncounterTables",
+                new ContentList(x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
+                    x => x.moveEncounterTableDownButton, x => x.selectedEncounterTable = -1)
+            },
+            {
+                "RefreshItems",
+                new ContentList(x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
+                    x => x.selectedItem = -1)
+            },
+            {
+                "RefreshLocations",
+                new ContentList(x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
+                    x => x.selectedLocation = -1)
+            },
+            {
+                "RefreshLootPacks",
+                new ContentList(x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
+                    x => x.selectedLootPack = -1)
+            },
+            {
+                "RefreshMerchantInventories",
+                new ContentList(x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
+                    x => x.moveMerchantInventoryDownButton, x => x.selectedMerchantInventory = -1)
+            },
+            {
+                "RefreshMonsters",
+                new ContentList(x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
+                    x => x.selectedMonster = -1)
+            },
+            {
+                "RefreshNpcs",
+                new ContentList(x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
+                    x => x.selectedNpc = -1)
+            },
+            {
+                "RefreshQuests",
+                new ContentList(x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
+                    x => x.selectedQuest = -1)
+            },
+            {
+                "RefreshVariables",
+                new ContentList(x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
+                    x => x.selectedVariable = -1)
+            }
+        };
+
+        internal sealed class ContentList(
+            Func<UserCampaignEditorScreen, Transform> table,
+            Func<UserCampaignEditorScreen, Button> moveUp,
+            Func<UserCampaignEditorScreen, Button> moveDown,
+            Action<UserCampaignEditorScreen> clearSelection)
+        {
+            internal readonly Action<UserCampaignEditorScreen> ClearSelection = clearSelection;
+            internal readonly Func<UserCampaignEditorScreen, Button> MoveDown = moveDown;
+            internal readonly Func<UserCampaignEditorScreen, Button> MoveUp = moveUp;
+            internal readonly Func<UserCampaignEditorScreen, Transform> Table = table;
+        }
 
         [UsedImplicitly]
         public static IEnumerable<MethodBase> TargetMethods()
@@ -114,26 +171,31 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance, MethodBase __originalMethod)
         {
-            if (!Lists.TryGetValue(__originalMethod.Name, out var parts))
+            if (!Lists.TryGetValue(__originalMethod.Name, out var list))
             {
                 return;
             }
 
-            var (table, _, _) = parts(__instance);
-
-            DungeonMakerListTools.Bound(table, HasContent);
-            ApplyTo(__instance, parts);
+            DungeonMakerListTools.Bound(list.Table(__instance), HasContent);
+            ApplyTo(__instance, list);
         }
 
         // Applies the view to one list. The move arrows swap neighbours in the campaign's list, which are only
         // neighbours on screen in the plain view, so they are off in any other. The game works their state out
         // again on every refresh, which is how they come back.
-        internal static void ApplyTo(
-            UserCampaignEditorScreen screen, Func<UserCampaignEditorScreen, (Transform, Button, Button)> parts)
+        internal static void ApplyTo(UserCampaignEditorScreen screen, ContentList list)
         {
-            var (table, moveUp, moveDown) = parts(screen);
+            var moveUp = list.MoveUp(screen);
+            var moveDown = list.MoveDown(screen);
 
-            DungeonMakerListTools.Apply(table, Editor, ContentName, ContentTitle);
+            // The search left the selected row out: drop the selection, or Edit and Delete would act on an item
+            // that isn't shown. The refresh this asks for works the list's buttons out again with nothing
+            // selected; it can't come back here in a loop, as there is then no selected row to hide.
+            if (DungeonMakerListTools.Apply(list.Table(screen), Editor, ContentName, ContentTitle, IsSelected))
+            {
+                list.ClearSelection(screen);
+                screen.Dirty = true;
+            }
 
             if (DungeonMakerListTools.IsPlain(Editor))
             {
@@ -166,9 +228,9 @@ public static class UserListSortPatcher
                 {
                     // the rows already hold their items: the twelve lists are only ordered and filtered again,
                     // without the game binding everything anew at every letter typed
-                    foreach (var parts in UserCampaignEditorScreen_RefreshLists.Lists.Values)
+                    foreach (var list in UserCampaignEditorScreen_RefreshLists.Lists.Values)
                     {
-                        UserCampaignEditorScreen_RefreshLists.ApplyTo(__instance, parts);
+                        UserCampaignEditorScreen_RefreshLists.ApplyTo(__instance, list);
                     }
 
                     // back to the plain view: a refresh has the game work out the move arrows again
@@ -190,10 +252,22 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserVariableSelectionModal __instance)
         {
-            var table = __instance.userVariablesTable;
+            DungeonMakerListTools.Bound(__instance.userVariablesTable, HasContent);
+            ApplyTo(__instance);
+        }
 
-            DungeonMakerListTools.Bound(table, HasContent);
-            DungeonMakerListTools.Apply(table, Picker, ContentName, ContentTitle);
+        // The search left the picked variable out: drop the pick, or Validate would hand back a variable that
+        // isn't shown. The refresh works Validate's state out again.
+        internal static void ApplyTo(UserVariableSelectionModal picker)
+        {
+            if (!DungeonMakerListTools.Apply(
+                    picker.userVariablesTable, Picker, ContentName, ContentTitle, IsSelected))
+            {
+                return;
+            }
+
+            picker.selectedVariable = -1;
+            picker.Dirty = true;
         }
     }
 
@@ -208,7 +282,7 @@ public static class UserListSortPatcher
         {
             DungeonMakerListTools.Ensure(__instance.transform, Picker, "MainPanel/UserVariablesScrollview",
                 "MainPanel/ButtonsBar/CancelButton", "ModUi/&DungeonMakerSortTitle",
-                () => DungeonMakerListTools.Apply(__instance.userVariablesTable, Picker, ContentName, ContentTitle));
+                () => UserVariableSelectionModal_EnumerateLines.ApplyTo(__instance));
         }
     }
 

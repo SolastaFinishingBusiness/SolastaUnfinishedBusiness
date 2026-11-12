@@ -32,7 +32,9 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //     the order the table's layout draws them in, and switches off the rows the search leaves out.
 //   - Every row keeps the item it was bound to, and the game finds out what a click means from the row's item
 //     (list.IndexOf(line.UserContent)), not from the row's position. So select, edit, duplicate, delete and "pick"
-//     act on the item that was clicked, and the selection survives every change of the view.
+//     act on the item that was clicked, and the selection survives a change of sort or direction.
+//   - A search that leaves the selected row out clears the selection, so no button acts on an item that isn't
+//     shown.
 //   - On its next refresh the game binds row object i to item i again, whichever object that now is, and switches
 //     it on; the view is then applied again.
 //
@@ -116,14 +118,19 @@ internal static class DungeonMakerListTools
     }
 
     // Orders and filters the rows remembered for this table. name and second give a row's two sort keys; a row
-    // is shown when its name or its second key contains the screen's search text.
-    internal static void Apply(
-        Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second)
+    // is shown when its name or its second key contains the screen's search text. Returns true when the search
+    // left out a row that isSelected says is the selected one: the screen still holds that selection, and its
+    // buttons (edit, delete, validate) would act on an item that can't be seen, so the caller has to clear it.
+    internal static bool Apply(
+        Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second,
+        Func<Transform, bool> isSelected = null)
     {
         if (!table || !BoundRows.TryGetValue(table, out var rows) || rows.Count == 0)
         {
-            return;
+            return false;
         }
+
+        var hidSelected = false;
 
         var search = Search(screen);
         var items = new List<Row>();
@@ -177,7 +184,11 @@ internal static class DungeonMakerListTools
             {
                 row.Transform.gameObject.SetActive(shown);
             }
+
+            hidSelected |= !shown && isSelected != null && isSelected(row.Transform);
         }
+
+        return hidSelected;
     }
 
     #endregion

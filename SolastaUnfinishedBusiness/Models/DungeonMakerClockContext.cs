@@ -31,8 +31,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //                       days ahead
 //    Clock_SkipToHour   1-23: to that hour (today, or tomorrow if it has passed); 24: to the next midnight
 //    Requests written during the same gadget update are ONE skip to ONE destination, worked out in the order
-//    above. So Clock_SkipToDay 5 with Clock_SkipToHour 9 ends on day 5 at 09:00, and with Clock_SkipToHour 24 at
-//    the midnight that ends day 5.
+//    above. With Clock_SkipToDay the hour is an hour OF THAT DAY: Clock_SkipToDay 5 with Clock_SkipToHour 9 ends
+//    on day 5 at 09:00, and with Clock_SkipToHour 24 on day 5 at 00:00 (24 is midnight, and day 5 has one).
 //    Each has an optional String status variable, e.g. Clock_SkipHours_Status: Running, Succeeded, Failed or
 //    Cancelled. A skip can't be cancelled once written.
 //
@@ -311,6 +311,7 @@ internal static class DungeonMakerClockContext
         }
 
         var toDay = Take(variables, SkipToDayVariable);
+        var dayGiven = false;
 
         if (toDay > 0)
         {
@@ -331,6 +332,7 @@ internal static class DungeonMakerClockContext
             {
                 // to 00:00 of that day
                 at = (at / SecondsPerDay * SecondsPerDay) + ((long)ahead * SecondsPerDay);
+                dayGiven = true;
                 job.Variables.Add(SkipToDayVariable);
                 parts.Add($"to day {toDay}");
             }
@@ -340,14 +342,24 @@ internal static class DungeonMakerClockContext
 
         if (toHour > 0)
         {
-            // the game's own "skip to hour" arithmetic (FunctorSkipTime): that hour today, or tomorrow when it is
-            // not later than now; 24 is midnight, which is always "tomorrow"
             var target = Math.Min(toHour, 24) % 24;
-            var intoDay = at % SecondsPerDay;
-            var hourAt = (int)(intoDay / SecondsPerHour);
-            var hoursAhead = target > hourAt ? target - hourAt : 24 - hourAt + target;
 
-            at += ((long)hoursAhead * SecondsPerHour) - (intoDay % SecondsPerHour);
+            if (dayGiven)
+            {
+                // a day was named: the hour is that day's, counted from its midnight, where the clock stands now
+                at += (long)target * SecondsPerHour;
+            }
+            else
+            {
+                // the game's own "skip to hour" arithmetic (FunctorSkipTime): that hour today, or tomorrow when it
+                // is not later than now; 24 is midnight, which is then always "tomorrow"
+                var intoDay = at % SecondsPerDay;
+                var hourAt = (int)(intoDay / SecondsPerHour);
+                var hoursAhead = target > hourAt ? target - hourAt : 24 - hourAt + target;
+
+                at += ((long)hoursAhead * SecondsPerHour) - (intoDay % SecondsPerHour);
+            }
+
             job.Variables.Add(SkipToHourVariable);
             parts.Add($"to hour {target}");
         }

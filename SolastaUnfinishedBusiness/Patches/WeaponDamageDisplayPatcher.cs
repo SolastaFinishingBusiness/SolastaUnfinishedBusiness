@@ -117,7 +117,14 @@ public static class WeaponDamageDisplayPatcher
             var definition = (provider as GuiEquipmentItem)?.EquipementItem?.ItemDefinition ??
                              (provider as GuiItemDefinition)?.ItemDefinition;
             var custom = WeaponDamageDisplay.CustomFlatDamage(definition);
-            var shown = damageGroup.gameObject.activeSelf;
+            var table = __instance.attackModifiersTable;
+            var hitGroup = __instance.hitModifierGroup;
+
+            // What is on screen now. The game hides the whole table when a weapon has neither bonus and then leaves
+            // the two rows inside it as the previous weapon set them, so a row only counts as shown when its table
+            // is shown too.
+            var tableShown = !table || table.gameObject.activeSelf;
+            var shown = tableShown && damageGroup.gameObject.activeSelf;
 
             // the total is worked out first, and decides whether the row is there: the game only looks at the
             // enhancement, so it shows a row for +1 -1 and none for +0 +2
@@ -130,26 +137,27 @@ public static class WeaponDamageDisplayPatcher
                 damageLabel.Text = net.ToString("+0;-#");
             }
 
-            if (wanted == shown)
+            // only a custom weapon's own bonus can change whether the row is there
+            if (wanted == shown || custom == 0)
             {
                 return;
             }
 
-            // only a custom weapon's own bonus can change whether the row is there
-            if (custom == 0)
-            {
-                return;
-            }
+            // Both rows are set from this weapon's numbers, not from what they were left as: the "to hit" row is
+            // there when the weapon has an attack bonus (the game's own rule), the damage row when the total is
+            // not 0, and the table when either is.
+            var hitWanted = provider.AttackRollModifier != 0;
 
             damageGroup.gameObject.SetActive(wanted);
 
-            // the table holds the "to hit" row and this one: it is there when either is
-            var table = __instance.attackModifiersTable;
-            var hitGroup = __instance.hitModifierGroup;
+            if (hitGroup)
+            {
+                hitGroup.gameObject.SetActive(hitWanted);
+            }
 
             if (table)
             {
-                table.gameObject.SetActive(wanted || (hitGroup && hitGroup.gameObject.activeSelf));
+                table.gameObject.SetActive(wanted || hitWanted);
             }
 
             // the layout steps the game performs at the end of Bind
