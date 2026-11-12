@@ -390,9 +390,12 @@ public class Settings : UnityModManager.ModSettings
     // a campaign that doesn't define those variables is not affected.
     public bool EnableDungeonMakerVariableCommands { get; set; } = true;
 
-    // Shows the Dungeon Maker editor's content lists, the variable picker and the campaign variables cheat panel in
-    // alphabetical order (Patches/UserListSortPatcher.cs). Only what is shown changes, never the campaign's lists.
-    public bool SortDungeonMakerListsAlphabetically { get; set; }
+    // How the Dungeon Maker editor's content lists, the variable picker and the campaign variables cheat panel are
+    // shown (CustomUI/DungeonMakerListTools.cs): 0 the campaign's own order, 1 by name, 2 by title or type; and
+    // whether that order is reversed. Set with the bar on those screens. Only what is shown changes, never the
+    // campaign's lists.
+    public int DungeonMakerListSort { get; set; }
+    public bool DungeonMakerListSortDescending { get; set; }
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }

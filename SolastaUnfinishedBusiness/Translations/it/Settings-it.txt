@@ -1,8 +1,12 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Tira Percezione per notare i bersagli non percepiti entro 10 caselle</i>
-ModUi/&DungeonMakerSortAlphabetical=Ordine: dalla A alla Z
+ModUi/&DungeonMakerSearch=Cerca
+ModUi/&DungeonMakerSortAscending=Crescente
 ModUi/&DungeonMakerSortDefault=Ordine: predefinito
+ModUi/&DungeonMakerSortDescending=Decrescente
+ModUi/&DungeonMakerSortName=Ordine: nome
+ModUi/&DungeonMakerSortTitle=Ordine: titolo
+ModUi/&DungeonMakerSortType=Ordine: tipo
 ModUi/&EnableDungeonMakerVariableCommands=Abilita i comandi di campagna del Dungeon Maker <i><color=#F0DAA0>[le variabili di campagna con nomi riservati leggono e fanno avanzare l'orologio, avviano dialoghi e tiri, teletrasportano e accendono o spengono le torce; guida: Documentation/DungeonMakerCommands.md sulla pagina GitHub della mod]</color></i>
-ModUi/&SortDungeonMakerListsAlphabetically=Mostra gli elenchi del Dungeon Maker in ordine alfabetico <i><color=#F0DAA0>[elenchi dei contenuti dell'editor, selettore delle variabili e pannello dei trucchi delle variabili di campagna; cambia solo la visualizzazione, l'ordine salvato resta e le frecce di spostamento dell'editor sono disattivate nel frattempo]</color></i>
 ModUi/&SyncAiPerceptionChecks=L'IA attende fino a 3 secondi tiri di Percezione condivisi prima di decidere cosa fare, poi tira quelli ancora mancanti sul computer che la esegue <i><color=#F0DAA0>[con l'opzione delle Regole che tira Percezione per i bersagli non percepiti; disattivato: l'IA li tira sul computer che la esegue, come prima, e le desincronizzazioni sono molto probabili a meno che tutti i giocatori abbiano impostato allo stesso modo l'opzione del gioco Gioco > Gioco > Conserva seme casuale (e restano possibili anche allora); solo partite multigiocatore]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Abilita colpi e mancati critici quando la differenza tra l'AC e il risultato del tiro di attacco modificato è 10 o superiore
 ModUI/&EnableDamageOnFailedJumpCheck=Applica danni 1d4 ai controlli di salto non riusciti

@@ -12,94 +12,48 @@ using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
-// Alphabetical view of the Dungeon Maker's lists (issue #42, adapted from BlackguardRogue's Dungeon Maker tools):
-// the twelve content lists of the campaign editor, the variable picker, and the Cheats > Campaign Variables panel.
-// One setting for all three, off by default (Settings.SortDungeonMakerListsAlphabetically). Each of the three
-// screens has a switch for it (CustomUI/DungeonMakerSortSwitch.cs), and it is also in Mod UI > Dungeon Maker as
-// "Show the Dungeon Maker's lists in alphabetical order".
-//
-// It only changes what is SHOWN. The first version sorted the campaign's own lists (so the order was saved with the
-// campaign, and auto-start quests, which the game starts in list order, entered the journal in another order) and
-// sorted every read of the game's variable list. Here nothing but the order of the row objects on screen changes:
-//
-//   - All three screens fill their table the same way: row object i is bound to item i of the list, in list order.
-//   - Afterwards the row objects are put in alphabetical order among themselves (Transform.SetSiblingIndex), which is
-//     the order the table's layout draws them in.
-//   - Every row keeps the item it was bound to, and the game finds out what a click means from the row's item
-//     (list.IndexOf(line.UserContent)), not from the row's position. So select, edit, duplicate, delete and "pick"
-//     act on the item that was clicked, and the selection survives switching the setting.
-//   - On the next refresh the game binds row object i to item i again, whichever object that now is, and the rows
-//     are ordered again. With the setting off, that alone puts everything back in list order.
-//
-// The order is by internal name, ignoring case; items with the same name keep their list order (a stable sort).
-// The editor's move up / move down arrows change the list order, which can't be seen in this view, so they are
-// switched off while it is on.
-internal static class UserListSorter
-{
-    internal static bool Alphabetical => Main.Settings.SortDungeonMakerListsAlphabetically;
-
-    // Orders the active row objects of a table by name. They are the table's first children (the screens keep
-    // unused pooled rows, switched off, after them), so the sorted rows take sibling positions 0, 1, 2...
-    internal static void SortRows<TLine>(Transform table, Func<TLine, string> name) where TLine : Component
-    {
-        if (!Alphabetical || !table)
-        {
-            return;
-        }
-
-        var rows = new List<KeyValuePair<Transform, string>>();
-
-        for (var i = 0; i < table.childCount; i++)
-        {
-            var child = table.GetChild(i);
-
-            if (child.gameObject.activeSelf && child.TryGetComponent<TLine>(out var line))
-            {
-                rows.Add(new KeyValuePair<Transform, string>(child, name(line) ?? string.Empty));
-            }
-        }
-
-        if (rows.Count < 2)
-        {
-            return;
-        }
-
-        // OrderBy is stable: rows with equal names stay in list order
-        var sorted = rows.OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase).ToList();
-
-        for (var i = 0; i < sorted.Count; i++)
-        {
-            if (sorted[i].Key.GetSiblingIndex() != i)
-            {
-                sorted[i].Key.SetSiblingIndex(i);
-            }
-        }
-    }
-
-    // the setting was switched in the mod's menu: have the editor draw its lists again if it is open
-    internal static void SettingChanged()
-    {
-        var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
-
-        if (editor && editor.gameObject.activeInHierarchy)
-        {
-            editor.Dirty = true;
-        }
-    }
-}
-
+// The hooks of the Dungeon Maker's list tools (issue #42): sorting and searching the campaign editor's twelve
+// content lists, the variable picker and the Cheats > Campaign Variables panel. How the view works, and why it
+// never touches the campaign's lists, is explained in CustomUI/DungeonMakerListTools.cs. Each screen has
+//   - a patch after the game fills a table: remember the rows in list order, then apply the view;
+//   - a patch when the screen is shown: add the bar (sort, direction, search) and say how to apply a change.
 [UsedImplicitly]
 public static class UserListSortPatcher
 {
-    //PATCH: alphabetical view of the campaign editor's content lists. One patch for the twelve Refresh methods:
-    //each fills its own table and switches its own pair of move arrows.
+    private const string Editor = "editor";
+    private const string Picker = "picker";
+    private const string Cheats = "cheats";
+
+    // a content row's two sort keys; the search looks in both
+    private static string ContentName(UserContentLine line)
+    {
+        return line.UserContent?.InternalName;
+    }
+
+    private static string ContentTitle(UserContentLine line)
+    {
+        return line.UserContent?.DisplayTitle;
+    }
+
+    private static string VariableName(CampaignVariableLine line)
+    {
+        return line.GameVariable?.Name;
+    }
+
+    private static string VariableType(CampaignVariableLine line)
+    {
+        return line.GameVariable?.Type.ToString();
+    }
+
+    //PATCH: the view of the campaign editor's content lists. One patch for the twelve Refresh methods: each fills
+    //its own table and works out its own pair of move arrows.
     [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class UserCampaignEditorScreen_RefreshLists
     {
-        private static readonly Dictionary<string, Func<UserCampaignEditorScreen, (Transform, Button, Button)>> Lists =
-            new()
+        internal static readonly Dictionary<string, Func<UserCampaignEditorScreen, (Transform, Button, Button)>>
+            Lists = new()
             {
                 { "RefreshBiomes", x => (x.userBiomesTable, x.moveBiomeUpButton, x.moveBiomeDownButton) },
                 { "RefreshDialogs", x => (x.userDialogsTable, x.moveDialogUpButton, x.moveDialogDownButton) },
@@ -134,17 +88,32 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance, MethodBase __originalMethod)
         {
-            if (!UserListSorter.Alphabetical || !Lists.TryGetValue(__originalMethod.Name, out var parts))
+            if (!Lists.TryGetValue(__originalMethod.Name, out var parts))
             {
                 return;
             }
 
-            var (table, moveUp, moveDown) = parts(__instance);
+            var (table, _, _) = parts(__instance);
 
-            UserListSorter.SortRows<UserContentLine>(table, x => x.UserContent?.InternalName);
+            DungeonMakerListTools.Bound<UserContentLine>(table, x => x.UserContent != null);
+            ApplyTo(__instance, parts);
+        }
 
-            // The arrows swap neighbours in the list, which are not neighbours in this view. The game works out
-            // their state again on every refresh, so they come back by themselves when the setting is off.
+        // Applies the view to one list. The move arrows swap neighbours in the campaign's list, which are only
+        // neighbours on screen in the plain view, so they are off in any other. The game works their state out
+        // again on every refresh, which is how they come back.
+        internal static void ApplyTo(
+            UserCampaignEditorScreen screen, Func<UserCampaignEditorScreen, (Transform, Button, Button)> parts)
+        {
+            var (table, moveUp, moveDown) = parts(screen);
+
+            DungeonMakerListTools.Apply<UserContentLine>(table, Editor, ContentName, ContentTitle);
+
+            if (DungeonMakerListTools.IsPlain(Editor))
+            {
+                return;
+            }
+
             if (moveUp)
             {
                 moveUp.interactable = false;
@@ -157,8 +126,7 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: the Default / Alphabetical switch on the three screens (CustomUI/DungeonMakerSortSwitch.cs). Each is
-    //added when its screen is shown, as a copy of a button of that screen, and redraws that screen's list.
+    //PATCH: the bar on the campaign editor, beside Import and Export above the content lists
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -167,42 +135,27 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
-            // beside Import and Export above the content lists; the screen refreshes every list when it is dirty
-            DungeonMakerSortSwitch.Ensure(__instance.transform, "RightPanel/ExportGroup/ImportContentsButton",
-                () => __instance.Dirty = true);
+            DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/ExportGroup/ImportContentsButton",
+                "ModUi/&DungeonMakerSortTitle", () =>
+                {
+                    // the rows already hold their items: the twelve lists are only ordered and filtered again,
+                    // without the game binding everything anew at every letter typed
+                    foreach (var parts in UserCampaignEditorScreen_RefreshLists.Lists.Values)
+                    {
+                        UserCampaignEditorScreen_RefreshLists.ApplyTo(__instance, parts);
+                    }
+
+                    // back to the plain view: a refresh has the game work out the move arrows again
+                    if (DungeonMakerListTools.IsPlain(Editor))
+                    {
+                        __instance.Dirty = true;
+                    }
+                });
         }
     }
 
-    [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.OnBeginShow))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class UserVariableSelectionModal_OnBeginShow
-    {
-        [UsedImplicitly]
-        public static void Postfix(UserVariableSelectionModal __instance)
-        {
-            // beside Cancel; filling the lines again binds them in list order, then the view orders them
-            DungeonMakerSortSwitch.Ensure(__instance.transform, "MainPanel/ButtonsBar/CancelButton",
-                __instance.EnumerateLines);
-        }
-    }
-
-    [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.OnBeginShow))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class CampaignVariablesModal_OnBeginShow
-    {
-        [UsedImplicitly]
-        public static void Postfix(CampaignVariablesModal __instance)
-        {
-            // beside Close; the panel builds its rows in a coroutine, as it does when it opens
-            DungeonMakerSortSwitch.Ensure(__instance.transform, "MainPanel/ButtonsBar/CloseButton",
-                () => __instance.StartCoroutine(__instance.EnumerateVariableLines()));
-        }
-    }
-
-    //PATCH: alphabetical view of the variable picker (the popup that asks which campaign variable to use). Its
-    //Validate button reads the picked variable from the campaign's list by the index the row's item has there.
+    //PATCH: the view of the variable picker (the popup that asks which campaign variable to use). Its Validate
+    //button reads the picked variable from the campaign's list by the index the row's item has there.
     [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.EnumerateLines))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -211,13 +164,32 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserVariableSelectionModal __instance)
         {
-            UserListSorter.SortRows<UserContentLine>(__instance.userVariablesTable, x => x.UserContent?.InternalName);
+            var table = __instance.userVariablesTable;
+
+            DungeonMakerListTools.Bound<UserContentLine>(table, x => x.UserContent != null);
+            DungeonMakerListTools.Apply<UserContentLine>(table, Picker, ContentName, ContentTitle);
         }
     }
 
-    //PATCH: alphabetical view of the Cheats > Campaign Variables panel. The game lists the variables in the order
-    //of its variable table, which starts out in campaign order and drifts as variables are registered and removed.
-    //The panel builds its rows over a few frames while it is still invisible, so they are ordered when it is done.
+    //PATCH: the bar on the variable picker, beside Cancel
+    [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.OnBeginShow))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserVariableSelectionModal_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserVariableSelectionModal __instance)
+        {
+            DungeonMakerListTools.Ensure(__instance.transform, Picker, "MainPanel/ButtonsBar/CancelButton",
+                "ModUi/&DungeonMakerSortTitle",
+                () => DungeonMakerListTools.Apply<UserContentLine>(
+                    __instance.userVariablesTable, Picker, ContentName, ContentTitle));
+        }
+    }
+
+    //PATCH: the view of the Cheats > Campaign Variables panel. The game lists the variables in the order of its
+    //variable table, which starts out in campaign order and drifts as variables are registered and removed. The
+    //panel builds its rows over a few frames while it is still invisible, so the view is applied when it is done.
     [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.EnumerateVariableLines))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -238,13 +210,37 @@ public static class UserListSortPatcher
                 (values as IDisposable)?.Dispose();
             }
 
-            if (!UserListSorter.Alphabetical || !__instance || !__instance.variableLinesTable)
+            if (!__instance || !__instance.variableLinesTable)
             {
                 yield break;
             }
 
-            UserListSorter.SortRows<CampaignVariableLine>(__instance.variableLinesTable, x => x.GameVariable?.Name);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(__instance.variableLinesTable);
+            DungeonMakerListTools.Bound<CampaignVariableLine>(
+                __instance.variableLinesTable, x => x.GameVariable != null);
+            ApplyTo(__instance);
+        }
+
+        internal static void ApplyTo(CampaignVariablesModal panel)
+        {
+            var table = panel.variableLinesTable;
+
+            DungeonMakerListTools.Apply<CampaignVariableLine>(table, Cheats, VariableName, VariableType);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(table);
+        }
+    }
+
+    //PATCH: the bar on the Cheats > Campaign Variables panel, beside Close
+    [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.OnBeginShow))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CampaignVariablesModal_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static void Postfix(CampaignVariablesModal __instance)
+        {
+            DungeonMakerListTools.Ensure(__instance.transform, Cheats, "MainPanel/ButtonsBar/CloseButton",
+                "ModUi/&DungeonMakerSortType",
+                () => CampaignVariablesModal_EnumerateVariableLines.ApplyTo(__instance));
         }
     }
 }
