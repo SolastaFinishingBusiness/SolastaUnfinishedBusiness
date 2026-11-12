@@ -402,6 +402,29 @@ internal static class EldritchBlastMoveContext
         return true;
     }
 
+    /// <summary>
+    ///     The targets the spend-power action reports as finished, once it has gone through all of them. For one of
+    ///     an Eldritch Blast cast's queued moves, entries that are missing or have been taken out of play (the ones
+    ///     <see cref="SkipGoneTarget" /> made the action skip, or removed since) are left out, so the mod's "effect
+    ///     finished" handlers, which read each target's rules side, are never handed one that has none (Codex's
+    ///     re-review of 3ad388c7). For any other power, and when nothing is missing, the list is returned as it is.
+    /// </summary>
+    internal static List<GameLocationCharacter> FinishedTargets(
+        CharacterActionSpendPower action, List<GameLocationCharacter> targets)
+    {
+        var actionParams = action?.ActionParams;
+
+        if (targets == null ||
+            actionParams == null ||
+            !Legs.TryGetValue(actionParams, out _) ||
+            !targets.Any(x => x == null || IsGone(x)))
+        {
+            return targets;
+        }
+
+        return targets.Where(x => x != null && !IsGone(x)).ToList();
+    }
+
     private static IEnumerator WaitUntilQuiet(GameLocationCharacter target)
     {
         var actions = ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;

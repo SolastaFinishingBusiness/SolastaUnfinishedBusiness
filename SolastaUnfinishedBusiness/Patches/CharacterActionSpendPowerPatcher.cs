@@ -369,8 +369,13 @@ public static class CharacterActionSpendPowerPatcher
                 }
             }
 
+            //PATCH: a queued Eldritch Blast move whose creature was removed from play (issue #37): the handlers
+            // below read each target's rules side, so they are given the targets without that creature. For any
+            // other power this is the same list as before.
+            var finishedTargets = EldritchBlastMoveContext.FinishedTargets(__instance, targets);
+
             //PATCH: support for `IMagicEffectFinishedOnMe`
-            foreach (var target in targets)
+            foreach (var target in finishedTargets)
             {
                 var rulesetTarget = target.RulesetCharacter;
 
@@ -383,7 +388,7 @@ public static class CharacterActionSpendPowerPatcher
                              .GetSubFeaturesByType<IMagicEffectFinishedOnMe>())
                 {
                     yield return magicEffectFinishedOnMe.OnMagicEffectFinishedOnMe(
-                        __instance, actingCharacter, target, targets);
+                        __instance, actingCharacter, target, finishedTargets);
                 }
             }
 
@@ -392,7 +397,7 @@ public static class CharacterActionSpendPowerPatcher
                          .GetSubFeaturesByType<IMagicEffectFinishedByMe>())
             {
                 yield return
-                    magicEffectFinishedByMe.OnMagicEffectFinishedByMe(__instance, actingCharacter, targets);
+                    magicEffectFinishedByMe.OnMagicEffectFinishedByMe(__instance, actingCharacter, finishedTargets);
             }
 
             //PATCH: support for `IMagicEffectFinishedByMeOrAlly`
@@ -410,7 +415,7 @@ public static class CharacterActionSpendPowerPatcher
                 {
                     yield return magicEffectFinishedByMeOrAlly
                         .OnMagicEffectFinishedByMeOrAlly(
-                            battleManager, __instance, actingCharacter, ally, targets);
+                            battleManager, __instance, actingCharacter, ally, finishedTargets);
                 }
             }
 
