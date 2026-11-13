@@ -18,7 +18,7 @@ namespace SolastaUnfinishedBusiness.Models;
 //                        Maker. Never a name as a player's language shows it: in multiplayer every computer has to
 //                        find the same gadget, whatever language it runs in.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
-//   Teleport_Node        the name of a Node gadget: the acting character is teleported onto its exact cell.
+//   Teleport_Node        the name of a Node gadget: the acting character is teleported near the named gadget.
 //   Teleport_PartyNode   the name of a Node gadget: the whole party, with the guests travelling with it, is
 //                        teleported there in formation. It is done when the game has placed every one of them.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
@@ -53,11 +53,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //     the moment it is set off (ExpectSoloTeleport), so a flow that reaches its Variable Operation late, behind a
 //     Wait for instance, is not overtaken by one set off after it. A gadget a character uses does the same when
 //     the game accepts the interaction (NoteInteracted).
-//   - The character is put on the Node's exact cell, height included, with the game's own TeleportCharacter and
-//     none of its placement search: a cell another hero stands on, a cell with no floor and a hazard are all
-//     allowed, and no safer cell is substituted. Arrival is checked once, right there (the character's three
-//     coordinates). Only then is the character's footing checked, so a fall or a hazard follows as the game does
-//     it; a fall after arriving is not a failed teleport.
+//   - The destination can be any uniquely named gadget. The native Teleport functor's placement search
+//     chooses a nearby cell and the marker supplies facing. Arrival is checked against the chosen cell.
 //
 // TORCHES (Int: 1 = lit, 2 = out, 0 or missing = no opinion; strongest first)
 //   Torch_<gadget name>  one torch;   Torches_Lit  every torch in the location;
@@ -104,7 +101,6 @@ internal static class DungeonMakerCommandsContext
     internal const string StatusCancelled = "Cancelled";
 
     // the Dungeon Maker gadget a teleport's destination must be (GadgetBlueprint.Name)
-    private const string NodeBlueprint = "Node";
 
     // the game's functor names (FunctorManager's registrations)
     private const string TeleportFunctor = "Teleport";
@@ -1136,13 +1132,6 @@ internal static class DungeonMakerCommandsContext
 
         switch (nodes.Count)
         {
-            // The game's own Teleporter takes any gadget of that name as its destination. A command names its
-            // destination in free text, so a slip could send characters to a door or a chest: only a Node is taken.
-            case 1 when nodes[0].UserGadget?.GadgetBlueprintName != NodeBlueprint:
-                Finish(request, StatusFailed,
-                    $"'{request.Target}' is a {nodes[0].UserGadget?.GadgetBlueprintName ?? "gadget of the game"}, not a Node");
-
-                return null;
             case 1:
                 return nodes[0];
             case 0:
@@ -1233,7 +1222,19 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        var destination = positioning.GetGridPositionFromWorldPosition(node.transform);
+        var marker = positioning.GetGridPositionFromWorldPosition(node.transform);
+        var orientation = positioning.GetGridOrientationFromWorldOrientation(node.transform);
+        var characters = ServiceRepository.GetService<IGameLocationCharacterService>();
+
+        if (characters?.PartyFormation == null ||
+            !positioning.TryComputeFirstFormationPlacementPositions(
+                character, marker, orientation, characters.PartyFormation.FormationPositions,
+                CellHelpers.PlacementMode.Station, out var destination, 5, true, false))
+        {
+            Finish(request, StatusFailed, $"no placement found near '{node.name}' for {character.Name}");
+
+            return;
+        }
 
         // from here the request is no longer waiting: its variable is cleared so the same name can be written again
         SoloTeleports.Remove(request);
@@ -1242,12 +1243,10 @@ internal static class DungeonMakerCommandsContext
         Main.Info(
             $"DM command {request.Variable}: teleporting {character.Name} to '{node.name}' at {destination}.");
 
-        // What the game's Teleport functor does before it moves a character, and the call it moves it with. The
-        // functor first searches for a free, safe cell near the marker; that search is left out on purpose, so
-        // the character lands on the cell itself.
+        // Use the native Teleport functor's placement search and facing before moving this actor.
         ServiceRepository.GetService<IGameLocationActionService>()?
             .StopCharacterActions(character, CharacterAction.InterruptionType.Kill, true);
-        positioning.TeleportCharacter(character, destination, character.Orientation);
+        positioning.TeleportCharacter(character, destination, orientation);
 
         // arrival is checked once, here, before anything that follows from standing on that cell
         var arrived = character.LocationPosition;
