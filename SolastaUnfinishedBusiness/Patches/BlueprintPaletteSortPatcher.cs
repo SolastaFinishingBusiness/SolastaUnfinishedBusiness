@@ -44,6 +44,22 @@ public static class BlueprintPaletteSortPatcher
     private static readonly ConditionalWeakTable<BaseBlueprintSelectionPanel, List<BlueprintCategoryItem>> Bound =
         new();
 
+    // The palettes seen so far. The game builds the three of them together and its tabs only show and hide them
+    // (Codex's review of 72916454), so a change made on one palette's bar is applied to all of them: the sort and
+    // the category order are one choice. Each keeps its own search.
+    private static readonly List<BaseBlueprintSelectionPanel> Palettes = [];
+
+    private static void ApplyAll()
+    {
+        Palettes.RemoveAll(x => !x);
+
+        foreach (var palette in Palettes)
+        {
+            DungeonMakerListTools.RefreshBar(KeyOf(palette));
+            Apply(palette);
+        }
+    }
+
     // the palette's search key: its own class name, so the three palettes have their own search
     private static string KeyOf(BaseBlueprintSelectionPanel panel)
     {
@@ -73,7 +89,7 @@ public static class BlueprintPaletteSortPatcher
     {
         var title = BlueprintOf(row)?.GuiPresentation?.Title;
 
-        return string.IsNullOrEmpty(title) ? BlueprintName(row) : Gui.Localize(title);
+        return DungeonMakerListTools.PlainText(string.IsNullOrEmpty(title) ? BlueprintName(row) : Gui.Localize(title));
     }
 
     // Orders and filters every category of the palette, and hides a category none of whose blueprints the search
@@ -106,7 +122,7 @@ public static class BlueprintPaletteSortPatcher
         // the categories in the game's order (the order bound) or by title, and the separators of the ones shown
         var ordered = DungeonMakerListTools.OrderSections(
             categories.Where(x => x && x.transform.parent == panel.categoriesTable).Select(x => x.transform).ToList(),
-            x => x.GetComponent<BlueprintCategoryItem>()?.categoryTitle?.TMP_Text?.text);
+            x => DungeonMakerListTools.PlainText(x.GetComponent<BlueprintCategoryItem>()?.categoryTitle?.TMP_Text?.text));
         var shown = ordered
             .Where(x => x.gameObject.activeSelf)
             .Select(x => x.GetComponent<BlueprintCategoryItem>())
@@ -134,10 +150,40 @@ public static class BlueprintPaletteSortPatcher
     [UsedImplicitly]
     public static class BaseBlueprintSelectionPanel_Bind
     {
+        // Puts the categories back in the game's order before the game binds them again. Bind hands category i to the
+        // table's child i, and when it doesn't reset the folds (undo, a change of environment or size) the child
+        // keeps its own folded state: with the children moved, a fold went to another category (Codex's review of
+        // 72916454, from the game's IL). The categories bound last are the table's first children, in that order.
+        [UsedImplicitly]
+        public static void Prefix(BaseBlueprintSelectionPanel __instance)
+        {
+            if (!__instance.categoriesTable || !Bound.TryGetValue(__instance, out var categories))
+            {
+                return;
+            }
+
+            var index = 0;
+
+            foreach (var category in categories.Where(x => x && x.transform.parent == __instance.categoriesTable))
+            {
+                if (category.transform.GetSiblingIndex() != index)
+                {
+                    category.transform.SetSiblingIndex(index);
+                }
+
+                index++;
+            }
+        }
+
         [UsedImplicitly]
         public static void Postfix(BaseBlueprintSelectionPanel __instance)
         {
             var table = __instance.categoriesTable;
+
+            if (!Palettes.Contains(__instance))
+            {
+                Palettes.Add(__instance);
+            }
 
             if (!table)
             {
@@ -147,7 +193,7 @@ public static class BlueprintPaletteSortPatcher
             var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
 
             DungeonMakerListTools.Ensure(__instance.transform, KeyOf(__instance), "BlueprintsScrollview",
-                SourceButton, "ModUi/&DungeonMakerSortTitle", () => Apply(__instance), null, stacked: true,
+                SourceButton, "ModUi/&DungeonMakerSortTitle", ApplyAll, null, stacked: true,
                 keepSearch: true, sourceRoot: editor ? editor.transform : null, sections: true);
 
             // the categories the game has just bound, and in each the rows it bound

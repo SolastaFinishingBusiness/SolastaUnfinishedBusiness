@@ -143,6 +143,10 @@ internal static class DungeonMakerListTools
 
     private static string _lastProblem = string.Empty;
 
+    // each screen's way to bring its bar's controls up to date, for a choice made on another screen's bar (the
+    // palettes: the game builds all three together and only shows one, see BlueprintPaletteSortPatcher)
+    private static readonly Dictionary<string, Action> Refreshers = [];
+
     // the editor's two arrow pictures, for the direction button
     private static Sprite _upArrow;
     private static Sprite _downArrow;
@@ -212,6 +216,24 @@ internal static class DungeonMakerListTools
         }
 
         Main.Settings.DungeonMakerCategorySorts = string.Join(";", entries);
+    }
+
+    // Brings a screen's bar's controls up to date (sort, direction, category order), keeping its search.
+    internal static void RefreshBar(string screen)
+    {
+        if (Refreshers.TryGetValue(screen, out var refresh))
+        {
+            refresh();
+        }
+    }
+
+    // A text as the sort and the search compare it: without rich-text tags. Some titles carry them, such as the
+    // mod's own coloured "Flat Rooms" category and its rooms (Codex's review of 72916454); the screen keeps them.
+    internal static string PlainText(string text)
+    {
+        return string.IsNullOrEmpty(text) || text.IndexOf('<') < 0
+            ? text
+            : System.Text.RegularExpressions.Regex.Replace(text, "<[^>]*>", string.Empty);
     }
 
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
@@ -664,6 +686,7 @@ internal static class DungeonMakerListTools
             });
         }
 
+        Refreshers[screen] = Refresh;
         Refresh();
     }
 

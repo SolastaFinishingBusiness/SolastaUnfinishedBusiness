@@ -303,7 +303,8 @@ public static class UserListSortPatcher
 
     private static string ContentTitle(Transform row)
     {
-        return ContentOf(row)?.DisplayTitle;
+        // without rich-text tags, which a title may carry (the screen keeps them)
+        return DungeonMakerListTools.PlainText(ContentOf(row)?.DisplayTitle);
     }
 
     private static GameVariable VariableOf(Transform row)
@@ -584,7 +585,7 @@ public static class UserListSortPatcher
             {
                 var header = x.GetComponent<CampaignContentGroupItem>()?.HeaderLabel;
 
-                return header && header.TMP_Text ? header.TMP_Text.text : x.name;
+                return header && header.TMP_Text ? DungeonMakerListTools.PlainText(header.TMP_Text.text) : x.name;
             });
         }
     }
