@@ -1004,6 +1004,13 @@ internal static class DungeonMakerListTools
         {
             var orderRow = stacked ? AddRow(bar.transform, CategoryOrderRowName, TextAnchor.MiddleLeft) : main;
 
+            // on the editor's sort row, set apart from the arrow (user, 2026-11-13: "put a space between the sort
+            // and the categories button")
+            if (!stacked)
+            {
+                AddGap(main);
+            }
+
             AddButton(orderRow, sourceButton, CategoryOrderName, ClearWidth);
             rows += stacked ? 1 : 0;
         }
