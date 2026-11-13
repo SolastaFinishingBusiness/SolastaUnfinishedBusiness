@@ -12,14 +12,14 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // Sorting and searching the Dungeon Maker's lists (issue #42; the alphabetical order comes from BlackguardRogue's
 // Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, and the
 // Cheats > Campaign Variables panel. Each of the three screens gets a bar on a row of its own, above its list and
-// as wide as it, with, from left to right (user direction, 2026-11-13: the bar "should be at the very top", and
-// "the sort settings should also be on the right of the clear"),
+// as wide as it, with, from left to right (user directions, 2026-11-13: the bar "should be at the very top"; later
+// "Search should be on the right, and sort on the left"),
 //
-//   a search field     only rows whose name or title contains the text are shown
-//   a clear button     empties the search field
 //   "Sort:" and a      what the list is ordered by: the campaign's own order, the name, or a second key
-//   dropdown           (the title for content, the type for variables), set apart from Clear by a gap
+//   dropdown           (the title for content, the type for variables)
 //   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
+//   a search field     set apart from the sort by a gap; only rows whose name or title contains the text are shown
+//   a clear button     empties the search field
 //
 // and a CATEGORY SORT for each list (user direction through Codex, 2026-11-13: "The category specific sort will be
 // priority, with the main sort as the secondary"; the user's choices: a sort per list, with its own arrow):
@@ -94,7 +94,7 @@ internal static class DungeonMakerListTools
     private const int ListSortIndent = 24;
 
     // the value overlay on a row: its width, and its gap from the row's right end
-    private const float OverlayWidth = 220f;
+    private const float OverlayWidth = 180f;
     private const float OverlayMargin = 8f;
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
@@ -782,12 +782,18 @@ internal static class DungeonMakerListTools
         var textRect = (RectTransform)textObject.transform;
 
         textRect.SetParent(rect, false);
+
+        // The text component first, its rectangle after. A TextMeshProUGUI added at runtime with no text yet runs
+        // TMP_Text.LoadDefaultSettings, which sets the RectTransform's sizeDelta to TextMeshPro's default text box
+        // size (TMP_Settings.defaultTextMeshProUITextContainerSize, read in the IL). Set before, the margins were
+        // replaced, the text box grew by that size on both sides of the backing, and the right-aligned value
+        // ended past the row's edge, cut off by the list (seen in game on 629633f8, 2026-11-13).
+        var label = textObject.AddComponent<TextMeshProUGUI>();
+
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = new Vector2(OverlayMargin, 0f);
         textRect.offsetMax = new Vector2(-OverlayMargin, 0f);
-
-        var label = textObject.AddComponent<TextMeshProUGUI>();
 
         label.font = source.font;
         label.fontSize = source.fontSize;
@@ -880,21 +886,22 @@ internal static class DungeonMakerListTools
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        // Each row places its controls in the order they are added. The first: search and clear, a gap, then the
-        // main sort. The second, aligned to the right so its controls stand under the main sort's: the category
-        // sort.
+        // Each row places its controls in the order they are added. The first: the main sort on the left, a gap,
+        // then the search field (taking the room that is left) and Clear on the right (user direction, 2026-11-13:
+        // "Search should be on the right, and sort on the left"). The second, aligned to the left so its controls
+        // stand under the main sort's: the category sort.
         var main = AddRow(bar.transform, MainRowName, TextAnchor.MiddleLeft);
 
-        AddSearch(main);
-        AddButton(main, sourceButton, ClearName, ClearWidth);
-        AddGap(main);
         AddSortLabel(main, sourceButton, SortLabelName);
         AddSortDropdown(main, SortName);
         AddArrow(main, DirectionName);
+        AddGap(main);
+        AddSearch(main);
+        AddButton(main, sourceButton, ClearName, ClearWidth);
 
         if (categoryRow)
         {
-            var second = AddRow(bar.transform, CategoryRowName, TextAnchor.MiddleRight);
+            var second = AddRow(bar.transform, CategoryRowName, TextAnchor.MiddleLeft);
 
             AddSortLabel(second, sourceButton, CategoryLabelName);
             AddSortDropdown(second, CategoryName);
