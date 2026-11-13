@@ -240,9 +240,36 @@ internal static class DungeonMakerListTools
         System.Text.RegularExpressions.RegexOptions.IgnoreCase |
         System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    // A "<noparse>" region, up to its "</noparse>" or the end of the text: TextMeshPro shows what is inside as written,
+    // tags included, and drops only the two noparse tags (Codex's review of 30c2fc55: "Guide <noparse><b></noparse>"
+    // reads "Guide <b>", so its key must too).
+    private static readonly System.Text.RegularExpressions.Regex NoParseRegion = new(
+        @"<noparse>(.*?)(?:</noparse>|$)",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase |
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant |
+        System.Text.RegularExpressions.RegexOptions.Singleline);
+
     internal static string PlainText(string text)
     {
-        return string.IsNullOrEmpty(text) || text.IndexOf('<') < 0 ? text : RichTextTag.Replace(text, string.Empty);
+        if (string.IsNullOrEmpty(text) || text.IndexOf('<') < 0)
+        {
+            return text;
+        }
+
+        // tags are removed outside the noparse regions only; each region's contents are kept as they read
+        var plain = new System.Text.StringBuilder(text.Length);
+        var start = 0;
+
+        foreach (System.Text.RegularExpressions.Match region in NoParseRegion.Matches(text))
+        {
+            plain.Append(RichTextTag.Replace(text.Substring(start, region.Index - start), string.Empty));
+            plain.Append(region.Groups[1].Value);
+            start = region.Index + region.Length;
+        }
+
+        plain.Append(RichTextTag.Replace(text.Substring(start), string.Empty));
+
+        return plain.ToString();
     }
 
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
