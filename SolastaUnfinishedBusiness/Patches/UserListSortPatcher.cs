@@ -92,85 +92,98 @@ public static class UserListSortPatcher
             {
                 "RefreshBiomes",
                 new ContentList(x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
-                    x => x.selectedBiome = -1,
+                    x => Clear(ref x.selectedBiome),
                     x => x.biomesGroupItem)
             },
             {
                 "RefreshDialogs",
                 new ContentList(x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
-                    x => x.selectedDialog = -1,
+                    x => Clear(ref x.selectedDialog),
                     x => x.dialogsGroupItem)
             },
             {
                 "RefreshEncounters",
                 new ContentList(x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
-                    x => x.selectedEncounter = -1,
+                    x => Clear(ref x.selectedEncounter),
                     x => x.encountersGroupItem)
             },
             {
                 "RefreshEncounterTables",
                 new ContentList(x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
-                    x => x.moveEncounterTableDownButton, x => x.selectedEncounterTable = -1,
+                    x => x.moveEncounterTableDownButton, x => Clear(ref x.selectedEncounterTable),
                     x => x.encounterTablesGroupItem)
             },
             {
                 "RefreshItems",
                 new ContentList(x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
-                    x => x.selectedItem = -1,
+                    x => Clear(ref x.selectedItem),
                     x => x.itemsGroupItem)
             },
             {
                 "RefreshLocations",
                 new ContentList(x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
-                    x => x.selectedLocation = -1,
+                    x => Clear(ref x.selectedLocation),
                     x => x.locationsGroupItem)
             },
             {
                 "RefreshLootPacks",
                 new ContentList(x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
-                    x => x.selectedLootPack = -1,
+                    x => Clear(ref x.selectedLootPack),
                     x => x.lootPacksGroupItem)
             },
             {
                 "RefreshMerchantInventories",
                 new ContentList(x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
-                    x => x.moveMerchantInventoryDownButton, x => x.selectedMerchantInventory = -1,
+                    x => x.moveMerchantInventoryDownButton, x => Clear(ref x.selectedMerchantInventory),
                     x => x.merchantIventoriesGroupItem)
             },
             {
                 "RefreshMonsters",
                 new ContentList(x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
-                    x => x.selectedMonster = -1,
+                    x => Clear(ref x.selectedMonster),
                     x => x.monstersGroupItem)
             },
             {
                 "RefreshNpcs",
                 new ContentList(x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
-                    x => x.selectedNpc = -1,
+                    x => Clear(ref x.selectedNpc),
                     x => x.npcsGroupItem)
             },
             {
                 "RefreshQuests",
                 new ContentList(x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
-                    x => x.selectedQuest = -1,
+                    x => Clear(ref x.selectedQuest),
                     x => x.questsGroupItem)
             },
             {
                 "RefreshVariables",
                 new ContentList(x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
-                    x => x.selectedVariable = -1,
+                    x => Clear(ref x.selectedVariable),
                     x => x.variablesGroupItem)
             }
         };
+
+        // sets a list's selected index to "none"; false when nothing was selected
+        private static bool Clear(ref int selected)
+        {
+            if (selected < 0)
+            {
+                return false;
+            }
+
+            selected = -1;
+
+            return true;
+        }
 
         internal sealed class ContentList(
             Func<UserCampaignEditorScreen, Transform> table,
             Func<UserCampaignEditorScreen, Button> moveUp,
             Func<UserCampaignEditorScreen, Button> moveDown,
-            Action<UserCampaignEditorScreen> clearSelection,
+            Func<UserCampaignEditorScreen, bool> clearSelection,
             Func<UserCampaignEditorScreen, CampaignContentGroupItem> group)
         {
-            internal readonly Action<UserCampaignEditorScreen> ClearSelection = clearSelection;
+            internal readonly Func<UserCampaignEditorScreen, bool> ClearSelection = clearSelection;
             internal readonly Func<UserCampaignEditorScreen, CampaignContentGroupItem> Group = group;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveDown = moveDown;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveUp = moveUp;
@@ -203,20 +216,18 @@ public static class UserListSortPatcher
             var moveUp = list.MoveUp(screen);
             var moveDown = list.MoveDown(screen);
 
-            // The search left this list's selected row out. The selection is dropped, or Edit and Delete would
-            // act on an item that isn't shown, but only while the list is open. The editor's shortcut icons work
-            // as tabs: one opens its list and folds the eleven others. A selection made in a list that is folded
-            // away now is left alone, because the search may be changed or cleared before the user comes back to
-            // it; it is looked at again when the list is opened (see the two patches below). The refresh asked
-            // for here works the list's buttons out again with nothing selected; it can't come back in a loop,
-            // as there is then no selected row to hide.
+            // Only a list that is open keeps a selection (user direction, 2026-11-13). The editor's shortcut
+            // icons work as tabs: one opens its list and folds the eleven others, and a list can also be folded
+            // by its header. A list that is folded away loses its selection; in an open list the selection is
+            // dropped when the search leaves the selected row out. Either way Edit and Delete never act on an
+            // item that isn't shown. The refresh asked for works the list's buttons out again with nothing
+            // selected; it can't come back here in a loop, as Clear then finds nothing selected.
             var hidSelected =
                 DungeonMakerListTools.Apply(list.Table(screen), Editor, ContentName, ContentTitle, IsSelected);
             var group = list.Group(screen);
 
-            if (hidSelected && (!group || !group.folded))
+            if ((hidSelected || (group && group.folded)) && list.ClearSelection(screen))
             {
-                list.ClearSelection(screen);
                 screen.Dirty = true;
             }
 
@@ -237,8 +248,8 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: a list of the campaign editor was opened or folded away by its header. On opening, the search as it
-    //is now is applied to it, which clears its selection if the search hides it.
+    //PATCH: a list of the campaign editor was opened or folded away by its header: a folded list loses its
+    //selection (see ApplyTo)
     [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -271,7 +282,7 @@ public static class UserListSortPatcher
     }
 
     //PATCH: a shortcut icon of the campaign editor was clicked: it opens its list and folds the others, which is
-    //how the user goes from one "tab" to another. The same check as above, for the list just opened.
+    //how the user goes from one "tab" to another. The same as above, for the eleven lists it folded.
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnCategoryHeaderFocused))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

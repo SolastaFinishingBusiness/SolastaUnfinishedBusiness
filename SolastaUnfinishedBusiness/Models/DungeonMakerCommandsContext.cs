@@ -48,7 +48,10 @@ namespace SolastaUnfinishedBusiness.Models;
 //     (unconscious, dying or dead too), as long as it is still in the location.
 //   - Every activation makes its own request, even for the same Node; a new one does not replace one that is
 //     waiting. They are carried out in the order the game reported the activations, one per gadget update, each
-//     ended before the next character is placed.
+//     ended before the next character is placed. The order is that of the activations, not of the variable
+//     writes: an Area Activator or pressure plate whose flow will write Teleport_Node takes its place in the queue
+//     the moment it is set off (ExpectSoloTeleport), so a flow that reaches its Variable Operation late, behind a
+//     Wait for instance, is not overtaken by one set off after it. Interactions take their place at the write.
 //   - The character is put on the Node's exact cell, height included, with the game's own TeleportCharacter and
 //     none of its placement search: a cell another hero stands on, a cell with no floor and a hazard are all
 //     allowed, and no safer cell is substituted. Arrival is checked once, right there (the character's three
@@ -155,8 +158,15 @@ internal static class DungeonMakerCommandsContext
     // requests handed to the game and watched until they end
     private static readonly List<Request> Started = [];
 
-    // Teleport_Node requests, oldest first: one per activation, none replaced by a later one
+    // Teleport_Node requests, oldest first: one per activation, none replaced by a later one. An entry can be a
+    // place kept for a request that is still to come (Request.Expected).
     private static readonly List<Request> SoloTeleports = [];
+
+    // a place kept in that queue for a flow that then never starts is given up after this many gadget updates
+    private const int ExpectedPatienceTicks = 600;
+
+    // the functor a gadget's Variable Operation is (FunctorManager's registration)
+    private const string VariableOperationFunctor = "VariableOperation";
 
     // the serial of the newest request of each command variable: only that one may write the status variable
     private static readonly Dictionary<string, int> NewestSerial = [];
@@ -246,7 +256,8 @@ internal static class DungeonMakerCommandsContext
         // acting character.
         foreach (var command in Commands)
         {
-            if (!Waiting.ContainsKey(command.Key) && SoloTeleports.All(x => x.Variable != command.Key) &&
+            if (!Waiting.ContainsKey(command.Key) &&
+                SoloTeleports.All(x => x.Expected || x.Variable != command.Key) &&
                 variables.TryFindVariable(command.Key, out var variable) && variable is
                 {
                     Type: GameVariableDefinitions.Type.String
@@ -350,13 +361,53 @@ internal static class DungeonMakerCommandsContext
                 GroupActivations.Add(activation);
             }
 
+            ForgetExpected(listener);
             _causes.Remove(listener);
             _causes.Add(listener, activation);
+            ExpectSoloTeleport(listener, activation);
         }
         else if (!triggeredAfter)
         {
             // the trigger was withdrawn before its flow ran (the character left again)
+            ForgetExpected(listener);
             _causes.Remove(listener);
+        }
+    }
+
+    // An Area Activator or pressure plate was just set off, and its flow has a Variable Operation on Teleport_Node:
+    // keep its place in the queue of one-character teleports now. The game runs gadget flows in the order of its
+    // gadget list, and a flow can wait before it writes, so the writes do not arrive in the order the activations
+    // happened; the places kept here do. The place is filled when the write comes (Capture), and given up if the
+    // flow ends without writing or never starts (StepExpected).
+    private static void ExpectSoloTeleport(GameGadgetListener listener, Activation activation)
+    {
+        if (!Enabled || CurrentLocation == null || listener.FunctorParams == null ||
+            !listener.FunctorParams.Any(x =>
+                x is FunctorParametersDescription { Type: VariableOperationFunctor } operation &&
+                operation.StringParameter == TeleportNodeVariable))
+        {
+            return;
+        }
+
+        activation.Expected = new Request
+        {
+            Kind = Kind.TeleportOne,
+            Variable = TeleportNodeVariable,
+            Expected = true,
+            Listener = listener,
+            Location = CurrentLocation,
+            IssuedAt = GameSeconds()
+        };
+        SoloTeleports.Add(activation.Expected);
+    }
+
+    // the place kept for this listener's activation that has not started yet, if any, is given up
+    private static void ForgetExpected(GameGadgetListener listener)
+    {
+        if (_causes.TryGetValue(listener, out var activation) && activation.Expected is { Expected: true } kept)
+        {
+            SoloTeleports.Remove(kept);
+            activation.Expected = null;
         }
     }
 
@@ -452,8 +503,14 @@ internal static class DungeonMakerCommandsContext
             GuardedStep(Started[i], StepStarted);
         }
 
-        // one-character teleports: the oldest request only, so each one ends before the next character is placed
-        if (SoloTeleports.Count > 0)
+        // One-character teleports: the oldest request only, so each one ends before the next character is placed.
+        // Places kept for requests that turn out not to come are dropped on the way to it.
+        while (SoloTeleports.Count > 0 && SoloTeleports[0].Expected && !StepExpected(SoloTeleports[0]))
+        {
+            SoloTeleports.RemoveAt(0);
+        }
+
+        if (SoloTeleports.Count > 0 && !SoloTeleports[0].Expected)
         {
             GuardedStep(SoloTeleports[0], StepSoloTeleport);
         }
@@ -528,7 +585,8 @@ internal static class DungeonMakerCommandsContext
         {
             if (queued)
             {
-                foreach (var waiting in SoloTeleports.ToArray())
+                // the requests made so far; a place kept for one still to come is not a request yet
+                foreach (var waiting in SoloTeleports.Where(x => !x.Expected).ToArray())
                 {
                     Finish(waiting, StatusCancelled, "the variable was cleared");
                 }
@@ -542,20 +600,24 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        var request = new Request
-        {
-            Kind = kind,
-            Variable = variableName,
-            Target = value,
-            Serial = ++_serial,
-            Location = CurrentLocation,
-            IssuedAt = GameSeconds()
-        };
+        // a one-character teleport whose activation kept a place in the queue takes that place
+        var kept = queued ? TakeExpected(operation) : null;
+        var request = kept ?? new Request { Kind = kind, Variable = variableName, Location = CurrentLocation };
+
+        request.Expected = false;
+        request.Ticks = 0;
+        request.Target = value;
+        request.Serial = ++_serial;
+        request.IssuedAt = GameSeconds();
 
         ResolveActor(operation, request);
         NewestSerial[variableName] = request.Serial;
 
-        if (queued)
+        if (kept != null)
+        {
+            // already in the queue, where its activation put it
+        }
+        else if (queued)
         {
             SoloTeleports.Add(request);
         }
@@ -565,6 +627,55 @@ internal static class DungeonMakerCommandsContext
         }
 
         WriteStatus(variableName, StatusPending);
+    }
+
+    // the listener (the flow) of the gadget whose Variable Operation this is
+    private static GameGadgetListener ListenerOf(FunctorParametersDescription operation)
+    {
+        var listeners = operation?.SourceGadget ? operation.SourceGadget.GameGadget?.activeListeners : null;
+        var index = operation?.ListenerIndex ?? -1;
+
+        return listeners != null && index >= 0 && index < listeners.Count ? listeners[index] : null;
+    }
+
+    // The place kept in the queue for the flow that is writing now, if its activation kept one and it has not
+    // been used. A second write by the same flow finds none and joins the end of the queue.
+    private static Request TakeExpected(FunctorParametersDescription operation)
+    {
+        var listener = ListenerOf(operation);
+
+        if (listener == null || !_runs.TryGetValue(listener, out var activation) ||
+            activation.Expected is not { Expected: true } kept || !SoloTeleports.Contains(kept))
+        {
+            return null;
+        }
+
+        activation.Expected = null;
+
+        return kept;
+    }
+
+    // A place kept at the head of the queue: is its request still to come? Yes while the flow has not started
+    // (its trigger is set) or is running (the gadget's coroutine is on this flow). A flow that has ended without
+    // writing, or that the game never starts, gives its place up, so the requests behind it are not held back.
+    private static bool StepExpected(Request kept)
+    {
+        var listener = kept.Listener;
+        var gadget = listener?.SourceGadget ? listener.SourceGadget.GameGadget : null;
+
+        if (gadget == null || !ReferenceEquals(kept.Location, CurrentLocation))
+        {
+            return false;
+        }
+
+        if (gadget.activeFunctorSequence != null && gadget.currentListenerIndex == listener.Index)
+        {
+            // running: it may be waiting on purpose before it writes
+            return GameSeconds() - kept.IssuedAt <= MaxWaitSeconds;
+        }
+
+        // not started yet: the game starts a triggered flow at the gadget's next update, unless something keeps it
+        return listener.IsTriggered && ++kept.Ticks <= ExpectedPatienceTicks;
     }
 
     // Works out which character a write acts for, from the gadget flow that made it. It never picks among
@@ -1279,10 +1390,13 @@ internal static class DungeonMakerCommandsContext
     // from the functor service's list of busy sources.
     private static void DropRequests()
     {
-        foreach (var request in Waiting.Values.Concat(SoloTeleports).ToArray())
+        foreach (var request in Waiting.Values.Concat(SoloTeleports.Where(x => !x.Expected)).ToArray())
         {
             Finish(request, StatusCancelled, "the location was left");
         }
+
+        // what is left are places kept for requests that never came
+        SoloTeleports.Clear();
 
         // A started request has already cleared its variable; without this its status would say Running for as
         // long as the campaign is played.
@@ -1416,6 +1530,39 @@ internal static class DungeonMakerCommandsContext
         try
         {
             variable.StringValue = value;
+        }
+        finally
+        {
+            _writing--;
+        }
+    }
+
+    internal static string StringValueOf(IGameVariableService variables, string name)
+    {
+        return variables.TryFindVariable(name, out var variable) && variable is
+        {
+            Type: GameVariableDefinitions.Type.String
+        }
+            ? variable.StringValue
+            : null;
+    }
+
+    // Makes sure a campaign variable of the mod's own exists, so that its value is saved with the game. It is a
+    // campaign variable like the author's: one scoped to the location would be dropped on leaving it.
+    internal static void EnsureInt(string name)
+    {
+        var variables = ServiceRepository.GetService<IGameVariableService>();
+
+        if (variables == null || variables.IsVariableRegistered(name))
+        {
+            return;
+        }
+
+        _writing++;
+
+        try
+        {
+            variables.RegisterVariable(name, GameVariableDefinitions.Scope.Campaign, 0);
         }
         finally
         {
@@ -1720,6 +1867,11 @@ internal static class DungeonMakerCommandsContext
         internal int Ticks;
         internal string Variable;
 
+        // One-character teleport: a place kept in the queue for a request that is still to come, and the flow it
+        // is expected from. Target, the acting character and the rest are set when the write arrives.
+        internal bool Expected;
+        internal GameGadgetListener Listener;
+
         // party teleport: everyone meant to travel, and the cell the game put each of them on
         internal List<ulong> Members;
         internal readonly Dictionary<ulong, TA.int3> Placed = [];
@@ -1728,6 +1880,9 @@ internal static class DungeonMakerCommandsContext
     // one activation of an Area Activator or pressure plate: the character whose move switched its trigger on
     private sealed class Activation
     {
+        // the place this activation keeps in the queue of one-character teleports, until its flow writes
+        internal Request Expected;
+
         // several characters were placed at once, so no single one caused it
         internal bool Group;
         internal ulong MoverGuid;

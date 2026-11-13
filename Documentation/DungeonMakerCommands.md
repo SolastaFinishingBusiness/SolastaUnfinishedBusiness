@@ -71,8 +71,9 @@ the Roll Activator. Whoever walks in rolls.
   even with a party member standing in the same area. The character's state is not checked: unconscious, dying or
   dead, it is moved as it is. It only has to be in the location still.
 - **Every activation is its own request.** Two characters stepping on two plates that both write the same Node
-  name are both teleported, one after the other, in the order the activations happened. A new request does not
-  replace one that is waiting. Writing an empty text cancels all that are waiting.
+  name are both teleported, one after the other, in the order the activations happened. That holds even if the
+  first plate's flow does something else first, such as a Wait, before it writes the variable. A new request does
+  not replace one that is waiting. Writing an empty text cancels all that are waiting.
 - **Where:** exactly on the Node's cell, at its height. No nearby free cell is looked for. So a character can arrive
   on a cell another hero stands on, in mid-air or in a hazard. What follows is up to the game: over a hole the
   character falls.
@@ -159,6 +160,9 @@ yourself to reset it.
   at 09:00, and with `Clock_SkipToHour` 24 on day 5 at 00:00.
 - A long skip advances a few hours at a time over a moment of play, so every dawn, new day and journal entry happens.
 - A skip can't be cancelled once written. Each has an optional status variable, such as `Clock_SkipHours_Status`.
+- While a skip runs, the mod keeps what is left of it, in seconds, in a variable of its own,
+  `Clock_SkipRemainingSeconds`. It is saved with the game, so a game saved in the middle of a long skip finishes the
+  skip when it is loaded. You can read it, but don't write it.
 
 ## Multiplayer
 

@@ -35,7 +35,7 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //     (list.IndexOf(line.UserContent)), not from the row's position. So select, edit, duplicate, delete and "pick"
 //     act on the item that was clicked, and the selection survives a change of sort or direction.
 //   - A search that leaves the selected row out clears the selection, so no button acts on an item that isn't
-//     shown. In the campaign editor that is only done for the lists that are open; see UserListSortPatcher.
+//     shown. In the campaign editor a list that is folded away loses its selection too; see UserListSortPatcher.
 //   - On its next refresh the game binds row object i to item i again, whichever object that now is, and switches
 //     it on; the view is then applied again.
 //

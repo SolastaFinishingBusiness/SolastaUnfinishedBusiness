@@ -35,6 +35,9 @@ namespace SolastaUnfinishedBusiness.Models;
 //    on day 5 at 09:00, and with Clock_SkipToHour 24 on day 5 at 00:00 (24 is midnight, and day 5 has one).
 //    Each has an optional String status variable, e.g. Clock_SkipHours_Status: Running, Succeeded, Failed or
 //    Cancelled. A skip can't be cancelled once written.
+//    Clock_SkipRemainingSeconds is the mod's own variable, made when a skip starts: what is left of the skip that
+//    is running. It is saved with the game, so a game saved in the middle of a long skip finishes the skip when it
+//    is loaded. Authors can read it, but should not write it.
 //
 // How the skip runs: the game's own "skip time" gadget function never moves the clock more than 23 hours at once,
 // and one clock update signals at most one dawn and one new day however long it is. A skip of several days in one
@@ -60,6 +63,7 @@ internal static class DungeonMakerClockContext
     private const string SkipDaysVariable = "Clock_SkipDays";
     private const string SkipToHourVariable = "Clock_SkipToHour";
     private const string SkipToDayVariable = "Clock_SkipToDay";
+    private const string SkipRemainingVariable = "Clock_SkipRemainingSeconds";
 
     private const int MaxSkipHours = 24 * 7;
     private const int MaxSkipDays = 180;
@@ -100,6 +104,30 @@ internal static class DungeonMakerClockContext
         {
             _skipRequested |= DungeonMakerCommandsContext.IntValueOf(variables, name) > 0;
         }
+
+        // A skip was running when this game was saved: its requests were already set back to 0 and the rest of it
+        // was only in memory, so without this the remainder would be lost and its status would say Running for
+        // good. The requests that belong to it are the ones whose status still says Running.
+        var remaining = DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable);
+
+        if (_job != null || remaining <= 0)
+        {
+            return;
+        }
+
+        _job = new SkipJob { Remaining = remaining, Description = "the rest of a skip that a save interrupted" };
+
+        foreach (var name in SkipVariables)
+        {
+            if (DungeonMakerCommandsContext.StringValueOf(
+                    variables, name + DungeonMakerCommandsContext.StatusSuffix) ==
+                DungeonMakerCommandsContext.StatusRunning)
+            {
+                _job.Variables.Add(name);
+            }
+        }
+
+        Main.Info($"DM clock: resuming a skip from the save, {remaining} second(s) left.");
     }
 
     internal static void OnLocationUnloading()
@@ -206,6 +234,10 @@ internal static class DungeonMakerClockContext
             _job.Remaining -= seconds;
         }
 
+        // what is left goes into a campaign variable, so a save made now holds it (see OnLocationReady)
+        DungeonMakerCommandsContext.EnsureInt(SkipRemainingVariable);
+        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, (int)Math.Max(0, _job.Remaining));
+
         if (_job.Remaining > 0)
         {
             return;
@@ -219,6 +251,9 @@ internal static class DungeonMakerClockContext
 
     private static void EndJob(string status)
     {
+        // nothing is left to resume, whether the skip is done or was cut short by leaving the location
+        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, 0);
+
         foreach (var name in _job.Variables)
         {
             DungeonMakerCommandsContext.WriteStatus(name, status);
