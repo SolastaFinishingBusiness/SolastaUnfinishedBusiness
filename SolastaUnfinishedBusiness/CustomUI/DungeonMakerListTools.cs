@@ -17,9 +17,9 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //
 //   a search field     only rows whose name or title contains the text are shown
 //   a clear button     empties the search field
-//   a sort button      what the list is ordered by: the campaign's own order, the name, or a second key
-//                      (the title for content, the type for variables); a click goes to the next one
-//   a direction button ascending or descending
+//   a sort dropdown    what the list is ordered by: the campaign's own order, the name, or a second key
+//                      (the title for content, the type for variables)
+//   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
@@ -61,9 +61,10 @@ internal static class DungeonMakerListTools
     private const string SearchName = "Search";
     private const string ClearName = "Clear";
 
-    // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the two
-    // buttons leave of the bar's width
-    private const float ButtonWidth = 150f;
+    // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
+    // controls leave of the bar's width
+    // the sort dropdown: room for its longest choice ("Sort: default") and its own open arrow
+    private const float SortWidth = 200f;
     private const float SearchMinWidth = 160f;
     private const float ClearWidth = 90f;
     private const float ControlHeight = 34f;
@@ -79,6 +80,10 @@ internal static class DungeonMakerListTools
     private static readonly Dictionary<string, string> Searches = [];
 
     private static string _lastProblem = string.Empty;
+
+    // the editor's two arrow pictures, for the direction button
+    private static Sprite _upArrow;
+    private static Sprite _downArrow;
 
     internal static Sort Kind => (Sort)Mathf.Clamp(Main.Settings.DungeonMakerListSort, 0, 2);
 
@@ -216,7 +221,7 @@ internal static class DungeonMakerListTools
     //   screen      the key of this screen's search text
     //   listPath    the scroll view that holds the list, from the screen's root; the bar takes a strip at its foot
     //   sourcePath  a button of the screen to copy for the bar's two buttons, from the screen's root
-    //   secondTerm  the text of the sort button for the second key ("Sort: title", "Sort: type")
+    //   secondTerm  the sort dropdown's choice for the second key ("Sort: title", "Sort: type")
     //   changed     the view changed: apply it to the screen's tables
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed)
@@ -242,20 +247,35 @@ internal static class DungeonMakerListTools
             bar = AddBar(list, source.gameObject);
         }
 
-        var sort = bar.Find(SortName)?.GetComponent<Button>();
+        var sort = bar.Find(SortName)?.GetComponent<GuiDropdown>();
         var direction = bar.Find(DirectionName)?.GetComponent<Button>();
         var search = bar.Find(SearchName)?.GetComponent<TMP_InputField>();
         var clear = bar.Find(ClearName)?.GetComponent<Button>();
 
+        // The sort is a dropdown (user direction, 2026-11-13: "Can the sort be a dropdown instead of a cycle
+        // toggle?"): its three choices, in the order of the Sort values, with this screen's second key.
+        if (sort)
+        {
+            sort.onValueChanged = new TMP_Dropdown.DropdownEvent();
+            sort.ClearOptions();
+            sort.AddOptions(new List<string>
+            {
+                Gui.Localize("ModUi/&DungeonMakerSortDefault"),
+                Gui.Localize("ModUi/&DungeonMakerSortName"),
+                Gui.Localize(secondTerm)
+            });
+        }
+
         void Refresh()
         {
-            SetText(sort, Kind switch
+            if (sort)
             {
-                Sort.Name => "ModUi/&DungeonMakerSortName",
-                Sort.Second => secondTerm,
-                _ => "ModUi/&DungeonMakerSortDefault"
-            });
-            SetText(direction, Descending ? "ModUi/&DungeonMakerSortDescending" : "ModUi/&DungeonMakerSortAscending");
+                sort.SetValueWithoutNotify((int)Kind);
+            }
+
+            // the direction is an arrow (user direction, 2026-11-13: "Ascending and Descending should also just
+            // be an arrow"); its tooltip says which
+            SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
 
             // Nothing to clear while the field is empty. The field's own text decides, not the search made from
@@ -283,10 +303,9 @@ internal static class DungeonMakerListTools
         // fresh events each time: "changed" belongs to this showing of the screen
         if (sort)
         {
-            sort.onClick = new Button.ButtonClickedEvent();
-            sort.onClick.AddListener(() =>
+            sort.onValueChanged.AddListener(value =>
             {
-                Main.Settings.DungeonMakerListSort = ((int)Kind + 1) % 3;
+                Main.Settings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
                 Changed();
             });
         }
@@ -356,8 +375,8 @@ internal static class DungeonMakerListTools
         // the layout group places them in the order they are added: search and clear, then the sort controls
         AddSearch(bar.transform);
         AddButton(bar.transform, sourceButton, ClearName, ClearWidth);
-        AddButton(bar.transform, sourceButton, SortName, ButtonWidth);
-        AddButton(bar.transform, sourceButton, DirectionName, ButtonWidth);
+        AddSortDropdown(bar.transform);
+        AddArrow(bar.transform);
 
         // anchored like the scroll view from side to side, and to its top edge, ControlHeight tall
         rect.SetParent(list.parent, false);
@@ -454,17 +473,21 @@ internal static class DungeonMakerListTools
         field.SetTextWithoutNotify(string.Empty);
 
         // Vertically centred. The original is a multi-line box: its text area and its placeholder label fill the
-        // field with an even inset (6 and 8 units, from the prefab), but the text keeps the box's own alignment,
-        // which in a one-line field 34 units tall put "Search..." off the middle (seen in game, 2026-11-13). Both
-        // labels are set to the middle of their rectangles, which are centred in the field.
+        // field with an even inset (6 and 8 units, from the prefab), but the labels keep the box's own alignment,
+        // which in a one-line field 34 units tall put "Search..." off the middle (seen in game, 2026-11-13).
+        // Setting the alignment here is not enough (tried in 9a8cd276, still off): the placeholder is a game label
+        // (GuiLabel), and when a label first wakes up, GuiLabel.Awake runs GuiStyleEnforcer.ApplyStyles, whose
+        // label style (GuiLabelStyleDefinition.Apply) sets the alignment again. The copy is made inactive, so it
+        // wakes up only when the bar is put on screen, after this. MiddleAlignment sets the middle again once the
+        // labels are awake, and each time they are switched on.
         if (field.textComponent)
         {
-            field.textComponent.alignment = TextAlignmentOptions.MidlineLeft;
+            field.textComponent.gameObject.AddComponent<MiddleAlignment>();
         }
 
-        if (field.placeholder is TMP_Text hint)
+        if (field.placeholder is TMP_Text)
         {
-            hint.alignment = TextAlignmentOptions.MidlineLeft;
+            field.placeholder.gameObject.AddComponent<MiddleAlignment>();
         }
 
         // the placeholder is a game label, which writes its own text when it starts up: set it through the label
@@ -481,6 +504,100 @@ internal static class DungeonMakerListTools
 
         SetSize(copy, SearchMinWidth, true);
         copy.SetActive(true);
+    }
+
+    // The sort dropdown: the game's own dropdown (the prefab the mod's other dropdowns use, CustomDropDown). Its
+    // choices are filled in by Ensure.
+    private static void AddSortDropdown(Transform bar)
+    {
+        var dropdown = CustomDropDown.MakeDropdown(SortName, bar);
+
+        if (!dropdown)
+        {
+            Problem("Dungeon Maker list tools: the game's dropdown was not found, so no sort choice.");
+
+            return;
+        }
+
+        SetSize(dropdown.gameObject, SortWidth, false);
+        dropdown.gameObject.SetActive(true);
+    }
+
+    // The direction arrow: a copy of the campaign editor's "move up" button (the arrows beside Edit), whose arrow
+    // picture is switched to the "move down" button's for descending. The editor screen exists from the start of
+    // the game, shown or not.
+    private static void AddArrow(Transform bar)
+    {
+        var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
+        var up = editor ? editor.moveQuestUpButton : null;
+        var down = editor ? editor.moveQuestDownButton : null;
+
+        _upArrow = ArrowOf(up)?.sprite;
+        _downArrow = ArrowOf(down)?.sprite;
+
+        if (!up || !_upArrow || !_downArrow)
+        {
+            Problem("Dungeon Maker list tools: the editor's move buttons were not found, so no direction arrow.");
+
+            return;
+        }
+
+        var copy = Object.Instantiate(up.gameObject, bar, false);
+
+        copy.name = DirectionName;
+
+        // the copied tooltip describes moving a quest; SetArrow writes its own
+        foreach (var tooltip in copy.GetComponentsInChildren<GuiTooltip>(true))
+        {
+            tooltip.Clear();
+        }
+
+        copy.GetComponent<Button>().interactable = true;
+
+        if (!copy.TryGetComponent<LayoutElement>(out var layout))
+        {
+            layout = copy.AddComponent<LayoutElement>();
+        }
+
+        // square, as tall as the bar's other controls
+        layout.ignoreLayout = false;
+        layout.minWidth = layout.preferredWidth = ControlHeight;
+        layout.minHeight = layout.preferredHeight = ControlHeight;
+        layout.flexibleWidth = 0f;
+        layout.flexibleHeight = 0f;
+        copy.SetActive(true);
+    }
+
+    // the arrow picture of one of the editor's move buttons: its image other than the frame
+    private static Image ArrowOf(Button button)
+    {
+        return button
+            ? button.GetComponentsInChildren<Image>(true)
+                .FirstOrDefault(x => x.gameObject != button.gameObject && x.name != "Frame")
+            : null;
+    }
+
+    private static void SetArrow(Button button, bool descending)
+    {
+        if (!button)
+        {
+            return;
+        }
+
+        var arrow = ArrowOf(button);
+
+        if (arrow)
+        {
+            arrow.sprite = descending ? _downArrow : _upArrow;
+        }
+
+        var tooltip = button.GetComponentInChildren<GuiTooltip>(true);
+
+        if (tooltip)
+        {
+            tooltip.Content = Gui.Localize(
+                descending ? "ModUi/&DungeonMakerSortDescending" : "ModUi/&DungeonMakerSortAscending");
+        }
     }
 
     // a fixed width, or at least that width and all the room that is left
@@ -526,5 +643,30 @@ internal static class DungeonMakerListTools
         internal string Name;
         internal string Second;
         internal Transform Transform;
+    }
+}
+
+// Keeps a copied text label vertically centred (the search field's text and its "Search..." hint). A game label's
+// style sets its alignment when the label wakes up (GuiLabel.Awake, GuiStyleEnforcer.ApplyStyles), which is after
+// the copy is made. Unity wakes the components of an object in order, each with its OnEnable, and this one is added
+// after the label's, so it comes after the style; Start, after every object's Awake, is the second chance.
+internal sealed class MiddleAlignment : MonoBehaviour
+{
+    private void Start()
+    {
+        Apply();
+    }
+
+    private void OnEnable()
+    {
+        Apply();
+    }
+
+    private void Apply()
+    {
+        if (TryGetComponent<TMP_Text>(out var text))
+        {
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+        }
     }
 }
