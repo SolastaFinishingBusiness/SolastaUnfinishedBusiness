@@ -18,6 +18,7 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //                      (the title for content, the type for variables); a click goes to the next one
 //   a direction button ascending or descending
 //   a search field     only rows whose name or title contains the text are shown
+//   a clear button     empties the search field
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
@@ -34,11 +35,11 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //     (list.IndexOf(line.UserContent)), not from the row's position. So select, edit, duplicate, delete and "pick"
 //     act on the item that was clicked, and the selection survives a change of sort or direction.
 //   - A search that leaves the selected row out clears the selection, so no button acts on an item that isn't
-//     shown.
+//     shown. In the campaign editor that is only done for the lists that are open; see UserListSortPatcher.
 //   - On its next refresh the game binds row object i to item i again, whichever object that now is, and switches
 //     it on; the view is then applied again.
 //
-// Names compare without regard to case; rows that compare equal keep the list's order.
+// Names compare without regard to case; rows that compare equal keep the list's order, ascending or descending.
 internal static class DungeonMakerListTools
 {
     internal enum Sort
@@ -57,11 +58,13 @@ internal static class DungeonMakerListTools
     private const string SortName = "Sort";
     private const string DirectionName = "Direction";
     private const string SearchName = "Search";
+    private const string ClearName = "Clear";
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the two
     // buttons leave of the bar's width
     private const float ButtonWidth = 150f;
     private const float SearchMinWidth = 160f;
+    private const float ClearWidth = 90f;
     private const float ControlHeight = 34f;
     private const float Spacing = 6f;
 
@@ -120,7 +123,8 @@ internal static class DungeonMakerListTools
     // Orders and filters the rows remembered for this table. name and second give a row's two sort keys; a row
     // is shown when its name or its second key contains the screen's search text. Returns true when the search
     // left out a row that isSelected says is the selected one: the screen still holds that selection, and its
-    // buttons (edit, delete, validate) would act on an item that can't be seen, so the caller has to clear it.
+    // buttons (edit, delete, validate) would act on an item that can't be seen. Whether to clear it is the
+    // caller's decision.
     internal static bool Apply(
         Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second,
         Func<Transform, bool> isSelected = null)
@@ -149,22 +153,26 @@ internal static class DungeonMakerListTools
             });
         }
 
-        // OrderBy is stable, and the rows start in list order, so equal keys keep that order
+        // OrderBy and OrderByDescending are stable, and the rows start in list order, so rows with equal keys
+        // keep that order in both directions. (Reversing an ascending result would turn the ties round too.)
+        // Only the campaign's own order has no keys: descending, it is simply the list from its end.
+        var descending = Descending;
         IEnumerable<Row> ordered = Kind switch
         {
-            Sort.Name => items.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
-            Sort.Second => items
-                .OrderBy(x => x.Second, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
-            _ => items
+            Sort.Name => descending
+                ? items.OrderByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            Sort.Second => descending
+                ? items
+                    .OrderByDescending(x => x.Second, StringComparer.OrdinalIgnoreCase)
+                    .ThenByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items
+                    .OrderBy(x => x.Second, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            _ => descending ? Enumerable.Reverse(items) : items
         };
 
         var sorted = ordered.ToList();
-
-        if (Descending)
-        {
-            sorted.Reverse();
-        }
 
         // The rows are the table's first children (the screens keep unused pooled rows after them), and they only
         // change places among themselves, so the game still finds a row object at each of the first positions.
@@ -229,6 +237,7 @@ internal static class DungeonMakerListTools
         var sort = bar.Find(SortName)?.GetComponent<Button>();
         var direction = bar.Find(DirectionName)?.GetComponent<Button>();
         var search = bar.Find(SearchName)?.GetComponent<TMP_InputField>();
+        var clear = bar.Find(ClearName)?.GetComponent<Button>();
 
         void Refresh()
         {
@@ -239,6 +248,13 @@ internal static class DungeonMakerListTools
                 _ => "ModUi/&DungeonMakerSortDefault"
             });
             SetText(direction, Descending ? "ModUi/&DungeonMakerSortDescending" : "ModUi/&DungeonMakerSortAscending");
+            SetText(clear, "ModUi/&DungeonMakerSearchClear");
+
+            // nothing to clear while the field is empty
+            if (clear)
+            {
+                clear.interactable = Search(screen).Length > 0;
+            }
         }
 
         void Changed()
@@ -287,6 +303,19 @@ internal static class DungeonMakerListTools
             });
         }
 
+        if (clear)
+        {
+            clear.onClick = new Button.ButtonClickedEvent();
+            clear.onClick.AddListener(() =>
+            {
+                // setting the field's text raises its "value changed", which empties the search and applies it
+                if (search)
+                {
+                    search.text = string.Empty;
+                }
+            });
+        }
+
         Refresh();
     }
 
@@ -315,9 +344,10 @@ internal static class DungeonMakerListTools
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
 
-        AddButton(bar.transform, sourceButton, SortName);
-        AddButton(bar.transform, sourceButton, DirectionName);
+        AddButton(bar.transform, sourceButton, SortName, ButtonWidth);
+        AddButton(bar.transform, sourceButton, DirectionName, ButtonWidth);
         AddSearch(bar.transform);
+        AddButton(bar.transform, sourceButton, ClearName, ClearWidth);
 
         // anchored like the scroll view from side to side, and to its bottom edge, ControlHeight tall
         rect.SetParent(list.parent, false);
@@ -336,7 +366,7 @@ internal static class DungeonMakerListTools
         return bar.transform;
     }
 
-    private static void AddButton(Transform bar, GameObject source, string name)
+    private static void AddButton(Transform bar, GameObject source, string name, float width)
     {
         var copy = Object.Instantiate(source, bar, false);
 
@@ -377,7 +407,7 @@ internal static class DungeonMakerListTools
         }
 
         copy.GetComponent<Button>().interactable = true;
-        SetSize(copy, ButtonWidth, false);
+        SetSize(copy, width, false);
         copy.SetActive(true);
     }
 

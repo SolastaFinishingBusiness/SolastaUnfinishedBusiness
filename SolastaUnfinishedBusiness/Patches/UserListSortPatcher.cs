@@ -85,68 +85,81 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class UserCampaignEditorScreen_RefreshLists
     {
-        // per Refresh method: the list's table, its two move arrows, and how to clear its selection
+        // per Refresh method: the list's table, its two move arrows, how to clear its selection, and the group
+        // (the foldable section with the list's header) it sits in
         internal static readonly Dictionary<string, ContentList> Lists = new()
         {
             {
                 "RefreshBiomes",
                 new ContentList(x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
-                    x => x.selectedBiome = -1)
+                    x => x.selectedBiome = -1,
+                    x => x.biomesGroupItem)
             },
             {
                 "RefreshDialogs",
                 new ContentList(x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
-                    x => x.selectedDialog = -1)
+                    x => x.selectedDialog = -1,
+                    x => x.dialogsGroupItem)
             },
             {
                 "RefreshEncounters",
                 new ContentList(x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
-                    x => x.selectedEncounter = -1)
+                    x => x.selectedEncounter = -1,
+                    x => x.encountersGroupItem)
             },
             {
                 "RefreshEncounterTables",
                 new ContentList(x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
-                    x => x.moveEncounterTableDownButton, x => x.selectedEncounterTable = -1)
+                    x => x.moveEncounterTableDownButton, x => x.selectedEncounterTable = -1,
+                    x => x.encounterTablesGroupItem)
             },
             {
                 "RefreshItems",
                 new ContentList(x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
-                    x => x.selectedItem = -1)
+                    x => x.selectedItem = -1,
+                    x => x.itemsGroupItem)
             },
             {
                 "RefreshLocations",
                 new ContentList(x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
-                    x => x.selectedLocation = -1)
+                    x => x.selectedLocation = -1,
+                    x => x.locationsGroupItem)
             },
             {
                 "RefreshLootPacks",
                 new ContentList(x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
-                    x => x.selectedLootPack = -1)
+                    x => x.selectedLootPack = -1,
+                    x => x.lootPacksGroupItem)
             },
             {
                 "RefreshMerchantInventories",
                 new ContentList(x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
-                    x => x.moveMerchantInventoryDownButton, x => x.selectedMerchantInventory = -1)
+                    x => x.moveMerchantInventoryDownButton, x => x.selectedMerchantInventory = -1,
+                    x => x.merchantIventoriesGroupItem)
             },
             {
                 "RefreshMonsters",
                 new ContentList(x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
-                    x => x.selectedMonster = -1)
+                    x => x.selectedMonster = -1,
+                    x => x.monstersGroupItem)
             },
             {
                 "RefreshNpcs",
                 new ContentList(x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
-                    x => x.selectedNpc = -1)
+                    x => x.selectedNpc = -1,
+                    x => x.npcsGroupItem)
             },
             {
                 "RefreshQuests",
                 new ContentList(x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
-                    x => x.selectedQuest = -1)
+                    x => x.selectedQuest = -1,
+                    x => x.questsGroupItem)
             },
             {
                 "RefreshVariables",
                 new ContentList(x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
-                    x => x.selectedVariable = -1)
+                    x => x.selectedVariable = -1,
+                    x => x.variablesGroupItem)
             }
         };
 
@@ -154,9 +167,11 @@ public static class UserListSortPatcher
             Func<UserCampaignEditorScreen, Transform> table,
             Func<UserCampaignEditorScreen, Button> moveUp,
             Func<UserCampaignEditorScreen, Button> moveDown,
-            Action<UserCampaignEditorScreen> clearSelection)
+            Action<UserCampaignEditorScreen> clearSelection,
+            Func<UserCampaignEditorScreen, CampaignContentGroupItem> group)
         {
             internal readonly Action<UserCampaignEditorScreen> ClearSelection = clearSelection;
+            internal readonly Func<UserCampaignEditorScreen, CampaignContentGroupItem> Group = group;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveDown = moveDown;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveUp = moveUp;
             internal readonly Func<UserCampaignEditorScreen, Transform> Table = table;
@@ -188,10 +203,18 @@ public static class UserListSortPatcher
             var moveUp = list.MoveUp(screen);
             var moveDown = list.MoveDown(screen);
 
-            // The search left the selected row out: drop the selection, or Edit and Delete would act on an item
-            // that isn't shown. The refresh this asks for works the list's buttons out again with nothing
-            // selected; it can't come back here in a loop, as there is then no selected row to hide.
-            if (DungeonMakerListTools.Apply(list.Table(screen), Editor, ContentName, ContentTitle, IsSelected))
+            // The search left this list's selected row out. The selection is dropped, or Edit and Delete would
+            // act on an item that isn't shown, but only while the list is open. The editor's shortcut icons work
+            // as tabs: one opens its list and folds the eleven others. A selection made in a list that is folded
+            // away now is left alone, because the search may be changed or cleared before the user comes back to
+            // it; it is looked at again when the list is opened (see the two patches below). The refresh asked
+            // for here works the list's buttons out again with nothing selected; it can't come back in a loop,
+            // as there is then no selected row to hide.
+            var hidSelected =
+                DungeonMakerListTools.Apply(list.Table(screen), Editor, ContentName, ContentTitle, IsSelected);
+            var group = list.Group(screen);
+
+            if (hidSelected && (!group || !group.folded))
             {
                 list.ClearSelection(screen);
                 screen.Dirty = true;
@@ -214,6 +237,53 @@ public static class UserListSortPatcher
         }
     }
 
+    //PATCH: a list of the campaign editor was opened or folded away by its header. On opening, the search as it
+    //is now is applied to it, which clears its selection if the search hides it.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserCampaignEditorScreen_FoldChanged
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            return new[]
+            {
+                "BiomeFoldChanged", "DialogFoldChanged", "EncounterFoldChanged", "EncounterTableFoldChanged",
+                "ItemFoldChanged", "LocationFoldChanged", "LootPackFoldChanged", "MerchantInventoryFoldChanged",
+                "MonsterFoldChanged", "NpcFoldChanged", "QuestFoldChanged", "VariableFoldChanged"
+            }.Select(x => AccessTools.Method(typeof(UserCampaignEditorScreen), x));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignEditorScreen __instance)
+        {
+            ApplyToAll(__instance);
+        }
+
+        internal static void ApplyToAll(UserCampaignEditorScreen screen)
+        {
+            foreach (var list in UserCampaignEditorScreen_RefreshLists.Lists.Values)
+            {
+                UserCampaignEditorScreen_RefreshLists.ApplyTo(screen, list);
+            }
+        }
+    }
+
+    //PATCH: a shortcut icon of the campaign editor was clicked: it opens its list and folds the others, which is
+    //how the user goes from one "tab" to another. The same check as above, for the list just opened.
+    [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnCategoryHeaderFocused))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserCampaignEditorScreen_OnCategoryHeaderFocused
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignEditorScreen __instance)
+        {
+            UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
+        }
+    }
+
     //PATCH: the bar on the campaign editor, under the content lists (its buttons are copies of Import)
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
@@ -228,10 +298,7 @@ public static class UserListSortPatcher
                 {
                     // the rows already hold their items: the twelve lists are only ordered and filtered again,
                     // without the game binding everything anew at every letter typed
-                    foreach (var list in UserCampaignEditorScreen_RefreshLists.Lists.Values)
-                    {
-                        UserCampaignEditorScreen_RefreshLists.ApplyTo(__instance, list);
-                    }
+                    UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
 
                     // back to the plain view: a refresh has the game work out the move arrows again
                     if (DungeonMakerListTools.IsPlain(Editor))

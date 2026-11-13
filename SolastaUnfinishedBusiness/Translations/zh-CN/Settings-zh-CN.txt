@@ -1,5 +1,6 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 若目标在 10 格内且当前未被察觉，则进行一次感知检定</i>
 ModUi/&DungeonMakerSearch=搜索
+ModUi/&DungeonMakerSearchClear=清除
 ModUi/&DungeonMakerSortAscending=升序
 ModUi/&DungeonMakerSortDefault=排序：默认
 ModUi/&DungeonMakerSortDescending=降序

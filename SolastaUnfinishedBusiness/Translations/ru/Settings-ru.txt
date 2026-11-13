@@ -1,6 +1,7 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Бросок Восприятия, чтобы заметить невоспринимаемые цели в пределах 10 клеток</i>
 ModUI/&EnableCriticalHitsMissesAt10=Включить критические удары и промахи, когда разница между переменным и модифицированным результатом атаки составляет 10 или более
 ModUi/&DungeonMakerSearch=Поиск
+ModUi/&DungeonMakerSearchClear=Очистить
 ModUi/&DungeonMakerSortAscending=По возрастанию
 ModUi/&DungeonMakerSortDefault=Сортировка: по умолчанию
 ModUi/&DungeonMakerSortDescending=По убыванию

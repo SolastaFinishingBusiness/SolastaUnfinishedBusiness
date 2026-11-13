@@ -1,5 +1,6 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 인지되지 않은 10칸 이내의 대상을 알아차리기 위해 지각 판정을 굴림</i>
 ModUi/&DungeonMakerSearch=검색
+ModUi/&DungeonMakerSearchClear=지우기
 ModUi/&DungeonMakerSortAscending=오름차순
 ModUi/&DungeonMakerSortDefault=정렬: 기본
 ModUi/&DungeonMakerSortDescending=내림차순
