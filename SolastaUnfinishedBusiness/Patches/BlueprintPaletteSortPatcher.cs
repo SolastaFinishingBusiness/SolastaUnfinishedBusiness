@@ -49,6 +49,73 @@ public static class BlueprintPaletteSortPatcher
     // the category order are one choice. Each keeps its own search.
     private static readonly List<BaseBlueprintSelectionPanel> Palettes = [];
 
+    // Each palette's fold states by category (the BaseBlueprint.Category key the game groups by), taken before the
+    // game lets go of the headers. An environment change calls the palette's Unbind, which sends every header back
+    // to the prefab pool (Gui.ReleaseChildrenToPool), and then Bind(resetFold: false), which takes headers from the
+    // pool and leaves each its own folded flag: in the game's order a fold could already land on another category,
+    // and with the categories reordered it did (seen in game on 8534f3b2: Activators open, then Adventuring; traced by
+    // Codex in the IL). So the folds are restored by category after such a Bind; with resetFold the game's own
+    // reset stands.
+    private static readonly ConditionalWeakTable<BaseBlueprintSelectionPanel, Dictionary<string, bool>> Folds =
+        new();
+
+    // the category each bound header shows, from its first blueprint
+    private static string CategoryKeyOf(BlueprintCategoryItem category)
+    {
+        return category && category.blueprintsTable
+            ? category.blueprintsTable.Cast<Transform>().Select(BlueprintOf).FirstOrDefault(x => x)?.Category
+            : null;
+    }
+
+    // remembers the folds of the headers the palette still holds (none once Unbind has released them, and then the
+    // last ones taken stay)
+    private static void RememberFolds(BaseBlueprintSelectionPanel panel)
+    {
+        if (!panel || !panel.categoriesTable || !Bound.TryGetValue(panel, out var categories))
+        {
+            return;
+        }
+
+        var held = categories.Where(x => x && x.transform.parent == panel.categoriesTable).ToList();
+
+        if (held.Count == 0)
+        {
+            return;
+        }
+
+        var folds = Folds.GetOrCreateValue(panel);
+
+        foreach (var category in held)
+        {
+            var key = CategoryKeyOf(category);
+
+            if (key != null)
+            {
+                folds[key] = category.folded;
+            }
+        }
+    }
+
+    // gives each header just bound the fold its category had (the game's own ForceFoldOrUnfold: flag, toggle, table,
+    // arrow, with no callbacks)
+    private static void RestoreFolds(BaseBlueprintSelectionPanel panel, IEnumerable<BlueprintCategoryItem> categories)
+    {
+        if (!Folds.TryGetValue(panel, out var folds))
+        {
+            return;
+        }
+
+        foreach (var category in categories)
+        {
+            var key = CategoryKeyOf(category);
+
+            if (key != null && folds.TryGetValue(key, out var folded) && category.folded != folded)
+            {
+                category.ForceFoldOrUnfold(folded);
+            }
+        }
+    }
+
     private static void ApplyAll()
     {
         Palettes.RemoveAll(x => !x);
@@ -143,6 +210,19 @@ public static class BlueprintPaletteSortPatcher
         LayoutRebuilder.ForceRebuildLayoutImmediate(panel.categoriesTable);
     }
 
+    //PATCH: the folds are remembered before the palette lets go of its headers
+    [HarmonyPatch(typeof(BaseBlueprintSelectionPanel), nameof(BaseBlueprintSelectionPanel.Unbind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class BaseBlueprintSelectionPanel_Unbind
+    {
+        [UsedImplicitly]
+        public static void Prefix(BaseBlueprintSelectionPanel __instance)
+        {
+            RememberFolds(__instance);
+        }
+    }
+
     //PATCH: the bar, and the view of each category, after the game bound the palette's categories (each palette's
     //own Bind fills AvailableBlueprints and then calls this one)
     [HarmonyPatch(typeof(BaseBlueprintSelectionPanel), nameof(BaseBlueprintSelectionPanel.Bind))]
@@ -150,33 +230,15 @@ public static class BlueprintPaletteSortPatcher
     [UsedImplicitly]
     public static class BaseBlueprintSelectionPanel_Bind
     {
-        // Puts the categories back in the game's order before the game binds them again. Bind hands category i to the
-        // table's child i, and when it doesn't reset the folds (undo, a change of environment or size) the child
-        // keeps its own folded state: with the children moved, a fold went to another category (Codex's review of
-        // 72916454, from the game's IL). The categories bound last are the table's first children, in that order.
+        // the folds, if the headers are still held (a Bind with no Unbind before it)
         [UsedImplicitly]
         public static void Prefix(BaseBlueprintSelectionPanel __instance)
         {
-            if (!__instance.categoriesTable || !Bound.TryGetValue(__instance, out var categories))
-            {
-                return;
-            }
-
-            var index = 0;
-
-            foreach (var category in categories.Where(x => x && x.transform.parent == __instance.categoriesTable))
-            {
-                if (category.transform.GetSiblingIndex() != index)
-                {
-                    category.transform.SetSiblingIndex(index);
-                }
-
-                index++;
-            }
+            RememberFolds(__instance);
         }
 
         [UsedImplicitly]
-        public static void Postfix(BaseBlueprintSelectionPanel __instance)
+        public static void Postfix(BaseBlueprintSelectionPanel __instance, bool resetFold)
         {
             var table = __instance.categoriesTable;
 
@@ -208,6 +270,12 @@ public static class BlueprintPaletteSortPatcher
                     categories.Add(category);
                     DungeonMakerListTools.Bound(category.blueprintsTable, IsBoundRow);
                 }
+            }
+
+            // each category gets its own fold back, unless the game reset them all
+            if (!resetFold)
+            {
+                RestoreFolds(__instance, categories);
             }
 
             Apply(__instance);
