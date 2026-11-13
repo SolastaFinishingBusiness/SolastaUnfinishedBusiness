@@ -50,7 +50,6 @@ ModUi/&DungeonMakerSortLabel=並び順：
 ModUi/&DungeonMakerSortName=名前
 ModUi/&DungeonMakerSortTitle=タイトル
 ModUi/&DungeonMakerSortType=種類
-ModUi/&EnableDungeonMakerVariableCommands=ダンジョンメーカーのキャンペーンコマンドを有効にする <i><color=#F0DAA0>[予約された名前のキャンペーン変数で、時計の読み取りと時間送り、会話や判定の開始、テレポート、松明の点灯・消灯ができます。ガイド：MODのGitHubページにあるDocumentation/DungeonMakerCommands.md]</color></i>
 ModUi/&SyncAiPerceptionChecks=AIは行動を決める前に、共有された知覚判定を最大3秒待ち、それでも届かない判定はAIを動かしているコンピューターで振る <i><color=#F0DAA0>[知覚されていない対象に知覚判定を行うルールのオプションが有効な場合；オフ：従来どおりAIを実行しているコンピューターで判定し、全プレイヤーがゲーム本体の「ゲーム > ゲームプレイ > ランダムシードを保存する」を同じ設定にしていない限り、非同期が起きる可能性が非常に高い（同じでも起こり得る）；マルチプレイのみ]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=ACと変更された攻撃ロール結果の違いが10以上の場合、クリティカルヒットとミスを有効にします
 ModUI/&EnableDamageOnFailedJumpCheck=失敗したジャンプチェックに1D4ダメージを適用します

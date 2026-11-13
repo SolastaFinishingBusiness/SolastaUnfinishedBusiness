@@ -82,13 +82,6 @@ internal static class DungeonMakerDisplay
             Main.Settings.EnableSortingDungeonMakerAssets = toggle;
         }
 
-        // campaign variables with reserved names act as commands (Models/DungeonMakerCommandsContext.cs)
-        toggle = Main.Settings.EnableDungeonMakerVariableCommands;
-        if (UI.Toggle(Gui.Localize("ModUi/&EnableDungeonMakerVariableCommands"), ref toggle, UI.AutoWidth()))
-        {
-            Main.Settings.EnableDungeonMakerVariableCommands = toggle;
-        }
-
         toggle = Main.Settings.AllowGadgetsAndPropsToBePlacedAnywhere;
         if (UI.Toggle(Gui.Localize("ModUi/&AllowGadgetsAndPropsToBePlacedAnywhere"), ref toggle))
         {

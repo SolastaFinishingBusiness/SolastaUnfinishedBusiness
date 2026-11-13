@@ -206,7 +206,6 @@ internal static class DungeonMakerCommandsContext
     private static string _lastTorchReport = string.Empty;
     private static string _lastTypeReport = string.Empty;
 
-    private static bool Enabled => Main.Settings.EnableDungeonMakerVariableCommands;
 
     private static GameLocation CurrentLocation => ServiceRepository.GetService<IGameLocationService>()?.GameLocation;
 
@@ -248,7 +247,7 @@ internal static class DungeonMakerCommandsContext
         _torchLocation = null;
         _lastTorchReport = string.Empty;
 
-        if (!Enabled || variables == null)
+        if (variables == null)
         {
             return;
         }
@@ -331,7 +330,7 @@ internal static class DungeonMakerCommandsContext
         // same Node name into Teleport_Node while the first request has not started yet (the variable still holds
         // that name) would go unnoticed, and it is a request of its own. So when this operation wrote
         // Teleport_Node and no request was taken while it ran, it is taken here.
-        if (operation?.StringParameter != TeleportNodeVariable || _serial != serialBefore || !Enabled ||
+        if (operation?.StringParameter != TeleportNodeVariable || _serial != serialBefore ||
             CurrentLocation == null)
         {
             return;
@@ -462,7 +461,7 @@ internal static class DungeonMakerCommandsContext
     // Teleport_Node; returns it, or null when the flow has none.
     private static Request KeepPlace(GameGadgetListener listener)
     {
-        if (!Enabled || CurrentLocation == null || listener.FunctorParams == null ||
+        if (CurrentLocation == null || listener.FunctorParams == null ||
             !listener.FunctorParams.Any(x =>
                 x is FunctorParametersDescription { Type: VariableOperationFunctor } operation &&
                 operation.StringParameter == TeleportNodeVariable))
@@ -556,7 +555,7 @@ internal static class DungeonMakerCommandsContext
     // GameLocation.UpdateGadgets, after the game updated its gadgets: work on the requests.
     internal static void Tick()
     {
-        if (!Enabled || ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: true })
+        if (ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: true })
         {
             return;
         }
@@ -620,7 +619,7 @@ internal static class DungeonMakerCommandsContext
     // the game's "variable value changed" event: any variable, written by anything
     private static void OnVariableChanged(GameVariable variable)
     {
-        if (_writing > 0 || variable?.Name == null || !Enabled || CurrentLocation == null)
+        if (_writing > 0 || variable?.Name == null || CurrentLocation == null)
         {
             return;
         }

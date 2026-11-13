@@ -50,7 +50,6 @@ ModUi/&DungeonMakerSortLabel=정렬:
 ModUi/&DungeonMakerSortName=이름
 ModUi/&DungeonMakerSortTitle=제목
 ModUi/&DungeonMakerSortType=유형
-ModUi/&EnableDungeonMakerVariableCommands=던전 메이커 캠페인 명령 활성화 <i><color=#F0DAA0>[예약된 이름의 캠페인 변수로 시계를 읽고 시간을 건너뛰며, 대화와 판정을 시작하고, 순간이동시키고, 횃불을 켜고 끕니다. 안내: 모드의 GitHub 페이지에 있는 Documentation/DungeonMakerCommands.md]</color></i>
 ModUi/&SyncAiPerceptionChecks=AI가 행동을 정하기 전에 공유된 지각 판정을 최대 3초 기다리고, 그때까지 없는 판정은 AI를 실행하는 컴퓨터에서 굴림 <i><color=#F0DAA0>[인지되지 않은 대상에게 지각 판정을 굴리는 규칙 옵션이 켜져 있을 때; 끄면: 이전처럼 AI를 실행하는 컴퓨터에서 판정하며, 모든 플레이어가 게임의 '게임 > 게임플레이 > 난수 시드 보존' 옵션을 같게 설정하지 않으면 비동기화가 일어날 가능성이 매우 높음 (같아도 일어날 수 있음); 멀티플레이 전용]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=AC와 수정 된 공격 롤 결과의 차이가 10 이상인 경우 임계 적중 및 누락을 활성화합니다.
 ModUI/&EnableDamageOnFailedJumpCheck=실패한 점프 점검에 1d4 피해를 적용합니다

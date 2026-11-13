@@ -50,7 +50,6 @@ ModUi/&DungeonMakerSortLabel=Ordem:
 ModUi/&DungeonMakerSortName=Nome
 ModUi/&DungeonMakerSortTitle=Título
 ModUi/&DungeonMakerSortType=Tipo
-ModUi/&EnableDungeonMakerVariableCommands=Habilitar os comandos de campanha do Dungeon Maker <i><color=#F0DAA0>[variáveis de campanha com nomes reservados leem e avançam o relógio, iniciam diálogos e testes, teletransportam e acendem ou apagam tochas; guia: Documentation/DungeonMakerCommands.md na página do mod no GitHub]</color></i>
 ModUi/&SyncAiPerceptionChecks=A IA espera até 3 segundos por rolagens de Percepção compartilhadas antes de decidir o que fazer; as que ainda faltarem são roladas no computador que a executa <i><color=#F0DAA0>[com a opção de Regras que rola Percepção para alvos não percebidos; desligado: a IA as rola no computador que a executa, como antes, e dessincronizações são muito prováveis a menos que todos os jogadores tenham a opção do jogo Jogo > Jogo > Preservar Sorteios Aleatórios configurada igual (e ainda possíveis mesmo assim); só partidas multijogador]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Ativar sucessos e erros críticos quando a diferença entre o resultado do rolo de ataque AC e o ataque é 10 ou mais
 ModUI/&EnableDamageOnFailedJumpCheck=Aplica 1d4 Danos em verificações de salto falhas

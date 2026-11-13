@@ -7,7 +7,8 @@ example from an Area Activator's Variable Operation.
 - You create the variables yourself in the campaign's variable list. Names are case-sensitive. A variable you don't
   create is ignored, so use only the ones you need.
 - Players need the mod for any of this to work. Without it the variables are ordinary variables and nothing happens.
-- The setting is Mod UI > Dungeon Maker > "Enable Dungeon Maker campaign commands" (on by default).
+- There is no setting to switch this off: the commands work in every campaign while the mod is installed. A campaign
+  that doesn't create these variables is not affected.
 - The mod writes what it does, and why a command failed, to the mod's log.
 
 Adapted from BlackguardRogue's Dungeon Maker tools.
@@ -41,6 +42,22 @@ ends, so you can write the same name again later.
   met, for up to an hour of game time. What can never work (no gadget of that name, the wrong kind of gadget, no
   acting character) fails at once.
 - **Leaving the location** cancels the commands that were waiting there.
+
+## During a battle
+
+The game keeps updating the location's objects during a fight, so a command written mid-battle is taken at once, as
+at any other time. What happens next depends on the command:
+
+| Command | In a battle |
+|---|---|
+| `Dialog_Trigger`, `Roll_Trigger` | They set off the object's own dialogue or roll, which runs only when the object may run: one set to run outside battles only waits until the fight is over, one set to run in battles only runs now, one set to run always runs now. |
+| `Teleport_Node`, `Teleport_PartyNode` | The character or the party is moved at once, in the middle of the fight. |
+| `Torches_Lit`, `Torches_Auto`, `Torch_<name>` | The torches change at once. |
+| `Clock_` read-outs and counters | They move with the rounds (six seconds each), the only way the clock moves in a battle. |
+| `Clock_Skip...` | Never in a battle: the request fails (see "Clock" below). |
+
+The objects whose flows write the variables follow the same rule: an object set to run outside battles only doesn't
+run its flow during a fight, so it doesn't write its command until the fight is over.
 
 ## Who is the acting character
 
@@ -92,8 +109,8 @@ with summoned creatures moved along with the party. It needs no acting character
 Its status is `Succeeded` only when the game has placed every one of them, summoned creatures included, and `Failed`
 if it found no free cell for someone; the log names who.
 
-`Teleport_Node` moves the one character only. Whether that character's summoned creatures should follow is not
-decided yet; for now they stay where they are.
+`Teleport_Node` moves the one character only. Its summoned creatures are not taken along: they stay where they are,
+as with the game's own one-character Teleporter.
 
 ## Status
 
