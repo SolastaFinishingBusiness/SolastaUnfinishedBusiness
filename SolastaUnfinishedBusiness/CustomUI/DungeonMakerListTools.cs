@@ -21,21 +21,20 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //   dropdown           (the title for content, the type for variables), set apart from Clear by a gap
 //   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
 //
-// and, right below the sort controls, a second row of the same kind for the CATEGORY SORT (user direction through
-// Codex, 2026-11-13: "The sort options should use the same style as the main sort, but be located right below the
-// dropdown. The category specific sort will be priority, with the main sort as the secondary."):
+// and a CATEGORY SORT for each list (user direction through Codex, 2026-11-13: "The category specific sort will be
+// priority, with the main sort as the secondary"; the user's choices: a sort per list, with its own arrow):
 //
-//   "<list>:"          the list it applies to ("Monsters:")
-//   a dropdown         Default, or one of that list's own keys (hit points, challenge rating, cost, ...);
-//                      Default, which every list starts on (user direction, 2026-11-13: "an option for Default
-//                      (and start with default), where the category just follows the main"), orders it by the
-//                      main sort alone
-//   a direction arrow  its own direction
+//   "Sort:"            in the campaign editor, a row inside each list's foldable group, directly under its header
+//   a dropdown         and above its items (user, 2026-11-13: "[Quests category expanded] / Sort: [Default] [arrow]
+//   a direction arrow  / {... Actual quest items...} / [New quest button]"); shown while the group is open. The
+//                      variable picker and the cheat panel, which have one list and no headers, have it as a second
+//                      row of the bar, under the main sort, as "Variables:".
 //
-// A list is ordered by its category key first, and rows with equal keys by the main sort (with its direction),
-// then by the campaign's order. Each list keeps its own category sort (user's choice, 2026-11-13: "A sort per
-// list"); in the campaign editor the row shows the list that was opened last, and every open list is ordered by its
-// own. Numbers compare as numbers; an entry without a value for the key comes last in both directions.
+// The dropdown holds Default, which every list starts on and which orders it by the main sort alone (user, same day:
+// "an option for Default (and start with default), where the category just follows the main"), then the list's
+// own keys (hit points, challenge rating, cost, ...). A list is ordered by its category key first, in that
+// direction, and rows with equal keys by the main sort, in its direction, then by the campaign's order. Numbers
+// compare as numbers; an entry without a value for the key comes last in both directions.
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
@@ -83,6 +82,7 @@ internal static class DungeonMakerListTools
     private const string CategoryLabelName = "CategoryLabel";
     private const string CategoryName = "Category";
     private const string CategoryDirectionName = "CategoryDirection";
+    private const string ListSortRowName = "FbListSort";
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
     // controls leave of the bar's width
@@ -97,8 +97,8 @@ internal static class DungeonMakerListTools
     private const float ControlHeight = 34f;
     private const float Spacing = 6f;
 
-    // two rows: the search and main sort, and the category sort under it
-    private const float BarHeight = (2 * ControlHeight) + Spacing;
+    // with a category row (picker, cheat panel): the search and main sort, and the category sort under it
+    private const float TwoRowHeight = (2 * ControlHeight) + Spacing;
 
     // between the list and the bar
     private const float Gap = 6f;
@@ -110,9 +110,6 @@ internal static class DungeonMakerListTools
     private static readonly Dictionary<string, string> Searches = [];
 
     private static string _lastProblem = string.Empty;
-
-    // each screen's way to bring its bar up to date (the editor's when another list is opened)
-    private static readonly Dictionary<string, Action> Refreshers = [];
 
     // the editor's two arrow pictures, for the direction button
     private static Sprite _upArrow;
@@ -131,15 +128,6 @@ internal static class DungeonMakerListTools
     internal static void ClearSearch(string screen)
     {
         Searches[screen] = string.Empty;
-    }
-
-    // Brings a screen's bar up to date, e.g. the category row after another list was opened in the editor.
-    internal static void RefreshBar(string screen)
-    {
-        if (Refreshers.TryGetValue(screen, out var refresh))
-        {
-            refresh();
-        }
     }
 
     // A list's category sort: the option's id (null for Default, the main sort alone) and whether it is
@@ -339,7 +327,8 @@ internal static class DungeonMakerListTools
     //   sourcePath  a button of the screen to copy for the bar's two buttons, from the screen's root
     //   secondTerm  the sort dropdown's choice for the second key ("Title", "Type")
     //   changed     the view changed: apply it to the screen's tables
-    //   category    the list the category row applies to now, with its options, or null when there is none
+    //   category    the list the bar's category row applies to, with its options; null for no such row (the
+    //               campaign editor, whose lists have theirs in their groups, see EnsureListSortRow)
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
         Func<CategoryView> category)
@@ -362,7 +351,7 @@ internal static class DungeonMakerListTools
 
         if (!bar)
         {
-            bar = AddBar(list, source.gameObject);
+            bar = AddBar(list, source.gameObject, category != null);
         }
 
         var sort = FindDeep(bar, SortName)?.GetComponent<GuiDropdown>();
@@ -559,8 +548,133 @@ internal static class DungeonMakerListTools
             });
         }
 
-        Refreshers[screen] = Refresh;
         Refresh();
+    }
+
+    // The campaign editor's category sort row for one list: "Sort:", a dropdown and an arrow, inside the list's
+    // foldable group (CampaignContentGroupItem), right after its header. The group stacks its children with a
+    // vertical layout (header, the item table, the buttons, a separator, from the prefab), and the game binds the
+    // items by their place in the item table, which this row is not in. Made once per group, then brought up to
+    // date and given fresh events each time the editor is shown.
+    //   group        the list's group
+    //   sourceButton a button of the screen whose label the "Sort:" text copies
+    //   listId       the settings key of the list's category sort
+    //   options      the keys it can be sorted by
+    //   changed      the list's sort changed: apply it
+    internal static void EnsureListSortRow(
+        Transform group, GameObject sourceButton, string listId, IReadOnlyList<CategoryOption> options,
+        Action changed)
+    {
+        if (!group || !sourceButton)
+        {
+            return;
+        }
+
+        var row = group.Find(ListSortRowName);
+
+        if (!row)
+        {
+            // built under an inactive holder, like the bar, so the copies only wake up once they are set up
+            var holder = new GameObject("FbHolder");
+
+            holder.SetActive(false);
+            row = AddRow(holder.transform, ListSortRowName, TextAnchor.MiddleLeft);
+            AddSortLabel(row, sourceButton, SortLabelName);
+            AddSortDropdown(row, CategoryName);
+            AddArrow(row, CategoryDirectionName);
+            row.SetParent(group, false);
+            row.SetSiblingIndex(1);
+            Object.Destroy(holder);
+        }
+
+        var label = row.Find(SortLabelName)?.GetComponent<GuiLabel>();
+        var dropdown = row.Find(CategoryName)?.GetComponent<GuiDropdown>();
+        var arrow = row.Find(CategoryDirectionName)?.GetComponent<Button>();
+
+        if (label)
+        {
+            label.Text = Gui.Localize("ModUi/&DungeonMakerSortLabel");
+        }
+
+        if (dropdown)
+        {
+            var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerCategoryNone") };
+
+            texts.AddRange(options.Select(x => Gui.Localize(x.Term)));
+            dropdown.onValueChanged = new TMP_Dropdown.DropdownEvent();
+            dropdown.ClearOptions();
+            dropdown.AddOptions(texts);
+        }
+
+        void RefreshRow()
+        {
+            var (id, descending) = CategoryChoice(listId);
+            var index = id == null ? -1 : options.ToList().FindIndex(x => x.Id == id);
+
+            if (dropdown)
+            {
+                dropdown.SetValueWithoutNotify(index + 1);
+            }
+
+            if (arrow)
+            {
+                SetArrow(arrow, descending);
+                arrow.interactable = index >= 0;
+            }
+        }
+
+        void Changed()
+        {
+            RefreshRow();
+
+            try
+            {
+                changed();
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+            }
+        }
+
+        if (dropdown)
+        {
+            dropdown.onValueChanged.AddListener(value =>
+            {
+                var id = value >= 1 && value <= options.Count ? options[value - 1].Id : null;
+
+                SetCategoryChoice(listId, id, CategoryChoice(listId).Descending);
+                Changed();
+            });
+        }
+
+        if (arrow)
+        {
+            arrow.onClick = new Button.ButtonClickedEvent();
+            arrow.onClick.AddListener(() =>
+            {
+                var (id, descending) = CategoryChoice(listId);
+
+                if (id != null)
+                {
+                    SetCategoryChoice(listId, id, !descending);
+                    Changed();
+                }
+            });
+        }
+
+        RefreshRow();
+    }
+
+    // the editor's category sort row is shown with its list, i.e. while the group is open
+    internal static void ShowListSortRow(Transform group, bool shown)
+    {
+        var row = group ? group.Find(ListSortRowName) : null;
+
+        if (row && row.gameObject.activeSelf != shown)
+        {
+            row.gameObject.SetActive(shown);
+        }
     }
 
     // The two labels ("Sort:" and "<list>:") are made as wide as the wider of them, so the two dropdowns and the
@@ -612,7 +726,7 @@ internal static class DungeonMakerListTools
     // the screen moves. It holds two copies of one of the screen's buttons and a copy of a text field, and is
     // built under an inactive holder so none of the copies' components start up before they are changed (as the
     // mod's other copied controls are).
-    private static Transform AddBar(RectTransform list, GameObject sourceButton)
+    private static Transform AddBar(RectTransform list, GameObject sourceButton, bool categoryRow)
     {
         var holder = new GameObject("FbHolder");
 
@@ -644,23 +758,28 @@ internal static class DungeonMakerListTools
         AddSortDropdown(main, SortName);
         AddArrow(main, DirectionName);
 
-        var second = AddRow(bar.transform, CategoryRowName, TextAnchor.MiddleRight);
+        if (categoryRow)
+        {
+            var second = AddRow(bar.transform, CategoryRowName, TextAnchor.MiddleRight);
 
-        AddSortLabel(second, sourceButton, CategoryLabelName);
-        AddSortDropdown(second, CategoryName);
-        AddArrow(second, CategoryDirectionName);
+            AddSortLabel(second, sourceButton, CategoryLabelName);
+            AddSortDropdown(second, CategoryName);
+            AddArrow(second, CategoryDirectionName);
+        }
 
-        // anchored like the scroll view from side to side, and to its top edge, BarHeight tall
+        var height = categoryRow ? TwoRowHeight : ControlHeight;
+
+        // anchored like the scroll view from side to side, and to its top edge, as tall as its rows
         rect.SetParent(list.parent, false);
         rect.SetSiblingIndex(list.GetSiblingIndex() + 1);
         rect.anchorMin = new Vector2(list.anchorMin.x, list.anchorMax.y);
         rect.anchorMax = new Vector2(list.anchorMax.x, list.anchorMax.y);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMax.y - BarHeight);
+        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMax.y - height);
         rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y);
 
         // the scroll view's top edge moves down by the bar and a gap; its bottom stays where it is
-        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - BarHeight - Gap);
+        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - height - Gap);
 
         Object.Destroy(holder);
 

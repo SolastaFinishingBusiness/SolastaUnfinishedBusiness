@@ -371,35 +371,6 @@ public static class UserListSortPatcher
             }
         };
 
-        // The list the category row shows (user's choice, 2026-11-13: each list has its own category sort, and the
-        // row shows the one opened last). Set when a list is unfolded by its header or a shortcut icon; until then,
-        // the first open list.
-        private static string _lastOpened;
-
-        internal static void NoteOpened(UserCampaignEditorScreen screen, string refreshMethod)
-        {
-            if (refreshMethod != null && Lists.TryGetValue(refreshMethod, out var list) && list.Group(screen) is
-                    { folded: false })
-            {
-                _lastOpened = refreshMethod;
-            }
-        }
-
-        internal static CategoryView CategoryViewOf(UserCampaignEditorScreen screen)
-        {
-            var key = _lastOpened ?? Lists.FirstOrDefault(x => x.Value.Group(screen) is { folded: false }).Key;
-
-            if (key == null || !Lists.TryGetValue(key, out var list))
-            {
-                return null;
-            }
-
-            var header = list.Group(screen)?.HeaderLabel;
-            var title = header && header.TMP_Text ? header.TMP_Text.text : list.Id;
-
-            return new CategoryView(list.Id, title, list.Options);
-        }
-
         // sets a list's selected index to "none"; false when nothing was selected
         private static bool Clear(ref int selected)
         {
@@ -470,6 +441,12 @@ public static class UserListSortPatcher
                 list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending);
             var group = list.Group(screen);
 
+            // the list's category sort row is shown while its group is open
+            if (group)
+            {
+                DungeonMakerListTools.ShowListSortRow(group.transform, !group.folded);
+            }
+
             if ((hidSelected || (group && group.folded)) && list.ClearSelection(screen))
             {
                 screen.Dirty = true;
@@ -493,6 +470,21 @@ public static class UserListSortPatcher
         }
     }
 
+    //PATCH: a list's group in the campaign editor shows or hides its parts (UpdateState switches its item table and
+    //buttons on or off by its folded flag, from every way of folding: the header, a shortcut icon, Fold All and
+    //Unfold All, and the editor's start). The list's category sort row follows them.
+    [HarmonyPatch(typeof(CampaignContentGroupItem), nameof(CampaignContentGroupItem.UpdateState))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CampaignContentGroupItem_UpdateState
+    {
+        [UsedImplicitly]
+        public static void Postfix(CampaignContentGroupItem __instance)
+        {
+            DungeonMakerListTools.ShowListSortRow(__instance.transform, !__instance.folded);
+        }
+    }
+
     //PATCH: a list of the campaign editor was opened or folded away by its header: a folded list loses its
     //selection (see ApplyTo)
     [HarmonyPatch]
@@ -511,31 +503,10 @@ public static class UserListSortPatcher
             }.Select(x => AccessTools.Method(typeof(UserCampaignEditorScreen), x));
         }
 
-        // the Refresh method of the list each fold method belongs to
-        private static readonly Dictionary<string, string> RefreshOf = new()
-        {
-            { "BiomeFoldChanged", "RefreshBiomes" },
-            { "DialogFoldChanged", "RefreshDialogs" },
-            { "EncounterFoldChanged", "RefreshEncounters" },
-            { "EncounterTableFoldChanged", "RefreshEncounterTables" },
-            { "ItemFoldChanged", "RefreshItems" },
-            { "LocationFoldChanged", "RefreshLocations" },
-            { "LootPackFoldChanged", "RefreshLootPacks" },
-            { "MerchantInventoryFoldChanged", "RefreshMerchantInventories" },
-            { "MonsterFoldChanged", "RefreshMonsters" },
-            { "NpcFoldChanged", "RefreshNpcs" },
-            { "QuestFoldChanged", "RefreshQuests" },
-            { "VariableFoldChanged", "RefreshVariables" }
-        };
-
         [UsedImplicitly]
-        public static void Postfix(UserCampaignEditorScreen __instance, MethodBase __originalMethod)
+        public static void Postfix(UserCampaignEditorScreen __instance)
         {
-            // a list opened by its header is the one the category row shows from now on
-            UserCampaignEditorScreen_RefreshLists.NoteOpened(
-                __instance, RefreshOf.TryGetValue(__originalMethod.Name, out var refresh) ? refresh : null);
             ApplyToAll(__instance);
-            DungeonMakerListTools.RefreshBar(Editor);
         }
 
         internal static void ApplyToAll(UserCampaignEditorScreen screen)
@@ -557,19 +528,7 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
-            // the icon leaves one list open: that one is shown in the category row
-            var open = UserCampaignEditorScreen_RefreshLists.Lists
-                .Where(x => x.Value.Group(__instance) is { folded: false })
-                .Select(x => x.Key)
-                .ToList();
-
-            if (open.Count == 1)
-            {
-                UserCampaignEditorScreen_RefreshLists.NoteOpened(__instance, open[0]);
-            }
-
             UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
-            DungeonMakerListTools.RefreshBar(Editor);
         }
     }
 
@@ -589,19 +548,37 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
-            DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/UserContentScrollview",
-                "RightPanel/ExportGroup/ImportContentsButton", "ModUi/&DungeonMakerSortTitle", () =>
-                {
-                    // the rows already hold their items: the twelve lists are only ordered and filtered again,
-                    // without the game binding everything anew at every letter typed
-                    UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
+            void Changed()
+            {
+                // the rows already hold their items: the twelve lists are only ordered and filtered again, without
+                // the game binding everything anew at every letter typed
+                UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
 
-                    // back to the plain view: a refresh has the game work out the move arrows again
-                    if (DungeonMakerListTools.IsPlain(Editor))
-                    {
-                        __instance.Dirty = true;
-                    }
-                }, () => UserCampaignEditorScreen_RefreshLists.CategoryViewOf(__instance));
+                // back to the plain view: a refresh has the game work out the move arrows again
+                if (DungeonMakerListTools.IsPlain(Editor))
+                {
+                    __instance.Dirty = true;
+                }
+            }
+
+            const string SourceButton = "RightPanel/ExportGroup/ImportContentsButton";
+
+            // the editor's bar has no category row: each list has its own, in its group (below)
+            DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/UserContentScrollview", SourceButton,
+                "ModUi/&DungeonMakerSortTitle", Changed, null);
+
+            var source = __instance.transform.Find(SourceButton);
+
+            foreach (var list in UserCampaignEditorScreen_RefreshLists.Lists.Values)
+            {
+                var group = list.Group(__instance);
+
+                DungeonMakerListTools.EnsureListSortRow(
+                    group ? group.transform : null, source ? source.gameObject : null, list.Id, list.Options, Changed);
+            }
+
+            // shows each row with its list
+            UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
         }
     }
 
