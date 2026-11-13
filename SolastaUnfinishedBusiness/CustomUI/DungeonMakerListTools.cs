@@ -15,7 +15,8 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // former "Enable assets sorting on Dungeon Maker editor" setting; the palettes' bar has two rows, as a palette is
 // only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher).
 //
-// The campaign editor's and the palettes' bars also end with a CATEGORY ORDER toggle (user, 2026-11-13: "a toggle
+// The campaign editor's and the palettes' bars also have a CATEGORY ORDER toggle (on the editor's sort row, on a
+// row of its own in a palette) (user, 2026-11-13: "a toggle
 // for sorting the categories themselves ... between default and alphabetical", for both): "Categories: Default"
 // keeps the sections (the editor's twelve lists, a palette's categories) in the game's order, "Categories: A-Z"
 // orders them by the title on their header. One saved choice for all of them
@@ -97,6 +98,7 @@ internal static class DungeonMakerListTools
     private const string CategoryDirectionName = "CategoryDirection";
     private const string SearchRowName = "SearchRow";
     private const string CategoryOrderName = "CategoryOrder";
+    private const string CategoryOrderRowName = "CategoryOrderRow";
 
     // the category order toggle's room around its text
     private const float ButtonTextPadding = 28f;
@@ -122,9 +124,6 @@ internal static class DungeonMakerListTools
     private const float ClearWidth = 90f;
     private const float ControlHeight = 34f;
     private const float Spacing = 6f;
-
-    // with a category row (picker, cheat panel): the search and main sort, and the category sort under it
-    private const float TwoRowHeight = (2 * ControlHeight) + Spacing;
 
     // between the list and the bar
     private const float Gap = 6f;
@@ -995,8 +994,24 @@ internal static class DungeonMakerListTools
         AddSortDropdown(main, SortName);
         AddArrow(main, DirectionName);
 
-        // stacked (a palette): the search and Clear on a row of their own under the sort
+        // The category order toggle, as wide as its text (FitButtonToText), with the other ordering controls
+        // (user direction, 2026-11-13: "Move it to the sort row for the editor, but make it a new row by itself for
+        // the palettes"): in the editor after the arrow, on the sort row; in a palette, too narrow for both, on a
+        // row of its own under the sort.
+        var rows = 1;
+
+        if (sections)
+        {
+            var orderRow = stacked ? AddRow(bar.transform, CategoryOrderRowName, TextAnchor.MiddleLeft) : main;
+
+            AddButton(orderRow, sourceButton, CategoryOrderName, ClearWidth);
+            rows += stacked ? 1 : 0;
+        }
+
+        // stacked (a palette): the search and Clear on a row of their own, last
         var searchRow = stacked ? AddRow(bar.transform, SearchRowName, TextAnchor.MiddleLeft) : main;
+
+        rows += stacked ? 1 : 0;
 
         if (!stacked)
         {
@@ -1005,12 +1020,6 @@ internal static class DungeonMakerListTools
 
         AddSearch(searchRow);
         AddButton(searchRow, sourceButton, ClearName, ClearWidth);
-
-        // the category order toggle at the row's right end; as wide as its text (FitButtonToText)
-        if (sections)
-        {
-            AddButton(searchRow, sourceButton, CategoryOrderName, ClearWidth);
-        }
 
         if (categoryRow)
         {
@@ -1021,7 +1030,9 @@ internal static class DungeonMakerListTools
             AddArrow(second, CategoryDirectionName);
         }
 
-        var height = categoryRow || stacked ? TwoRowHeight : ControlHeight;
+        rows += categoryRow ? 1 : 0;
+
+        var height = (rows * ControlHeight) + ((rows - 1) * Spacing);
 
         // anchored like the scroll view from side to side, and to its top edge, as tall as its rows
         rect.SetParent(list.parent, false);
