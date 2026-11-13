@@ -26,7 +26,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // dropdown. The category specific sort will be priority, with the main sort as the secondary."):
 //
 //   "<list>:"          the list it applies to ("Monsters:")
-//   a dropdown         None, or one of that list's own keys (hit points, challenge rating, cost, ...)
+//   a dropdown         Default, or one of that list's own keys (hit points, challenge rating, cost, ...);
+//                      Default, which every list starts on (user direction, 2026-11-13: "an option for Default
+//                      (and start with default), where the category just follows the main"), orders it by the
+//                      main sort alone
 //   a direction arrow  its own direction
 //
 // A list is ordered by its category key first, and rows with equal keys by the main sort (with its direction),
@@ -139,7 +142,8 @@ internal static class DungeonMakerListTools
         }
     }
 
-    // A list's category sort: the option's id (null for None) and whether it is descending.
+    // A list's category sort: the option's id (null for Default, the main sort alone) and whether it is
+    // descending. A list with nothing saved is on Default.
     internal static (string Id, bool Descending) CategoryChoice(string list)
     {
         foreach (var entry in (Main.Settings.DungeonMakerCategorySorts ?? string.Empty).Split(';'))
@@ -370,7 +374,7 @@ internal static class DungeonMakerListTools
         var categoryDropdown = FindDeep(bar, CategoryName)?.GetComponent<GuiDropdown>();
         var categoryDirection = FindDeep(bar, CategoryDirectionName)?.GetComponent<Button>();
 
-        // the list the category row shows now; its dropdown's choices are that list's options after None
+        // the list the category row shows now; its dropdown's choices are Default, then that list's options
         CategoryView shown = null;
 
         // "Sort:" stands in front of the dropdown, which holds only the choices (user direction, 2026-11-13:
