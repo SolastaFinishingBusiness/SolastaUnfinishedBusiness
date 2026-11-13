@@ -29,8 +29,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # The actions are at majors built for Node.js 24 (checkout v7, setup-dotnet v6, upload-artifact v7, 2026-11-14):
+    # GitHub has retired Node.js 20, and the v4 actions were forced onto Node.js 24 with a warning on every run.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check version
         if: github.ref_type == 'tag'
         run: |
@@ -51,7 +53,7 @@ jobs:
             exit 1
           fi
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 9.0.x
       - name: Restore dependencies
@@ -107,7 +109,7 @@ jobs:
         run: echo "ARTIFACT=SolastaUnfinishedBusiness-$(jq -r .Version SolastaFiles/Mods/SolastaUnfinishedBusiness/Info.json)" >> "$GITHUB_ENV"
       - name: Keep the test build
         if: github.ref_type != 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT }}
           path: SolastaUnfinishedBusiness.zip
