@@ -131,9 +131,9 @@ public static class DungeonMakerCommandsPatcher
     public static class GameGadget_Interact
     {
         [UsedImplicitly]
-        public static void Postfix(GameGadget __instance, int listenerIndex)
+        public static void Postfix(GameGadget __instance, int listenerIndex, GameLocationCharacter actingCharacter)
         {
-            DungeonMakerCommandsContext.NoteInteracted(__instance, listenerIndex);
+            DungeonMakerCommandsContext.NoteInteracted(__instance, listenerIndex, actingCharacter);
         }
     }
 

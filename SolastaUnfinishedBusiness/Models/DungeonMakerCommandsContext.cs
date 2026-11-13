@@ -394,7 +394,13 @@ internal static class DungeonMakerCommandsContext
     // in the queue is kept now, so that a flow which waits before it writes is not overtaken by a plate or an
     // area set off after it. An interaction has one flow waiting at a time, so one place per listener is enough;
     // using the gadget again before the flow started keeps the place it has.
-    internal static void NoteInteracted(GameGadget gadget, int listenerIndex)
+    //
+    // The character is fixed here as well. The game writes the interacting character into the flow's functor
+    // parameters at every accepted Interact, so if a second character uses the gadget before the flow has
+    // written the variable, the parameters name the second one by then. The place belongs to the first: its
+    // character, and whether it may cause a one-character teleport, are noted with the place, and the write
+    // that fills the place takes them from there instead of from the parameters.
+    internal static void NoteInteracted(GameGadget gadget, int listenerIndex, GameLocationCharacter actor)
     {
         var listeners = gadget?.activeListeners;
 
@@ -409,10 +415,27 @@ internal static class DungeonMakerCommandsContext
 
         _interactionPlaces.Remove(listener);
 
-        if (kept != null)
+        if (kept == null)
         {
-            _interactionPlaces.Add(listener, kept);
+            return;
         }
+
+        kept.ActorFixed = true;
+
+        if (CanTriggerSoloTeleport(actor))
+        {
+            kept.ActorKnown = true;
+            kept.ActorGuid = actor.Guid;
+            kept.ActorName = actor.Name;
+        }
+        else
+        {
+            kept.ActorProblem = actor == null
+                ? "the interaction had no acting character"
+                : "the triggering character was outside the party and guest rosters";
+        }
+
+        _interactionPlaces.Add(listener, kept);
     }
 
     // Adds a place to the queue of one-character teleports for this flow, if the flow has a Variable Operation on
@@ -651,7 +674,12 @@ internal static class DungeonMakerCommandsContext
         request.Serial = ++_serial;
         request.IssuedAt = GameSeconds();
 
-        ResolveActor(operation, request);
+        // a place kept by an interaction already holds its character (NoteInteracted)
+        if (!request.ActorFixed)
+        {
+            ResolveActor(operation, request);
+        }
+
         NewestSerial[variableName] = request.Serial;
 
         if (kept != null)
@@ -1925,6 +1953,9 @@ internal static class DungeonMakerCommandsContext
         // One-character teleport: a place kept in the queue for a request that is still to come, and the flow it
         // is expected from. Target, the acting character and the rest are set when the write arrives.
         internal bool Expected;
+
+        // the acting character was noted when the place was kept, and is not read again at the write
+        internal bool ActorFixed;
         internal GameGadgetListener Listener;
 
         // party teleport: everyone meant to travel, and the cell the game put each of them on
