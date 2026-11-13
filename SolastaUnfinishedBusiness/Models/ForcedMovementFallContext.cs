@@ -1053,8 +1053,12 @@ internal static class ForcedMovementFallContext
                 return true;
             }
 
+            // The running chain's list keeps every entry it started with. The game moves the chain's index on and
+            // then starts the entry at the new index (StartNextActionFromCurrentChain), so only the entries after the
+            // index are still to come; the one at it has been started, and is in actionQueue above if it still runs
+            // (Codex's re-review of 888a9a08).
             if (slot.actionChainParams?.actionsParams != null &&
-                slot.actionChainParams.actionsParams.Contains(actionParams))
+                slot.actionChainParams.actionsParams.IndexOf(actionParams) > slot.indexActionChainParams)
             {
                 return true;
             }
