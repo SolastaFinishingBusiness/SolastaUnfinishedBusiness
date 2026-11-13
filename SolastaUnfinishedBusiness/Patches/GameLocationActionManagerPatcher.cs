@@ -30,15 +30,32 @@ public static class GameLocationActionManagerPatcher
         {
             ForcedMovementContext.BindToAction(actionParams);
 
-            //PATCH: Eldritch Blast's pushes and pulls: note the push a queued move of the cast makes (issue #37)
-            EldritchBlastFallContext.PushQueued(actionParams);
+            //PATCH: falls put off until an action's last push or pull (issues #37 and #39): note which action a
+            // queued push belongs to, and hold the creature it moves
+            ForcedMovementFallContext.PushQueued(actionParams);
         }
     }
 
-    //PATCH: Eldritch Blast's pushes and pulls (issue #37, EldritchBlastFallContext, a setting): a creature whose
-    // fall was put off until the cast's last move on it is let go here, once it is at rest and nothing more is to
-    // come. UpdateImpl is where the game advances every character's actions, so this follows the same steps on
-    // every computer. Returns at once when no creature is held.
+    //PATCH: falls put off until an action's last push or pull (issue #39, ForcedMovementFallContext, a setting). The
+    // game queues an action's resulting actions (on-hit powers such as Repelling Blast per Eldritch Blast beam or
+    // Gravity Well) on its character here, right after the action ends. They are part of that action, so a creature
+    // its pushes moved stays held until they have run. Only reads the action; the game's method runs unchanged.
+    [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.FinishActionExecution))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FinishActionExecution_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameLocationActionManager __instance, CharacterAction action)
+        {
+            ForcedMovementFallContext.ResultingActionsQueued(__instance, action);
+        }
+    }
+
+    //PATCH: falls put off until an action's last push or pull (issues #37 and #39, ForcedMovementFallContext, a
+    // setting): a creature whose fall was put off is let go here, once it is at rest and nothing more of its action
+    // is to come. UpdateImpl is where the game advances every character's actions, so this follows the same steps on
+    // every computer. Does almost nothing when no creature is held and no action is being followed.
     [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.UpdateImpl))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -47,7 +64,7 @@ public static class GameLocationActionManagerPatcher
         [UsedImplicitly]
         public static void Postfix(GameLocationActionManager __instance)
         {
-            EldritchBlastFallContext.AfterActionUpdate(__instance);
+            ForcedMovementFallContext.AfterActionUpdate(__instance);
         }
     }
 
