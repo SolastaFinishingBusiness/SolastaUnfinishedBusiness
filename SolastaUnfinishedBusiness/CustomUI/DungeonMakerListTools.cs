@@ -13,7 +13,13 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, the
 // Cheats > Campaign Variables panel, and the location editor's gadget, prop and room palettes (which replace the
 // former "Enable assets sorting on Dungeon Maker editor" setting; the palettes' bar has two rows, as a palette is
-// only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher). Each of the three screens gets a bar on a row of its own, above its list and
+// only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher).
+//
+// The campaign editor's and the palettes' bars also end with a CATEGORY ORDER toggle (user, 2026-11-13: "a toggle
+// for sorting the categories themselves ... between default and alphabetical", for both): "Categories: Default"
+// keeps the sections (the editor's twelve lists, a palette's categories) in the game's order, "Categories: A-Z"
+// orders them by the title on their header. One saved choice for all of them
+// (Settings.DungeonMakerCategoriesAlphabetical); no direction, as a short list of headers gains little from Z-A. Each of the three screens gets a bar on a row of its own, above its list and
 // as wide as it, with, from left to right (user directions, 2026-11-13: the bar "should be at the very top"; later
 // "Search should be on the right, and sort on the left"),
 //
@@ -90,6 +96,10 @@ internal static class DungeonMakerListTools
     private const string CategoryName = "Category";
     private const string CategoryDirectionName = "CategoryDirection";
     private const string SearchRowName = "SearchRow";
+    private const string CategoryOrderName = "CategoryOrder";
+
+    // the category order toggle's room around its text
+    private const float ButtonTextPadding = 28f;
     private const string ListSortRowName = "FbListSort";
     private const string OverlayName = "FbSortValue";
 
@@ -132,6 +142,9 @@ internal static class DungeonMakerListTools
     private static Sprite _downArrow;
 
     internal static Sort Kind => (Sort)Mathf.Clamp(Main.Settings.DungeonMakerListSort, 0, 2);
+
+    // the sections themselves in title order rather than the game's
+    internal static bool CategoriesAlphabetical => Main.Settings.DungeonMakerCategoriesAlphabetical;
 
     private static bool Descending => Main.Settings.DungeonMakerListSortDescending;
 
@@ -337,6 +350,49 @@ internal static class DungeonMakerListTools
 
     #endregion
 
+    // Puts a screen's sections in the chosen order: the game's (original, the order they had before the mod first
+    // moved them) or by title. The sections change places among the places they hold, which must follow each other
+    // (they do: the palette's bound categories are its table's first children, the editor's twelve groups the
+    // content's). Returns the sections in the order they now stand.
+    internal static List<Transform> OrderSections(IReadOnlyList<Transform> original, Func<Transform, string> title)
+    {
+        var sections = original.Where(x => x).ToList();
+
+        if (sections.Count < 2)
+        {
+            return sections;
+        }
+
+        var ordered = CategoriesAlphabetical
+            ? sections
+                .Select((x, i) => (Section: x, Index: i, Title: title(x) ?? string.Empty))
+                .OrderBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(x => x.Index)
+                .Select(x => x.Section)
+                .ToList()
+            : sections;
+
+        var parent = sections[0].parent;
+        var first = sections.Min(x => x.GetSiblingIndex());
+
+        if (sections.Any(x => x.parent != parent) || sections.Max(x => x.GetSiblingIndex()) - first != sections.Count - 1)
+        {
+            Problem("Dungeon Maker list tools: the sections don't follow each other, so their order is left as it is.");
+
+            return sections.OrderBy(x => x.GetSiblingIndex()).ToList();
+        }
+
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            if (ordered[i].GetSiblingIndex() != first + i)
+            {
+                ordered[i].SetSiblingIndex(first + i);
+            }
+        }
+
+        return ordered;
+    }
+
     #region The bar
 
     // Adds the bar to a screen if it isn't there yet and brings it up to date. Called each time the screen is
@@ -351,9 +407,11 @@ internal static class DungeonMakerListTools
     //   stacked     the sort on a row of its own and the search under it, for a narrow screen (the palettes)
     //   keepSearch  keep the screen's search (the palettes are bound again by the game while they stay open)
     //   sourceRoot  where sourcePath starts, when the button to copy belongs to another screen
+    //   sections    the screen has sections to order (the editor, the palettes): the category order toggle
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
-        Func<CategoryView> category, bool stacked = false, bool keepSearch = false, Transform sourceRoot = null)
+        Func<CategoryView> category, bool stacked = false, bool keepSearch = false, Transform sourceRoot = null,
+        bool sections = false)
     {
         if (!keepSearch || !Searches.ContainsKey(screen))
         {
@@ -377,7 +435,7 @@ internal static class DungeonMakerListTools
 
         if (!bar)
         {
-            bar = AddBar(list, source.gameObject, category != null, stacked);
+            bar = AddBar(list, source.gameObject, category != null, stacked, sections);
         }
 
         var sort = FindDeep(bar, SortName)?.GetComponent<GuiDropdown>();
@@ -388,6 +446,7 @@ internal static class DungeonMakerListTools
         var categoryLabel = FindDeep(bar, CategoryLabelName)?.GetComponent<GuiLabel>();
         var categoryDropdown = FindDeep(bar, CategoryName)?.GetComponent<GuiDropdown>();
         var categoryDirection = FindDeep(bar, CategoryDirectionName)?.GetComponent<Button>();
+        var categoryOrder = FindDeep(bar, CategoryOrderName)?.GetComponent<Button>();
 
         // the list the category row shows now; its dropdown's choices are Default, then that list's options
         CategoryView shown = null;
@@ -425,6 +484,11 @@ internal static class DungeonMakerListTools
             // be an arrow"); its tooltip says which
             SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
+            SetText(categoryOrder,
+                CategoriesAlphabetical
+                    ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
+                    : "ModUi/&DungeonMakerCategoryOrderDefault");
+            FitButtonToText(categoryOrder);
             RefreshCategory();
 
             // Nothing to clear while the field is empty. The field's own text decides, not the search made from
@@ -516,6 +580,16 @@ internal static class DungeonMakerListTools
                 var id = value >= 1 && value <= options.Count ? options[value - 1].Id : null;
 
                 SetCategoryChoice(shown.ListId, id, CategoryChoice(shown.ListId).Descending);
+                Changed();
+            });
+        }
+
+        if (categoryOrder)
+        {
+            categoryOrder.onClick = new Button.ButtonClickedEvent();
+            categoryOrder.onClick.AddListener(() =>
+            {
+                Main.Settings.DungeonMakerCategoriesAlphabetical = !Main.Settings.DungeonMakerCategoriesAlphabetical;
                 Changed();
             });
         }
@@ -708,6 +782,20 @@ internal static class DungeonMakerListTools
         RefreshRow();
     }
 
+    // a button as wide as its label's text and some room around it, so a longer translation fits
+    private static void FitButtonToText(Button button)
+    {
+        var text = button ? button.transform.Find("Label")?.GetComponent<GuiLabel>()?.TMP_Text : null;
+
+        if (!text || !button.TryGetComponent<LayoutElement>(out var layout))
+        {
+            return;
+        }
+
+        layout.minWidth = layout.preferredWidth =
+            Mathf.Ceil(text.GetPreferredValues(text.text).x) + ButtonTextPadding;
+    }
+
     // a label as wide as its text, measured, not left to the layout
     private static void FitToText(GuiLabel label)
     {
@@ -876,7 +964,8 @@ internal static class DungeonMakerListTools
     // the screen moves. It holds two copies of one of the screen's buttons and a copy of a text field, and is
     // built under an inactive holder so none of the copies' components start up before they are changed (as the
     // mod's other copied controls are).
-    private static Transform AddBar(RectTransform list, GameObject sourceButton, bool categoryRow, bool stacked)
+    private static Transform AddBar(
+        RectTransform list, GameObject sourceButton, bool categoryRow, bool stacked, bool sections)
     {
         var holder = new GameObject("FbHolder");
 
@@ -916,6 +1005,12 @@ internal static class DungeonMakerListTools
 
         AddSearch(searchRow);
         AddButton(searchRow, sourceButton, ClearName, ClearWidth);
+
+        // the category order toggle at the row's right end; as wide as its text (FitButtonToText)
+        if (sections)
+        {
+            AddButton(searchRow, sourceButton, CategoryOrderName, ClearWidth);
+        }
 
         if (categoryRow)
         {

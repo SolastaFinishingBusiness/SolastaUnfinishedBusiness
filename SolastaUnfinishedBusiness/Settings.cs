@@ -395,6 +395,10 @@ public class Settings : UnityModManager.ModSettings
     // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by
     // DungeonMakerListTools.CategoryChoice; a list that isn't there has none.
     public string DungeonMakerCategorySorts { get; set; } = string.Empty;
+
+    // The sections themselves (the campaign editor's twelve lists, a palette's categories) in title order instead of
+    // the game's; the "Categories:" toggle on those bars (issue #42).
+    public bool DungeonMakerCategoriesAlphabetical { get; set; }
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }

@@ -26,6 +26,10 @@ namespace SolastaUnfinishedBusiness.Patches;
 //   direction arrow; the search shows only the blueprints whose name or title contains the text, and a category none
 //   of whose blueprints is shown is hidden while the search is on.
 //
+// The bar's "Categories:" toggle puts the categories themselves in title order instead of the game's (one choice for
+// the palettes and the campaign editor); the separator under each category is then shown on all but the last one on
+// screen, as the game's Bind does it (separator.SetActive(!last)).
+//
 // Only what is shown changes; the sort and its direction are the same saved choice as the other screens' bars. The
 // search belongs to each palette and stays while the palette stays open, as the game binds it again when the
 // environment changes.
@@ -99,6 +103,27 @@ public static class BlueprintPaletteSortPatcher
             }
         }
 
+        // the categories in the game's order (the order bound) or by title, and the separators of the ones shown
+        var ordered = DungeonMakerListTools.OrderSections(
+            categories.Where(x => x && x.transform.parent == panel.categoriesTable).Select(x => x.transform).ToList(),
+            x => x.GetComponent<BlueprintCategoryItem>()?.categoryTitle?.TMP_Text?.text);
+        var shown = ordered
+            .Where(x => x.gameObject.activeSelf)
+            .Select(x => x.GetComponent<BlueprintCategoryItem>())
+            .Where(x => x && x.separator)
+            .ToList();
+
+        for (var i = 0; i < shown.Count; i++)
+        {
+            var separator = shown[i].separator.gameObject;
+            var wanted = i < shown.Count - 1;
+
+            if (separator.activeSelf != wanted)
+            {
+                separator.SetActive(wanted);
+            }
+        }
+
         LayoutRebuilder.ForceRebuildLayoutImmediate(panel.categoriesTable);
     }
 
@@ -123,7 +148,7 @@ public static class BlueprintPaletteSortPatcher
 
             DungeonMakerListTools.Ensure(__instance.transform, KeyOf(__instance), "BlueprintsScrollview",
                 SourceButton, "ModUi/&DungeonMakerSortTitle", () => Apply(__instance), null, stacked: true,
-                keepSearch: true, sourceRoot: editor ? editor.transform : null);
+                keepSearch: true, sourceRoot: editor ? editor.transform : null, sections: true);
 
             // the categories the game has just bound, and in each the rows it bound
             var categories = Bound.GetOrCreateValue(__instance);

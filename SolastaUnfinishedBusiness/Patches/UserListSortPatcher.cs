@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.CustomUI;
@@ -556,6 +557,35 @@ public static class UserListSortPatcher
             {
                 UserCampaignEditorScreen_RefreshLists.ApplyTo(screen, list);
             }
+
+            OrderGroups(screen);
+        }
+
+        // the twelve groups in the order the screen was built with, taken before the mod first moves any
+        private static readonly ConditionalWeakTable<UserCampaignEditorScreen, List<Transform>> GameOrder = new();
+
+        // The twelve lists' groups in the game's order or by the title on their header (the "Categories:" toggle).
+        // The shortcut icons and the game reach the groups through its fields, not by their place, and a group's
+        // separator follows its own fold state only (CampaignContentGroupItem.UpdateState), so moving them is safe.
+        private static void OrderGroups(UserCampaignEditorScreen screen)
+        {
+            if (!GameOrder.TryGetValue(screen, out var groups))
+            {
+                groups = UserCampaignEditorScreen_RefreshLists.Lists.Values
+                    .Select(x => x.Group(screen))
+                    .Where(x => x)
+                    .Select(x => x.transform)
+                    .OrderBy(x => x.GetSiblingIndex())
+                    .ToList();
+                GameOrder.Add(screen, groups);
+            }
+
+            DungeonMakerListTools.OrderSections(groups, x =>
+            {
+                var header = x.GetComponent<CampaignContentGroupItem>()?.HeaderLabel;
+
+                return header && header.TMP_Text ? header.TMP_Text.text : x.name;
+            });
         }
     }
 
@@ -606,7 +636,7 @@ public static class UserListSortPatcher
 
             // the editor's bar has no category row: each list has its own, in its group (below)
             DungeonMakerListTools.Ensure(__instance.transform, Editor, "RightPanel/UserContentScrollview", SourceButton,
-                "ModUi/&DungeonMakerSortTitle", Changed, null);
+                "ModUi/&DungeonMakerSortTitle", Changed, null, sections: true);
 
             var source = __instance.transform.Find(SourceButton);
 
