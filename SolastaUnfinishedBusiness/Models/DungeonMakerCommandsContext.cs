@@ -18,8 +18,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //                        Maker. Never a name as a player's language shows it: in multiplayer every computer has to
 //                        find the same gadget, whatever language it runs in.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
-//   Teleport_Node        the name of a Node gadget: the acting character is teleported near the named gadget.
-//   Teleport_PartyNode   the name of a Node gadget: the whole party, with the guests travelling with it, is
+//   Teleport_Node        the name of a gadget (a Node, usually): the acting character is teleported near it.
+//   Teleport_PartyNode   the name of a gadget (a Node, usually): the whole party, with the guests travelling with it, is
 //                        teleported there in formation. It is done when the game has placed every one of them.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
 //   Teleport_Node is the exception: every activation that writes it is a request of its own, and they are
@@ -99,8 +99,6 @@ internal static class DungeonMakerCommandsContext
     internal const string StatusSucceeded = "Succeeded";
     internal const string StatusFailed = "Failed";
     internal const string StatusCancelled = "Cancelled";
-
-    // the Dungeon Maker gadget a teleport's destination must be (GadgetBlueprint.Name)
 
     // the game's functor names (FunctorManager's registrations)
     private const string TeleportFunctor = "Teleport";

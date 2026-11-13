@@ -22,14 +22,15 @@ ends, so you can write the same name again later.
 |---|---|---|
 | `Dialog_Trigger` | the name of an NPC or object | Its dialogue starts, as if a character had clicked it. |
 | `Roll_Trigger` | the name of a Roll Activator | The acting character rolls its check. |
-| `Teleport_Node` | the name of a Node | The acting character is teleported onto the Node's exact cell. |
-| `Teleport_PartyNode` | the name of a Node | The whole party, with its guests, is teleported there in formation. |
+| `Teleport_Node` | the name of a Node or another gadget | The acting character is teleported to a free cell next to it. |
+| `Teleport_PartyNode` | the name of a Node or another gadget | The whole party, with its guests, is teleported there in formation. |
 
 - **Names.** For `Dialog_Trigger` you can use the gadget's own name (such as `NpcDialog4`), or the name or title you
   gave the NPC when creating it. For the others use the gadget's own name. Capital letters don't matter. If a name
   fits more than one gadget, the command fails and the log lists them. A name as the game translates it for a
   player's language is not looked at, so that every player's game finds the same gadget.
-- **Teleport destinations must be Nodes.** A name that belongs to another kind of gadget fails.
+- **Teleport destinations** can be any gadget with its own name, as with the game's own Teleporter. A Node is the
+  usual choice, as it shows nothing in the game; a door or a chest works too, so check the name.
 - **Finding names.** Create an Int variable `Dialog_ListGadgets` and set it to `1`: the log lists the interactive
   gadgets of the location and whether each has a dialogue or a roll. Set it to `2` to list every gadget with its
   conditions, which is how you find Node and torch names.
@@ -95,14 +96,14 @@ the Roll Activator. Whoever walks in rolls.
   and its request joins the end of the queue if it comes later. A new request does not replace one that is
   waiting. Writing an empty text cancels all that are waiting, also when the variable already reads empty because
   the teleport before them has started.
-- **Where:** exactly on the Node's cell, at its height. No nearby free cell is looked for. So a character can arrive
-  on a cell another hero stands on, in mid-air or in a hazard. What follows is up to the game: over a hole the
-  character falls.
+- **Where:** the cell is picked by the same search the game's own Teleporter uses, so the character lands on a free
+  cell at or near the gadget, facing the way the gadget does. If the search finds none, the command fails and
+  nobody moves.
 - A pressure plate that stays held down is one press. A second character stepping on it while the first is still
   there does not ask for a second teleport.
 
 Typical set-up: an Area Activator one cell large whose Variable Operation sets `Teleport_Node` to the name of a Node.
-Whoever walks onto that cell is moved to the Node.
+Whoever walks onto that cell is moved to the Node, or next to it if the cell is taken.
 
 `Teleport_PartyNode` moves the whole party and the guests travelling with it, placed in formation around the Node,
 with summoned creatures moved along with the party. It needs no acting character, so a timer or a quest can use it.
