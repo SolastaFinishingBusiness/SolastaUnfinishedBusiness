@@ -37,13 +37,18 @@ namespace SolastaUnfinishedBusiness.Models;
 //    above. With Clock_SkipToDay the hour is an hour OF THAT DAY: Clock_SkipToDay 5 with Clock_SkipToHour 9 ends
 //    on day 5 at 09:00, and with Clock_SkipToHour 24 on day 5 at 00:00 (24 is midnight, and day 5 has one).
 //    Each has an optional String status variable, e.g. Clock_SkipHours_Status: Running, Succeeded, Failed or
-//    Cancelled. A skip can't be cancelled once written.
+//    Cancelled. A skip can't be cancelled once written; only a battle ends one (below).
 //    Clock_SkipRemainingSeconds is the mod's own variable, made when a skip starts: what is left of the skip that
 //    is running. It is saved with the game, so a game saved in the middle of a long skip finishes the skip when it
 //    is loaded, and a skip running when the party leaves the location finishes in the next one. Authors can read
-//    it, but should not write it.
-//    A skip waits while a battle is in progress and goes on when it ends: the clock only moves by rounds in a
-//    battle, and days passing in the middle of one would end every effect and condition there at once.
+//    it, but should not write it. Clock_SkipTargetMinute, the mod's too, holds the clock minute a skip to a given
+//    hour or day ends on (0 for a skip by a number of hours or days), so time that passes between two locations,
+//    such as travel, is not added on top of it when it finishes there.
+//    NEVER IN BATTLE (user direction, 2026-11-13: "Skips should be like long rest waits or learning spells or
+//    something like that. They should never occur in battle"): a request written while a battle is in progress
+//    fails, and a battle that starts while a skip runs ends it, the way an encounter ends a rest, with the status
+//    Cancelled. The clock only moves by rounds in a battle; days passing in one would end every effect and
+//    condition there at once.
 //
 // How the skip runs: the game's own "skip time" gadget function never moves the clock more than 23 hours at once,
 // and one clock update signals at most one dawn and one new day however long it is. A skip of several days in one
@@ -76,6 +81,7 @@ internal static class DungeonMakerClockContext
     private const string SkipToHourVariable = "Clock_SkipToHour";
     private const string SkipToDayVariable = "Clock_SkipToDay";
     private const string SkipRemainingVariable = "Clock_SkipRemainingSeconds";
+    private const string SkipTargetVariable = "Clock_SkipTargetMinute";
 
     private const int MaxSkipHours = 24 * 7;
     private const int MaxSkipDays = 180;
@@ -95,7 +101,14 @@ internal static class DungeonMakerClockContext
 
     private static SkipJob _job;
     private static bool _skipRequested;
+
+    // a skip request was written while a battle was in progress: it fails when it is taken
+    private static bool _requestedInBattle;
+
     private static string _lastError = string.Empty;
+
+    private static bool BattleInProgress =>
+        ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
 
     #region Hooks
 
@@ -120,14 +133,29 @@ internal static class DungeonMakerClockContext
         // A skip was running when this game was saved: its requests were already set back to 0 and the rest of it
         // was only in memory, so without this the remainder would be lost and its status would say Running for
         // good. The requests that belong to it are the ones whose status still says Running.
-        var remaining = DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable);
+        var remaining = (long)DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable);
 
         if (_job != null || remaining <= 0)
         {
             return;
         }
 
-        _job = new SkipJob { Remaining = remaining, Description = "the rest of a skip that a save interrupted" };
+        // A skip to a given hour or day ends at that moment, not after a duration: whatever time passed since the
+        // checkpoint (travel between two locations) counts towards it. A skip by a number of hours or days keeps
+        // what was left of it.
+        var target = DungeonMakerCommandsContext.IntValueOf(variables, SkipTargetVariable);
+
+        if (target > 0)
+        {
+            remaining = Math.Max(0, ((long)target * 60) - Now(time.TimeInfo));
+        }
+
+        _job = new SkipJob
+        {
+            Remaining = remaining,
+            TargetMinute = target,
+            Description = "the rest of a skip from the save or the previous location"
+        };
 
         foreach (var name in SkipVariables)
         {
@@ -157,15 +185,21 @@ internal static class DungeonMakerClockContext
         }
 
         _skipRequested = false;
+        _requestedInBattle = false;
     }
 
-    // from the commands context: a variable it has no use for was written
+    // from the commands context: a variable it has no use for was written. Whether a battle is in progress is
+    // noted now, at the write: the request is taken at the end of the gadget update, and the battle could have
+    // ended by then.
     internal static void OnVariableChanged(string name)
     {
-        if (Array.IndexOf(SkipVariables, name) >= 0)
+        if (Array.IndexOf(SkipVariables, name) < 0)
         {
-            _skipRequested = true;
+            return;
         }
+
+        _skipRequested = true;
+        _requestedInBattle |= BattleInProgress;
     }
 
     // GameTime.UpdateTime, after it ran: the one function the game advances the clock with (walking around, rests,
@@ -232,7 +266,14 @@ internal static class DungeonMakerClockContext
             return;
         }
 
-        if (_job == null && _skipRequested)
+        if (_job == null && _skipRequested && (_requestedInBattle || BattleInProgress))
+        {
+            // never in battle: written during one (or found in a save made during one), the requests fail
+            _skipRequested = false;
+            _requestedInBattle = false;
+            RejectInBattle();
+        }
+        else if (_job == null && _skipRequested)
         {
             _skipRequested = false;
             _job = BuildJob(time);
@@ -246,10 +287,23 @@ internal static class DungeonMakerClockContext
             }
         }
 
-        // the clock is paused: UpdateTime would do nothing, so the skip waits for it; and it waits for a battle to
-        // end (see the header). Both are the same on every computer.
-        if (_job == null || time.Paused ||
-            ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true })
+        if (_job == null)
+        {
+            return;
+        }
+
+        // never in battle: a battle that starts during the skip ends it, as an encounter ends a rest (see the
+        // header). The same on every computer, as the battle is.
+        if (BattleInProgress)
+        {
+            Main.Info($"DM clock: the skip ({_job.Description}) ended early: a battle started.");
+            EndJob(DungeonMakerCommandsContext.StatusCancelled);
+
+            return;
+        }
+
+        // the clock is paused: UpdateTime would do nothing, so the skip waits for it
+        if (time.Paused)
         {
             return;
         }
@@ -280,13 +334,16 @@ internal static class DungeonMakerClockContext
     private static void Checkpoint()
     {
         DungeonMakerCommandsContext.EnsureInt(SkipRemainingVariable);
+        DungeonMakerCommandsContext.EnsureInt(SkipTargetVariable);
         DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, (int)Math.Max(0, _job.Remaining));
+        DungeonMakerCommandsContext.WriteInt(SkipTargetVariable, _job.TargetMinute);
     }
 
     private static void EndJob(string status)
     {
-        // nothing is left to resume: the skip is done
+        // nothing is left to resume: the skip is done, or a battle ended it
         DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, 0);
+        DungeonMakerCommandsContext.WriteInt(SkipTargetVariable, 0);
 
         foreach (var name in _job.Variables)
         {
@@ -458,6 +515,13 @@ internal static class DungeonMakerClockContext
 
         job.Remaining = at - start;
 
+        // A destination named by hour or day is a moment on the clock: kept as such, in whole minutes (it is
+        // always on the hour), for a skip that finishes in another location (see OnLocationReady).
+        if (dayGiven || toHour > 0)
+        {
+            job.TargetMinute = (int)((Now(info) + job.Remaining) / 60);
+        }
+
         if (job.Remaining <= 0)
         {
             return null;
@@ -505,10 +569,40 @@ internal static class DungeonMakerClockContext
         Main.Info($"DM clock: {reason}.");
     }
 
+    // the clock in seconds from TimeInfo's origin (its minutes fit an int; its seconds would not)
+    private static long Now(TimeInfo info)
+    {
+        return ((long)info.ComputeMinutes() * 60) + info.Second;
+    }
+
+    // every skip request written is taken and fails: a skip is never made during a battle
+    private static void RejectInBattle()
+    {
+        var variables = ServiceRepository.GetService<IGameVariableService>();
+
+        if (variables == null)
+        {
+            return;
+        }
+
+        foreach (var name in SkipVariables)
+        {
+            var value = Take(variables, name);
+
+            if (value != 0)
+            {
+                Reject(name, $"{name} {value} ignored: time can't be skipped during a battle");
+            }
+        }
+    }
+
     private sealed class SkipJob
     {
         internal readonly List<string> Variables = [];
         internal string Description;
         internal long Remaining;
+
+        // the clock minute a skip to a given hour or day ends on; 0 for a skip by a duration
+        internal int TargetMinute;
     }
 }

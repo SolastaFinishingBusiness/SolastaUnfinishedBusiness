@@ -170,12 +170,15 @@ written with it still run. A `Clock_SkipToHour` written with a `Clock_SkipToDay`
   "every N hours" trigger runs at most once per skipped day, and the read-outs show only every fourth hour, so a
   Variable Activator waiting for `Clock_Hour` to equal one exact hour can be stepped over. The read-outs are exact
   once the skip ends; a counter, or a test such as "`Clock_Hour` at least 10", doesn't miss.
-- A skip waits while a battle is in progress, and goes on when it ends.
-- A skip can't be cancelled once written. Each has an optional status variable, such as `Clock_SkipHours_Status`.
+- **Never in battle.** Like a rest, a skip only happens outside a battle. A request written while a battle is in
+  progress fails (status `Failed`), and a battle that starts while a skip is running ends it there (status
+  `Cancelled`): the time already skipped stays skipped.
+- A skip can't be cancelled once written (only a battle ends one). Each has an optional status variable, such as `Clock_SkipHours_Status`.
 - While a skip runs, the mod keeps what is left of it, in seconds, in a variable of its own,
   `Clock_SkipRemainingSeconds`. It is saved with the game, so a game saved in the middle of a long skip finishes the
   skip when it is loaded, and a skip still running when the party leaves the location finishes in the next one.
-  You can read it, but don't write it.
+  A skip to a given hour or day still ends at that hour, whatever time the journey between the two took; the mod
+  keeps that moment in `Clock_SkipTargetMinute`. You can read both, but don't write them.
 
 ## Multiplayer
 
