@@ -9,7 +9,7 @@ ModUi/&AddHumanoidFavoredEnemyToRanger=Enable <color=#D89555>Humanoid</color> pr
 ModUi/&AddNewScrollsToShops=Add scrolls for new spells to appropriate shops <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewScrollsToTreasure=Add scrolls for new spells to appropriate treasure packs <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewWeaponsAndRecipesToShops=Add new weapons and recipes to shops <i><color=#F0DAA0>[hand wraps, halberds, pikes, long maces, hand crossbows]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
-ModUi/&DungeonMakerSearch=Search
+ModUi/&DungeonMakerSearch=Search...
 ModUi/&DungeonMakerSearchClear=Clear
 ModUi/&DungeonMakerSortAscending=Ascending
 ModUi/&DungeonMakerSortDefault=Sort: default

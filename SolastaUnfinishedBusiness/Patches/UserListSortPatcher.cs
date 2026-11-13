@@ -304,7 +304,7 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: the bar on the campaign editor, under the content lists (its buttons are copies of Import)
+    //PATCH: the bar on the campaign editor, above the content lists (its buttons are copies of Import)
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -365,7 +365,7 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: the bar on the variable picker, under its list (its buttons are copies of Cancel)
+    //PATCH: the bar on the variable picker, above its list (its buttons are copies of Cancel)
     [HarmonyPatch(typeof(UserVariableSelectionModal), nameof(UserVariableSelectionModal.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -430,7 +430,7 @@ public static class UserListSortPatcher
         }
     }
 
-    //PATCH: the bar on the Cheats > Campaign Variables panel, under its list (its buttons are copies of Close)
+    //PATCH: the bar on the Cheats > Campaign Variables panel, above its list (its buttons are copies of Close)
     [HarmonyPatch(typeof(CampaignVariablesModal), nameof(CampaignVariablesModal.OnBeginShow))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

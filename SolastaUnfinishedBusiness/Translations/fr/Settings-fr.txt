@@ -1,5 +1,5 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Lance un jet de Perception pour remarquer les cibles non perçues à 10 cases ou moins</i>
-ModUi/&DungeonMakerSearch=Rechercher
+ModUi/&DungeonMakerSearch=Rechercher...
 ModUi/&DungeonMakerSearchClear=Effacer
 ModUi/&DungeonMakerSortAscending=Croissant
 ModUi/&DungeonMakerSortDefault=Tri : par défaut

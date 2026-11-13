@@ -1,5 +1,5 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 知覚されていない10マス以内の対象に気付くため、知覚判定を行う</i>
-ModUi/&DungeonMakerSearch=検索
+ModUi/&DungeonMakerSearch=検索...
 ModUi/&DungeonMakerSearchClear=クリア
 ModUi/&DungeonMakerSortAscending=昇順
 ModUi/&DungeonMakerSortDefault=並び順：既定

@@ -1,5 +1,5 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Rola Percepção para notar alvos não percebidos a até 10 casas</i>
-ModUi/&DungeonMakerSearch=Buscar
+ModUi/&DungeonMakerSearch=Buscar...
 ModUi/&DungeonMakerSearchClear=Limpar
 ModUi/&DungeonMakerSortAscending=Crescente
 ModUi/&DungeonMakerSortDefault=Ordem: padrão

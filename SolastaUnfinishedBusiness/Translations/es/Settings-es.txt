@@ -1,5 +1,5 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Tira Percepción para advertir objetivos no percibidos a 10 casillas o menos</i>
-ModUi/&DungeonMakerSearch=Buscar
+ModUi/&DungeonMakerSearch=Buscar...
 ModUi/&DungeonMakerSearchClear=Borrar
 ModUi/&DungeonMakerSortAscending=Ascendente
 ModUi/&DungeonMakerSortDefault=Orden: predeterminado

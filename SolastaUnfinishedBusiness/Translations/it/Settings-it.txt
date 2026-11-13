@@ -1,5 +1,5 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Tira Percezione per notare i bersagli non percepiti entro 10 caselle</i>
-ModUi/&DungeonMakerSearch=Cerca
+ModUi/&DungeonMakerSearch=Cerca...
 ModUi/&DungeonMakerSearchClear=Cancella
 ModUi/&DungeonMakerSortAscending=Crescente
 ModUi/&DungeonMakerSortDefault=Ordine: predefinito

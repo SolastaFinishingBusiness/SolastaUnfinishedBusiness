@@ -11,14 +11,15 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 
 // Sorting and searching the Dungeon Maker's lists (issue #42; the alphabetical order comes from BlackguardRogue's
 // Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, and the
-// Cheats > Campaign Variables panel. Each of the three screens gets a bar on a row of its own, under its list and
-// as wide as it, with
+// Cheats > Campaign Variables panel. Each of the three screens gets a bar on a row of its own, above its list and
+// as wide as it, with, from left to right (user direction, 2026-11-13: the bar "should be at the very top", and
+// "the sort settings should also be on the right of the clear"),
 //
+//   a search field     only rows whose name or title contains the text are shown
+//   a clear button     empties the search field
 //   a sort button      what the list is ordered by: the campaign's own order, the name, or a second key
 //                      (the title for content, the type for variables); a click goes to the next one
 //   a direction button ascending or descending
-//   a search field     only rows whose name or title contains the text are shown
-//   a clear button     empties the search field
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
@@ -327,7 +328,7 @@ internal static class DungeonMakerListTools
         Refresh();
     }
 
-    // The bar: a row of its own under the list. It takes the bottom strip of the rectangle the list's scroll view
+    // The bar: a row of its own above the list. It takes the top strip of the rectangle the list's scroll view
     // had, and the scroll view gives that strip up, so the bar is exactly as wide as the list and nothing else on
     // the screen moves. It holds two copies of one of the screen's buttons and a copy of a text field, and is
     // built under an inactive holder so none of the copies' components start up before they are changed (as the
@@ -352,22 +353,23 @@ internal static class DungeonMakerListTools
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
 
-        AddButton(bar.transform, sourceButton, SortName, ButtonWidth);
-        AddButton(bar.transform, sourceButton, DirectionName, ButtonWidth);
+        // the layout group places them in the order they are added: search and clear, then the sort controls
         AddSearch(bar.transform);
         AddButton(bar.transform, sourceButton, ClearName, ClearWidth);
+        AddButton(bar.transform, sourceButton, SortName, ButtonWidth);
+        AddButton(bar.transform, sourceButton, DirectionName, ButtonWidth);
 
-        // anchored like the scroll view from side to side, and to its bottom edge, ControlHeight tall
+        // anchored like the scroll view from side to side, and to its top edge, ControlHeight tall
         rect.SetParent(list.parent, false);
         rect.SetSiblingIndex(list.GetSiblingIndex() + 1);
-        rect.anchorMin = new Vector2(list.anchorMin.x, list.anchorMin.y);
-        rect.anchorMax = new Vector2(list.anchorMax.x, list.anchorMin.y);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMin.y);
-        rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMin.y + ControlHeight);
+        rect.anchorMin = new Vector2(list.anchorMin.x, list.anchorMax.y);
+        rect.anchorMax = new Vector2(list.anchorMax.x, list.anchorMax.y);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMax.y - ControlHeight);
+        rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y);
 
-        // the scroll view's bottom edge moves up by the bar and a gap; its top stays where it is
-        list.offsetMin = new Vector2(list.offsetMin.x, list.offsetMin.y + ControlHeight + Gap);
+        // the scroll view's top edge moves down by the bar and a gap; its bottom stays where it is
+        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - ControlHeight - Gap);
 
         Object.Destroy(holder);
 
@@ -450,6 +452,20 @@ internal static class DungeonMakerListTools
         field.characterLimit = 40;
         field.interactable = true;
         field.SetTextWithoutNotify(string.Empty);
+
+        // Vertically centred. The original is a multi-line box: its text area and its placeholder label fill the
+        // field with an even inset (6 and 8 units, from the prefab), but the text keeps the box's own alignment,
+        // which in a one-line field 34 units tall put "Search..." off the middle (seen in game, 2026-11-13). Both
+        // labels are set to the middle of their rectangles, which are centred in the field.
+        if (field.textComponent)
+        {
+            field.textComponent.alignment = TextAlignmentOptions.MidlineLeft;
+        }
+
+        if (field.placeholder is TMP_Text hint)
+        {
+            hint.alignment = TextAlignmentOptions.MidlineLeft;
+        }
 
         // the placeholder is a game label, which writes its own text when it starts up: set it through the label
         var placeholder = field.placeholder ? field.placeholder.GetComponent<GuiLabel>() : null;
