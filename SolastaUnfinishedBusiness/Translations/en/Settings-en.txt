@@ -41,6 +41,7 @@ ModUi/&DungeonMakerCategoryNoList=No list open
 ModUi/&DungeonMakerCategoryNone=Default
 ModUi/&DungeonMakerCategoryOrderAlphabetical=Categories: A-Z
 ModUi/&DungeonMakerCategoryOrderDefault=Categories: Default
+ModUi/&DungeonMakerCategoryOrderShortAlphabetical=A-Z
 ModUi/&DungeonMakerCategoryQuestCategory=Category
 ModUi/&DungeonMakerCategoryScope=Scope
 ModUi/&DungeonMakerCategoryStartingValue=Starting value

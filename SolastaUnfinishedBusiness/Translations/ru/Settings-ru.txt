@@ -32,6 +32,7 @@ ModUi/&DungeonMakerCategoryNoList=Нет открытого списка
 ModUi/&DungeonMakerCategoryNone=По умолчанию
 ModUi/&DungeonMakerCategoryOrderAlphabetical=Категории: А-Я
 ModUi/&DungeonMakerCategoryOrderDefault=Категории: По умолчанию
+ModUi/&DungeonMakerCategoryOrderShortAlphabetical=А-Я
 ModUi/&DungeonMakerCategoryQuestCategory=Категория
 ModUi/&DungeonMakerCategoryScope=Область
 ModUi/&DungeonMakerCategoryStartingValue=Начальное значение

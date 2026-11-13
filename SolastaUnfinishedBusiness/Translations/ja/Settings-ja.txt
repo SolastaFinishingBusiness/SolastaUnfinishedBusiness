@@ -31,6 +31,7 @@ ModUi/&DungeonMakerCategoryNoList=開いているリストなし
 ModUi/&DungeonMakerCategoryNone=既定
 ModUi/&DungeonMakerCategoryOrderAlphabetical=カテゴリー：A-Z
 ModUi/&DungeonMakerCategoryOrderDefault=カテゴリー：既定
+ModUi/&DungeonMakerCategoryOrderShortAlphabetical=A-Z
 ModUi/&DungeonMakerCategoryQuestCategory=カテゴリー
 ModUi/&DungeonMakerCategoryScope=スコープ
 ModUi/&DungeonMakerCategoryStartingValue=初期値

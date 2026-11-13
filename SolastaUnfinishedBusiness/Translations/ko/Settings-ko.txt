@@ -31,6 +31,7 @@ ModUi/&DungeonMakerCategoryNoList=열린 목록 없음
 ModUi/&DungeonMakerCategoryNone=기본
 ModUi/&DungeonMakerCategoryOrderAlphabetical=분류: A-Z
 ModUi/&DungeonMakerCategoryOrderDefault=분류: 기본
+ModUi/&DungeonMakerCategoryOrderShortAlphabetical=A-Z
 ModUi/&DungeonMakerCategoryQuestCategory=분류
 ModUi/&DungeonMakerCategoryScope=범위
 ModUi/&DungeonMakerCategoryStartingValue=시작 값

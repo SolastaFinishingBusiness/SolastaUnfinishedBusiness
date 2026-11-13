@@ -15,8 +15,9 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // former "Enable assets sorting on Dungeon Maker editor" setting; the palettes' bar has two rows, as a palette is
 // only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher).
 //
-// The campaign editor's and the palettes' bars also have a CATEGORY ORDER toggle (on the editor's sort row, on a
-// row of its own in a palette) (user, 2026-11-13: "a toggle
+// The campaign editor's and the palettes' bars also have a CATEGORY ORDER toggle (on the editor's sort row after a
+// gap; in a palette on the sort row too, flush right, showing only "Default" or "A-Z" with "Categories: ..." as its
+// tooltip, user direction 2026-11-13) (user, 2026-11-13: "a toggle
 // for sorting the categories themselves ... between default and alphabetical", for both): "Categories: Default"
 // keeps the sections (the editor's twelve lists, a palette's categories) in the game's order, "Categories: A-Z"
 // orders them by the title on their header. One saved choice for all of them
@@ -98,7 +99,6 @@ internal static class DungeonMakerListTools
     private const string CategoryDirectionName = "CategoryDirection";
     private const string SearchRowName = "SearchRow";
     private const string CategoryOrderName = "CategoryOrder";
-    private const string CategoryOrderRowName = "CategoryOrderRow";
 
     // the category order toggle's room around its text
     private const float ButtonTextPadding = 28f;
@@ -116,6 +116,9 @@ internal static class DungeonMakerListTools
     // controls leave of the bar's width
     // the sort dropdown: room for its longest choice ("По умолчанию") and its own open arrow
     private const float SortWidth = 180f;
+
+    // in a palette, where the sort row also holds the category toggle (Default, Name, Title are short)
+    private const float PaletteSortWidth = 150f;
 
     // the space that sets the sort controls apart from the search and Clear (user direction, 2026-11-13: "Add a
     // distinct padding between the search clear and the sort"), on top of the usual spacing either side
@@ -487,10 +490,19 @@ internal static class DungeonMakerListTools
             // be an arrow"); its tooltip says which
             SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
+            // the full "Categories: ..." on the button in the editor; in a palette only "Default" or "A-Z" on it, and the
+            // full text always as its tooltip
+            var orderTerm = CategoriesAlphabetical
+                ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
+                : "ModUi/&DungeonMakerCategoryOrderDefault";
+
             SetText(categoryOrder,
-                CategoriesAlphabetical
-                    ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
-                    : "ModUi/&DungeonMakerCategoryOrderDefault");
+                !stacked
+                    ? orderTerm
+                    : CategoriesAlphabetical
+                        ? "ModUi/&DungeonMakerCategoryOrderShortAlphabetical"
+                        : "ModUi/&DungeonMakerSortDefault");
+            SetTooltip(categoryOrder, orderTerm);
             FitButtonToText(categoryOrder);
             RefreshCategory();
 
@@ -785,6 +797,17 @@ internal static class DungeonMakerListTools
         RefreshRow();
     }
 
+    // a button's hover text (the copied button's tooltip, emptied when it was copied)
+    private static void SetTooltip(Button button, string term)
+    {
+        var tooltip = button ? button.GetComponentInChildren<GuiTooltip>(true) : null;
+
+        if (tooltip)
+        {
+            tooltip.Content = Gui.Localize(term);
+        }
+    }
+
     // a button as wide as its label's text and some room around it, so a longer translation fits
     private static void FitButtonToText(Button button)
     {
@@ -995,7 +1018,7 @@ internal static class DungeonMakerListTools
         var main = AddRow(bar.transform, MainRowName, TextAnchor.MiddleLeft);
 
         AddSortLabel(main, sourceButton, SortLabelName);
-        AddSortDropdown(main, SortName);
+        AddSortDropdown(main, SortName, stacked ? PaletteSortWidth : SortWidth);
         AddArrow(main, DirectionName);
 
         // The category order toggle, as wide as its text (FitButtonToText), with the other ordering controls
@@ -1006,17 +1029,19 @@ internal static class DungeonMakerListTools
 
         if (sections)
         {
-            var orderRow = stacked ? AddRow(bar.transform, CategoryOrderRowName, TextAnchor.MiddleLeft) : main;
-
-            // on the editor's sort row, set apart from the arrow (user, 2026-11-13: "put a space between the sort
-            // and the categories button")
-            if (!stacked)
+            // On the sort row in both. In the editor set apart from the arrow by a gap (user, 2026-11-13: "put a
+            // space between the sort and the categories button"); in a palette pushed to the row's right end by a
+            // stretching space (user, same day: "put the categories behind the sort ... Make it flush to the right").
+            if (stacked)
+            {
+                AddStretch(main);
+            }
+            else
             {
                 AddGap(main);
             }
 
-            AddButton(orderRow, sourceButton, CategoryOrderName, ClearWidth);
-            rows += stacked ? 1 : 0;
+            AddButton(main, sourceButton, CategoryOrderName, ClearWidth);
         }
 
         // stacked (a palette): the search and Clear on a row of their own, last
@@ -1198,6 +1223,19 @@ internal static class DungeonMakerListTools
         copy.SetActive(true);
     }
 
+    // an empty space that takes the row's room left over, pushing what follows to the right end
+    private static void AddStretch(Transform row)
+    {
+        var stretch = new GameObject(GapName, typeof(RectTransform), typeof(LayoutElement));
+
+        stretch.transform.SetParent(row, false);
+
+        var layout = stretch.GetComponent<LayoutElement>();
+
+        layout.minWidth = 0f;
+        layout.flexibleWidth = 1f;
+    }
+
     // an empty, fixed-width space in the bar's row
     private static void AddGap(Transform bar)
     {
@@ -1254,7 +1292,7 @@ internal static class DungeonMakerListTools
 
     // A sort dropdown: the game's own dropdown (the prefab the mod's other dropdowns use, CustomDropDown). Its
     // choices are filled in by Ensure.
-    private static void AddSortDropdown(Transform bar, string name)
+    private static void AddSortDropdown(Transform bar, string name, float width = SortWidth)
     {
         var dropdown = CustomDropDown.MakeDropdown(name, bar);
 
@@ -1265,7 +1303,7 @@ internal static class DungeonMakerListTools
             return;
         }
 
-        SetSize(dropdown.gameObject, SortWidth, false);
+        SetSize(dropdown.gameObject, width, false);
         dropdown.gameObject.SetActive(true);
     }
 

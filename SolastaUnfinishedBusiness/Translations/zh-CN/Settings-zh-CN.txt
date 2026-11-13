@@ -31,6 +31,7 @@ ModUi/&DungeonMakerCategoryNoList=没有打开的列表
 ModUi/&DungeonMakerCategoryNone=默认
 ModUi/&DungeonMakerCategoryOrderAlphabetical=类别：A-Z
 ModUi/&DungeonMakerCategoryOrderDefault=类别：默认
+ModUi/&DungeonMakerCategoryOrderShortAlphabetical=A-Z
 ModUi/&DungeonMakerCategoryQuestCategory=类别
 ModUi/&DungeonMakerCategoryScope=范围
 ModUi/&DungeonMakerCategoryStartingValue=初始值
