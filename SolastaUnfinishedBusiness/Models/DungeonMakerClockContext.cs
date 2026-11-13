@@ -117,13 +117,16 @@ internal static class DungeonMakerClockContext
     // skip runs, or while one kept in Clock_SkipRemainingSeconds waits to go on: between a save's load (when each
     // timer's PostLoad checks it) and the location being ready, between two locations, or with the clock paused.
     // Checkpoint keeps that variable above 0 for as long as a skip lasts, and EndJob sets it to 0, then CheckTimers
-    // makes the one check. With the commands switched off, nothing would ever resume a saved skip, so nothing is
-    // held then.
+    // makes the one check.
+    // Only while the commands are switched on (Codex's review of d26e0f30): switched off, the skip is no longer
+    // advanced (the commands' Tick returns at once), and holding the timers then would stop every hour and
+    // elapsed-time object in the location for as long as the setting stays off. The skip stays where it was, kept
+    // in _job or the variable, and goes on, with its timers held again, once the setting is back on.
     internal static bool HoldTimers =>
-        _job != null ||
-        (Main.Settings.EnableDungeonMakerVariableCommands &&
-         ServiceRepository.GetService<IGameVariableService>() is { } variables &&
-         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable) > 0);
+        Main.Settings.EnableDungeonMakerVariableCommands &&
+        (_job != null ||
+         (ServiceRepository.GetService<IGameVariableService>() is { } variables &&
+          DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable) > 0));
 
     private static bool BattleInProgress =>
         ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
