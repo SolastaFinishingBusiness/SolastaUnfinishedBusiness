@@ -40,9 +40,15 @@ namespace SolastaUnfinishedBusiness.Models;
 ///                 <see cref="Group" />.
 ///             </item>
 ///             <item>
-///                 A power started while one of these is running for the same character (an on-hit power the game
-///                 runs at once, the mod's own on-hit powers such as Weapon Mastery Push) joins its group
-///                 (<see cref="ActionStarting" />). A reaction never does: it is its own action.
+///                 A power queued or started while one of these is running for the same character joins its group:
+///                 the game's direct on-hit powers when they are queued behind the action that hit
+///                 (<see cref="PowerQueued" />), the mod's own on-hit powers such as Weapon Mastery Push when they
+///                 start (<see cref="ActionStarting" />). A reaction never does: it is its own action.
+///             </item>
+///             <item>
+///                 An action ends when its Execute ends, or when the game stops it (<see cref="ActionsStopped" />)
+///                 or aborts it, since a stopped action's coroutine is reset and never reports its end. One not
+///                 started yet counts only while it still waits in its character's chains.
 ///             </item>
 ///             <item>
 ///                 The powers the game queues to run right after an action (its ResultingActions, e.g. Repelling Blast
@@ -197,7 +203,10 @@ internal static class ForcedMovementFallContext
         running.Add(action);
     }
 
-    /// <summary>Called when an action has run to its end (the end of CharacterAction.Execute).</summary>
+    /// <summary>
+    ///     Called when an action has run to its end (the end of CharacterAction.Execute), and for an action the game
+    ///     stopped (<see cref="ActionsStopped" />), whose end is never reported otherwise.
+    /// </summary>
     internal static void ActionEnded(CharacterAction action)
     {
         if (action?.ActingCharacter is not { } actor)
@@ -248,7 +257,9 @@ internal static class ForcedMovementFallContext
 
         foreach (var resultingAction in resultingActions)
         {
+            // a reaction is its own action, however it was queued (Codex's review of c98ac8bd)
             if (!IsEffectAction(resultingAction) ||
+                IsReaction(resultingAction) ||
                 resultingAction.ActionParams is not { } childParams ||
                 GroupByParams.ContainsKey(childParams))
             {
@@ -259,6 +270,78 @@ internal static class ForcedMovementFallContext
             group.Add(childParams, null);
             GroupByParams[childParams] = group;
         }
+    }
+
+    /// <summary>
+    ///     The actions in a character's running chain right before the game stops its actions
+    ///     (GameLocationActionManager.StopCharacterActionsImpl), for <see cref="ActionsStopped" />.
+    /// </summary>
+    internal static List<CharacterAction> ActionsBeforeStop(GameLocationActionManager.ActionChainSlot slot)
+    {
+        if (Running.Count == 0 || slot?.actionQueue is not { Count: > 0 } queue)
+        {
+            return null;
+        }
+
+        var actions = new List<CharacterAction>(queue.Count);
+
+        foreach (var queueSlot in queue)
+        {
+            if (queueSlot?.action is { } action)
+            {
+                actions.Add(action);
+            }
+        }
+
+        return actions;
+    }
+
+    /// <summary>
+    ///     Right after the game stopped a character's actions. The game takes the stopped actions out of the chain
+    ///     and resets their coroutine (TA.Coroutine.Reset) after aborting them, or kills one that refused to be
+    ///     aborted. A reset coroutine is never finished or disposed, so the end of Execute, where
+    ///     <see cref="ActionEnded" /> is called, never comes for them (Codex's review of c98ac8bd). Every action that
+    ///     was in the chain before and isn't any more has ended here.
+    /// </summary>
+    internal static void ActionsStopped(GameLocationActionManager.ActionChainSlot slot, List<CharacterAction> before)
+    {
+        if (before == null)
+        {
+            return;
+        }
+
+        foreach (var action in before)
+        {
+            if (slot?.actionQueue == null || !slot.actionQueue.Any(queueSlot => queueSlot?.action == action))
+            {
+                ActionEnded(action);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Called when an action is handed to the action service (GameLocationActionManager.ExecuteAction), before
+    ///     anything else of it. The game's direct path for an on-hit power queues it behind the action that hit
+    ///     (GameLocationBattleManager.PrepareAndExecuteSpendPowerAction calls ExecuteAction with enqueue on), so it
+    ///     often starts only once that action has ended. It is tied to that action here, when it is queued (Codex's
+    ///     review of c98ac8bd). The mod's own on-hit powers start at once and are tied when they start
+    ///     (<see cref="ActionStarting" />).
+    /// </summary>
+    private static void PowerQueued(CharacterActionParams actionParams)
+    {
+        if (actionParams.ActionDefinition?.Id != ActionDefinitions.Id.SpendPower ||
+            actionParams.IsReactionEffect ||
+            actionParams.ActionDefinition.ActionType == ActionDefinitions.ActionType.Reaction ||
+            GroupByParams.ContainsKey(actionParams) ||
+            CurrentEffectAction(actionParams.ActingCharacter) is not { } parent)
+        {
+            return;
+        }
+
+        var group = GroupOf(parent);
+
+        group.Add(actionParams, null);
+        GroupByParams[actionParams] = group;
     }
 
     /// <summary>
@@ -374,10 +457,20 @@ internal static class ForcedMovementFallContext
     /// </summary>
     internal static void PushQueued(CharacterActionParams actionParams)
     {
-        if (actionParams?.ActionDefinition?.Id is not
-                (ActionDefinitions.Id.Pushed or (ActionDefinitions.Id)ExtraActionId.PushedCustom) ||
-            actionParams.ActingCharacter is not { } target)
+        if (actionParams?.ActingCharacter is not { } target)
         {
+            return;
+        }
+
+        if (actionParams.ActionDefinition?.Id is not
+            (ActionDefinitions.Id.Pushed or (ActionDefinitions.Id)ExtraActionId.PushedCustom))
+        {
+            // not a push: an on-hit power queued behind the action that hit is part of it
+            if (IsOn)
+            {
+                PowerQueued(actionParams);
+            }
+
             return;
         }
 
@@ -434,6 +527,12 @@ internal static class ForcedMovementFallContext
 
         if (index < 0)
         {
+            // A push from something else. A push of the action that was running for this creature is over by now
+            // (the game stops a creature's actions before it queues a push), even if its end was never reported, so
+            // this push must not be taken for it: it plays the game's pose and waits as usual (Codex's review of
+            // c98ac8bd).
+            hold.Running = null;
+
             return;
         }
 
@@ -674,6 +773,16 @@ internal static class ForcedMovementFallContext
                 if (!entry.Key.Valid)
                 {
                     Running.Remove(entry.Key);
+
+                    continue;
+                }
+
+                // An aborted action applies no more effects, and one the game stopped by resetting its coroutine
+                // never reports its end, even for a character that stays (Codex's review of c98ac8bd). Its end is
+                // noted here, which also ends it in its group.
+                foreach (var action in entry.Value.Where(action => action.Aborted).ToArray())
+                {
+                    ActionEnded(action);
                 }
             }
         }
@@ -904,8 +1013,9 @@ internal static class ForcedMovementFallContext
         internal bool HasEnded { get; set; }
 
         // Can this action still do anything? A started one until it ends, unless it was aborted (an aborted action
-        // applies no more effects, whether or not its end is ever reported). One that hasn't started yet while its
-        // character still has actions queued or running: once nothing is, it was dropped and will never run.
+        // applies no more effects, whether or not its end is ever reported). One that hasn't started yet while it is
+        // still waiting in its character's chains: once it isn't, it was dropped or refused and will never run.
+        // (Its character merely doing something else doesn't keep it alive: Codex's review of c98ac8bd.)
         internal bool IsLive(GameLocationActionManager manager)
         {
             if (HasEnded)
@@ -918,8 +1028,43 @@ internal static class ForcedMovementFallContext
                 return !Action.Aborted;
             }
 
-            return IsActing(manager, Params.ActingCharacter);
+            return IsWaiting(manager, Params);
         }
+    }
+
+    // Is this action, not started yet, still waiting to run? It is either in its character's running chain already
+    // (a resulting action, or the chain's next action) or in one of its chains queued after that one.
+    private static bool IsWaiting(GameLocationActionManager manager, CharacterActionParams actionParams)
+    {
+        var character = actionParams.ActingCharacter;
+
+        if (manager == null || character == null)
+        {
+            return false;
+        }
+
+        if (manager.actionChainByCharacter != null &&
+            manager.actionChainByCharacter.TryGetValue(character, out var slot) &&
+            slot != null)
+        {
+            if (slot.actionQueue != null &&
+                slot.actionQueue.Any(queueSlot => queueSlot?.action?.ActionParams == actionParams))
+            {
+                return true;
+            }
+
+            if (slot.actionChainParams?.actionsParams != null &&
+                slot.actionChainParams.actionsParams.Contains(actionParams))
+            {
+                return true;
+            }
+        }
+
+        return manager.actionChainQueueByCharacter != null &&
+               manager.actionChainQueueByCharacter.TryGetValue(character, out var queue) &&
+               queue != null &&
+               queue.Any(chain => chain?.actionChainParams?.actionsParams != null &&
+                                  chain.actionChainParams.actionsParams.Contains(actionParams));
     }
 
     private sealed class Hold(GameLocationCharacter target, GameLocationActionManager manager)

@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using HarmonyLib;
@@ -49,6 +50,32 @@ public static class GameLocationActionManagerPatcher
         public static void Prefix(GameLocationActionManager __instance, CharacterAction action)
         {
             ForcedMovementFallContext.ResultingActionsQueued(__instance, action);
+        }
+    }
+
+    //PATCH: falls put off until an action's last push or pull (issue #39, ForcedMovementFallContext). The game stops
+    // a character's actions here (a push, a fall, death, an interruption): it takes them out of the chain and resets
+    // their coroutines, so their end is never reported. The actions gone from the chain are noted as ended. Only
+    // reads the chain; the game's method runs unchanged.
+    [HarmonyPatch(typeof(GameLocationActionManager), nameof(GameLocationActionManager.StopCharacterActionsImpl))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class StopCharacterActionsImpl_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(
+            GameLocationActionManager.ActionChainSlot actionChainSlot,
+            out List<CharacterAction> __state)
+        {
+            __state = ForcedMovementFallContext.ActionsBeforeStop(actionChainSlot);
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(
+            GameLocationActionManager.ActionChainSlot actionChainSlot,
+            List<CharacterAction> __state)
+        {
+            ForcedMovementFallContext.ActionsStopped(actionChainSlot, __state);
         }
     }
 
