@@ -128,6 +128,10 @@ internal static class DungeonMakerListTools
     // between the list and the bar
     private const float Gap = 6f;
 
+    // between a palette's bar and its blueprints (user, 2026-11-13: "In the palette screen, add a padding between the
+    // search row and the items"): the palettes' category headers start right at the top of their list
+    private const float PaletteGap = 18f;
+
     // the rows of each table in the order the game bound them, i.e. the order of the list
     private static readonly ConditionalWeakTable<Transform, List<Transform>> BoundRows = new();
 
@@ -1051,7 +1055,7 @@ internal static class DungeonMakerListTools
         rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y);
 
         // the scroll view's top edge moves down by the bar and a gap; its bottom stays where it is
-        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - height - Gap);
+        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - height - (stacked ? PaletteGap : Gap));
 
         Object.Destroy(holder);
 
