@@ -21,6 +21,19 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //   dropdown           (the title for content, the type for variables), set apart from Clear by a gap
 //   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
 //
+// and, right below the sort controls, a second row of the same kind for the CATEGORY SORT (user direction through
+// Codex, 2026-11-13: "The sort options should use the same style as the main sort, but be located right below the
+// dropdown. The category specific sort will be priority, with the main sort as the secondary."):
+//
+//   "<list>:"          the list it applies to ("Monsters:")
+//   a dropdown         None, or one of that list's own keys (hit points, challenge rating, cost, ...)
+//   a direction arrow  its own direction
+//
+// A list is ordered by its category key first, and rows with equal keys by the main sort (with its direction),
+// then by the campaign's order. Each list keeps its own category sort (user's choice, 2026-11-13: "A sort per
+// list"); in the campaign editor the row shows the list that was opened last, and every open list is ordered by its
+// own. Numbers compare as numbers; an entry without a value for the key comes last in both directions.
+//
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
 //
@@ -62,6 +75,11 @@ internal static class DungeonMakerListTools
     private const string ClearName = "Clear";
     private const string SortLabelName = "SortLabel";
     private const string GapName = "Gap";
+    private const string MainRowName = "MainRow";
+    private const string CategoryRowName = "CategoryRow";
+    private const string CategoryLabelName = "CategoryLabel";
+    private const string CategoryName = "Category";
+    private const string CategoryDirectionName = "CategoryDirection";
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
     // controls leave of the bar's width
@@ -76,6 +94,9 @@ internal static class DungeonMakerListTools
     private const float ControlHeight = 34f;
     private const float Spacing = 6f;
 
+    // two rows: the search and main sort, and the category sort under it
+    private const float BarHeight = (2 * ControlHeight) + Spacing;
+
     // between the list and the bar
     private const float Gap = 6f;
 
@@ -86,6 +107,9 @@ internal static class DungeonMakerListTools
     private static readonly Dictionary<string, string> Searches = [];
 
     private static string _lastProblem = string.Empty;
+
+    // each screen's way to bring its bar up to date (the editor's when another list is opened)
+    private static readonly Dictionary<string, Action> Refreshers = [];
 
     // the editor's two arrow pictures, for the direction button
     private static Sprite _upArrow;
@@ -104,6 +128,63 @@ internal static class DungeonMakerListTools
     internal static void ClearSearch(string screen)
     {
         Searches[screen] = string.Empty;
+    }
+
+    // Brings a screen's bar up to date, e.g. the category row after another list was opened in the editor.
+    internal static void RefreshBar(string screen)
+    {
+        if (Refreshers.TryGetValue(screen, out var refresh))
+        {
+            refresh();
+        }
+    }
+
+    // A list's category sort: the option's id (null for None) and whether it is descending.
+    internal static (string Id, bool Descending) CategoryChoice(string list)
+    {
+        foreach (var entry in (Main.Settings.DungeonMakerCategorySorts ?? string.Empty).Split(';'))
+        {
+            var equals = entry.IndexOf('=');
+
+            if (equals <= 0 || entry.Substring(0, equals) != list)
+            {
+                continue;
+            }
+
+            var rest = entry.Substring(equals + 1);
+            var colon = rest.LastIndexOf(':');
+
+            return colon < 0
+                ? (rest, false)
+                : (rest.Substring(0, colon), rest.Substring(colon + 1) == "1");
+        }
+
+        return (null, false);
+    }
+
+    // the option a list is sorted by now, from its own options, or null
+    internal static CategoryOption ChosenOption(string list, IReadOnlyList<CategoryOption> options, out bool descending)
+    {
+        var (id, isDescending) = CategoryChoice(list);
+
+        descending = isDescending;
+
+        return id == null ? null : options?.FirstOrDefault(x => x.Id == id);
+    }
+
+    private static void SetCategoryChoice(string list, string id, bool descending)
+    {
+        var entries = (Main.Settings.DungeonMakerCategorySorts ?? string.Empty)
+            .Split(';')
+            .Where(x => x.Length > 0 && !x.StartsWith(list + "=", StringComparison.Ordinal))
+            .ToList();
+
+        if (id != null)
+        {
+            entries.Add($"{list}={id}:{(descending ? 1 : 0)}");
+        }
+
+        Main.Settings.DungeonMakerCategorySorts = string.Join(";", entries);
     }
 
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
@@ -140,13 +221,15 @@ internal static class DungeonMakerListTools
     }
 
     // Orders and filters the rows remembered for this table. name and second give a row's two sort keys; a row
-    // is shown when its name or its second key contains the screen's search text. Returns true when the search
-    // left out a row that isSelected says is the selected one: the screen still holds that selection, and its
-    // buttons (edit, delete, validate) would act on an item that can't be seen. Whether to clear it is the
-    // caller's decision.
+    // is shown when its name or its second key contains the screen's search text. category, if given, is the
+    // list's category key, which orders the rows before the main sort does. Returns true when the search left out
+    // a row that isSelected says is the selected one: the screen still holds that selection, and its buttons
+    // (edit, delete, validate) would act on an item that can't be seen. Whether to clear it is the caller's
+    // decision.
     internal static bool Apply(
         Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second,
-        Func<Transform, bool> isSelected = null)
+        Func<Transform, bool> isSelected = null, Func<Transform, SortKey> category = null,
+        bool categoryDescending = false)
     {
         if (!table || !BoundRows.TryGetValue(table, out var rows) || rows.Count == 0)
         {
@@ -168,30 +251,53 @@ internal static class DungeonMakerListTools
 
             items.Add(new Row
             {
-                Transform = row, Name = name(row) ?? string.Empty, Second = second(row) ?? string.Empty
+                Transform = row,
+                Index = items.Count,
+                Name = name(row) ?? string.Empty,
+                Second = second(row) ?? string.Empty,
+                Category = category?.Invoke(row) ?? SortKey.Missing
             });
         }
 
-        // OrderBy and OrderByDescending are stable, and the rows start in list order, so rows with equal keys
-        // keep that order in both directions. (Reversing an ascending result would turn the ties round too.)
-        // Only the campaign's own order has no keys: descending, it is simply the list from its end.
+        // One comparison, so the order is fully decided: the category key first (in its own direction), then the
+        // main sort in its direction, and last the campaign's order, so rows that are equal on every key keep
+        // their campaign order in both directions. The campaign's own order as the main sort, descending, is the
+        // list from its end.
+        var kind = Kind;
         var descending = Descending;
-        IEnumerable<Row> ordered = Kind switch
-        {
-            Sort.Name => descending
-                ? items.OrderByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
-                : items.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
-            Sort.Second => descending
-                ? items
-                    .OrderByDescending(x => x.Second, StringComparer.OrdinalIgnoreCase)
-                    .ThenByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
-                : items
-                    .OrderBy(x => x.Second, StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
-            _ => descending ? Enumerable.Reverse(items) : items
-        };
 
-        var sorted = ordered.ToList();
+        items.Sort((a, b) =>
+        {
+            int result;
+
+            if (category != null)
+            {
+                result = SortKey.Compare(a.Category, b.Category, categoryDescending);
+
+                if (result != 0)
+                {
+                    return result;
+                }
+            }
+
+            result = kind switch
+            {
+                Sort.Name => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name),
+                Sort.Second => StringComparer.OrdinalIgnoreCase.Compare(a.Second, b.Second) is var bySecond and not 0
+                    ? bySecond
+                    : StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name),
+                _ => a.Index.CompareTo(b.Index)
+            };
+
+            if (descending)
+            {
+                result = -result;
+            }
+
+            return result != 0 ? result : a.Index.CompareTo(b.Index);
+        });
+
+        var sorted = items;
 
         // The rows are the table's first children (the screens keep unused pooled rows after them), and they only
         // change places among themselves, so the game still finds a row object at each of the first positions.
@@ -229,8 +335,10 @@ internal static class DungeonMakerListTools
     //   sourcePath  a button of the screen to copy for the bar's two buttons, from the screen's root
     //   secondTerm  the sort dropdown's choice for the second key ("Title", "Type")
     //   changed     the view changed: apply it to the screen's tables
+    //   category    the list the category row applies to now, with its options, or null when there is none
     internal static void Ensure(
-        Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed)
+        Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
+        Func<CategoryView> category)
     {
         Searches[screen] = string.Empty;
 
@@ -253,11 +361,17 @@ internal static class DungeonMakerListTools
             bar = AddBar(list, source.gameObject);
         }
 
-        var sort = bar.Find(SortName)?.GetComponent<GuiDropdown>();
-        var direction = bar.Find(DirectionName)?.GetComponent<Button>();
-        var search = bar.Find(SearchName)?.GetComponent<TMP_InputField>();
-        var clear = bar.Find(ClearName)?.GetComponent<Button>();
-        var sortLabel = bar.Find(SortLabelName)?.GetComponent<GuiLabel>();
+        var sort = FindDeep(bar, SortName)?.GetComponent<GuiDropdown>();
+        var direction = FindDeep(bar, DirectionName)?.GetComponent<Button>();
+        var search = FindDeep(bar, SearchName)?.GetComponent<TMP_InputField>();
+        var clear = FindDeep(bar, ClearName)?.GetComponent<Button>();
+        var sortLabel = FindDeep(bar, SortLabelName)?.GetComponent<GuiLabel>();
+        var categoryLabel = FindDeep(bar, CategoryLabelName)?.GetComponent<GuiLabel>();
+        var categoryDropdown = FindDeep(bar, CategoryName)?.GetComponent<GuiDropdown>();
+        var categoryDirection = FindDeep(bar, CategoryDirectionName)?.GetComponent<Button>();
+
+        // the list the category row shows now; its dropdown's choices are that list's options after None
+        CategoryView shown = null;
 
         // "Sort:" stands in front of the dropdown, which holds only the choices (user direction, 2026-11-13:
         // "split them so that the "Sort:" is outside the dropdown"). Set through the game label, which otherwise
@@ -292,6 +406,7 @@ internal static class DungeonMakerListTools
             // be an arrow"); its tooltip says which
             SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
+            RefreshCategory();
 
             // Nothing to clear while the field is empty. The field's own text decides, not the search made from
             // it: spaces alone are no search, but they are in the field and Clear must be able to remove them.
@@ -299,6 +414,49 @@ internal static class DungeonMakerListTools
             {
                 clear.interactable = search && !string.IsNullOrEmpty(search.text);
             }
+        }
+
+        void RefreshCategory()
+        {
+            try
+            {
+                shown = category?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+                shown = null;
+            }
+
+            var (id, isDescending) = shown == null ? (null, false) : CategoryChoice(shown.ListId);
+            var options = shown?.Options ?? [];
+            var index = id == null ? -1 : options.ToList().FindIndex(x => x.Id == id);
+
+            if (categoryLabel)
+            {
+                categoryLabel.Text = shown == null
+                    ? Gui.Localize("ModUi/&DungeonMakerCategoryNoList")
+                    : string.Format(Gui.Localize("ModUi/&DungeonMakerCategoryLabel"), shown.Title);
+            }
+
+            if (categoryDropdown)
+            {
+                var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerCategoryNone") };
+
+                texts.AddRange(options.Select(x => Gui.Localize(x.Term)));
+                categoryDropdown.ClearOptions();
+                categoryDropdown.AddOptions(texts);
+                categoryDropdown.SetValueWithoutNotify(index + 1);
+                categoryDropdown.interactable = shown != null && options.Count > 0;
+            }
+
+            if (categoryDirection)
+            {
+                SetArrow(categoryDirection, isDescending);
+                categoryDirection.interactable = index >= 0;
+            }
+
+            MatchLabels(sortLabel, categoryLabel);
         }
 
         void Changed()
@@ -322,6 +480,44 @@ internal static class DungeonMakerListTools
             {
                 Main.Settings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
                 Changed();
+            });
+        }
+
+        if (categoryDropdown)
+        {
+            categoryDropdown.onValueChanged = new TMP_Dropdown.DropdownEvent();
+            categoryDropdown.onValueChanged.AddListener(value =>
+            {
+                if (shown == null)
+                {
+                    return;
+                }
+
+                var options = shown.Options;
+                var id = value >= 1 && value <= options.Count ? options[value - 1].Id : null;
+
+                SetCategoryChoice(shown.ListId, id, CategoryChoice(shown.ListId).Descending);
+                Changed();
+            });
+        }
+
+        if (categoryDirection)
+        {
+            categoryDirection.onClick = new Button.ButtonClickedEvent();
+            categoryDirection.onClick.AddListener(() =>
+            {
+                if (shown == null)
+                {
+                    return;
+                }
+
+                var (id, isDescending) = CategoryChoice(shown.ListId);
+
+                if (id != null)
+                {
+                    SetCategoryChoice(shown.ListId, id, !isDescending);
+                    Changed();
+                }
             });
         }
 
@@ -359,7 +555,52 @@ internal static class DungeonMakerListTools
             });
         }
 
+        Refreshers[screen] = Refresh;
         Refresh();
+    }
+
+    // The two labels ("Sort:" and "<list>:") are made as wide as the wider of them, so the two dropdowns and the
+    // two arrows stand exactly under each other.
+    private static void MatchLabels(GuiLabel first, GuiLabel second)
+    {
+        var a = first ? first.TMP_Text : null;
+        var b = second ? second.TMP_Text : null;
+
+        if (!a || !b)
+        {
+            return;
+        }
+
+        var width = Mathf.Ceil(Mathf.Max(a.GetPreferredValues(a.text).x, b.GetPreferredValues(b.text).x));
+
+        foreach (var text in new[] { a, b })
+        {
+            if (text.TryGetComponent<LayoutElement>(out var layout))
+            {
+                layout.minWidth = layout.preferredWidth = width;
+            }
+        }
+    }
+
+    // a control of the bar, wherever it is in its rows
+    private static Transform FindDeep(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == name)
+            {
+                return child;
+            }
+
+            var found = FindDeep(child, name);
+
+            if (found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     // The bar: a row of its own above the list. It takes the top strip of the rectangle the list's scroll view
@@ -378,38 +619,72 @@ internal static class DungeonMakerListTools
 
         rect.SetParent(holder.transform, false);
 
-        var layout = bar.AddComponent<HorizontalLayoutGroup>();
+        var layout = bar.AddComponent<VerticalLayoutGroup>();
 
         layout.spacing = Spacing;
-        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childAlignment = TextAnchor.UpperLeft;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
-        layout.childForceExpandWidth = false;
+        layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
-        // the layout group places them in the order they are added: search and clear, then the sort controls
-        AddSearch(bar.transform);
-        AddButton(bar.transform, sourceButton, ClearName, ClearWidth);
-        AddGap(bar.transform);
-        AddSortLabel(bar.transform, sourceButton);
-        AddSortDropdown(bar.transform);
-        AddArrow(bar.transform);
+        // Each row places its controls in the order they are added. The first: search and clear, a gap, then the
+        // main sort. The second, aligned to the right so its controls stand under the main sort's: the category
+        // sort.
+        var main = AddRow(bar.transform, MainRowName, TextAnchor.MiddleLeft);
 
-        // anchored like the scroll view from side to side, and to its top edge, ControlHeight tall
+        AddSearch(main);
+        AddButton(main, sourceButton, ClearName, ClearWidth);
+        AddGap(main);
+        AddSortLabel(main, sourceButton, SortLabelName);
+        AddSortDropdown(main, SortName);
+        AddArrow(main, DirectionName);
+
+        var second = AddRow(bar.transform, CategoryRowName, TextAnchor.MiddleRight);
+
+        AddSortLabel(second, sourceButton, CategoryLabelName);
+        AddSortDropdown(second, CategoryName);
+        AddArrow(second, CategoryDirectionName);
+
+        // anchored like the scroll view from side to side, and to its top edge, BarHeight tall
         rect.SetParent(list.parent, false);
         rect.SetSiblingIndex(list.GetSiblingIndex() + 1);
         rect.anchorMin = new Vector2(list.anchorMin.x, list.anchorMax.y);
         rect.anchorMax = new Vector2(list.anchorMax.x, list.anchorMax.y);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMax.y - ControlHeight);
+        rect.offsetMin = new Vector2(list.offsetMin.x, list.offsetMax.y - BarHeight);
         rect.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y);
 
         // the scroll view's top edge moves down by the bar and a gap; its bottom stays where it is
-        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - ControlHeight - Gap);
+        list.offsetMax = new Vector2(list.offsetMax.x, list.offsetMax.y - BarHeight - Gap);
 
         Object.Destroy(holder);
 
         return bar.transform;
+    }
+
+    // one row of the bar, ControlHeight tall
+    private static Transform AddRow(Transform bar, string name, TextAnchor alignment)
+    {
+        var row = new GameObject(name, typeof(RectTransform), typeof(LayoutElement));
+
+        row.transform.SetParent(bar, false);
+
+        var layout = row.AddComponent<HorizontalLayoutGroup>();
+
+        layout.spacing = Spacing;
+        layout.childAlignment = alignment;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+
+        var size = row.GetComponent<LayoutElement>();
+
+        size.minHeight = size.preferredHeight = ControlHeight;
+        size.flexibleHeight = 0f;
+
+        return row.transform;
     }
 
     private static void AddButton(Transform bar, GameObject source, string name, float width)
@@ -536,10 +811,11 @@ internal static class DungeonMakerListTools
         layout.flexibleWidth = 0f;
     }
 
-    // "Sort:", in the look of the bar's button text: a copy of the source button's label (a game label, GuiLabel,
-    // with its text style). It is as wide as its text, so a longer word in another language ("Сортировка:") takes
-    // the room it needs from the search field. Its text is set by Ensure.
-    private static void AddSortLabel(Transform bar, GameObject sourceButton)
+    // "Sort:" or the category row's "<list>:", in the look of the bar's button text: a copy of the source button's
+    // label (a game label, GuiLabel, with its text style), right-aligned against its dropdown. Its width is set by
+    // MatchLabels (both labels as wide as the wider text, so a longer word in another language, "Сортировка:",
+    // takes the room it needs from the search field), and its text by Ensure.
+    private static void AddSortLabel(Transform bar, GameObject sourceButton, string name)
     {
         var source = sourceButton.transform.Find("Label");
 
@@ -552,7 +828,10 @@ internal static class DungeonMakerListTools
 
         var copy = Object.Instantiate(source.gameObject, bar, false);
 
-        copy.name = SortLabelName;
+        copy.name = name;
+
+        // the label style sets the alignment when the copy wakes up; MiddleAlignment sets it after that
+        copy.AddComponent<MiddleAlignment>().Alignment = TextAlignmentOptions.MidlineRight;
 
         // the copied tooltip, if any, describes the original button
         foreach (var tooltip in copy.GetComponentsInChildren<GuiTooltip>(true))
@@ -565,7 +844,7 @@ internal static class DungeonMakerListTools
             layout = copy.AddComponent<LayoutElement>();
         }
 
-        // no fixed width: the row's layout takes the text's own preferred width
+        // until MatchLabels sets the width: the text's own preferred width
         layout.ignoreLayout = false;
         layout.minWidth = layout.preferredWidth = -1f;
         layout.flexibleWidth = 0f;
@@ -573,11 +852,11 @@ internal static class DungeonMakerListTools
         copy.SetActive(true);
     }
 
-    // The sort dropdown: the game's own dropdown (the prefab the mod's other dropdowns use, CustomDropDown). Its
+    // A sort dropdown: the game's own dropdown (the prefab the mod's other dropdowns use, CustomDropDown). Its
     // choices are filled in by Ensure.
-    private static void AddSortDropdown(Transform bar)
+    private static void AddSortDropdown(Transform bar, string name)
     {
-        var dropdown = CustomDropDown.MakeDropdown(SortName, bar);
+        var dropdown = CustomDropDown.MakeDropdown(name, bar);
 
         if (!dropdown)
         {
@@ -593,7 +872,7 @@ internal static class DungeonMakerListTools
     // The direction arrow: a copy of the campaign editor's "move up" button (the arrows beside Edit), whose arrow
     // picture is switched to the "move down" button's for descending. The editor screen exists from the start of
     // the game, shown or not.
-    private static void AddArrow(Transform bar)
+    private static void AddArrow(Transform bar, string name)
     {
         var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
         var up = editor ? editor.moveQuestUpButton : null;
@@ -611,7 +890,7 @@ internal static class DungeonMakerListTools
 
         var copy = Object.Instantiate(up.gameObject, bar, false);
 
-        copy.name = DirectionName;
+        copy.name = name;
 
         // the copied tooltip describes moving a quest; SetArrow writes its own
         foreach (var tooltip in copy.GetComponentsInChildren<GuiTooltip>(true))
@@ -707,10 +986,97 @@ internal static class DungeonMakerListTools
 
     private sealed class Row
     {
+        internal SortKey Category;
+        internal int Index;
         internal string Name;
         internal string Second;
         internal Transform Transform;
     }
+}
+
+// A row's value for a category sort key: a number, a text, or nothing. Numbers compare as numbers, texts without
+// regard to case. A group, if given, compares first, so values of different kinds (a variable's Int and String
+// starting values) are kept apart, like with like. An entry with no value comes last whichever the direction.
+internal readonly struct SortKey
+{
+    private readonly bool _has;
+    private readonly int _group;
+    private readonly double? _number;
+    private readonly string _text;
+
+    private SortKey(int group, double? number, string text)
+    {
+        _has = true;
+        _group = group;
+        _number = number;
+        _text = text;
+    }
+
+    internal static SortKey Missing => default;
+
+    internal static SortKey Of(double number)
+    {
+        return new SortKey(0, number, null);
+    }
+
+    internal static SortKey Of(bool value)
+    {
+        return new SortKey(0, value ? 1 : 0, null);
+    }
+
+    internal static SortKey Of(string text)
+    {
+        return string.IsNullOrEmpty(text) ? Missing : new SortKey(0, null, text);
+    }
+
+    internal static SortKey Grouped(int group, double? number, string text)
+    {
+        return new SortKey(group, number, text);
+    }
+
+    internal static int Compare(SortKey a, SortKey b, bool descending)
+    {
+        if (a._has != b._has)
+        {
+            return a._has ? -1 : 1;
+        }
+
+        if (!a._has)
+        {
+            return 0;
+        }
+
+        var result = a._group.CompareTo(b._group);
+
+        if (result == 0)
+        {
+            result = Nullable.Compare(a._number, b._number);
+        }
+
+        if (result == 0)
+        {
+            result = StringComparer.OrdinalIgnoreCase.Compare(a._text ?? string.Empty, b._text ?? string.Empty);
+        }
+
+        return descending ? -result : result;
+    }
+}
+
+// One key a list can be sorted by in its category row: a stable id (saved in the settings), its dropdown text
+// and how to read it from a row.
+internal sealed class CategoryOption(string id, string term, Func<Transform, SortKey> key)
+{
+    internal readonly string Id = id;
+    internal readonly Func<Transform, SortKey> Key = key;
+    internal readonly string Term = term;
+}
+
+// The list a screen's category row applies to: its id (the settings key), its shown name and its options.
+internal sealed class CategoryView(string listId, string title, IReadOnlyList<CategoryOption> options)
+{
+    internal readonly string ListId = listId;
+    internal readonly IReadOnlyList<CategoryOption> Options = options;
+    internal readonly string Title = title;
 }
 
 // Keeps a copied text label vertically centred (the search field's text and its "Search..." hint). A game label's
@@ -719,6 +1085,9 @@ internal static class DungeonMakerListTools
 // after the label's, so it comes after the style; Start, after every object's Awake, is the second chance.
 internal sealed class MiddleAlignment : MonoBehaviour
 {
+    // set right after the component is added, before the label wakes up
+    internal TextAlignmentOptions Alignment = TextAlignmentOptions.MidlineLeft;
+
     private void Start()
     {
         Apply();
@@ -733,7 +1102,7 @@ internal sealed class MiddleAlignment : MonoBehaviour
     {
         if (TryGetComponent<TMP_Text>(out var text))
         {
-            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.alignment = Alignment;
         }
     }
 }

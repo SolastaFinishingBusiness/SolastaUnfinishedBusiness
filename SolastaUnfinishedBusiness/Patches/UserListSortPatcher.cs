@@ -56,6 +56,205 @@ public static class UserListSortPatcher
     }
 
     // a content row's two sort keys; the search looks in both
+    #region Category sort options
+
+    // The keys each list can be sorted by in the category row (Codex's list of what the game's data holds,
+    // 2026-11-13, each read here from the game's own classes). Ids are saved in the settings: don't rename them.
+    // Counts are of entries (rows), not of the quantities in them.
+
+    // the picker lists the campaign's variables like the editor's Variables list, and shares its category sort
+    private const string PickerList = "Variables";
+
+    // the cheat panel's variables are the running game's, with a scope and a current value
+    private const string CheatsList = "CampaignVariables";
+
+    private static CategoryOption Option(string id, Func<Transform, SortKey> key)
+    {
+        return new CategoryOption(id, "ModUi/&DungeonMakerCategory" + id, key);
+    }
+
+    private static SortKey Number(double? value)
+    {
+        return value.HasValue ? SortKey.Of(value.Value) : SortKey.Missing;
+    }
+
+    private static T As<T>(Transform row) where T : class
+    {
+        return ContentOf(row) as T;
+    }
+
+    // a game definition as players see it: its title, or its internal name when it has none
+    private static string TitleOf(BaseDefinition definition)
+    {
+        if (!definition)
+        {
+            return null;
+        }
+
+        var title = definition.GuiPresentation?.Title;
+
+        return string.IsNullOrEmpty(title) ? definition.name : Gui.Localize(title);
+    }
+
+    // a value of a variable, kept with values of its own type: numbers and flags as numbers, text as text
+    private static SortKey ValueKey(GameVariableDefinitions.Type type, int number, bool flag, string text)
+    {
+        return type switch
+        {
+            GameVariableDefinitions.Type.Int => SortKey.Grouped((int)type, number, null),
+            GameVariableDefinitions.Type.Bool => SortKey.Grouped((int)type, flag ? 1 : 0, null),
+            _ => SortKey.Grouped((int)type, null, text ?? string.Empty)
+        };
+    }
+
+    private static readonly CategoryOption AuthorOption = Option("Author", r => SortKey.Of(ContentOf(r)?.Author));
+
+    // an ability score of a monster or NPC; the game stores the six in this order (AttributeDefinitions)
+    private static CategoryOption Ability(string id, int index)
+    {
+        return Option(id, r => As<UserCharacter>(r)?.AbilityScores is { } scores && scores.Length > index
+            ? SortKey.Of(scores[index])
+            : SortKey.Missing);
+    }
+
+    // an item's cost in copper: Costs holds one amount per coin, in the order of EquipmentDefinitions.Currency
+    // (platinum, gold, electrum, silver, copper)
+    private static readonly int[] CopperPerCoin = [1000, 100, 50, 10, 1];
+
+    private static SortKey CostKey(Transform row)
+    {
+        var costs = As<UserItem>(row)?.Costs;
+
+        if (costs == null)
+        {
+            return SortKey.Missing;
+        }
+
+        double copper = 0;
+
+        for (var i = 0; i < costs.Length && i < CopperPerCoin.Length; i++)
+        {
+            copper += (double)costs[i] * CopperPerCoin[i];
+        }
+
+        return SortKey.Of(copper);
+    }
+
+    private static readonly CategoryOption[] CharacterOptions =
+    [
+        Option("ChallengeRating", r => Number(As<UserCharacter>(r)?.ChallengeRating)),
+        Option("HitPoints", r => Number(As<UserCharacter>(r)?.HitPoints)),
+        Option("ArmorClass", r => Number(As<UserCharacter>(r)?.ArmorClass)),
+        Ability("Strength", 0),
+        Ability("Dexterity", 1),
+        Ability("Constitution", 2),
+        Ability("Intelligence", 3),
+        Ability("Wisdom", 4),
+        Ability("Charisma", 5),
+        Option("BaseCreature", r => As<UserCharacter>(r) is { } character
+            ? SortKey.Of(TitleOf(character.ReferenceMonsterDefinition) ?? character.ReferenceDefinition)
+            : SortKey.Missing),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] EncounterOptions =
+    [
+        Option("ChallengeRating", r => Number(As<UserEncounter>(r)?.ChallengeRating)),
+        Option("MonsterCount", r => Number(As<UserEncounter>(r)?.MonsterOccurences?.Count)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] LocationOptions =
+    [
+        Option("MinStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMin)),
+        Option("MaxStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMax)),
+        Option("MapSize", r => As<UserLocation>(r) is { } location
+            ? SortKey.Of((double)location.WidthCells * location.HeightCells)
+            : SortKey.Missing),
+        Option("Environment", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.Environment))),
+        Option("VisualMood", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.VisualMood))),
+        Option("CampaignStart", r => As<UserLocation>(r) is { } location
+            ? SortKey.Of(location.CampaignStart)
+            : SortKey.Missing),
+        AuthorOption
+    ];
+
+    // QuestCategory compares by the game's own order: main, secondary, destiny, hidden, faction
+    private static readonly CategoryOption[] QuestOptions =
+    [
+        Option("QuestCategory", r => As<UserQuest>(r) is { } quest ? SortKey.Of((int)quest.Category) : SortKey.Missing),
+        Option("AutoStart", r => As<UserQuest>(r) is { } quest ? SortKey.Of(quest.AutoStart) : SortKey.Missing),
+        Option("StepCount", r => Number(As<UserQuest>(r)?.AllQuestStepDescriptions?.Count)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] ItemOptions =
+    [
+        Option("BaseItem", r => As<UserItem>(r) is { } item
+            ? SortKey.Of(TitleOf(item.ReferenceItemDefinition) ?? item.ReferenceDefinition)
+            : SortKey.Missing),
+        Option("Cost", CostKey),
+        Option("Language", r => SortKey.Of(As<UserItem>(r)?.Language)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] MerchantOptions =
+    [
+        Option("Markup", r => Number(As<UserMerchantInventory>(r)?.OverchargePercent)),
+        Option("Buyback", r => Number(As<UserMerchantInventory>(r)?.BuyBackPercent)),
+        Option("IdentifyFee", r => Number(As<UserMerchantInventory>(r)?.IdentifyCostGp)),
+        Option("StockEntries", r => Number(As<UserMerchantInventory>(r)?.StockUnits?.Count)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] VariableOptions =
+    [
+        Option("VariableType", r => As<UserVariable>(r) is { } variable
+            ? SortKey.Of((int)variable.VariableType)
+            : SortKey.Missing),
+        Option("StartingValue", r => As<UserVariable>(r) is { } variable
+            ? ValueKey(variable.VariableType, variable.VariableDefaultValueInt, variable.VariableDefaultValueBool,
+                variable.VariableDefaultValueString)
+            : SortKey.Missing),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] BiomeOptions =
+    [
+        Option("Terrain", r => SortKey.Of(As<UserBiome>(r)?.TerrainType)),
+        Option("EncounterTable", r => SortKey.Of(As<UserBiome>(r)?.EncounterTable)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] DialogOptions =
+    [
+        Option("DialogStates", r => Number(As<UserDialog>(r)?.AllDialogStates?.Count)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] EncounterTableOptions =
+    [
+        Option("Entries", r => Number(As<UserEncounterTable>(r)?.EncounterOccurences?.Count)),
+        AuthorOption
+    ];
+
+    private static readonly CategoryOption[] LootPackOptions =
+    [
+        Option("Entries", r => Number(As<UserLootPack>(r)?.ItemOccurences?.Count)),
+        AuthorOption
+    ];
+
+    // the running game's variables: scope (the game's order) and current value
+    private static readonly CategoryOption[] CheatOptions =
+    [
+        Option("Scope", r => VariableOf(r) is { } variable ? SortKey.Of((int)variable.Scope) : SortKey.Missing),
+        Option("CurrentValue", r => VariableOf(r) is { } variable
+            ? ValueKey(variable.Type, variable.IntValue, variable.BoolValue, variable.StringValue)
+            : SortKey.Missing)
+    ];
+
+    #endregion
+
     private static string ContentName(Transform row)
     {
         return ContentOf(row)?.InternalName;
@@ -100,77 +299,106 @@ public static class UserListSortPatcher
         {
             {
                 "RefreshBiomes",
-                new ContentList(x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
+                new ContentList("Biomes", BiomeOptions, x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
                     x => Clear(ref x.selectedBiome),
                     x => x.biomesGroupItem)
             },
             {
                 "RefreshDialogs",
-                new ContentList(x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
+                new ContentList("Dialogs", DialogOptions, x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
                     x => Clear(ref x.selectedDialog),
                     x => x.dialogsGroupItem)
             },
             {
                 "RefreshEncounters",
-                new ContentList(x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
+                new ContentList("Encounters", EncounterOptions, x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
                     x => Clear(ref x.selectedEncounter),
                     x => x.encountersGroupItem)
             },
             {
                 "RefreshEncounterTables",
-                new ContentList(x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
+                new ContentList("EncounterTables", EncounterTableOptions, x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
                     x => x.moveEncounterTableDownButton, x => Clear(ref x.selectedEncounterTable),
                     x => x.encounterTablesGroupItem)
             },
             {
                 "RefreshItems",
-                new ContentList(x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
+                new ContentList("Items", ItemOptions, x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
                     x => Clear(ref x.selectedItem),
                     x => x.itemsGroupItem)
             },
             {
                 "RefreshLocations",
-                new ContentList(x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
+                new ContentList("Locations", LocationOptions, x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
                     x => Clear(ref x.selectedLocation),
                     x => x.locationsGroupItem)
             },
             {
                 "RefreshLootPacks",
-                new ContentList(x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
+                new ContentList("LootPacks", LootPackOptions, x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
                     x => Clear(ref x.selectedLootPack),
                     x => x.lootPacksGroupItem)
             },
             {
                 "RefreshMerchantInventories",
-                new ContentList(x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
+                new ContentList("MerchantInventories", MerchantOptions, x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
                     x => x.moveMerchantInventoryDownButton, x => Clear(ref x.selectedMerchantInventory),
                     x => x.merchantIventoriesGroupItem)
             },
             {
                 "RefreshMonsters",
-                new ContentList(x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
+                new ContentList("Monsters", CharacterOptions, x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
                     x => Clear(ref x.selectedMonster),
                     x => x.monstersGroupItem)
             },
             {
                 "RefreshNpcs",
-                new ContentList(x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
+                new ContentList("Npcs", CharacterOptions, x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
                     x => Clear(ref x.selectedNpc),
                     x => x.npcsGroupItem)
             },
             {
                 "RefreshQuests",
-                new ContentList(x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
+                new ContentList("Quests", QuestOptions, x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
                     x => Clear(ref x.selectedQuest),
                     x => x.questsGroupItem)
             },
             {
                 "RefreshVariables",
-                new ContentList(x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
+                new ContentList("Variables", VariableOptions, x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
                     x => Clear(ref x.selectedVariable),
                     x => x.variablesGroupItem)
             }
         };
+
+        // The list the category row shows (user's choice, 2026-11-13: each list has its own category sort, and the
+        // row shows the one opened last). Set when a list is unfolded by its header or a shortcut icon; until then,
+        // the first open list.
+        private static string _lastOpened;
+
+        internal static void NoteOpened(UserCampaignEditorScreen screen, string refreshMethod)
+        {
+            if (refreshMethod != null && Lists.TryGetValue(refreshMethod, out var list) && list.Group(screen) is
+                    { folded: false })
+            {
+                _lastOpened = refreshMethod;
+            }
+        }
+
+        internal static CategoryView CategoryViewOf(UserCampaignEditorScreen screen)
+        {
+            var key = _lastOpened ?? Lists.FirstOrDefault(x => x.Value.Group(screen) is { folded: false }).Key;
+
+            if (key == null || !Lists.TryGetValue(key, out var list))
+            {
+                return null;
+            }
+
+            var header = list.Group(screen)?.HeaderLabel;
+            var title = header && header.TMP_Text ? header.TMP_Text.text : list.Id;
+
+            return new CategoryView(list.Id, title, list.Options);
+        }
 
         // sets a list's selected index to "none"; false when nothing was selected
         private static bool Clear(ref int selected)
@@ -186,6 +414,8 @@ public static class UserListSortPatcher
         }
 
         internal sealed class ContentList(
+            string id,
+            CategoryOption[] options,
             Func<UserCampaignEditorScreen, Transform> table,
             Func<UserCampaignEditorScreen, Button> moveUp,
             Func<UserCampaignEditorScreen, Button> moveDown,
@@ -194,6 +424,10 @@ public static class UserListSortPatcher
         {
             internal readonly Func<UserCampaignEditorScreen, bool> ClearSelection = clearSelection;
             internal readonly Func<UserCampaignEditorScreen, CampaignContentGroupItem> Group = group;
+
+            // the settings key of the list's category sort, and the keys it can be sorted by
+            internal readonly string Id = id;
+            internal readonly CategoryOption[] Options = options;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveDown = moveDown;
             internal readonly Func<UserCampaignEditorScreen, Button> MoveUp = moveUp;
             internal readonly Func<UserCampaignEditorScreen, Transform> Table = table;
@@ -231,8 +465,9 @@ public static class UserListSortPatcher
             // dropped when the search leaves the selected row out. Either way Edit and Delete never act on an
             // item that isn't shown. The refresh asked for works the list's buttons out again with nothing
             // selected; it can't come back here in a loop, as Clear then finds nothing selected.
-            var hidSelected =
-                DungeonMakerListTools.Apply(list.Table(screen), Editor, ContentName, ContentTitle, IsSelected);
+            var option = DungeonMakerListTools.ChosenOption(list.Id, list.Options, out var descending);
+            var hidSelected = DungeonMakerListTools.Apply(
+                list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending);
             var group = list.Group(screen);
 
             if ((hidSelected || (group && group.folded)) && list.ClearSelection(screen))
@@ -240,7 +475,8 @@ public static class UserListSortPatcher
                 screen.Dirty = true;
             }
 
-            if (DungeonMakerListTools.IsPlain(Editor))
+            // the move arrows swap neighbours in the campaign's order, which a category sort also changes
+            if (DungeonMakerListTools.IsPlain(Editor) && option == null)
             {
                 return;
             }
@@ -275,10 +511,31 @@ public static class UserListSortPatcher
             }.Select(x => AccessTools.Method(typeof(UserCampaignEditorScreen), x));
         }
 
-        [UsedImplicitly]
-        public static void Postfix(UserCampaignEditorScreen __instance)
+        // the Refresh method of the list each fold method belongs to
+        private static readonly Dictionary<string, string> RefreshOf = new()
         {
+            { "BiomeFoldChanged", "RefreshBiomes" },
+            { "DialogFoldChanged", "RefreshDialogs" },
+            { "EncounterFoldChanged", "RefreshEncounters" },
+            { "EncounterTableFoldChanged", "RefreshEncounterTables" },
+            { "ItemFoldChanged", "RefreshItems" },
+            { "LocationFoldChanged", "RefreshLocations" },
+            { "LootPackFoldChanged", "RefreshLootPacks" },
+            { "MerchantInventoryFoldChanged", "RefreshMerchantInventories" },
+            { "MonsterFoldChanged", "RefreshMonsters" },
+            { "NpcFoldChanged", "RefreshNpcs" },
+            { "QuestFoldChanged", "RefreshQuests" },
+            { "VariableFoldChanged", "RefreshVariables" }
+        };
+
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignEditorScreen __instance, MethodBase __originalMethod)
+        {
+            // a list opened by its header is the one the category row shows from now on
+            UserCampaignEditorScreen_RefreshLists.NoteOpened(
+                __instance, RefreshOf.TryGetValue(__originalMethod.Name, out var refresh) ? refresh : null);
             ApplyToAll(__instance);
+            DungeonMakerListTools.RefreshBar(Editor);
         }
 
         internal static void ApplyToAll(UserCampaignEditorScreen screen)
@@ -300,7 +557,19 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
+            // the icon leaves one list open: that one is shown in the category row
+            var open = UserCampaignEditorScreen_RefreshLists.Lists
+                .Where(x => x.Value.Group(__instance) is { folded: false })
+                .Select(x => x.Key)
+                .ToList();
+
+            if (open.Count == 1)
+            {
+                UserCampaignEditorScreen_RefreshLists.NoteOpened(__instance, open[0]);
+            }
+
             UserCampaignEditorScreen_FoldChanged.ApplyToAll(__instance);
+            DungeonMakerListTools.RefreshBar(Editor);
         }
     }
 
@@ -332,7 +601,7 @@ public static class UserListSortPatcher
                     {
                         __instance.Dirty = true;
                     }
-                });
+                }, () => UserCampaignEditorScreen_RefreshLists.CategoryViewOf(__instance));
         }
     }
 
@@ -354,8 +623,11 @@ public static class UserListSortPatcher
         // isn't shown. The refresh works Validate's state out again.
         internal static void ApplyTo(UserVariableSelectionModal picker)
         {
+            var option = DungeonMakerListTools.ChosenOption(PickerList, VariableOptions, out var descending);
+
             if (!DungeonMakerListTools.Apply(
-                    picker.userVariablesTable, Picker, ContentName, ContentTitle, IsSelected))
+                    picker.userVariablesTable, Picker, ContentName, ContentTitle, IsSelected, option?.Key,
+                    descending))
             {
                 return;
             }
@@ -385,7 +657,9 @@ public static class UserListSortPatcher
         {
             DungeonMakerListTools.Ensure(__instance.transform, Picker, "MainPanel/UserVariablesScrollview",
                 "MainPanel/ButtonsBar/CancelButton", "ModUi/&DungeonMakerSortTitle",
-                () => UserVariableSelectionModal_EnumerateLines.ApplyTo(__instance));
+                () => UserVariableSelectionModal_EnumerateLines.ApplyTo(__instance),
+                () => new CategoryView(PickerList, Gui.Localize("ModUi/&DungeonMakerCategoryVariables"),
+                    VariableOptions));
         }
     }
 
@@ -425,7 +699,9 @@ public static class UserListSortPatcher
         {
             var table = panel.variableLinesTable;
 
-            DungeonMakerListTools.Apply(table, Cheats, VariableName, VariableType);
+            var option = DungeonMakerListTools.ChosenOption(CheatsList, CheatOptions, out var descending);
+
+            DungeonMakerListTools.Apply(table, Cheats, VariableName, VariableType, null, option?.Key, descending);
             LayoutRebuilder.ForceRebuildLayoutImmediate(table);
         }
     }
@@ -448,7 +724,9 @@ public static class UserListSortPatcher
         {
             DungeonMakerListTools.Ensure(__instance.transform, Cheats, "MainPanel/VariableLinesScrollview",
                 "MainPanel/ButtonsBar/CloseButton", "ModUi/&DungeonMakerSortType",
-                () => CampaignVariablesModal_EnumerateVariableLines.ApplyTo(__instance));
+                () => CampaignVariablesModal_EnumerateVariableLines.ApplyTo(__instance),
+                () => new CategoryView(CheatsList, Gui.Localize("ModUi/&DungeonMakerCategoryVariables"),
+                    CheatOptions));
         }
     }
 }
