@@ -36,6 +36,11 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // direction, and rows with equal keys by the main sort, in its direction, then by the campaign's order. Numbers
 // compare as numbers; an entry without a value for the key comes last in both directions.
 //
+// While a list has a category sort whose field its rows don't show (all but a location's author, start levels,
+// environment and campaign start), each row carries a small overlay at its right end with that row's value (user,
+// 2026-11-13: "a temporary overlay for each entry that shows the value of the field while that particular sort is
+// active"). It goes when the list is back on Default.
+//
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
 //
@@ -83,6 +88,14 @@ internal static class DungeonMakerListTools
     private const string CategoryName = "Category";
     private const string CategoryDirectionName = "CategoryDirection";
     private const string ListSortRowName = "FbListSort";
+    private const string OverlayName = "FbSortValue";
+
+    // the per-list sort row: indented from the group's left edge, under the header's fold arrow
+    private const int ListSortIndent = 24;
+
+    // the value overlay on a row: its width, and its gap from the row's right end
+    private const float OverlayWidth = 220f;
+    private const float OverlayMargin = 8f;
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
     // controls leave of the bar's width
@@ -221,7 +234,7 @@ internal static class DungeonMakerListTools
     internal static bool Apply(
         Transform table, string screen, Func<Transform, string> name, Func<Transform, string> second,
         Func<Transform, bool> isSelected = null, Func<Transform, SortKey> category = null,
-        bool categoryDescending = false)
+        bool categoryDescending = false, Func<Transform, string> overlay = null)
     {
         if (!table || !BoundRows.TryGetValue(table, out var rows) || rows.Count == 0)
         {
@@ -309,6 +322,9 @@ internal static class DungeonMakerListTools
             {
                 row.Transform.gameObject.SetActive(shown);
             }
+
+            // the category field's value, while the list is sorted by a field its rows don't show
+            SetOverlay(row.Transform, category != null && overlay != null ? overlay(row.Transform) : null);
 
             hidSelected |= !shown && isSelected != null && isSelected(row.Transform);
         }
@@ -578,7 +594,7 @@ internal static class DungeonMakerListTools
             var holder = new GameObject("FbHolder");
 
             holder.SetActive(false);
-            row = AddRow(holder.transform, ListSortRowName, TextAnchor.MiddleLeft);
+            row = AddRow(holder.transform, ListSortRowName, TextAnchor.MiddleLeft, ListSortIndent);
             AddSortLabel(row, sourceButton, SortLabelName);
             AddSortDropdown(row, CategoryName);
             AddArrow(row, CategoryDirectionName);
@@ -594,6 +610,22 @@ internal static class DungeonMakerListTools
         if (label)
         {
             label.Text = Gui.Localize("ModUi/&DungeonMakerSortLabel");
+            FitToText(label);
+        }
+
+        // As wide as the group's header. The group's other parts each carry the list's width themselves (986 units
+        // in the prefab, HeaderGroup, the item table, ButtonsBar), so the group's layout doesn't give its children
+        // a width, and a new row kept the 100 units a new object starts with: the dropdown and the arrow, which
+        // have fixed widths, then left "Sort:" no room at all (seen in game on cd9aa39a, 2026-11-13).
+        var header = group.Find("HeaderGroup") as RectTransform;
+        var rowRect = (RectTransform)row;
+        var width = header && header.rect.width > 0 ? header.rect.width : 986f;
+
+        rowRect.sizeDelta = new Vector2(width, rowRect.sizeDelta.y);
+
+        if (row.TryGetComponent<LayoutElement>(out var rowLayout))
+        {
+            rowLayout.minWidth = rowLayout.preferredWidth = width;
         }
 
         if (dropdown)
@@ -664,6 +696,108 @@ internal static class DungeonMakerListTools
         }
 
         RefreshRow();
+    }
+
+    // a label as wide as its text, measured, not left to the layout
+    private static void FitToText(GuiLabel label)
+    {
+        var text = label ? label.TMP_Text : null;
+
+        if (!text || !text.TryGetComponent<LayoutElement>(out var layout))
+        {
+            return;
+        }
+
+        layout.minWidth = layout.preferredWidth = Mathf.Ceil(text.GetPreferredValues(text.text).x) + 4f;
+    }
+
+    // Shows text in the row's value overlay, made the first time it is needed; null hides it. The overlay is laid
+    // over the row's right end (it takes no part in the row's own layout) on a dark backing, in the row's
+    // smallest font, so it can be read whatever the row shows there.
+    private static void SetOverlay(Transform row, string text)
+    {
+        var overlay = row.Find(OverlayName);
+
+        if (text == null)
+        {
+            if (overlay && overlay.gameObject.activeSelf)
+            {
+                overlay.gameObject.SetActive(false);
+            }
+
+            return;
+        }
+
+        if (!overlay)
+        {
+            overlay = MakeOverlay(row);
+
+            if (!overlay)
+            {
+                return;
+            }
+        }
+
+        overlay.SetAsLastSibling();
+        overlay.gameObject.SetActive(true);
+
+        var label = overlay.GetComponentInChildren<TMP_Text>(true);
+
+        if (label)
+        {
+            label.text = text;
+        }
+    }
+
+    private static Transform MakeOverlay(Transform row)
+    {
+        // the row's own text style: its smallest label
+        var source = row.GetComponentsInChildren<TMP_Text>(true)
+            .Where(x => x.font && x.fontSize > 0)
+            .OrderBy(x => x.fontSize)
+            .FirstOrDefault();
+
+        if (!source)
+        {
+            return null;
+        }
+
+        var overlay = new GameObject(OverlayName, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+        var rect = (RectTransform)overlay.transform;
+
+        rect.SetParent(row, false);
+        overlay.GetComponent<LayoutElement>().ignoreLayout = true;
+        rect.anchorMin = new Vector2(1f, 0f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 0.5f);
+        rect.sizeDelta = new Vector2(OverlayWidth, -OverlayMargin);
+        rect.anchoredPosition = new Vector2(-OverlayMargin, 0f);
+
+        var backing = overlay.GetComponent<Image>();
+
+        backing.color = new Color(0.1f, 0.1f, 0.1f, 0.9f);
+        backing.raycastTarget = false;
+
+        var textObject = new GameObject("Text", typeof(RectTransform));
+        var textRect = (RectTransform)textObject.transform;
+
+        textRect.SetParent(rect, false);
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(OverlayMargin, 0f);
+        textRect.offsetMax = new Vector2(-OverlayMargin, 0f);
+
+        var label = textObject.AddComponent<TextMeshProUGUI>();
+
+        label.font = source.font;
+        label.fontSize = source.fontSize;
+        label.color = source.color;
+        label.alignment = TextAlignmentOptions.MidlineRight;
+        label.enableWordWrapping = false;
+        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.raycastTarget = false;
+
+        return rect;
     }
 
     // the editor's category sort row is shown with its list, i.e. while the group is open
@@ -787,7 +921,7 @@ internal static class DungeonMakerListTools
     }
 
     // one row of the bar, ControlHeight tall
-    private static Transform AddRow(Transform bar, string name, TextAnchor alignment)
+    private static Transform AddRow(Transform bar, string name, TextAnchor alignment, int indent = 0)
     {
         var row = new GameObject(name, typeof(RectTransform), typeof(LayoutElement));
 
@@ -801,6 +935,7 @@ internal static class DungeonMakerListTools
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
+        layout.padding = new RectOffset(indent, 0, 0, 0);
 
         var size = row.GetComponent<LayoutElement>();
 
@@ -1122,17 +1257,37 @@ internal static class DungeonMakerListTools
 // starting values) are kept apart, like with like. An entry with no value comes last whichever the direction.
 internal readonly struct SortKey
 {
+    private readonly bool _flag;
     private readonly bool _has;
     private readonly int _group;
     private readonly double? _number;
     private readonly string _text;
 
-    private SortKey(int group, double? number, string text)
+    private SortKey(int group, double? number, string text, bool flag = false)
     {
         _has = true;
         _group = group;
         _number = number;
         _text = text;
+        _flag = flag;
+    }
+
+    // the value as the overlay shows it
+    internal string Display()
+    {
+        if (!_has)
+        {
+            return "-";
+        }
+
+        if (_flag)
+        {
+            return Gui.Localize(_number > 0 ? "ModUi/&DungeonMakerCategoryYes" : "ModUi/&DungeonMakerCategoryNo");
+        }
+
+        return _number.HasValue
+            ? _number.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+            : _text ?? string.Empty;
     }
 
     internal static SortKey Missing => default;
@@ -1144,7 +1299,13 @@ internal readonly struct SortKey
 
     internal static SortKey Of(bool value)
     {
-        return new SortKey(0, value ? 1 : 0, null);
+        return Flag(0, value);
+    }
+
+    // a yes/no value: compares as 0 and 1, shown as Yes or No
+    internal static SortKey Flag(int group, bool value)
+    {
+        return new SortKey(group, value ? 1 : 0, null, true);
     }
 
     internal static SortKey Of(string text)
@@ -1185,10 +1346,12 @@ internal readonly struct SortKey
     }
 }
 
-// One key a list can be sorted by in its category row: a stable id (saved in the settings), its dropdown text
-// and how to read it from a row.
-internal sealed class CategoryOption(string id, string term, Func<Transform, SortKey> key)
+// One key a list can be sorted by in its category row: a stable id (saved in the settings), its dropdown text,
+// how to read it from a row, and the text of the row's value overlay (null when the rows show the field already).
+internal sealed class CategoryOption(
+    string id, string term, Func<Transform, SortKey> key, Func<Transform, string> display)
 {
+    internal readonly Func<Transform, string> Display = display;
     internal readonly string Id = id;
     internal readonly Func<Transform, SortKey> Key = key;
     internal readonly string Term = term;

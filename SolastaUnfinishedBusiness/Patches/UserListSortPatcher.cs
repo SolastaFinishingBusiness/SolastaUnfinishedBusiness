@@ -68,9 +68,18 @@ public static class UserListSortPatcher
     // the cheat panel's variables are the running game's, with a scope and a current value
     private const string CheatsList = "CampaignVariables";
 
-    private static CategoryOption Option(string id, Func<Transform, SortKey> key)
+    // a key whose value the rows don't show: while it sorts the list, each row's overlay shows it (by default as
+    // the key's own value: a number, a text, Yes or No)
+    private static CategoryOption Option(
+        string id, Func<Transform, SortKey> key, Func<Transform, string> display = null)
     {
-        return new CategoryOption(id, "ModUi/&DungeonMakerCategory" + id, key);
+        return new CategoryOption(id, "ModUi/&DungeonMakerCategory" + id, key, display ?? (r => key(r).Display()));
+    }
+
+    // a key the rows show already (a location's author, start levels, environment, campaign start): no overlay
+    private static CategoryOption Shown(string id, Func<Transform, SortKey> key)
+    {
+        return new CategoryOption(id, "ModUi/&DungeonMakerCategory" + id, key, null);
     }
 
     private static SortKey Number(double? value)
@@ -102,12 +111,37 @@ public static class UserListSortPatcher
         return type switch
         {
             GameVariableDefinitions.Type.Int => SortKey.Grouped((int)type, number, null),
-            GameVariableDefinitions.Type.Bool => SortKey.Grouped((int)type, flag ? 1 : 0, null),
+            GameVariableDefinitions.Type.Bool => SortKey.Flag((int)type, flag),
             _ => SortKey.Grouped((int)type, null, text ?? string.Empty)
         };
     }
 
     private static readonly CategoryOption AuthorOption = Option("Author", r => SortKey.Of(ContentOf(r)?.Author));
+
+    // the location rows show their author (UserLocationLine.authorLabel)
+    private static readonly CategoryOption ShownAuthorOption =
+        Shown("Author", r => SortKey.Of(ContentOf(r)?.Author));
+
+    // the cost in the item's own coins, e.g. "1 pp 5 gp"
+    private static readonly string[] CoinNames = ["pp", "gp", "ep", "sp", "cp"];
+
+    private static string CostText(Transform row)
+    {
+        var costs = As<UserItem>(row)?.Costs;
+
+        if (costs == null)
+        {
+            return "-";
+        }
+
+        var parts = costs
+            .Take(CoinNames.Length)
+            .Select((amount, coin) => amount != 0 ? $"{amount} {CoinNames[coin]}" : null)
+            .Where(x => x != null)
+            .ToList();
+
+        return parts.Count == 0 ? "0" : string.Join(" ", parts);
+    }
 
     // an ability score of a monster or NPC; the game stores the six in this order (AttributeDefinitions)
     private static CategoryOption Ability(string id, int index)
@@ -166,23 +200,27 @@ public static class UserListSortPatcher
 
     private static readonly CategoryOption[] LocationOptions =
     [
-        Option("MinStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMin)),
-        Option("MaxStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMax)),
+        Shown("MinStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMin)),
+        Shown("MaxStartLevel", r => Number(As<UserLocation>(r)?.StartLevelMax)),
         Option("MapSize", r => As<UserLocation>(r) is { } location
-            ? SortKey.Of((double)location.WidthCells * location.HeightCells)
-            : SortKey.Missing),
-        Option("Environment", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.Environment))),
+                ? SortKey.Of((double)location.WidthCells * location.HeightCells)
+                : SortKey.Missing,
+            r => As<UserLocation>(r) is { } location ? $"{location.WidthCells} x {location.HeightCells}" : "-"),
+        Shown("Environment", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.Environment))),
         Option("VisualMood", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.VisualMood))),
-        Option("CampaignStart", r => As<UserLocation>(r) is { } location
-            ? SortKey.Of(location.CampaignStart)
+        // the campaign's starting location first when ascending (user, 2026-11-13: "those with Campaign start at the
+        // very top for Ascending"); the rows show it with an icon
+        Shown("CampaignStart", r => As<UserLocation>(r) is { } location
+            ? SortKey.Of(location.CampaignStart ? 0 : 1)
             : SortKey.Missing),
-        AuthorOption
+        ShownAuthorOption
     ];
 
     // QuestCategory compares by the game's own order: main, secondary, destiny, hidden, faction
     private static readonly CategoryOption[] QuestOptions =
     [
-        Option("QuestCategory", r => As<UserQuest>(r) is { } quest ? SortKey.Of((int)quest.Category) : SortKey.Missing),
+        Option("QuestCategory", r => As<UserQuest>(r) is { } quest ? SortKey.Of((int)quest.Category) : SortKey.Missing,
+            r => As<UserQuest>(r)?.Category.ToString() ?? "-"),
         Option("AutoStart", r => As<UserQuest>(r) is { } quest ? SortKey.Of(quest.AutoStart) : SortKey.Missing),
         Option("StepCount", r => Number(As<UserQuest>(r)?.AllQuestStepDescriptions?.Count)),
         AuthorOption
@@ -193,7 +231,7 @@ public static class UserListSortPatcher
         Option("BaseItem", r => As<UserItem>(r) is { } item
             ? SortKey.Of(TitleOf(item.ReferenceItemDefinition) ?? item.ReferenceDefinition)
             : SortKey.Missing),
-        Option("Cost", CostKey),
+        Option("Cost", CostKey, CostText),
         Option("Language", r => SortKey.Of(As<UserItem>(r)?.Language)),
         AuthorOption
     ];
@@ -210,8 +248,9 @@ public static class UserListSortPatcher
     private static readonly CategoryOption[] VariableOptions =
     [
         Option("VariableType", r => As<UserVariable>(r) is { } variable
-            ? SortKey.Of((int)variable.VariableType)
-            : SortKey.Missing),
+                ? SortKey.Of((int)variable.VariableType)
+                : SortKey.Missing,
+            r => As<UserVariable>(r)?.VariableType.ToString() ?? "-"),
         Option("StartingValue", r => As<UserVariable>(r) is { } variable
             ? ValueKey(variable.VariableType, variable.VariableDefaultValueInt, variable.VariableDefaultValueBool,
                 variable.VariableDefaultValueString)
@@ -247,7 +286,8 @@ public static class UserListSortPatcher
     // the running game's variables: scope (the game's order) and current value
     private static readonly CategoryOption[] CheatOptions =
     [
-        Option("Scope", r => VariableOf(r) is { } variable ? SortKey.Of((int)variable.Scope) : SortKey.Missing),
+        Option("Scope", r => VariableOf(r) is { } variable ? SortKey.Of((int)variable.Scope) : SortKey.Missing,
+            r => VariableOf(r)?.Scope.ToString() ?? "-"),
         Option("CurrentValue", r => VariableOf(r) is { } variable
             ? ValueKey(variable.Type, variable.IntValue, variable.BoolValue, variable.StringValue)
             : SortKey.Missing)
@@ -438,7 +478,8 @@ public static class UserListSortPatcher
             // selected; it can't come back here in a loop, as Clear then finds nothing selected.
             var option = DungeonMakerListTools.ChosenOption(list.Id, list.Options, out var descending);
             var hidSelected = DungeonMakerListTools.Apply(
-                list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending);
+                list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending,
+                option?.Display);
             var group = list.Group(screen);
 
             // the list's category sort row is shown while its group is open
@@ -604,7 +645,7 @@ public static class UserListSortPatcher
 
             if (!DungeonMakerListTools.Apply(
                     picker.userVariablesTable, Picker, ContentName, ContentTitle, IsSelected, option?.Key,
-                    descending))
+                    descending, option?.Display))
             {
                 return;
             }
@@ -678,7 +719,8 @@ public static class UserListSortPatcher
 
             var option = DungeonMakerListTools.ChosenOption(CheatsList, CheatOptions, out var descending);
 
-            DungeonMakerListTools.Apply(table, Cheats, VariableName, VariableType, null, option?.Key, descending);
+            DungeonMakerListTools.Apply(
+                table, Cheats, VariableName, VariableType, null, option?.Key, descending, option?.Display);
             LayoutRebuilder.ForceRebuildLayoutImmediate(table);
         }
     }
