@@ -490,19 +490,20 @@ internal static class DungeonMakerListTools
             // be an arrow"); its tooltip says which
             SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
-            // the full "Categories: ..." on the button in the editor; in a palette only "Default" or "A-Z" on it, and the
-            // full text always as its tooltip
-            var orderTerm = CategoriesAlphabetical
-                ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
-                : "ModUi/&DungeonMakerCategoryOrderDefault";
 
-            SetText(categoryOrder,
-                !stacked
-                    ? orderTerm
-                    : CategoriesAlphabetical
-                        ? "ModUi/&DungeonMakerCategoryOrderShortAlphabetical"
-                        : "ModUi/&DungeonMakerSortDefault");
-            SetTooltip(categoryOrder, orderTerm);
+            // The toggle's text is built from pieces, each translated once (user, 2026-11-13: "Use modular translations
+            // instead of having multiple lines translating the same text"): the order ("Default", the main sort's own
+            // word, or "A-Z"), and in the editor "Categories" in front of it through the language's "{0}: {1}"
+            // template. In a palette the button shows the order alone. The tooltip is only "Categories" in both (user,
+            // same day: "hover shows only "Categories", without the colon").
+            var categories = Gui.Localize("ModUi/&DungeonMakerCategories");
+            var order = Gui.Localize(CategoriesAlphabetical
+                ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
+                : "ModUi/&DungeonMakerSortDefault");
+
+            SetRawText(categoryOrder,
+                stacked ? order : string.Format(Gui.Localize("ModUi/&DungeonMakerNameValue"), categories, order));
+            SetTooltip(categoryOrder, "ModUi/&DungeonMakerCategories");
             FitButtonToText(categoryOrder);
             RefreshCategory();
 
@@ -539,7 +540,7 @@ internal static class DungeonMakerListTools
 
             if (categoryDropdown)
             {
-                var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerCategoryNone") };
+                var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerSortDefault") };
 
                 texts.AddRange(options.Select(x => Gui.Localize(x.Term)));
                 categoryDropdown.ClearOptions();
@@ -729,7 +730,7 @@ internal static class DungeonMakerListTools
 
         if (dropdown)
         {
-            var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerCategoryNone") };
+            var texts = new List<string> { Gui.Localize("ModUi/&DungeonMakerSortDefault") };
 
             texts.AddRange(options.Select(x => Gui.Localize(x.Term)));
             dropdown.onValueChanged = new TMP_Dropdown.DropdownEvent();
@@ -1406,6 +1407,17 @@ internal static class DungeonMakerListTools
         if (label)
         {
             label.Text = Gui.Localize(term);
+        }
+    }
+
+    // a button's label set to text already put together (see the category order toggle)
+    private static void SetRawText(Button button, string text)
+    {
+        var label = button ? button.transform.Find("Label")?.GetComponent<GuiLabel>() : null;
+
+        if (label)
+        {
+            label.Text = text;
         }
     }
 

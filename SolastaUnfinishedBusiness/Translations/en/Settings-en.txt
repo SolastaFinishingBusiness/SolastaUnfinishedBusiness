@@ -9,6 +9,7 @@ ModUi/&AddHumanoidFavoredEnemyToRanger=Enable <color=#D89555>Humanoid</color> pr
 ModUi/&AddNewScrollsToShops=Add scrolls for new spells to appropriate shops <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewScrollsToTreasure=Add scrolls for new spells to appropriate treasure packs <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewWeaponsAndRecipesToShops=Add new weapons and recipes to shops <i><color=#F0DAA0>[hand wraps, halberds, pikes, long maces, hand crossbows]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
+ModUi/&DungeonMakerCategories=Categories
 ModUi/&DungeonMakerCategoryArmorClass=Armor class
 ModUi/&DungeonMakerCategoryAuthor=Author
 ModUi/&DungeonMakerCategoryAutoStart=Auto-start
@@ -38,10 +39,7 @@ ModUi/&DungeonMakerCategoryMinStartLevel=Min. start level
 ModUi/&DungeonMakerCategoryMonsterCount=Monster entries
 ModUi/&DungeonMakerCategoryNo=No
 ModUi/&DungeonMakerCategoryNoList=No list open
-ModUi/&DungeonMakerCategoryNone=Default
-ModUi/&DungeonMakerCategoryOrderAlphabetical=Categories: A-Z
-ModUi/&DungeonMakerCategoryOrderDefault=Categories: Default
-ModUi/&DungeonMakerCategoryOrderShortAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
 ModUi/&DungeonMakerCategoryQuestCategory=Category
 ModUi/&DungeonMakerCategoryScope=Scope
 ModUi/&DungeonMakerCategoryStartingValue=Starting value
@@ -54,6 +52,7 @@ ModUi/&DungeonMakerCategoryVariables=Variables
 ModUi/&DungeonMakerCategoryVisualMood=Visual mood
 ModUi/&DungeonMakerCategoryWisdom=Wisdom
 ModUi/&DungeonMakerCategoryYes=Yes
+ModUi/&DungeonMakerNameValue={0}: {1}
 ModUi/&DungeonMakerSearch=Search...
 ModUi/&DungeonMakerSearchClear=Clear
 ModUi/&DungeonMakerSortAscending=Ascending
