@@ -96,8 +96,11 @@ public static class BlueprintPaletteSortPatcher
         }
     }
 
-    // gives each header just bound the fold its category had (the game's own ForceFoldOrUnfold: flag, toggle, table,
-    // arrow, with no callbacks)
+    // Gives each header just bound the fold its category had (the game's own ForceFoldOrUnfold: flag, toggle, table,
+    // arrow, with no callbacks). A category with no remembered fold is one this palette hasn't shown before, such as
+    // Harvestables, which Town offers and Catacombs and Necropolis don't. It starts folded (user, 2026-11-13: "Start
+    // them folded"); otherwise it would keep the folded flag of whichever pooled header it got (seen in game on
+    // 52a5e21b: Harvestables open in the place of the open Traps).
     private static void RestoreFolds(BaseBlueprintSelectionPanel panel, IEnumerable<BlueprintCategoryItem> categories)
     {
         if (!Folds.TryGetValue(panel, out var folds))
@@ -109,7 +112,14 @@ public static class BlueprintPaletteSortPatcher
         {
             var key = CategoryKeyOf(category);
 
-            if (key != null && folds.TryGetValue(key, out var folded) && category.folded != folded)
+            if (key == null)
+            {
+                continue;
+            }
+
+            var folded = !folds.TryGetValue(key, out var remembered) || remembered;
+
+            if (category.folded != folded)
             {
                 category.ForceFoldOrUnfold(folded);
             }
