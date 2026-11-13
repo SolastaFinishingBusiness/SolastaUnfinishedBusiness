@@ -266,7 +266,8 @@ public static class BlueprintPaletteSortPatcher
 
             DungeonMakerListTools.Ensure(__instance.transform, KeyOf(__instance), "BlueprintsScrollview",
                 SourceButton, "ModUi/&DungeonMakerSortTitle", ApplyAll, null, stacked: true,
-                keepSearch: true, sourceRoot: editor ? editor.transform : null, sections: true);
+                keepSearch: true, sourceRoot: editor ? editor.transform : null, sections: true,
+                searched: () => Apply(__instance));
 
             // the categories the game has just bound, and in each the rows it bound
             var categories = Bound.GetOrCreateValue(__instance);
@@ -282,8 +283,16 @@ public static class BlueprintPaletteSortPatcher
                 }
             }
 
-            // each category gets its own fold back, unless the game reset them all
-            if (!resetFold)
+            // Each category gets its own fold back, unless the game reset them all. A reset (the location editor
+            // opening a location, UserLocationEditorScreen.Show -> Bind(true)) also forgets the history: the palette
+            // object is reused from location to location, and a fold kept from an earlier location would otherwise
+            // come back for a category this one never showed (Codex's review of 52a5e21b). The next Unbind remembers
+            // the folds afresh.
+            if (resetFold)
+            {
+                Folds.Remove(__instance);
+            }
+            else
             {
                 RestoreFolds(__instance, categories);
             }

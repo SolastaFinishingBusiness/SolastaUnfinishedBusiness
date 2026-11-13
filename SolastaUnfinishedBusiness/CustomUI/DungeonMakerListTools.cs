@@ -227,13 +227,22 @@ internal static class DungeonMakerListTools
         }
     }
 
-    // A text as the sort and the search compare it: without rich-text tags. Some titles carry them, such as the
-    // mod's own coloured "Flat Rooms" category and its rooms (Codex's review of 72916454); the screen keeps them.
+    // A text as the sort and the search compare it: as the player reads it, without TextMeshPro's rich-text tags.
+    // Some titles carry them, such as the mod's own coloured "Flat Rooms" category and its rooms (Codex's review of
+    // 72916454); the screen keeps them. Only TextMeshPro's tags are removed (its documented tag names, and "<#rrggbb>"
+    // colours; the game's TextMeshPro matches tags by a hash of the name, so the list isn't read from it): it shows
+    // any other text in angle brackets as written, such as an author's "<Unnamed>", so that text
+    // stays searchable and sorts where it reads (Codex's review of 52a5e21b; the earlier "<anything>" pattern dropped it).
+    private static readonly System.Text.RegularExpressions.Regex RichTextTag = new(
+        @"</?(?:#[0-9a-f]{3,8}|(?:align|allcaps|alpha|b|color|cspace|font|font-weight|gradient|i|indent|line-height|" +
+        @"line-indent|link|lowercase|margin|margin-left|margin-right|mark|mspace|nobr|noparse|page|pos|rotate|s|size|" +
+        @"smallcaps|space|sprite|strikethrough|style|sub|sup|u|uppercase|voffset|width)(?:\s*=[^>]*|\s[^>]*)?)>",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase |
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     internal static string PlainText(string text)
     {
-        return string.IsNullOrEmpty(text) || text.IndexOf('<') < 0
-            ? text
-            : System.Text.RegularExpressions.Regex.Replace(text, "<[^>]*>", string.Empty);
+        return string.IsNullOrEmpty(text) || text.IndexOf('<') < 0 ? text : RichTextTag.Replace(text, string.Empty);
     }
 
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
@@ -436,10 +445,12 @@ internal static class DungeonMakerListTools
     //   keepSearch  keep the screen's search (the palettes are bound again by the game while they stay open)
     //   sourceRoot  where sourcePath starts, when the button to copy belongs to another screen
     //   sections    the screen has sections to order (the editor, the palettes): the category order toggle
+    //   searched    the search changed, when that needs less than "changed" (a palette's search is its own, while
+    //               its sort is shared by all three palettes; Codex's review of 52a5e21b); null: "changed"
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
         Func<CategoryView> category, bool stacked = false, bool keepSearch = false, Transform sourceRoot = null,
-        bool sections = false)
+        bool sections = false, Action searched = null)
     {
         if (!keepSearch || !Searches.ContainsKey(screen))
         {
@@ -580,13 +591,13 @@ internal static class DungeonMakerListTools
             MatchLabels(sortLabel, categoryLabel);
         }
 
-        void Changed()
+        void Changed(Action apply = null)
         {
             Refresh();
 
             try
             {
-                changed();
+                (apply ?? changed)();
             }
             catch (Exception e)
             {
@@ -669,7 +680,7 @@ internal static class DungeonMakerListTools
             search.onValueChanged.AddListener(text =>
             {
                 Searches[screen] = (text ?? string.Empty).Trim();
-                Changed();
+                Changed(searched);
             });
         }
 
