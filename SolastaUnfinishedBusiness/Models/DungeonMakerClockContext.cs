@@ -58,11 +58,13 @@ namespace SolastaUnfinishedBusiness.Models;
 // can't freeze the game.
 // A skip is ONE WAIT for an object's timers, its "every N hours" (GameGadgetListenerHourUpdate) and its "after a
 // time" (GameGadgetListenerElapsedTime) listeners, as a long rest or scribing a scroll is (issue #42's Clock Skip
-// specification): they are not checked during the inner steps, only at the last one (the elapsed-time listener
-// still adds up the inner steps' seconds), so a due timer has one activation when the skip ends, as after the
-// game's own single clock update for a rest, and an hour timer's next interval counts from the arrival hour. (A two-hour timer
-// started at 08:00, then an eight-hour skip: at 16:00 one activation is due, the next at 18:00.) The read-outs
-// only show every fourth hour on the way (Clock_Hour 11, 15, 19, ... from 07:30), so an activator waiting for
+// specification): they don't check themselves from the moment a skip is taken until it ends (HoldTimers), also
+// across the game's own clock updates between the skip's batches, a save loaded in the middle of it and a change of
+// location; the elapsed-time listener still adds up the seconds. When the skip ends, or a battle cuts it short,
+// every timer checks itself once (CheckTimers), so a due timer has one activation, as after the game's own single
+// clock update for a rest, and an hour timer's next interval counts from the arrival hour. (A two-hour timer
+// started at 08:00, then an eight-hour skip: at 16:00 one activation is due, the next at 18:00.) The read-outs only
+// show every fourth hour on the way (Clock_Hour 11, 15, 19, ... from 07:30), so an activator waiting for
 // "Clock_Hour = 10" isn't set off by a skip passing 10:00, as the specification allows; it sees the arrival hour.
 // A counter (Clock_HoursElapsed) or a test like "Clock_Hour >= 10" doesn't miss.
 internal static class DungeonMakerClockContext
@@ -111,9 +113,17 @@ internal static class DungeonMakerClockContext
 
     private static string _lastError = string.Empty;
 
-    // true while a skip's inner step runs: objects' timers don't check themselves on that step's ticks (see the
-    // header and the two GameGadgetListener patches in DungeonMakerCommandsPatcher)
-    internal static bool HoldTimers { get; private set; }
+    // Objects' timers don't check themselves (GameGadgetListener_CheckTimer in DungeonMakerCommandsPatcher) while a
+    // skip runs, or while one kept in Clock_SkipRemainingSeconds waits to go on: between a save's load (when each
+    // timer's PostLoad checks it) and the location being ready, between two locations, or with the clock paused.
+    // Checkpoint keeps that variable above 0 for as long as a skip lasts, and EndJob sets it to 0, then CheckTimers
+    // makes the one check. With the commands switched off, nothing would ever resume a saved skip, so nothing is
+    // held then.
+    internal static bool HoldTimers =>
+        _job != null ||
+        (Main.Settings.EnableDungeonMakerVariableCommands &&
+         ServiceRepository.GetService<IGameVariableService>() is { } variables &&
+         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable) > 0);
 
     private static bool BattleInProgress =>
         ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
@@ -306,12 +316,11 @@ internal static class DungeonMakerClockContext
         {
             Main.Info($"DM clock: the skip ({_job.Description}) ended early: a battle started.");
 
-            // The skip stops at the time already reached, and that is where the wait ends for the timers too: the
-            // check its inner steps held back is made now, once. (A timer that isn't due stays as it is, as on any
-            // tick, so this is safe also for a skip that held nothing back yet.)
-            DungeonMakerCommandsContext.CheckTimers(time.TimeInfo.Hour);
-
+            // The skip stops at the time already reached, and that is where the wait ends for the timers too: once
+            // the skip is ended (nothing held any more), the check held back is made, once. A timer that isn't due
+            // stays as it is, as on any tick.
             EndJob(DungeonMakerCommandsContext.StatusCancelled);
+            DungeonMakerCommandsContext.CheckTimers(time.TimeInfo.Hour);
 
             return;
         }
@@ -326,18 +335,8 @@ internal static class DungeonMakerClockContext
         {
             var seconds = (int)Math.Min(_job.Remaining, StepSeconds);
 
-            // every step but the last is held back from the objects' timers
-            HoldTimers = _job.Remaining > seconds;
-
-            try
-            {
-                time.UpdateTime(seconds);
-            }
-            finally
-            {
-                HoldTimers = false;
-            }
-
+            // the objects' timers are held for the whole skip (HoldTimers)
+            time.UpdateTime(seconds);
             _job.Remaining -= seconds;
         }
 
@@ -350,6 +349,9 @@ internal static class DungeonMakerClockContext
 
         Main.Info($"DM clock: skipped {_job.Description}.");
         EndJob(DungeonMakerCommandsContext.StatusSucceeded);
+
+        // the one check of the objects' timers for the whole skip, now that nothing holds them
+        DungeonMakerCommandsContext.CheckTimers(time.TimeInfo.Hour);
     }
 
     #endregion

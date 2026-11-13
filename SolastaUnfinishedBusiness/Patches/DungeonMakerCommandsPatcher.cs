@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Models;
@@ -253,47 +255,34 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: an object's "every N hours" timer (GameGadgetListenerHourUpdate) is not checked during a clock skip's
-    //inner steps, so a skip is one wait for it, as a long rest is (issue #42's Clock Skip specification). The game
-    //raises the hour tick once per clock update, and the timer then compares the total hours with its last
-    //activation; a skip's last step, which lets the tick through, gives a due timer its one activation and
-    //restarts its interval from the arrival hour. Without this, a skip of several days set its flow off once per
-    //gadget update between the steps.
-    [HarmonyPatch(typeof(GameGadgetListenerHourUpdate), nameof(GameGadgetListenerHourUpdate.RealTimeHourTicked))]
+    //PATCH: a clock skip is one wait for an object's timers, as a long rest is (issue #42's Clock Skip
+    //specification): its "every N hours" (GameGadgetListenerHourUpdate) and "after a time"
+    //(GameGadgetListenerElapsedTime) listeners don't check themselves while a skip runs, or while a skip saved
+    //with the game waits to go on, and check once when it ends (DungeonMakerClockContext.HoldTimers, CheckTimers).
+    //The checks themselves are held, not the clock's ticks, because the game also checks from other places: its
+    //ordinary per-frame clock updates between the skip's batches, and each listener's PostLoad when a save is
+    //loaded (Codex's review of cd9aa39a, from the game's IL). The ticks still run, so the elapsed-time listener
+    //keeps adding up the seconds (only while its conditions match, as the game does), and the hour listener's
+    //check compares the total hours with its last activation: the one check at the end gives a due timer one
+    //activation and restarts an hour timer's interval from the arrival hour.
+    [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class GameGadgetListenerHourUpdate_RealTimeHourTicked
+    public static class GameGadgetListener_CheckTimer
     {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(GameGadgetListenerHourUpdate),
+                nameof(GameGadgetListenerHourUpdate.CheckHoursElapsed));
+            yield return AccessTools.Method(typeof(GameGadgetListenerElapsedTime),
+                nameof(GameGadgetListenerElapsedTime.CheckSecondsElapsed));
+        }
+
         [UsedImplicitly]
         public static bool Prefix()
         {
             return !DungeonMakerClockContext.HoldTimers;
-        }
-    }
-
-    //PATCH: the same for an object's "after a time" timer (GameGadgetListenerElapsedTime). It adds the seconds of
-    //each clock update to its total and goes off when the total reaches its duration. During a skip's inner steps
-    //the seconds are still added, as the game would (only while its conditions match), but the check is left to
-    //the last step, so the skip gives it one activation, as a single clock update of the same length would.
-    [HarmonyPatch(typeof(GameGadgetListenerElapsedTime), nameof(GameGadgetListenerElapsedTime.RealTimeSecondTicked))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class GameGadgetListenerElapsedTime_RealTimeSecondTicked
-    {
-        [UsedImplicitly]
-        public static bool Prefix(GameGadgetListenerElapsedTime __instance, int seconds)
-        {
-            if (!DungeonMakerClockContext.HoldTimers)
-            {
-                return true;
-            }
-
-            if (__instance.IsMatchingConditions())
-            {
-                __instance.lapsedDuration += seconds;
-            }
-
-            return false;
         }
     }
 }
