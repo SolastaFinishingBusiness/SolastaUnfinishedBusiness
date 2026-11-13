@@ -1734,6 +1734,30 @@ internal static class DungeonMakerCommandsContext
     }
 
     // every gadget object of the loaded location
+    // Has every object's timer in the location check itself, and nothing else: the "every N hours" timers get an
+    // hour tick (what GameTime.UpdateTime raises once per update, RealTimeHourTicked) and the "after a time" timers
+    // a tick of 0 seconds, i.e. a check of the seconds already added up. For a clock skip that a battle cut short
+    // while these checks were held back (DungeonMakerClockContext). Each timer checks its own conditions as on a
+    // tick from the game; the gadget runs a triggered flow at its next update.
+    internal static void CheckTimers(int hour)
+    {
+        foreach (var gadget in WorldGadgets().Select(x => x.GameGadget).Where(x => x != null))
+        {
+            foreach (var listener in gadget.activeListeners.ToArray())
+            {
+                switch (listener)
+                {
+                    case GameGadgetListenerHourUpdate hours:
+                        Guarded("an hour timer", () => hours.RealTimeHourTicked(hour, 1));
+                        break;
+                    case GameGadgetListenerElapsedTime elapsed:
+                        Guarded("an elapsed time timer", () => elapsed.RealTimeSecondTicked(0));
+                        break;
+                }
+            }
+        }
+    }
+
     private static IEnumerable<WorldGadget> WorldGadgets()
     {
         var sectors = (ServiceRepository.GetService<IGameLocationService>() as GameLocationManager)?.WorldLocation?

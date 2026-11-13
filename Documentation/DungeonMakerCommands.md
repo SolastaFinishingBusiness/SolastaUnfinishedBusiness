@@ -166,10 +166,12 @@ written with it still run. A `Clock_SkipToHour` written with a `Clock_SkipToDay`
   `Clock_SkipToDay`, the hour is an hour of that day: `Clock_SkipToDay` 5 with `Clock_SkipToHour` 9 ends on day 5
   at 09:00, and with `Clock_SkipToHour` 24 on day 5 at 00:00.
 - A long skip advances four hours at a time, a day per moment of play, so every dawn, new day and journal entry
-  happens, and the counters count every minute, hour and day. Two things are coarser while it runs: an object's
-  "every N hours" trigger runs at most once per skipped day, and the read-outs show only every fourth hour, so a
-  Variable Activator waiting for `Clock_Hour` to equal one exact hour can be stepped over. The read-outs are exact
-  once the skip ends; a counter, or a test such as "`Clock_Hour` at least 10", doesn't miss.
+  happens, and the counters count every minute, hour and day.
+- **A skip is one wait,** as a long rest is. An object's "every N hours" or "after a time" trigger that comes due during it is set off
+  once, when the skip ends, and counts its next interval from there: a two-hour trigger started at 08:00, then an
+  eight-hour skip, goes off once at 16:00 and next at 18:00. The hours passed on the way are not played one by one,
+  so a Variable Activator waiting for `Clock_Hour` to equal 10 isn't set off by a skip going past 10:00; it sees
+  the hour the skip ends on. A counter, or a test such as "`Clock_Hour` at least 10", doesn't miss.
 - **Never in battle.** Like a rest, a skip only happens outside a battle. A request written while a battle is in
   progress fails (status `Failed`), and a battle that starts while a skip is running ends it there (status
   `Cancelled`): the time already skipped stays skipped.

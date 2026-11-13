@@ -252,4 +252,48 @@ public static class DungeonMakerCommandsPatcher
             DungeonMakerClockContext.OnTimeUpdated(__instance, __state);
         }
     }
+
+    //PATCH: an object's "every N hours" timer (GameGadgetListenerHourUpdate) is not checked during a clock skip's
+    //inner steps, so a skip is one wait for it, as a long rest is (issue #42's Clock Skip specification). The game
+    //raises the hour tick once per clock update, and the timer then compares the total hours with its last
+    //activation; a skip's last step, which lets the tick through, gives a due timer its one activation and
+    //restarts its interval from the arrival hour. Without this, a skip of several days set its flow off once per
+    //gadget update between the steps.
+    [HarmonyPatch(typeof(GameGadgetListenerHourUpdate), nameof(GameGadgetListenerHourUpdate.RealTimeHourTicked))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerHourUpdate_RealTimeHourTicked
+    {
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !DungeonMakerClockContext.HoldTimers;
+        }
+    }
+
+    //PATCH: the same for an object's "after a time" timer (GameGadgetListenerElapsedTime). It adds the seconds of
+    //each clock update to its total and goes off when the total reaches its duration. During a skip's inner steps
+    //the seconds are still added, as the game would (only while its conditions match), but the check is left to
+    //the last step, so the skip gives it one activation, as a single clock update of the same length would.
+    [HarmonyPatch(typeof(GameGadgetListenerElapsedTime), nameof(GameGadgetListenerElapsedTime.RealTimeSecondTicked))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerElapsedTime_RealTimeSecondTicked
+    {
+        [UsedImplicitly]
+        public static bool Prefix(GameGadgetListenerElapsedTime __instance, int seconds)
+        {
+            if (!DungeonMakerClockContext.HoldTimers)
+            {
+                return true;
+            }
+
+            if (__instance.IsMatchingConditions())
+            {
+                __instance.lapsedDuration += seconds;
+            }
+
+            return false;
+        }
+    }
 }
