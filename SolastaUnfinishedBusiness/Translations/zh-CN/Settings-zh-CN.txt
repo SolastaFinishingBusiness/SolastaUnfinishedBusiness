@@ -308,7 +308,6 @@ ModUi/&EnableSorcererMetamagic2024=在 2 级（而非 3 级）启用 <color=#D89
 ModUi/&EnableSorcererOrigin2024=在 3 级（而非 1 级）启用 <color=#D89555>术士起源</color>
 ModUi/&EnableSorcererQuickenedAction=启用<color=#D89555>加速法术</color>动作以允许施放应用了加速超魔法的主要动作法术
 ModUi/&EnableSorcererSorcerousRestoration2024=在第 5 级启用<color=#D89555>魔法恢复</color>
-ModUi/&EnableSortingDungeonMakerAssets=在地城编辑器编辑器上启用资产排序
 ModUi/&EnableSpeech=在自定义战役中启用语音<i><color=#F0DAA0>[仅限旁白和英雄]</color></i>
 ModUi/&EnableSpeechActorHelp=• 选择演员
 ModUi/&EnableSpeechOnNpcs=<i>+ 启用 NPC 语音<color=#F0DAA0>[通过战役映射或自动分配]</color></i>

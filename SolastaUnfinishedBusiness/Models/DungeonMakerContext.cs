@@ -74,28 +74,6 @@ internal static class DungeonMakerContext
         }
     }
 
-    internal static int Compare([NotNull] BaseBlueprint left, [NotNull] BaseBlueprint right)
-    {
-        var leftCategory = DatabaseHelper.GetDefinition<BlueprintCategory>(left.Category);
-        var rightCategory = DatabaseHelper.GetDefinition<BlueprintCategory>(right.Category);
-        var result = string.Compare(leftCategory.FormatTitle(), rightCategory.FormatTitle(),
-            StringComparison.CurrentCultureIgnoreCase);
-
-        if (result != 0)
-        {
-            return result;
-        }
-
-        result = string.Compare(left.name, right.name, StringComparison.CurrentCultureIgnoreCase);
-
-        if (result == 0)
-        {
-            result = left.GuiPresentation.SortOrder - right.GuiPresentation.SortOrder;
-        }
-
-        return result;
-    }
-
     private static void UpdateAvailableDungeonSizes()
     {
         var customDungeonSizes = new Dictionary<UserLocationDefinitions.Size, int>

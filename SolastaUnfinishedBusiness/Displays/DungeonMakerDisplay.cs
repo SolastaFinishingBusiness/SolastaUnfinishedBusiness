@@ -76,12 +76,6 @@ internal static class DungeonMakerDisplay
             Main.Settings.EnableLoggingInvalidReferencesInUserCampaigns = toggle;
         }
 
-        toggle = Main.Settings.EnableSortingDungeonMakerAssets;
-        if (UI.Toggle(Gui.Localize("ModUi/&EnableSortingDungeonMakerAssets"), ref toggle))
-        {
-            Main.Settings.EnableSortingDungeonMakerAssets = toggle;
-        }
-
         toggle = Main.Settings.AllowGadgetsAndPropsToBePlacedAnywhere;
         if (UI.Toggle(Gui.Localize("ModUi/&AllowGadgetsAndPropsToBePlacedAnywhere"), ref toggle))
         {

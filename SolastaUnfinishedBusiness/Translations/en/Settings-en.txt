@@ -311,7 +311,6 @@ ModUi/&EnableSorcererMetamagic2024=Enable <color=#D89555>Metamagic</color> at le
 ModUi/&EnableSorcererOrigin2024=Enable <color=#D89555>Origin</color> at level 3 instead of 1
 ModUi/&EnableSorcererQuickenedAction=Enable <color=#D89555>Quickened Spell</color> action to allow cast main action spell with quickened metamagic applied
 ModUi/&EnableSorcererSorcerousRestoration2024=Enable <color=#D89555>Sorcerous Restoration</color> at level 5
-ModUi/&EnableSortingDungeonMakerAssets=Enable assets sorting on Dungeon Maker editor
 ModUi/&EnableSpeech=Enable speech on custom campaigns <i><color=#F0DAA0>[narration and heroes only]</color></i>
 ModUi/&EnableSpeechActorHelp=• Select an actor
 ModUi/&EnableSpeechOnNpcs=<i>+ Enable speech on NPCs <color=#F0DAA0>[either from campaign mapping or auto assignment]</color></i>

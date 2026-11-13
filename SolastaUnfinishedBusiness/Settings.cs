@@ -383,7 +383,6 @@ public class Settings : UnityModManager.ModSettings
     //
 
     public bool EnableLoggingInvalidReferencesInUserCampaigns { get; set; }
-    public bool EnableSortingDungeonMakerAssets { get; set; }
 
     // How the Dungeon Maker editor's content lists, the variable picker and the campaign variables cheat panel are
     // shown (CustomUI/DungeonMakerListTools.cs): 0 the campaign's own order, 1 by name, 2 by title or type; and

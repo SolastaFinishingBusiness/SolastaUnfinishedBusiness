@@ -10,8 +10,10 @@ using Object = UnityEngine.Object;
 namespace SolastaUnfinishedBusiness.CustomUI;
 
 // Sorting and searching the Dungeon Maker's lists (issue #42; the alphabetical order comes from BlackguardRogue's
-// Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, and the
-// Cheats > Campaign Variables panel. Each of the three screens gets a bar on a row of its own, above its list and
+// Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, the
+// Cheats > Campaign Variables panel, and the location editor's gadget, prop and room palettes (which replace the
+// former "Enable assets sorting on Dungeon Maker editor" setting; the palettes' bar has two rows, as a palette is
+// only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher). Each of the three screens gets a bar on a row of its own, above its list and
 // as wide as it, with, from left to right (user directions, 2026-11-13: the bar "should be at the very top"; later
 // "Search should be on the right, and sort on the left"),
 //
@@ -87,6 +89,7 @@ internal static class DungeonMakerListTools
     private const string CategoryLabelName = "CategoryLabel";
     private const string CategoryName = "Category";
     private const string CategoryDirectionName = "CategoryDirection";
+    private const string SearchRowName = "SearchRow";
     private const string ListSortRowName = "FbListSort";
     private const string OverlayName = "FbSortValue";
 
@@ -345,14 +348,21 @@ internal static class DungeonMakerListTools
     //   changed     the view changed: apply it to the screen's tables
     //   category    the list the bar's category row applies to, with its options; null for no such row (the
     //               campaign editor, whose lists have theirs in their groups, see EnsureListSortRow)
+    //   stacked     the sort on a row of its own and the search under it, for a narrow screen (the palettes)
+    //   keepSearch  keep the screen's search (the palettes are bound again by the game while they stay open)
+    //   sourceRoot  where sourcePath starts, when the button to copy belongs to another screen
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
-        Func<CategoryView> category)
+        Func<CategoryView> category, bool stacked = false, bool keepSearch = false, Transform sourceRoot = null)
     {
-        Searches[screen] = string.Empty;
+        if (!keepSearch || !Searches.ContainsKey(screen))
+        {
+            Searches[screen] = string.Empty;
+        }
 
         var list = root ? root.Find(listPath) as RectTransform : null;
-        var source = root ? root.Find(sourcePath) : null;
+        var sourceFrom = sourceRoot ? sourceRoot : root;
+        var source = sourceFrom ? sourceFrom.Find(sourcePath) : null;
 
         if (!list || !source || !source.GetComponent<Button>())
         {
@@ -367,7 +377,7 @@ internal static class DungeonMakerListTools
 
         if (!bar)
         {
-            bar = AddBar(list, source.gameObject, category != null);
+            bar = AddBar(list, source.gameObject, category != null, stacked);
         }
 
         var sort = FindDeep(bar, SortName)?.GetComponent<GuiDropdown>();
@@ -543,7 +553,7 @@ internal static class DungeonMakerListTools
         if (search)
         {
             search.onValueChanged = new TMP_InputField.OnChangeEvent();
-            search.SetTextWithoutNotify(string.Empty);
+            search.SetTextWithoutNotify(Search(screen));
             search.onValueChanged.AddListener(text =>
             {
                 Searches[screen] = (text ?? string.Empty).Trim();
@@ -866,7 +876,7 @@ internal static class DungeonMakerListTools
     // the screen moves. It holds two copies of one of the screen's buttons and a copy of a text field, and is
     // built under an inactive holder so none of the copies' components start up before they are changed (as the
     // mod's other copied controls are).
-    private static Transform AddBar(RectTransform list, GameObject sourceButton, bool categoryRow)
+    private static Transform AddBar(RectTransform list, GameObject sourceButton, bool categoryRow, bool stacked)
     {
         var holder = new GameObject("FbHolder");
 
@@ -895,9 +905,17 @@ internal static class DungeonMakerListTools
         AddSortLabel(main, sourceButton, SortLabelName);
         AddSortDropdown(main, SortName);
         AddArrow(main, DirectionName);
-        AddGap(main);
-        AddSearch(main);
-        AddButton(main, sourceButton, ClearName, ClearWidth);
+
+        // stacked (a palette): the search and Clear on a row of their own under the sort
+        var searchRow = stacked ? AddRow(bar.transform, SearchRowName, TextAnchor.MiddleLeft) : main;
+
+        if (!stacked)
+        {
+            AddGap(main);
+        }
+
+        AddSearch(searchRow);
+        AddButton(searchRow, sourceButton, ClearName, ClearWidth);
 
         if (categoryRow)
         {
@@ -908,7 +926,7 @@ internal static class DungeonMakerListTools
             AddArrow(second, CategoryDirectionName);
         }
 
-        var height = categoryRow ? TwoRowHeight : ControlHeight;
+        var height = categoryRow || stacked ? TwoRowHeight : ControlHeight;
 
         // anchored like the scroll view from side to side, and to its top edge, as tall as its rows
         rect.SetParent(list.parent, false);

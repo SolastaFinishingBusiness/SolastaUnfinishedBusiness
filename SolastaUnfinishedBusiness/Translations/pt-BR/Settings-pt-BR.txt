@@ -308,7 +308,6 @@ ModUi/&EnableSorcererMetamagic2024=Habilitar <color=#D89555>Metamagic</color> no
 ModUi/&EnableSorcererOrigin2024=Habilitar <color=#D89555>Origens</color> no nível 3 em vez de 1
 ModUi/&EnableSorcererQuickenedAction=Habilitar ação <color=#D89555>Feitiço Acelerado</color> para permitir conjurar feitiço de ação principal com metamagia acelerada aplicada
 ModUi/&EnableSorcererSorcerousRestoration2024=Habilitar <color=#D89555>Restauração Feiticeira</color> no nível 5
-ModUi/&EnableSortingDungeonMakerAssets=Habilitar classificação de ativos no editor do Dungeon Maker
 ModUi/&EnableSpeech=Habilitar fala em campanhas personalizadas <i><color=#F0DAA0>[somente narração e heróis]</color></i>
 ModUi/&EnableSpeechActorHelp=• Selecione um ator
 ModUi/&EnableSpeechOnNpcs=<i>+ Habilitar fala em NPCs <color=#F0DAA0>[por mapeamento de campanha ou atribuição automática]</color></i>

@@ -308,7 +308,6 @@ ModUi/&EnableSorcererMetamagic2024=Включить <color=#D89555>Метама�
 ModUi/&EnableSorcererOrigin2024=Включить <color=#D89555>Происхождение чародея</color> на уровне 3 вместо 1
 ModUi/&EnableSorcererQuickenedAction=Включить действие <color=#D89555>Ускоренное заклинание</color>, позволяющее накладывать заклинание основного действия с применением метамагии Ускоренного заклинания.
 ModUi/&EnableSorcererSorcerousRestoration2024=Включить <color=#D89555>Чародейское восстановление</color> на уровне 5
-ModUi/&EnableSortingDungeonMakerAssets=Включить сортировку ассетов в редакторе Создателя Подземелий
 ModUi/&EnableSpeech=Включить речь в пользовательских кампаниях <i><color=#F0DAA0>[только повествование и герои]</color></i>
 ModUi/&EnableSpeechActorHelp=• Выберите актера
 ModUi/&EnableSpeechOnNpcs=<i>+ Включить речь для NPC <color=#F0DAA0>[из карты кампании, либо автоматически назначенные]</color></i>

@@ -308,7 +308,6 @@ ModUi/&EnableSorcererMetamagic2024=Abilita <color=#D89555>Metamagia</color> al l
 ModUi/&EnableSorcererOrigin2024=Abilita <color=#D89555>Origini</color> al livello 3 invece che 1
 ModUi/&EnableSorcererQuickenedAction=Abilita l'azione <color=#D89555>Incantesimo accelerato</color> per consentire il lancio dell'incantesimo di azione principale con metamagia accelerata applicata
 ModUi/&EnableSorcererSorcerousRestoration2024=Abilita <color=#D89555>Restauro Stregonesco</color> al livello 5
-ModUi/&EnableSortingDungeonMakerAssets=Abilita l'ordinamento delle risorse nell'editor di Dungeon Maker
 ModUi/&EnableSpeech=Abilita la voce nelle campagne personalizzate <i><color=#F0DAA0>[solo narrazione ed eroi]</color></i>
 ModUi/&EnableSpeechActorHelp=• Seleziona un attore
 ModUi/&EnableSpeechOnNpcs=<i>+ Abilita la parola sui PNG <color=#F0DAA0>[sia dalla mappatura della campagna che dall'assegnazione automatica]</color></i>

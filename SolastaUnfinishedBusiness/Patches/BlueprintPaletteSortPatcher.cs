@@ -1,0 +1,145 @@
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using HarmonyLib;
+using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.CustomUI;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace SolastaUnfinishedBusiness.Patches;
+
+// The location editor's gadget, prop and room palettes get the Dungeon Maker list bar (issue #42; user, 2026-11-13:
+// "Can we just add the new dropdown for sorts to the palette then?"), in place of the former "Enable assets sorting
+// on Dungeon Maker editor" setting, which swapped the game's own comparison for one by category title and name and
+// only took effect at the next start of the game.
+//
+// What the game does (from its IL): each palette sorts its blueprints once, when the game starts (RuntimeLoaded,
+// Array.Sort with the palette's Compare), and every Bind groups them by category in that order: one
+// BlueprintCategoryItem per category, in the order the categories first appear, each binding row i of its
+// blueprintsTable to blueprint i and switching off (and unbinding) the rows past the end. So the categories keep the
+// game's order (user's choice: within each category, like the campaign editor's lists), and within a category the
+// bar orders and filters the rows on screen, as it does for the editor's lists:
+//
+//   Sort: Default (the game's order), Name (the blueprint's internal name) or Title (its name as shown), with the
+//   direction arrow; the search shows only the blueprints whose name or title contains the text, and a category none
+//   of whose blueprints is shown is hidden while the search is on.
+//
+// Only what is shown changes; the sort and its direction are the same saved choice as the other screens' bars. The
+// search belongs to each palette and stays while the palette stays open, as the game binds it again when the
+// environment changes.
+[UsedImplicitly]
+public static class BlueprintPaletteSortPatcher
+{
+    // the campaign editor's Import button, copied for the bar's Clear button: a palette has no button of its own,
+    // and the editor screen exists from the start of the game, shown or not
+    private const string SourceButton = "RightPanel/ExportGroup/ImportContentsButton";
+
+    // the categories each palette bound last, in the game's order
+    private static readonly ConditionalWeakTable<BaseBlueprintSelectionPanel, List<BlueprintCategoryItem>> Bound =
+        new();
+
+    // the palette's search key: its own class name, so the three palettes have their own search
+    private static string KeyOf(BaseBlueprintSelectionPanel panel)
+    {
+        return panel.GetType().Name;
+    }
+
+    // a row the game has just bound to a blueprint: switched on and holding one (the game switches off and unbinds
+    // the rows past the end of the category)
+    private static bool IsBoundRow(Transform row)
+    {
+        return row.gameObject.activeSelf && row.TryGetComponent<BaseBlueprintItem>(out var item) &&
+               item.BaseBlueprint;
+    }
+
+    private static BaseBlueprint BlueprintOf(Transform row)
+    {
+        return row.TryGetComponent<BaseBlueprintItem>(out var item) ? item.BaseBlueprint : null;
+    }
+
+    private static string BlueprintName(Transform row)
+    {
+        return BlueprintOf(row)?.name;
+    }
+
+    // the blueprint's name as the palette shows it
+    private static string BlueprintTitle(Transform row)
+    {
+        var title = BlueprintOf(row)?.GuiPresentation?.Title;
+
+        return string.IsNullOrEmpty(title) ? BlueprintName(row) : Gui.Localize(title);
+    }
+
+    // Orders and filters every category of the palette, and hides a category none of whose blueprints the search
+    // leaves. The categories are those the game bound last; one it has switched off since is left alone.
+    private static void Apply(BaseBlueprintSelectionPanel panel)
+    {
+        if (!panel || !Bound.TryGetValue(panel, out var categories))
+        {
+            return;
+        }
+
+        var key = KeyOf(panel);
+        var searching = DungeonMakerListTools.Search(key).Length > 0;
+
+        foreach (var category in categories.Where(x => x && x.transform.parent == panel.categoriesTable))
+        {
+            var table = category.blueprintsTable;
+
+            DungeonMakerListTools.Apply(table, key, BlueprintName, BlueprintTitle);
+
+            var anyShown = !searching ||
+                           table.Cast<Transform>().Any(x => x.gameObject.activeSelf && BlueprintOf(x));
+
+            if (category.gameObject.activeSelf != anyShown)
+            {
+                category.gameObject.SetActive(anyShown);
+            }
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(panel.categoriesTable);
+    }
+
+    //PATCH: the bar, and the view of each category, after the game bound the palette's categories (each palette's
+    //own Bind fills AvailableBlueprints and then calls this one)
+    [HarmonyPatch(typeof(BaseBlueprintSelectionPanel), nameof(BaseBlueprintSelectionPanel.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class BaseBlueprintSelectionPanel_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(BaseBlueprintSelectionPanel __instance)
+        {
+            var table = __instance.categoriesTable;
+
+            if (!table)
+            {
+                return;
+            }
+
+            var editor = Gui.GuiService?.GetScreen<UserCampaignEditorScreen>();
+
+            DungeonMakerListTools.Ensure(__instance.transform, KeyOf(__instance), "BlueprintsScrollview",
+                SourceButton, "ModUi/&DungeonMakerSortTitle", () => Apply(__instance), null, stacked: true,
+                keepSearch: true, sourceRoot: editor ? editor.transform : null);
+
+            // the categories the game has just bound, and in each the rows it bound
+            var categories = Bound.GetOrCreateValue(__instance);
+
+            categories.Clear();
+
+            foreach (Transform child in table)
+            {
+                if (child.gameObject.activeSelf && child.TryGetComponent<BlueprintCategoryItem>(out var category))
+                {
+                    categories.Add(category);
+                    DungeonMakerListTools.Bound(category.blueprintsTable, IsBoundRow);
+                }
+            }
+
+            Apply(__instance);
+        }
+    }
+}
