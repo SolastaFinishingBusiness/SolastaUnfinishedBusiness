@@ -2,11 +2,12 @@ ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Würfelt auf Wahrnehmung, um nicht 
 ModUi/&DungeonMakerSearch=Suchen...
 ModUi/&DungeonMakerSearchClear=Leeren
 ModUi/&DungeonMakerSortAscending=Aufsteigend
-ModUi/&DungeonMakerSortDefault=Sortierung: Standard
+ModUi/&DungeonMakerSortDefault=Standard
 ModUi/&DungeonMakerSortDescending=Absteigend
-ModUi/&DungeonMakerSortName=Sortierung: Name
-ModUi/&DungeonMakerSortTitle=Sortierung: Titel
-ModUi/&DungeonMakerSortType=Sortierung: Typ
+ModUi/&DungeonMakerSortLabel=Sortierung:
+ModUi/&DungeonMakerSortName=Name
+ModUi/&DungeonMakerSortTitle=Titel
+ModUi/&DungeonMakerSortType=Typ
 ModUi/&EnableDungeonMakerVariableCommands=Kampagnenbefehle des Dungeon Makers aktivieren <i><color=#F0DAA0>[Kampagnenvariablen mit reservierten Namen lesen und überspringen die Uhrzeit, starten Dialoge und Würfe, teleportieren und schalten Fackeln; Anleitung: Documentation/DungeonMakerCommands.md auf der GitHub-Seite der Mod]</color></i>
 ModUi/&SyncAiPerceptionChecks=KI wartet vor ihrer Entscheidung bis zu 3 Sekunden auf gemeinsame Wahrnehmungswürfe und würfelt danach noch fehlende auf dem Computer, auf dem sie läuft <i><color=#F0DAA0>[mit der Regeloption, die auf Wahrnehmung für nicht wahrgenommene Ziele würfelt; aus: die KI würfelt sie wie bisher auf dem Rechner, auf dem sie läuft, und Desyncs sind sehr wahrscheinlich, außer alle Spieler haben die Spieloption Spiel > Gameplay > Zufällige Samen erhalten gleich eingestellt (und auch dann noch möglich); nur Mehrspielerpartien]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Ermöglichen

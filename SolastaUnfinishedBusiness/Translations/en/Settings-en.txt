@@ -12,11 +12,12 @@ ModUi/&AddNewWeaponsAndRecipesToShops=Add new weapons and recipes to shops <i><c
 ModUi/&DungeonMakerSearch=Search...
 ModUi/&DungeonMakerSearchClear=Clear
 ModUi/&DungeonMakerSortAscending=Ascending
-ModUi/&DungeonMakerSortDefault=Sort: default
+ModUi/&DungeonMakerSortDefault=Default
 ModUi/&DungeonMakerSortDescending=Descending
-ModUi/&DungeonMakerSortName=Sort: name
-ModUi/&DungeonMakerSortTitle=Sort: title
-ModUi/&DungeonMakerSortType=Sort: type
+ModUi/&DungeonMakerSortLabel=Sort:
+ModUi/&DungeonMakerSortName=Name
+ModUi/&DungeonMakerSortTitle=Title
+ModUi/&DungeonMakerSortType=Type
 ModUi/&EnableDungeonMakerVariableCommands=Enable Dungeon Maker campaign commands <i><color=#F0DAA0>[campaign variables with reserved names read and skip the clock, start dialogues and rolls, teleport and switch torches; guide: Documentation/DungeonMakerCommands.md on the mod's GitHub page]</color></i>
 ModUi/&NewWeaponsAndRecipesBaseInsteadOfPrimed=<i>+ Use base weapons and armor as ingredients instead of Primed versions</i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&NewWeaponsAndRecipesSimplified=<i>+ Use simple all-in-one recipes <color=#F0DAA0>[base ingredients only, does not affect custom items from campaigns]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>

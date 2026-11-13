@@ -17,8 +17,8 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //
 //   a search field     only rows whose name or title contains the text are shown
 //   a clear button     empties the search field
-//   a sort dropdown    what the list is ordered by: the campaign's own order, the name, or a second key
-//                      (the title for content, the type for variables)
+//   "Sort:" and a      what the list is ordered by: the campaign's own order, the name, or a second key
+//   dropdown           (the title for content, the type for variables), set apart from Clear by a gap
 //   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
@@ -60,11 +60,17 @@ internal static class DungeonMakerListTools
     private const string DirectionName = "Direction";
     private const string SearchName = "Search";
     private const string ClearName = "Clear";
+    private const string SortLabelName = "SortLabel";
+    private const string GapName = "Gap";
 
     // the bar's controls, in the units of the game's 1920 x 1080 interface; the search field takes what the other
     // controls leave of the bar's width
-    // the sort dropdown: room for its longest choice ("Sort: default") and its own open arrow
-    private const float SortWidth = 200f;
+    // the sort dropdown: room for its longest choice ("По умолчанию") and its own open arrow
+    private const float SortWidth = 180f;
+
+    // the space that sets the sort controls apart from the search and Clear (user direction, 2026-11-13: "Add a
+    // distinct padding between the search clear and the sort"), on top of the usual spacing either side
+    private const float GroupGap = 28f;
     private const float SearchMinWidth = 160f;
     private const float ClearWidth = 90f;
     private const float ControlHeight = 34f;
@@ -221,7 +227,7 @@ internal static class DungeonMakerListTools
     //   screen      the key of this screen's search text
     //   listPath    the scroll view that holds the list, from the screen's root; the bar takes a strip at its foot
     //   sourcePath  a button of the screen to copy for the bar's two buttons, from the screen's root
-    //   secondTerm  the sort dropdown's choice for the second key ("Sort: title", "Sort: type")
+    //   secondTerm  the sort dropdown's choice for the second key ("Title", "Type")
     //   changed     the view changed: apply it to the screen's tables
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed)
@@ -251,6 +257,15 @@ internal static class DungeonMakerListTools
         var direction = bar.Find(DirectionName)?.GetComponent<Button>();
         var search = bar.Find(SearchName)?.GetComponent<TMP_InputField>();
         var clear = bar.Find(ClearName)?.GetComponent<Button>();
+        var sortLabel = bar.Find(SortLabelName)?.GetComponent<GuiLabel>();
+
+        // "Sort:" stands in front of the dropdown, which holds only the choices (user direction, 2026-11-13:
+        // "split them so that the "Sort:" is outside the dropdown"). Set through the game label, which otherwise
+        // writes its own text when it wakes up.
+        if (sortLabel)
+        {
+            sortLabel.Text = Gui.Localize("ModUi/&DungeonMakerSortLabel");
+        }
 
         // The sort is a dropdown (user direction, 2026-11-13: "Can the sort be a dropdown instead of a cycle
         // toggle?"): its three choices, in the order of the Sort values, with this screen's second key.
@@ -375,6 +390,8 @@ internal static class DungeonMakerListTools
         // the layout group places them in the order they are added: search and clear, then the sort controls
         AddSearch(bar.transform);
         AddButton(bar.transform, sourceButton, ClearName, ClearWidth);
+        AddGap(bar.transform);
+        AddSortLabel(bar.transform, sourceButton);
         AddSortDropdown(bar.transform);
         AddArrow(bar.transform);
 
@@ -503,6 +520,56 @@ internal static class DungeonMakerListTools
         }
 
         SetSize(copy, SearchMinWidth, true);
+        copy.SetActive(true);
+    }
+
+    // an empty, fixed-width space in the bar's row
+    private static void AddGap(Transform bar)
+    {
+        var gap = new GameObject(GapName, typeof(RectTransform), typeof(LayoutElement));
+
+        gap.transform.SetParent(bar, false);
+
+        var layout = gap.GetComponent<LayoutElement>();
+
+        layout.minWidth = layout.preferredWidth = GroupGap;
+        layout.flexibleWidth = 0f;
+    }
+
+    // "Sort:", in the look of the bar's button text: a copy of the source button's label (a game label, GuiLabel,
+    // with its text style). It is as wide as its text, so a longer word in another language ("Сортировка:") takes
+    // the room it needs from the search field. Its text is set by Ensure.
+    private static void AddSortLabel(Transform bar, GameObject sourceButton)
+    {
+        var source = sourceButton.transform.Find("Label");
+
+        if (!source || !source.GetComponent<GuiLabel>())
+        {
+            Problem("Dungeon Maker list tools: the button's label was not found, so no \"Sort:\" label.");
+
+            return;
+        }
+
+        var copy = Object.Instantiate(source.gameObject, bar, false);
+
+        copy.name = SortLabelName;
+
+        // the copied tooltip, if any, describes the original button
+        foreach (var tooltip in copy.GetComponentsInChildren<GuiTooltip>(true))
+        {
+            tooltip.Clear();
+        }
+
+        if (!copy.TryGetComponent<LayoutElement>(out var layout))
+        {
+            layout = copy.AddComponent<LayoutElement>();
+        }
+
+        // no fixed width: the row's layout takes the text's own preferred width
+        layout.ignoreLayout = false;
+        layout.minWidth = layout.preferredWidth = -1f;
+        layout.flexibleWidth = 0f;
+        layout.flexibleHeight = 0f;
         copy.SetActive(true);
     }
 
