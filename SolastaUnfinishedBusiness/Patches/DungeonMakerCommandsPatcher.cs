@@ -123,6 +123,20 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: a character used a gadget: if its flow will ask for a one-character teleport, its place in the queue is
+    //kept from this moment, as for areas and plates
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.Interact))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_Interact
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameGadget __instance, int listenerIndex)
+        {
+            DungeonMakerCommandsContext.NoteInteracted(__instance, listenerIndex);
+        }
+    }
+
     //PATCH: remember whose move made an Area Activator fire (the game passes the character that moved)
     [HarmonyPatch(typeof(GameGadgetListenerVolumetricTrigger),
         nameof(GameGadgetListenerVolumetricTrigger.OccupationChanged))]

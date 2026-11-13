@@ -51,7 +51,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //     ended before the next character is placed. The order is that of the activations, not of the variable
 //     writes: an Area Activator or pressure plate whose flow will write Teleport_Node takes its place in the queue
 //     the moment it is set off (ExpectSoloTeleport), so a flow that reaches its Variable Operation late, behind a
-//     Wait for instance, is not overtaken by one set off after it. Interactions take their place at the write.
+//     Wait for instance, is not overtaken by one set off after it. A gadget a character uses does the same when
+//     the game accepts the interaction (NoteInteracted).
 //   - The character is put on the Node's exact cell, height included, with the game's own TeleportCharacter and
 //     none of its placement search: a cell another hero stands on, a cell with no floor and a hazard are all
 //     allowed, and no safer cell is substituted. Arrival is checked once, right there (the character's three
@@ -176,6 +177,9 @@ internal static class DungeonMakerCommandsContext
     private static ConditionalWeakTable<GameGadgetListener, Activation> _causes = new();
     private static ConditionalWeakTable<GameGadgetListener, Activation> _runs = new();
 
+    // per interaction flow: the place it keeps in the queue of one-character teleports (see NoteInteracted)
+    private static ConditionalWeakTable<GameGadgetListener, Request> _interactionPlaces = new();
+
     // while the game's Teleport functor moves characters (see BeginGroupMove): who it moved, and the
     // activations those moves caused
     private static readonly HashSet<ulong> GroupMovers = [];
@@ -282,6 +286,7 @@ internal static class DungeonMakerCommandsContext
         _operation = null;
         _causes = new ConditionalWeakTable<GameGadgetListener, Activation>();
         _runs = new ConditionalWeakTable<GameGadgetListener, Activation>();
+        _interactionPlaces = new ConditionalWeakTable<GameGadgetListener, Request>();
         GroupMovers.Clear();
         GroupActivations.Clear();
         _groupDepth = 0;
@@ -381,15 +386,48 @@ internal static class DungeonMakerCommandsContext
     // flow ends without writing or never starts (StepExpected).
     private static void ExpectSoloTeleport(GameGadgetListener listener, Activation activation)
     {
+        activation.Expected = KeepPlace(listener);
+    }
+
+    // GameGadget.Interact, after it ran: a character used a gadget. The same as above for an interaction: if the
+    // game accepted it (the flow is triggered) and the flow has a Variable Operation on Teleport_Node, its place
+    // in the queue is kept now, so that a flow which waits before it writes is not overtaken by a plate or an
+    // area set off after it. An interaction has one flow waiting at a time, so one place per listener is enough;
+    // using the gadget again before the flow started keeps the place it has.
+    internal static void NoteInteracted(GameGadget gadget, int listenerIndex)
+    {
+        var listeners = gadget?.activeListeners;
+
+        if (listeners == null || listenerIndex < 0 || listenerIndex >= listeners.Count ||
+            listeners[listenerIndex] is not GameGadgetListenerCharacterInteraction { IsTriggered: true } listener ||
+            (_interactionPlaces.TryGetValue(listener, out var held) && held.Expected && SoloTeleports.Contains(held)))
+        {
+            return;
+        }
+
+        var kept = KeepPlace(listener);
+
+        _interactionPlaces.Remove(listener);
+
+        if (kept != null)
+        {
+            _interactionPlaces.Add(listener, kept);
+        }
+    }
+
+    // Adds a place to the queue of one-character teleports for this flow, if the flow has a Variable Operation on
+    // Teleport_Node; returns it, or null when the flow has none.
+    private static Request KeepPlace(GameGadgetListener listener)
+    {
         if (!Enabled || CurrentLocation == null || listener.FunctorParams == null ||
             !listener.FunctorParams.Any(x =>
                 x is FunctorParametersDescription { Type: VariableOperationFunctor } operation &&
                 operation.StringParameter == TeleportNodeVariable))
         {
-            return;
+            return null;
         }
 
-        activation.Expected = new Request
+        var kept = new Request
         {
             Kind = Kind.TeleportOne,
             Variable = TeleportNodeVariable,
@@ -398,7 +436,10 @@ internal static class DungeonMakerCommandsContext
             Location = CurrentLocation,
             IssuedAt = GameSeconds()
         };
-        SoloTeleports.Add(activation.Expected);
+
+        SoloTeleports.Add(kept);
+
+        return kept;
     }
 
     // the place kept for this listener's activation that has not started yet, if any, is given up
@@ -643,6 +684,20 @@ internal static class DungeonMakerCommandsContext
     private static Request TakeExpected(FunctorParametersDescription operation)
     {
         var listener = ListenerOf(operation);
+
+        // an interaction's place is kept by its listener (NoteInteracted)
+        if (listener is GameGadgetListenerCharacterInteraction)
+        {
+            if (!_interactionPlaces.TryGetValue(listener, out var place) || !place.Expected ||
+                !SoloTeleports.Contains(place))
+            {
+                return null;
+            }
+
+            _interactionPlaces.Remove(listener);
+
+            return place;
+        }
 
         if (listener == null || !_runs.TryGetValue(listener, out var activation) ||
             activation.Expected is not { Expected: true } kept || !SoloTeleports.Contains(kept))

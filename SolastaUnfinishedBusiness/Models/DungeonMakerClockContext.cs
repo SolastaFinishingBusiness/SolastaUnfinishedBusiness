@@ -218,6 +218,14 @@ internal static class DungeonMakerClockContext
         {
             _skipRequested = false;
             _job = BuildJob(time);
+
+            // The requests are now set back to 0 and marked Running, and the skip may not advance at once (the
+            // clock can be paused): what is left is written down straight away, so a save made before the first
+            // step can still resume it.
+            if (_job != null)
+            {
+                Checkpoint();
+            }
         }
 
         // the clock is paused: UpdateTime would do nothing, so the skip waits for it
@@ -234,9 +242,7 @@ internal static class DungeonMakerClockContext
             _job.Remaining -= seconds;
         }
 
-        // what is left goes into a campaign variable, so a save made now holds it (see OnLocationReady)
-        DungeonMakerCommandsContext.EnsureInt(SkipRemainingVariable);
-        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, (int)Math.Max(0, _job.Remaining));
+        Checkpoint();
 
         if (_job.Remaining > 0)
         {
@@ -248,6 +254,14 @@ internal static class DungeonMakerClockContext
     }
 
     #endregion
+
+    // what is left of the running skip goes into a campaign variable, so a save made now holds it (see
+    // OnLocationReady)
+    private static void Checkpoint()
+    {
+        DungeonMakerCommandsContext.EnsureInt(SkipRemainingVariable);
+        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, (int)Math.Max(0, _job.Remaining));
+    }
 
     private static void EndJob(string status)
     {

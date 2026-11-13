@@ -250,10 +250,11 @@ internal static class DungeonMakerListTools
             SetText(direction, Descending ? "ModUi/&DungeonMakerSortDescending" : "ModUi/&DungeonMakerSortAscending");
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
 
-            // nothing to clear while the field is empty
+            // Nothing to clear while the field is empty. The field's own text decides, not the search made from
+            // it: spaces alone are no search, but they are in the field and Clear must be able to remove them.
             if (clear)
             {
-                clear.interactable = Search(screen).Length > 0;
+                clear.interactable = search && !string.IsNullOrEmpty(search.text);
             }
         }
 
