@@ -123,8 +123,8 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: a character used a gadget: if its flow will ask for a one-character teleport, its place in the queue is
-    //kept from this moment, as for areas and plates
+    //PATCH: a character used a gadget: who it was is noted for the flow this starts, and if the flow will ask for
+    //a one-character teleport, its place in the queue is kept from this moment, as for areas and plates
     [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.Interact))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -134,6 +134,21 @@ public static class DungeonMakerCommandsPatcher
         public static void Postfix(GameGadget __instance, int listenerIndex, GameLocationCharacter actingCharacter)
         {
             DungeonMakerCommandsContext.NoteInteracted(__instance, listenerIndex, actingCharacter);
+        }
+    }
+
+    //PATCH: the game starts the flow of an interaction it accepted: that flow acts for the character who used
+    //the gadget then
+    [HarmonyPatch(typeof(GameGadgetListenerCharacterInteraction),
+        nameof(GameGadgetListenerCharacterInteraction.AcknowledgeTrigger))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerCharacterInteraction_AcknowledgeTrigger
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListenerCharacterInteraction __instance)
+        {
+            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
         }
     }
 

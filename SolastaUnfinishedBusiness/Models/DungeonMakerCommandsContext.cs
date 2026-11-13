@@ -172,13 +172,11 @@ internal static class DungeonMakerCommandsContext
     // the serial of the newest request of each command variable: only that one may write the status variable
     private static readonly Dictionary<string, int> NewestSerial = [];
 
-    // Per Area Activator / pressure plate flow, whose move made it fire (see NoteOccupationChanged): the
-    // activation whose flow has not started yet, and the one whose flow the game is running (or ran last).
+    // Per flow of an Area Activator, a pressure plate or an interaction, who set it off (see NoteOccupationChanged
+    // and NoteInteracted): the activation whose flow has not started yet, and the one whose flow the game is
+    // running (or ran last).
     private static ConditionalWeakTable<GameGadgetListener, Activation> _causes = new();
     private static ConditionalWeakTable<GameGadgetListener, Activation> _runs = new();
-
-    // per interaction flow: the place it keeps in the queue of one-character teleports (see NoteInteracted)
-    private static ConditionalWeakTable<GameGadgetListener, Request> _interactionPlaces = new();
 
     // while the game's Teleport functor moves characters (see BeginGroupMove): who it moved, and the
     // activations those moves caused
@@ -286,7 +284,6 @@ internal static class DungeonMakerCommandsContext
         _operation = null;
         _causes = new ConditionalWeakTable<GameGadgetListener, Activation>();
         _runs = new ConditionalWeakTable<GameGadgetListener, Activation>();
-        _interactionPlaces = new ConditionalWeakTable<GameGadgetListener, Request>();
         GroupMovers.Clear();
         GroupActivations.Clear();
         _groupDepth = 0;
@@ -389,53 +386,38 @@ internal static class DungeonMakerCommandsContext
         activation.Expected = KeepPlace(listener);
     }
 
-    // GameGadget.Interact, after it ran: a character used a gadget. The same as above for an interaction: if the
-    // game accepted it (the flow is triggered) and the flow has a Variable Operation on Teleport_Node, its place
-    // in the queue is kept now, so that a flow which waits before it writes is not overtaken by a plate or an
-    // area set off after it. An interaction has one flow waiting at a time, so one place per listener is enough;
-    // using the gadget again before the flow started keeps the place it has.
+    // GameGadget.Interact, after it ran: a character used a gadget. If the game accepted it (the flow is
+    // triggered), this is an activation like an area's or a plate's, and it is recorded the same way: who caused
+    // it, whether that character may cause a one-character teleport, and, if the flow has a Variable Operation on
+    // Teleport_Node, its place in the queue, so that a flow which waits before it writes is not overtaken by one
+    // set off after it. NoteTriggerAcknowledged then carries the record over to the flow when the game starts it.
     //
-    // The character is fixed here as well. The game writes the interacting character into the flow's functor
-    // parameters at every accepted Interact, so if a second character uses the gadget before the flow has
-    // written the variable, the parameters name the second one by then. The place belongs to the first: its
-    // character, and whether it may cause a one-character teleport, are noted with the place, and the write
-    // that fills the place takes them from there instead of from the parameters.
+    // The character has to be noted here, for the whole activation. The game writes the interacting character
+    // into every functor's parameters at each accepted Interact, so when a second character uses the gadget
+    // before the flow has started, the parameters name the second one from then on, for every write the flow
+    // makes. The game runs the flow once for both presses; it is the first character's, so a second press while
+    // the first is still waiting changes nothing here.
     internal static void NoteInteracted(GameGadget gadget, int listenerIndex, GameLocationCharacter actor)
     {
         var listeners = gadget?.activeListeners;
 
         if (listeners == null || listenerIndex < 0 || listenerIndex >= listeners.Count ||
             listeners[listenerIndex] is not GameGadgetListenerCharacterInteraction { IsTriggered: true } listener ||
-            (_interactionPlaces.TryGetValue(listener, out var held) && held.Expected && SoloTeleports.Contains(held)))
+            _causes.TryGetValue(listener, out _))
         {
             return;
         }
 
-        var kept = KeepPlace(listener);
-
-        _interactionPlaces.Remove(listener);
-
-        if (kept == null)
+        var activation = new Activation
         {
-            return;
-        }
+            MoverKnown = actor != null,
+            SoloTeleportEligible = CanTriggerSoloTeleport(actor),
+            MoverGuid = actor?.Guid ?? 0,
+            MoverName = actor?.Name
+        };
 
-        kept.ActorFixed = true;
-
-        if (CanTriggerSoloTeleport(actor))
-        {
-            kept.ActorKnown = true;
-            kept.ActorGuid = actor.Guid;
-            kept.ActorName = actor.Name;
-        }
-        else
-        {
-            kept.ActorProblem = actor == null
-                ? "the interaction had no acting character"
-                : "the triggering character was outside the party and guest rosters";
-        }
-
-        _interactionPlaces.Add(listener, kept);
+        _causes.Add(listener, activation);
+        ExpectSoloTeleport(listener, activation);
     }
 
     // Adds a place to the queue of one-character teleports for this flow, if the flow has a Variable Operation on
@@ -475,7 +457,7 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
-    // AcknowledgeTrigger of those two listeners: the game is about to run the flow for the trigger it noted. From
+    // AcknowledgeTrigger of those listeners: the game is about to run the flow for the trigger it noted. From
     // here until the next acknowledge, the flow's functors act for the character that caused this trigger. A flow
     // started without a move behind it (a trigger kept in a save) gets no character, rather than inheriting the
     // one of an older activation.
@@ -674,12 +656,7 @@ internal static class DungeonMakerCommandsContext
         request.Serial = ++_serial;
         request.IssuedAt = GameSeconds();
 
-        // a place kept by an interaction already holds its character (NoteInteracted)
-        if (!request.ActorFixed)
-        {
-            ResolveActor(operation, request);
-        }
-
+        ResolveActor(operation, request);
         NewestSerial[variableName] = request.Serial;
 
         if (kept != null)
@@ -712,20 +689,6 @@ internal static class DungeonMakerCommandsContext
     private static Request TakeExpected(FunctorParametersDescription operation)
     {
         var listener = ListenerOf(operation);
-
-        // an interaction's place is kept by its listener (NoteInteracted)
-        if (listener is GameGadgetListenerCharacterInteraction)
-        {
-            if (!_interactionPlaces.TryGetValue(listener, out var place) || !place.Expected ||
-                !SoloTeleports.Contains(place))
-            {
-                return null;
-            }
-
-            _interactionPlaces.Remove(listener);
-
-            return place;
-        }
 
         if (listener == null || !_runs.TryGetValue(listener, out var activation) ||
             activation.Expected is not { Expected: true } kept || !SoloTeleports.Contains(kept))
@@ -795,7 +758,26 @@ internal static class DungeonMakerCommandsContext
 
         switch (listener)
         {
-            // something a character used: the game hands the flow exactly that character (GameGadget.Interact)
+            // Something a character used, and the use was seen (NoteInteracted): the character noted then, for
+            // every write this flow makes. The functor's own list may name a later user of the same gadget.
+            case GameGadgetListenerCharacterInteraction
+                when _runs.TryGetValue(listener, out var used) && used.MoverKnown:
+                if (anyCharacter && !used.SoloTeleportEligible)
+                {
+                    request.ActorProblem = "the triggering character was outside the party and guest rosters";
+                }
+                else
+                {
+                    // for a roll or a dialogue, being a conscious party member is checked when the command runs
+                    request.ActorGuid = used.MoverGuid;
+                    request.ActorKnown = true;
+                    request.ActorName = used.MoverName;
+                }
+
+                break;
+
+            // an interaction that was not seen being made: the game hands the flow exactly the interacting
+            // character (GameGadget.Interact)
             case GameGadgetListenerCharacterInteraction when heroes.Count == 1 && singleActorEligible:
                 request.ActorGuid = heroes[0];
                 request.ActorKnown = true;
@@ -1953,9 +1935,6 @@ internal static class DungeonMakerCommandsContext
         // One-character teleport: a place kept in the queue for a request that is still to come, and the flow it
         // is expected from. Target, the acting character and the rest are set when the write arrives.
         internal bool Expected;
-
-        // the acting character was noted when the place was kept, and is not read again at the write
-        internal bool ActorFixed;
         internal GameGadgetListener Listener;
 
         // party teleport: everyone meant to travel, and the cell the game put each of them on
