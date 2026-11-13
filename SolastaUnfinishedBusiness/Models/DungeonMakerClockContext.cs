@@ -30,6 +30,9 @@ namespace SolastaUnfinishedBusiness.Models;
 //    Clock_SkipToDay    X: to 00:00 of campaign day X (numbered like Clock_CampaignDay), which must be 1 to 180
 //                       days ahead
 //    Clock_SkipToHour   1-23: to that hour (today, or tomorrow if it has passed); 24: to the next midnight
+//    A value outside its range is not cut down to fit: that request fails (status Failed, a line in the log) and
+//    the others written with it still run. A Clock_SkipToHour written with a Clock_SkipToDay that fails fails
+//    too, as the two name one moment together.
 //    Requests written during the same gadget update are ONE skip to ONE destination, worked out in the order
 //    above. With Clock_SkipToDay the hour is an hour OF THAT DAY: Clock_SkipToDay 5 with Clock_SkipToHour 9 ends
 //    on day 5 at 09:00, and with Clock_SkipToHour 24 on day 5 at 00:00 (24 is midnight, and day 5 has one).
@@ -37,13 +40,22 @@ namespace SolastaUnfinishedBusiness.Models;
 //    Cancelled. A skip can't be cancelled once written.
 //    Clock_SkipRemainingSeconds is the mod's own variable, made when a skip starts: what is left of the skip that
 //    is running. It is saved with the game, so a game saved in the middle of a long skip finishes the skip when it
-//    is loaded. Authors can read it, but should not write it.
+//    is loaded, and a skip running when the party leaves the location finishes in the next one. Authors can read
+//    it, but should not write it.
+//    A skip waits while a battle is in progress and goes on when it ends: the clock only moves by rounds in a
+//    battle, and days passing in the middle of one would end every effect and condition there at once.
 //
 // How the skip runs: the game's own "skip time" gadget function never moves the clock more than 23 hours at once,
 // and one clock update signals at most one dawn and one new day however long it is. A skip of several days in one
 // update (what the first version did) therefore gave one dawn and one journal entry in all. So a skip here
-// advances in steps of a few hours, each an ordinary clock update, a few steps per gadget update: every dawn, new
-// day, journal entry and hour passes as it would have, and a long skip can't freeze the game.
+// advances in steps of four hours, each an ordinary clock update, six steps per gadget update: every dawn, new day
+// and journal entry passes as it would have, the counters count every minute, hour and day, and a long skip
+// can't freeze the game.
+// What a skip does NOT give while it runs: a gadget's "every N hours" listener runs its flow at most once per
+// gadget update, so once per skipped day, and counts its interval again from there; and the read-outs only show
+// every fourth hour (Clock_Hour 11, 15, 19, ... from 07:30), so an activator waiting for "Clock_Hour = 10" can be
+// stepped over. The read-outs are exact again when the skip ends. A counter (Clock_HoursElapsed) or a test like
+// "Clock_Hour >= 10" doesn't miss.
 internal static class DungeonMakerClockContext
 {
     private const string HourVariable = "Clock_Hour";
@@ -102,7 +114,7 @@ internal static class DungeonMakerClockContext
         // a skip written outside a location, or kept in a save, starts now
         foreach (var name in SkipVariables)
         {
-            _skipRequested |= DungeonMakerCommandsContext.IntValueOf(variables, name) > 0;
+            _skipRequested |= DungeonMakerCommandsContext.IntValueOf(variables, name) != 0;
         }
 
         // A skip was running when this game was saved: its requests were already set back to 0 and the rest of it
@@ -130,12 +142,18 @@ internal static class DungeonMakerClockContext
         Main.Info($"DM clock: resuming a skip from the save, {remaining} second(s) left.");
     }
 
+    // The location is going away. A skip can't be cancelled once written, so a running one is not ended here: what
+    // is left of it is already in Clock_SkipRemainingSeconds (Checkpoint runs after every batch of steps and right
+    // after the skip is taken), and its requests still say Running, which is all OnLocationReady needs to take it
+    // up in the next location. Only the copy in memory goes, as this may also be the game itself going away (a
+    // load, the main menu); the next game's own variables then decide.
     internal static void OnLocationUnloading()
     {
         if (_job != null)
         {
-            EndJob(DungeonMakerCommandsContext.StatusCancelled);
-            Main.Info("DM clock: the skip was cut short because the location was left.");
+            Main.Info(
+                $"DM clock: the location was left during a skip; {_job.Remaining} second(s) are kept for the next one.");
+            _job = null;
         }
 
         _skipRequested = false;
@@ -228,8 +246,10 @@ internal static class DungeonMakerClockContext
             }
         }
 
-        // the clock is paused: UpdateTime would do nothing, so the skip waits for it
-        if (_job == null || time.Paused)
+        // the clock is paused: UpdateTime would do nothing, so the skip waits for it; and it waits for a battle to
+        // end (see the header). Both are the same on every computer.
+        if (_job == null || time.Paused ||
+            ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true })
         {
             return;
         }
@@ -265,7 +285,7 @@ internal static class DungeonMakerClockContext
 
     private static void EndJob(string status)
     {
-        // nothing is left to resume, whether the skip is done or was cut short by leaving the location
+        // nothing is left to resume: the skip is done
         DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, 0);
 
         foreach (var name in _job.Variables)
@@ -341,9 +361,13 @@ internal static class DungeonMakerClockContext
 
         var hours = Take(variables, SkipHoursVariable);
 
+        if (hours != 0 && !InRange(SkipHoursVariable, hours, 1, MaxSkipHours))
+        {
+            hours = 0;
+        }
+
         if (hours > 0)
         {
-            hours = Math.Min(hours, MaxSkipHours);
             at += (long)hours * SecondsPerHour;
             job.Variables.Add(SkipHoursVariable);
             parts.Add($"{hours} hour(s)");
@@ -351,9 +375,13 @@ internal static class DungeonMakerClockContext
 
         var days = Take(variables, SkipDaysVariable);
 
+        if (days != 0 && !InRange(SkipDaysVariable, days, 1, MaxSkipDays))
+        {
+            days = 0;
+        }
+
         if (days > 0)
         {
-            days = Math.Min(days, MaxSkipDays);
             at += (long)days * SecondsPerDay;
             job.Variables.Add(SkipDaysVariable);
             parts.Add($"{days} day(s)");
@@ -362,7 +390,11 @@ internal static class DungeonMakerClockContext
         var toDay = Take(variables, SkipToDayVariable);
         var dayGiven = false;
 
-        if (toDay > 0)
+        if (toDay < 0)
+        {
+            Reject(SkipToDayVariable, $"skip to day {toDay} ignored: days are numbered from 1");
+        }
+        else if (toDay > 0)
         {
             // the campaign day the paper clock is on now
             var known = TryGetCampaignDay(info, out var today);
@@ -388,6 +420,17 @@ internal static class DungeonMakerClockContext
         }
 
         var toHour = Take(variables, SkipToHourVariable);
+
+        if (toHour != 0 && toDay != 0 && !dayGiven)
+        {
+            // the hour belongs to the day that was rejected: on its own it would name another moment
+            Reject(SkipToHourVariable, $"skip to hour {toHour} ignored: it was written with a day that was rejected");
+            toHour = 0;
+        }
+        else if (toHour != 0 && !InRange(SkipToHourVariable, toHour, 1, 24))
+        {
+            toHour = 0;
+        }
 
         if (toHour > 0)
         {
@@ -441,6 +484,19 @@ internal static class DungeonMakerClockContext
         }
 
         return value;
+    }
+
+    // a request outside its range fails, rather than being cut down to a skip the author didn't ask for
+    private static bool InRange(string name, int value, int min, int max)
+    {
+        if (value >= min && value <= max)
+        {
+            return true;
+        }
+
+        Reject(name, $"{name} {value} ignored: it must be {min} to {max}");
+
+        return false;
     }
 
     private static void Reject(string name, string reason)

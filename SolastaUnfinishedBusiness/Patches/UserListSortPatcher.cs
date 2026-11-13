@@ -34,9 +34,18 @@ public static class UserListSortPatcher
             : null;
     }
 
-    private static bool HasContent(Transform row)
+    // Is this row one the game has just bound to an item of the list? Only right after the game filled the table.
+    // The editor's twelve Refresh methods and the picker's EnumerateLines bind row i to item i and switch it on for
+    // every item, and switch off each further row that is on. A further row keeps the item it last held: the
+    // game's UserContentLine.Unbind only releases the row's picture, it never clears UserContent (the location
+    // row's Unbind does clear its item). So the item alone can't tell a bound row from a pooled one: a row left
+    // over after a delete, or from a bigger campaign opened before, still has one, and turning it back on showed
+    // that item twice or another campaign's item, whose double-click made the game read item -1 of the list.
+    // Being switched on can tell them apart: a row the search had switched off and that is now past the end of
+    // the list is left off by the game, and every row within the list's length has just been switched on.
+    private static bool IsBoundRow(Transform row)
     {
-        return ContentOf(row) != null;
+        return row.gameObject.activeSelf && ContentOf(row) != null;
     }
 
     // is this the row the screen shows as selected?
@@ -204,7 +213,7 @@ public static class UserListSortPatcher
                 return;
             }
 
-            DungeonMakerListTools.Bound(list.Table(__instance), HasContent);
+            DungeonMakerListTools.Bound(list.Table(__instance), IsBoundRow);
             ApplyTo(__instance, list);
         }
 
@@ -301,6 +310,13 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class UserCampaignEditorScreen_OnBeginShow
     {
+        // as for the picker: no list is filled with the last showing's search
+        [UsedImplicitly]
+        public static void Prefix()
+        {
+            DungeonMakerListTools.ClearSearch(Editor);
+        }
+
         [UsedImplicitly]
         public static void Postfix(UserCampaignEditorScreen __instance)
         {
@@ -330,7 +346,7 @@ public static class UserListSortPatcher
         [UsedImplicitly]
         public static void Postfix(UserVariableSelectionModal __instance)
         {
-            DungeonMakerListTools.Bound(__instance.userVariablesTable, HasContent);
+            DungeonMakerListTools.Bound(__instance.userVariablesTable, IsBoundRow);
             ApplyTo(__instance);
         }
 
@@ -355,6 +371,15 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class UserVariableSelectionModal_OnBeginShow
     {
+        // The game's OnBeginShow fills the list itself (EnumerateLines) before this postfix empties the search, so
+        // the rows were filtered by the last showing's search behind an empty field until something was typed.
+        // The search is emptied before the game fills the list.
+        [UsedImplicitly]
+        public static void Prefix()
+        {
+            DungeonMakerListTools.ClearSearch(Picker);
+        }
+
         [UsedImplicitly]
         public static void Postfix(UserVariableSelectionModal __instance)
         {
@@ -411,6 +436,13 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class CampaignVariablesModal_OnBeginShow
     {
+        // as for the picker: no list is filled with the last showing's search
+        [UsedImplicitly]
+        public static void Prefix()
+        {
+            DungeonMakerListTools.ClearSearch(Cheats);
+        }
+
         [UsedImplicitly]
         public static void Postfix(CampaignVariablesModal __instance)
         {

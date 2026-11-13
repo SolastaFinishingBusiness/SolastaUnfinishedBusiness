@@ -72,8 +72,12 @@ the Roll Activator. Whoever walks in rolls.
   dead, it is moved as it is. It only has to be in the location still.
 - **Every activation is its own request.** Two characters stepping on two plates that both write the same Node
   name are both teleported, one after the other, in the order the activations happened. That holds even if the
-  first plate's flow does something else first, such as a Wait, before it writes the variable. A new request does
-  not replace one that is waiting. Writing an empty text cancels all that are waiting.
+  first plate's flow does something else first, such as a Wait, before it writes the variable. An activation keeps
+  its place while its gadget is running another of its flows or can't run flows at the moment (a gadget set to
+  run only outside or only inside battles); one whose conditions are not met when it is set off gives its place up,
+  and its request joins the end of the queue if it comes later. A new request does not replace one that is
+  waiting. Writing an empty text cancels all that are waiting, also when the variable already reads empty because
+  the teleport before them has started.
 - **Where:** exactly on the Node's cell, at its height. No nearby free cell is looked for. So a character can arrive
   on a cell another hero stands on, in mid-air or in a hazard. What follows is up to the game: over a hole the
   character falls.
@@ -102,7 +106,7 @@ The mod keeps it at one of:
 | `Running` | started: the dialogue is open, the roll is being made, the teleport is under way |
 | `Succeeded` | done |
 | `Failed` | could not be done; the reason is in the log |
-| `Cancelled` | replaced by an empty text, or the location was left |
+| `Cancelled` | replaced by an empty text, the location was left, or the game was saved while it was `Running` and then loaded (a dialogue, roll or teleport can't be picked up again from a save) |
 
 Use a Variable Activator on the status variable to react, for example to open a door when `Roll_Trigger_Status`
 becomes `Succeeded`. Note that `Succeeded` means the roll was made, not that the character passed it: the Roll
@@ -155,14 +159,23 @@ yourself to reset it.
 | `Clock_SkipToDay` | a campaign day, 1 to 180 days ahead | 00:00 of that day (numbered like `Clock_CampaignDay`) |
 | `Clock_SkipToHour` | 1 to 23, or 24 for midnight | that hour, today or tomorrow if it has passed |
 
+A value outside its range fails (status `Failed`, the reason in the log); it is not cut down to fit, and the others
+written with it still run. A `Clock_SkipToHour` written with a `Clock_SkipToDay` that fails fails too.
+
 - Requests written together are **one skip to one destination**, worked out in the order of the table. With
   `Clock_SkipToDay`, the hour is an hour of that day: `Clock_SkipToDay` 5 with `Clock_SkipToHour` 9 ends on day 5
   at 09:00, and with `Clock_SkipToHour` 24 on day 5 at 00:00.
-- A long skip advances a few hours at a time over a moment of play, so every dawn, new day and journal entry happens.
+- A long skip advances four hours at a time, a day per moment of play, so every dawn, new day and journal entry
+  happens, and the counters count every minute, hour and day. Two things are coarser while it runs: an object's
+  "every N hours" trigger runs at most once per skipped day, and the read-outs show only every fourth hour, so a
+  Variable Activator waiting for `Clock_Hour` to equal one exact hour can be stepped over. The read-outs are exact
+  once the skip ends; a counter, or a test such as "`Clock_Hour` at least 10", doesn't miss.
+- A skip waits while a battle is in progress, and goes on when it ends.
 - A skip can't be cancelled once written. Each has an optional status variable, such as `Clock_SkipHours_Status`.
 - While a skip runs, the mod keeps what is left of it, in seconds, in a variable of its own,
   `Clock_SkipRemainingSeconds`. It is saved with the game, so a game saved in the middle of a long skip finishes the
-  skip when it is loaded. You can read it, but don't write it.
+  skip when it is loaded, and a skip still running when the party leaves the location finishes in the next one.
+  You can read it, but don't write it.
 
 ## Multiplayer
 

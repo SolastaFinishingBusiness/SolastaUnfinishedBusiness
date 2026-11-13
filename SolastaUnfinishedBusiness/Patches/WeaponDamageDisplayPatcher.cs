@@ -160,6 +160,24 @@ public static class WeaponDamageDisplayPatcher
                 table.gameObject.SetActive(wanted || hitWanted);
             }
 
+            // The game ends Bind by switching off this whole section when it shows nothing: no bonus row and no
+            // weapon header (Reach or Range), which is every melee weapon without the reach or thrown tag. A
+            // custom weapon with "+2 typed" and no enhancement then had its row switched on inside a section
+            // that stayed off, so nothing showed. The section is shown when a row is, and hidden the way the
+            // game hides it when the custom bonus leaves no row and there is no header (+1 enhancement, -1 typed).
+            var statsShown = __instance.statsGroup && __instance.statsGroup.gameObject.activeSelf;
+            var anyShown = wanted || hitWanted || statsShown;
+
+            if (__instance.gameObject.activeSelf != anyShown)
+            {
+                __instance.gameObject.SetActive(anyShown);
+            }
+
+            if (!anyShown)
+            {
+                return;
+            }
+
             // the layout steps the game performs at the end of Bind
             var master = __instance.masterTable;
 

@@ -88,6 +88,12 @@ internal static class DungeonMakerListTools
         return Searches.TryGetValue(screen, out var text) ? text : string.Empty;
     }
 
+    // empties a screen's search before the game fills its list for a new showing (Ensure empties the field)
+    internal static void ClearSearch(string screen)
+    {
+        Searches[screen] = string.Empty;
+    }
+
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
     internal static bool IsPlain(string screen)
     {
@@ -97,7 +103,8 @@ internal static class DungeonMakerListTools
     #region The view
 
     // The game has just filled this table: remember its bound rows in the order they are in now. isBound says
-    // whether a child of the table is a row that holds an item (the screens keep unused pooled rows there too).
+    // whether a child of the table is a row the game bound to an item just now (the screens keep unused pooled
+    // rows there too, and those may still hold an old item; see UserListSortPatcher.IsBoundRow).
     internal static void Bound(Transform table, Func<Transform, bool> isBound)
     {
         if (!table)

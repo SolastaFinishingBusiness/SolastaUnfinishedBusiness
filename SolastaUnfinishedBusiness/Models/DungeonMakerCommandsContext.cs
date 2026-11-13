@@ -269,6 +269,21 @@ internal static class DungeonMakerCommandsContext
             }
         }
 
+        // A dialogue, roll or teleport that was running when the game was saved can't be picked up again: its
+        // variable was already cleared when it started, and nothing in the save says how far it got. Its status
+        // would read Running for the rest of the campaign, so it is closed as Cancelled. (Leaving a location
+        // closes them the same way, in DropRequests; this is the load.) A request of this location that is
+        // running now is in Started.
+        foreach (var command in Commands.Keys)
+        {
+            if (StringValueOf(variables, command + StatusSuffix) == StatusRunning &&
+                Started.All(x => x.Variable != command))
+            {
+                WriteStatus(command, StatusCancelled);
+                Main.Info($"DM command {command} cancelled: it was running when the game was saved.");
+            }
+        }
+
         _listRequested = IntValueOf(variables, ListVariable) != 0;
         _torchesDirty = true;
         _torchRetriesLeft = TorchRetries;
@@ -324,12 +339,35 @@ internal static class DungeonMakerCommandsContext
 
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
-        if (variables != null && variables.TryFindVariable(TeleportNodeVariable, out var variable) && variable is
+        if (variables == null || !variables.TryFindVariable(TeleportNodeVariable, out var variable) || variable is not
             {
                 Type: GameVariableDefinitions.Type.String
-            } && !string.IsNullOrEmpty(variable.StringValue))
+            })
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(variable.StringValue))
         {
             Capture(Kind.TeleportOne, TeleportNodeVariable, variable.StringValue, operation);
+
+            return;
+        }
+
+        // The same goes for a cancel. Once the request at the head of the queue starts, it empties the variable
+        // (ClearVariable), and writing "" over "" raises no event, so "writing an empty text cancels all that are
+        // waiting" did nothing while requests stood behind it. An operation on Teleport_Node that leaves it
+        // empty is that cancel. (Writing "" when the event did fire has already cancelled them; this finds none.)
+        CancelQueuedTeleports();
+    }
+
+    // "" written to Teleport_Node: the requests made so far end as Cancelled. A place kept for one still to come
+    // is not a request yet, and stays.
+    private static void CancelQueuedTeleports()
+    {
+        foreach (var waiting in SoloTeleports.Where(x => !x.Expected).ToArray())
+        {
+            Finish(waiting, StatusCancelled, "the variable was cleared");
         }
     }
 
@@ -631,11 +669,7 @@ internal static class DungeonMakerCommandsContext
         {
             if (queued)
             {
-                // the requests made so far; a place kept for one still to come is not a request yet
-                foreach (var waiting in SoloTeleports.Where(x => !x.Expected).ToArray())
-                {
-                    Finish(waiting, StatusCancelled, "the variable was cleared");
-                }
+                CancelQueuedTeleports();
             }
             else if (replaced)
             {
@@ -701,9 +735,19 @@ internal static class DungeonMakerCommandsContext
         return kept;
     }
 
-    // A place kept at the head of the queue: is its request still to come? Yes while the flow has not started
-    // (its trigger is set) or is running (the gadget's coroutine is on this flow). A flow that has ended without
-    // writing, or that the game never starts, gives its place up, so the requests behind it are not held back.
+    // A place kept at the head of the queue: is its request still to come? Yes while the flow is running (the
+    // gadget's coroutine is on this flow), and while it is triggered and the game will still start it. A flow that
+    // has ended without writing, or that the game won't start, gives its place up, so the requests behind it are
+    // not held back.
+    //
+    // The game starts a triggered flow at a gadget update (GameGadget.Update) only when the gadget's scope is valid
+    // (CheckIfScopeIsValid), no other flow of the gadget is running (activeFunctorSequence), and the flow's
+    // conditions match (IsMatchingConditions; OccupationChanged sets the trigger even when they don't). The first
+    // two are temporary: the gadget may be running another flow of its own (a dialogue, a Wait) or be out of scope
+    // for a while, and its flow then starts later and writes in its turn. Those updates are not counted against
+    // the place's patience, which only measures updates in which nothing kept the flow from starting; the game
+    // clock alone bounds the wait. Conditions that don't match keep it from starting until something changes
+    // them, so the place is given up at once rather than holding every teleport behind it.
     private static bool StepExpected(Request kept)
     {
         var listener = kept.Listener;
@@ -714,14 +758,28 @@ internal static class DungeonMakerCommandsContext
             return false;
         }
 
+        var withinTime = GameSeconds() - kept.IssuedAt <= MaxWaitSeconds;
+
         if (gadget.activeFunctorSequence != null && gadget.currentListenerIndex == listener.Index)
         {
             // running: it may be waiting on purpose before it writes
-            return GameSeconds() - kept.IssuedAt <= MaxWaitSeconds;
+            return withinTime;
         }
 
-        // not started yet: the game starts a triggered flow at the gadget's next update, unless something keeps it
-        return listener.IsTriggered && ++kept.Ticks <= ExpectedPatienceTicks;
+        if (!listener.IsTriggered)
+        {
+            // ended without writing, or its trigger was taken back
+            return false;
+        }
+
+        if (gadget.activeFunctorSequence != null || !gadget.HasValidScope)
+        {
+            // another flow of this gadget runs first, or the gadget isn't updated now: still to come
+            return withinTime;
+        }
+
+        // nothing keeps it from starting at the next update but its conditions
+        return listener.IsMatchingConditions() && ++kept.Ticks <= ExpectedPatienceTicks;
     }
 
     // Works out which character a write acts for, from the gadget flow that made it. It never picks among
