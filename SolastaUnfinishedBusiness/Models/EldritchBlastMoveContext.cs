@@ -147,7 +147,7 @@ internal static class EldritchBlastMoveContext
         internal GameLocationCharacter Caster;
 
         // Every queued move of the cast (the parameters of its spend-power action), and those that have applied
-        // their effect. The difference is what is still to come, which EldritchBlastFallContext needs to know
+        // their effect. The difference is what is still to come, which ForcedMovementFallContext needs to know
         // whether a creature will be moved again before it may fall.
         internal readonly List<CharacterActionParams> Legs = [];
         internal readonly HashSet<CharacterActionParams> DoneLegs = [];
@@ -377,7 +377,7 @@ internal static class EldritchBlastMoveContext
     ///     the whole action short (Codex's review of a8c25e62).
     ///     <para>
     ///         The move is also marked as no longer to come, so no other creature the cast has moved goes on
-    ///         waiting for it before it may fall (<see cref="EldritchBlastFallContext" />).
+    ///         waiting for it before it may fall (<see cref="ForcedMovementFallContext" />).
     ///     </para>
     ///     <para>
     ///         Only the cast's own queued moves are covered. Any other power is left exactly as it was.
@@ -440,7 +440,7 @@ internal static class EldritchBlastMoveContext
         {
             if (IsGone(target) ||
                 (!target.MoveInProgress && !target.Pushed &&
-                 !EldritchBlastFallContext.IsActing(actions, target)))
+                 !ForcedMovementFallContext.IsActing(actions, target)))
             {
                 yield break;
             }

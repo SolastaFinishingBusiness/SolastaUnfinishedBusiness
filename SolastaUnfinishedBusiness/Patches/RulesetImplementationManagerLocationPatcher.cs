@@ -177,6 +177,11 @@ public static class RulesetImplementationManagerLocationPatcher
             // Finalizer below ends it however the method ends.
             ForcedMovementContext.EnterMotionForm();
 
+            //PATCH: falls put off until an action's last push or pull (issue #39): the pushes this queues, by the
+            // mod's code just below or by the game's own, belong to the action the source is carrying out. Ended in
+            // the Finalizer like the line above.
+            ForcedMovementFallContext.EnterMotionForm(formsParams.sourceCharacter);
+
             //PATCH: support for `PushesFromEffectPoint`
             // allows push/grab motion effects to work relative to casting point, instead of caster's position
             // used for Grenadier's force grenades
@@ -206,6 +211,7 @@ public static class RulesetImplementationManagerLocationPatcher
         public static void Finalizer()
         {
             ForcedMovementContext.ExitMotionForm();
+            ForcedMovementFallContext.ExitMotionForm();
         }
 
         private static bool CustomSwap(

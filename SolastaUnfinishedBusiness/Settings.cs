@@ -166,10 +166,11 @@ public class Settings : UnityModManager.ModSettings
     // default (user, 2026-11-10: "a toggleable option in the mod settings, with the default set to true").
     public bool PushOrPullOncePerHit { get; set; } = true;
 
-    // Issue #37: a creature that Eldritch Blast's pushes and pulls (Repelling Blast, Grasp of Hadar) move over a
-    // drop falls only after the cast's last move on it, from where it then is. Off: it falls as soon as a move
-    // leaves it without footing, as the game does it. On by default (user, 2026-11-11: "make this fall handling a
-    // toggleable option as well (that is set to on). If it is off, the default behaviour should occur").
+    // Issues #37 and #39: a creature that the pushes and pulls of one action (a spell, a power, an attack with its
+    // riders, a shove) move over a drop falls only after that action's last move, from where it then is. Off: it
+    // falls as soon as a move leaves it without footing, as the game does it. On by default (user, 2026-11-11: "make
+    // this fall handling a toggleable option as well (that is set to on). If it is off, the default behaviour should
+    // occur"). Issue #37 built it for Eldritch Blast only; the name is kept so players' saved choice carries over.
     public bool DeferFallDuringEldritchBlastMoves { get; set; } = true;
     [Tag(Type = TagType.T2014)] public bool FullyControlConjurations { get; set; }
     public bool EnableHigherGroundRules { get; set; }
