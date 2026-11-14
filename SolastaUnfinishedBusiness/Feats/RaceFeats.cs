@@ -1647,8 +1647,16 @@ internal static class RaceFeats
             // above and only a finish with the pending flag reads.
             rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
+
+            // The knock-out tag is cleared only when no hit is pending: several hits of one action (rays, beams)
+            // each get here before that action's single finish, and a later hit must not erase that an earlier one
+            // already set off Relentless Endurance (Codex's review of 0ff72e2b).
+            if (defender.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
+            {
+                defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
+            }
+
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
-            defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
             yield break;
         }
@@ -1686,8 +1694,16 @@ internal static class RaceFeats
             // above and only a finish with the pending flag reads.
             rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
+
+            // The knock-out tag is cleared only when no hit is pending: several hits of one action (rays, beams)
+            // each get here before that action's single finish, and a later hit must not erase that an earlier one
+            // already set off Relentless Endurance (Codex's review of 0ff72e2b).
+            if (defender.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
+            {
+                defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
+            }
+
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
-            defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
             yield break;
         }
@@ -1774,6 +1790,10 @@ internal static class RaceFeats
                 yield break;
             }
 
+            // a copy: the mode found is the hero's own (RulesetCharacter.AttackModes), and the tag would stay on it
+            // even if the prompt is declined, so a later real opportunity attack with it would count as not one
+            // (Blade Mastery's advantage, for one) (Codex's review of 0ff72e2b)
+            retaliationMode = retaliationMode.Clone();
             retaliationMode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
 
             yield return target.MyReactForOpportunityAttack(
