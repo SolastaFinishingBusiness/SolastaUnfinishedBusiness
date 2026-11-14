@@ -320,34 +320,27 @@ public static partial class Tabletop2024Context
         // Handle Human separately due to Alternate Human
         var humanRace = dbCharacterRaceDefinition.GetElement("Human", true);
 
-        // Find all ASI-related features
-        var toRemoveHuman = humanRace.FeatureUnlocks
+        // The Human's ASI-related features: the plain +1s, or Alternate Human's point pool
+        var humanASIUnlocks = humanRace.FeatureUnlocks
             .Where(fu =>
                 fu.FeatureDefinition.Name.Contains("AttributeModifierHumanAbilityScoreIncrease") ||
                 fu.FeatureDefinition.Name.Contains("PointPoolAbilityScoreImprovement"))
             .ToList();
 
-        foreach (var featureUnlock in toRemoveHuman)
+        // With the option, the background gives the ASI, so the Human's own goes. Without it, the Human gets back the
+        // one that matches the Alternate Human setting if none is there (#55). This used to loop over the features
+        // found above only, so "it isn't there" could never be true and an ASI removed by the option never came back
+        // when it was turned off.
+        if (Main.Settings.EnableBackgroundASI)
         {
-            var exists =
-                humanRace.FeatureUnlocks.Contains(featureUnlock);
-
-            switch (exists)
+            foreach (var featureUnlock in humanASIUnlocks)
             {
-                case true when Main.Settings.EnableBackgroundASI:
-                    humanRace.featureUnlocks.Remove(featureUnlock);
-                    break;
-
-                case false when !Main.Settings.EnableBackgroundASI &&
-                        Main.Settings.EnableAlternateHuman:
-                    humanRace.featureUnlocks.Add(HumanASIImprovement);
-                    break;
-
-                case false when !Main.Settings.EnableBackgroundASI &&
-                        !Main.Settings.EnableAlternateHuman:
-                    humanRace.featureUnlocks.Add(HumanASI);
-                    break;
+                humanRace.featureUnlocks.Remove(featureUnlock);
             }
+        }
+        else if (humanASIUnlocks.Count == 0)
+        {
+            humanRace.featureUnlocks.Add(Main.Settings.EnableAlternateHuman ? HumanASIImprovement : HumanASI);
         }
     }
 

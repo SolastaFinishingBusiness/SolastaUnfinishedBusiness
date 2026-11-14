@@ -255,10 +255,12 @@ public static partial class Tabletop2024Context
 
     internal static void SwitchOneDndSpellSpareTheDying()
     {
+        // the 2024 version's text (range doubles at 5, 11 and 17) with the option, the game's own without it; they
+        // were swapped (#55)
         SpareTheDying.GuiPresentation.description =
             Main.Settings.EnableOneDndSpareTheDyingSpell
-                ? "Spell/&SpareTheDyingDescription"
-                : "Spell/&SpareTheDyingExtendedDescription";
+                ? "Spell/&SpareTheDyingExtendedDescription"
+                : "Spell/&SpareTheDyingDescription";
     }
 
     internal static void SwitchOneDndSpellSpiderClimb()

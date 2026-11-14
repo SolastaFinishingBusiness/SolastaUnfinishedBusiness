@@ -554,7 +554,10 @@ public static partial class Tabletop2024Context
                         actingCharacter, position, CellHelpers.PlacementMode.Station) ||
                     !positioningService.CanCharacterStayAtPosition_Floor(
                         actingCharacter, position,
-                        onlyCheckCellsWithRealGround: Main.Settings.EnableForceAllyMovementAllowsFlight))
+                        // "true" makes the game skip its flying check and demand real ground
+                        // (GameLocationPositioningManager.CanStandOnFloor), so passing the setting as it was meant that
+                        // with it on a flier could never be placed mid-air, and with it off it could (#55)
+                        onlyCheckCellsWithRealGround: !Main.Settings.EnableForceAllyMovementAllowsFlight))
                 {
                     continue;
                 }

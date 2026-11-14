@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -95,21 +96,29 @@ internal sealed class OpenAITranslationService : ITranslationService
             var model = Main.Settings.OpenAIModel;
             var temperature = Main.Settings.OpenAITemperature;
             var topP = Main.Settings.OpenAITopP;
+            var topK = Main.Settings.OpenAITopK;
             var systemPrompt = Main.Settings.OpenAISystemPrompt
                 .Replace("{targetLanguage}", GetLanguageName(targetLanguageCode));
 
-            var requestBody = new
+            var requestBody = new Dictionary<string, object>
             {
-                model,
-                messages = new object[]
+                ["model"] = model,
+                ["messages"] = new object[]
                 {
                     new { role = "system", content = systemPrompt },
                     new { role = "user", content = sourceText }
                 },
-                temperature,
-                top_p = topP,
-                max_tokens = 4096
+                ["temperature"] = temperature,
+                ["top_p"] = topP,
+                ["max_tokens"] = 4096
             };
+
+            // The menu's "Top K" was never sent (#55). It goes only when set above 0, its default: OpenAI's own chat API
+            // has no top_k and rejects a request with one, while OpenAI-compatible servers (local models) take it.
+            if (topK > 0)
+            {
+                requestBody["top_k"] = topK;
+            }
 
             var json = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");

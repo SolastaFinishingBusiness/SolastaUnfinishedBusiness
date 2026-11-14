@@ -459,7 +459,9 @@ public sealed class PathOfTheSpirits : AbstractSubclass
                 [attacker],
                 attacker,
                 "SpiritWalker",
-                Main.Settings.EnableBarbarianRelentlessRage2024
+                // "lasts as long as you are raging" comes with Persistent Rage 2024, which ties Spirit Guardians to the
+                // rage (2024BarbarianContext.SwitchBarbarianPersistentRage); this read the Relentless Rage option (#55)
+                Main.Settings.EnableBarbarianPersistentRage2024
                     ? "Reaction/&UseSpiritWalkerExtendedDescription"
                     : "Reaction/&UseSpiritWalkerDescription",
                 ReactionValidated);
