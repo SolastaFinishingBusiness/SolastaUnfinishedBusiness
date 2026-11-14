@@ -554,10 +554,12 @@ public static partial class Tabletop2024Context
                         actingCharacter, position, CellHelpers.PlacementMode.Station) ||
                     !positioningService.CanCharacterStayAtPosition_Floor(
                         actingCharacter, position,
-                        // "true" makes the game skip its flying check and demand real ground
-                        // (GameLocationPositioningManager.CanStandOnFloor), so passing the setting as it was meant that
-                        // with it on a flier could never be placed mid-air, and with it off it could (#55)
-                        onlyCheckCellsWithRealGround: !Main.Settings.EnableForceAllyMovementAllowsFlight))
+                        // Passed as it is, on purpose: "true" makes the game skip its flying check and demand real
+                        // ground (GameLocationPositioningManager.CanStandOnFloor). So with the setting on, the search
+                        // above reaches other heights but only solid ground; with it off, it stays at the creature's
+                        // height, where a flier can stay in mid-air. The label says so (user, 2026-11-15: keep the
+                        // behaviour, "fix the text according to the actual behaviour currently in game"; #66).
+                        onlyCheckCellsWithRealGround: Main.Settings.EnableForceAllyMovementAllowsFlight))
                 {
                     continue;
                 }
