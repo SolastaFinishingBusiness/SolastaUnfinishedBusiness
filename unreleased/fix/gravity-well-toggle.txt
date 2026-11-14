@@ -1,0 +1,2 @@
+- Graviturgist wizard, Gravity Well (level 6): with its toggle on, a creature hit by the wizard's spell attack is now pushed 1 cell away, as described. It never did anything: the power checked the Evocation wizard's Over-Channel toggle instead of its own. Weapon attacks don't push, as the description says only spell attacks do.
+- Not tested in game: a spell with a saving throw (not expected to push), anything on two computers. Tested in single player: Fire Bolt and Scorching Ray push with the toggle on, not with it off; a quarterstaff hit doesn't push.

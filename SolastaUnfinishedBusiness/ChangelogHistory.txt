@@ -1,6 +1,3 @@
-Unreleased:
-- Graviturgist wizard, Gravity Well (level 6): with its toggle on, a creature hit by the wizard's spell attack is now pushed 1 cell away, as described. It never did anything: the power checked the Evocation wizard's Over-Channel toggle instead of its own. Weapon attacks don't push, as the description says only spell attacks do.
-
 1.16.0:
 - Repelling Blast and Grasp of Hadar have a third state in the Invocations popup, after off and on: "prompt", shown with a light blue question mark. Click the invocation to go through off, on and prompt. With either on prompt, each beam of Eldritch Blast that hits asks, just before it moves the creature, how far Repelling Blast pushes and Grasp of Hadar pulls it (a slider each: 0, 5 or 10 feet) and which goes first. Submit moves the creature for that beam and Skip leaves it; Submit for All and Skip for All do the same for every remaining beam of the cast. A prompt that times out moves the full distance. Enemies and AI-controlled casters aren't asked.
 - Repelling Blast and Grasp of Hadar together: the push now always comes before the pull. It used to follow the order of the character's powers.
