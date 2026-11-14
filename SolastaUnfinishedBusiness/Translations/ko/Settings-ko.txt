@@ -73,7 +73,7 @@ ModUi/&CriticalOption0=<color=#D89555><b>0</b></color>: 게임 기본값, 데미
 ModUi/&CriticalOption1=<color=#D89555><b>1</b></color>: 데미지 주사위의 최대 결과를 합산하여 공격의 데미지에 더합니다. <i><color=#F0DAA0>[XdY+(X*Y)+Z]</color></i>
 ModUi/&CriticalOption2=<color=#D89555><b>2</b></color>: 가능한 가장 높은 결과가 나오는 모든 데미지 주사위를 계속 다시 굴려 총 데미지에 추가합니다.
 ModUi/&CriticalOption3=<color=#D89555><b>3</b></color>: 추가 주사위를 굴리는 대신 공격의 총 데미지를 두 배로 늘립니다. <i><color=#F0DAA0>[(XdY+Z)*2]</color></i>
-ModUi/&DeferFallDuringEldritchBlastMoves=한 번의 행동으로 인한 모든 강제 이동이 끝난 뒤에만 크리처가 떨어지게 하기 <i><color=#F0DAA0>[Repelling Blast나 하다르의 손아귀로 허공 위로 옮겨진 크리처는 그 시전의 마지막 이동이 끝난 위치에서 떨어집니다. 그 전에 끌어서 되돌릴 수도 있습니다. 끄면 이동으로 발 디딜 곳을 잃는 즉시 떨어집니다]</color></i>
+ModUi/&DeferFallDuringEldritchBlastMoves=한 번의 행동으로 인한 모든 강제 이동이 끝난 뒤에만 크리처가 떨어지게 하기 <i><color=#F0DAA0>[하나의 주문, 능력, 공격 또는 밀치기의 밀기와 끌기로 허공 위로 옮겨진 크리처는 그중 마지막 이동이 끝난 위치에서 떨어집니다. 그 전에 이후의 끌기로 되돌릴 수도 있습니다. 끄면 이동으로 발 디딜 곳을 잃는 즉시 떨어집니다]</color></i>
 ModUi/&DisableAutoEquip=인벤토리에 있는 아이템의 자동 장착을 비활성화합니다.
 ModUi/&DisableCastSpellPreRequisitesOnModFeats=<color=#D89555>특기</color> 모드에서 주문 시전 전제 조건 비활성화 <b><i><color=#C04040E0>[재시작 필요]</color></i></b>
 ModUi/&DisableClassPrerequisitesOnModFeats=<color=#D89555>특기</color>에 레벨 전제 조건 비활성화

@@ -73,7 +73,7 @@ ModUi/&CriticalOption0=<color=#D89555><b>0</b></color>: ゲームのデフォル
 ModUi/&CriticalOption1=<color=#D89555><b>1</b></color>: ダメージダイスの最大結果を合計し、それを攻撃のダメージに加えます <i><color=#F0DAA0>[XdY+(X*Y)+Z]</color></i>
 ModUi/&CriticalOption2=<color=#D89555><b>2</b></color>: 可能な限り最高の結果を出したダメージダイスを再度振り直し、合計ダメージに加えます。
 ModUi/&CriticalOption3=<color=#D89555><b>3</b></color>: 追加のサイコロを振る代わりに、攻撃の合計ダメージを 2 倍にします。<i><color=#F0DAA0>[(XdY+Z)*2]</color></i>
-ModUi/&DeferFallDuringEldritchBlastMoves=1つのアクションによる強制移動がすべて解決してからクリーチャーを落下させる <i><color=#F0DAA0>[Repelling Blast やハダルの掌握で足場のない場所へ動かされたクリーチャーは、その発動の最後の移動が終わった位置から落下する。先に引き寄せて戻すこともできる。オフの場合、移動で足場を失った時点ですぐに落下する]</color></i>
+ModUi/&DeferFallDuringEldritchBlastMoves=1つのアクションによる強制移動がすべて解決してからクリーチャーを落下させる <i><color=#F0DAA0>[1つの呪文・パワー・攻撃・突き飛ばしによる押し出しや引き寄せで足場のない場所へ動かされたクリーチャーは、その最後の移動が終わった位置から落下する。後の引き寄せで先に戻すこともできる。オフの場合、移動で足場を失った時点ですぐに落下する]</color></i>
 ModUi/&DisableAutoEquip=インベントリ内のアイテムの自動装備を無効にする
 ModUi/&DisableCastSpellPreRequisitesOnModFeats=モッド <color=#D89555>feats</color> の呪文詠唱の前提条件を無効にします <b><i><color=#C04040E0>[再起動が必要]</color></i></b>
 ModUi/&DisableClassPrerequisitesOnModFeats=<color=#D89555>特技</color>のレベル前提条件を無効にする
