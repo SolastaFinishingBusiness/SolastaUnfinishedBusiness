@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -1623,20 +1624,24 @@ internal static class RaceFeats
 
         #region Knock-Out
 
-        // One record per half-orc with a hit in progress (Codex's reviews of 0ff72e2b and 60787771). Keyed on the
-        // half-orc being hit, so two half-orcs caught by one spell stay apart, and owned by what made the hit: the
-        // attacking character for a weapon attack, the RulesetEffect for a spell or power. Only the finish of that same
-        // attack or effect acts on it:
-        // - a weapon attack has one before-hit and one finish, so each before-hit starts a new record;
+        // The hits in progress on each half-orc, in the order they began (Codex's reviews of 0ff72e2b, 60787771 and
+        // 66260705). Keyed on the half-orc being hit, so two half-orcs caught by one spell stay apart; each record is
+        // owned by what made the hit: the attacking character for a weapon attack, the RulesetEffect for a spell or
+        // power. Only the finish of that same attack or effect acts on a record:
+        // - a weapon attack has one before-hit and one finish, so each before-hit adds a record;
         // - a spell or power with several beams on one creature has a before-hit per beam and one finish, all with the
         //   same RulesetEffect (both read it from the action's params), so a later beam keeps the record and doesn't
         //   erase that an earlier one set off Relentless Endurance;
-        // - the game skips the finish for a target left unconscious; that record is then left behind, and the next
-        //   finish of anything else on the half-orc (a heal, say) only clears it instead of offering an attack
-        //   against whoever made that action. The next before-hit replaces it too.
+        // - an attack that starts while another is still going (a reaction attack in the middle of it) adds its own
+        //   record, and its finish removes only that one, so the outer attack's record survives;
+        // - the game skips the finish for a target left unconscious, so that record is never removed by a finish. It
+        //   matches nothing else (a heal, say, can't set off an attack against the healer), and goes with the
+        //   half-orc's location character: the table holds the half-orc weakly (WeakKeyTable, as a ConditionalWeakTable
+        //   never lets go on this runtime) and each record holds its source weakly, so nothing here keeps a character
+        //   or effect alive after a reload or a location change, and no clean-up hook is needed.
         // The flags used to live in UsedSpecialFeatures, written with TryAdd (never overwriting) and read from the
         // attacker, so the attack never happened.
-        private readonly Dictionary<GameLocationCharacter, PendingHit> _pendingHits = new();
+        private readonly WeakKeyTable<GameLocationCharacter, List<PendingHit>> _pendingHits = new();
 
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
             GameLocationBattleManager battleManager,
@@ -1691,7 +1696,7 @@ internal static class RaceFeats
             yield return HandleKnockOutBehavior(action, defender, action.ActingCharacter, battleManager);
         }
 
-        // Starts (or, for another beam of the same effect, keeps) the record of a hit on the half-orc, and makes sure
+        // Adds (or, for another beam of the same effect, keeps) the record of a hit on the half-orc, and makes sure
         // KnockOutPreventedHandler listens: removed first, so the half-orc holds at most one subscription however many
         // hits there are and whether or not their finish runs.
         private void BeginHit(GameLocationCharacter defender, object source, bool keepSameSource)
@@ -1701,14 +1706,18 @@ internal static class RaceFeats
             rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
 
-            if (keepSameSource &&
-                _pendingHits.TryGetValue(defender, out var pending) &&
-                ReferenceEquals(pending.Source, source))
+            if (!_pendingHits.TryGetValue(defender, out var hits))
+            {
+                hits = [];
+                _pendingHits.Add(defender, hits);
+            }
+
+            if (keepSameSource && hits.Exists(x => x.Is(source)))
             {
                 return;
             }
 
-            _pendingHits[defender] = new PendingHit(source);
+            hits.Add(new PendingHit(source));
         }
 
         // Only Relentless Endurance counts, and it only ever sets the mark: another feature that prevents a knock-out
@@ -1722,9 +1731,10 @@ internal static class RaceFeats
 
             var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-            if (character != null && _pendingHits.TryGetValue(character, out var pending))
+            // the newest hit is the one being resolved: an outer attack's record is older
+            if (character != null && _pendingHits.TryGetValue(character, out var hits) && hits.Count > 0)
             {
-                pending.EnduranceFired = true;
+                hits[hits.Count - 1].EnduranceFired = true;
             }
         }
 
@@ -1734,19 +1744,32 @@ internal static class RaceFeats
             object finishSource,
             GameLocationBattleManager battleManager)
         {
-            if (!_pendingHits.TryGetValue(target, out var pending))
+            if (!_pendingHits.TryGetValue(target, out var hits))
             {
                 yield break;
             }
 
-            _pendingHits.Remove(target);
+            // only this attack's or effect's own record, the newest if a stale one has the same source; a finish of
+            // something that didn't hit the half-orc (a heal, a miss) finds none and leaves the others alone
+            var index = hits.FindLastIndex(x => x.Is(finishSource));
 
+            if (index < 0)
+            {
+                yield break;
+            }
+
+            var pending = hits[index];
             var rulesetTarget = target.RulesetCharacter;
 
-            rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
+            hits.RemoveAt(index);
 
-            // a record of another attack or effect (its finish was skipped) is only cleared
-            if (!ReferenceEquals(pending.Source, finishSource) || !pending.EnduranceFired)
+            if (hits.Count == 0)
+            {
+                _pendingHits.Remove(target);
+                rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
+            }
+
+            if (!pending.EnduranceFired)
             {
                 yield break;
             }
@@ -1861,11 +1884,18 @@ internal static class RaceFeats
             ];
         }
 
-        // a hit on a half-orc waiting for its finish: what made it, and whether Relentless Endurance fired meanwhile
+        // A hit on a half-orc waiting for its finish: what made it (held weakly, so it never keeps an attacker or an
+        // effect alive, nor through them the half-orc that keys the table), and whether Relentless Endurance fired.
         private sealed class PendingHit(object source)
         {
-            internal object Source { get; } = source;
+            private readonly WeakReference<object> _source = new(source);
+
             internal bool EnduranceFired { get; set; }
+
+            internal bool Is(object candidate)
+            {
+                return candidate != null && _source.TryGetTarget(out var target) && ReferenceEquals(target, candidate);
+            }
         }
 
         #endregion
