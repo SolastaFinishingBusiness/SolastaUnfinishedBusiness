@@ -1757,53 +1757,99 @@ internal static class RaceFeats
 
             var attacker = action.ActingCharacter;
 
-            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact() ||
-                attacker == null || attacker == target ||
-                attacker.RulesetActor is not { IsDeadOrDyingOrUnconscious: false })
+            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact())
             {
                 yield break;
             }
 
             battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
-            if (!battleManager)
+            var actionManager =
+                ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;
+
+            if (!battleManager || !actionManager)
             {
                 yield break;
             }
 
             // "Immediately after you use your Relentless Endurance trait, you can use your reaction to make one
-            // weapon attack": a choice, so it goes through the normal reaction prompt (the half-orc may have been
-            // hit by an ally, or not want to use the reaction), with a weapon mode that can actually reach the
-            // creature that hit it, melee first, then ranged, as Wyrmkin's Reactive Retribution does. It used to
-            // execute an opportunity attack straight away with the main-hand mode, unchecked.
-            var (retaliationMode, retaliationModifier) =
-                target.GetFirstMeleeModeThatCanAttack(attacker, battleManager);
+            // weapon attack": any creature a weapon can reach, of the player's choice (user, 2026-11-15: "Let the
+            // player hit any creature of their choice in range. Make it a list selection (one button per enemy) or to
+            // pass to not do the attack"). It used to execute an opportunity attack against the attacker straight
+            // away with the main-hand mode, unchecked; then (0ff72e2b) it was offered against the attacker only.
+            var targets = GetOrcishFuryTargets(target, attacker, battleManager);
 
-            if (retaliationMode == null)
-            {
-                (retaliationMode, retaliationModifier) =
-                    target.GetFirstRangedModeThatCanAttack(attacker, battleManager);
-            }
-
-            if (retaliationMode == null)
+            if (targets.Count == 0)
             {
                 yield break;
             }
 
-            // a copy: the mode found is the hero's own (RulesetCharacter.AttackModes), and the tag would stay on it
-            // even if the prompt is declined, so a later real opportunity attack with it would count as not one
-            // (Blade Mastery's advantage, for one) (Codex's review of 0ff72e2b)
-            retaliationMode = retaliationMode.Clone();
-            retaliationMode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
+            var first = targets[0];
+            var reactionParams = new CharacterActionParams(
+                target,
+                ActionDefinitions.Id.AttackOpportunity,
+                first.Mode,
+                first.Character,
+                first.Modifier) { StringParameter2 = "OrcishFury" };
+            var reactionRequest = new ReactionRequestOrcishFury(reactionParams, attacker ?? target, targets);
+            var count = actionManager.PendingReactionRequestGroups.Count;
 
-            yield return target.MyReactForOpportunityAttack(
-                attacker,
-                attacker,
-                retaliationMode,
-                retaliationModifier,
-                "OrcishFury",
-                () => rulesetTarget.LogCharacterUsedPower(powerOrcishFury),
-                battleManager);
+            actionManager.AddInterruptRequest(reactionRequest);
+
+            yield return battleManager.WaitForReactions(attacker ?? target, actionManager, count);
+
+            if (reactionParams.ReactionValidated)
+            {
+                rulesetTarget.LogCharacterUsedPower(powerOrcishFury);
+            }
+        }
+
+        // The enemies the half-orc can attack now, each with a weapon mode that reaches it (melee first, then
+        // ranged, as Wyrmkin's Reactive Retribution picks), in a fixed order so every computer builds the same list:
+        // the creature that hit first, then the others by distance, then battle order. The modes are copies: the found
+        // mode is the hero's own (RulesetCharacter.AttackModes), and the tag would stay on it even if the prompt is
+        // declined, so a later real opportunity attack with it would count as not one (Blade Mastery's advantage, for
+        // one) (Codex's review of 0ff72e2b).
+        private static List<ReactionRequestOrcishFury.Target> GetOrcishFuryTargets(
+            GameLocationCharacter halfOrc,
+            GameLocationCharacter attacker,
+            GameLocationBattleManager battleManager)
+        {
+            var result = new List<ReactionRequestOrcishFury.Target>();
+            var contenders = Gui.Battle.GetContenders(halfOrc);
+
+            for (var index = 0; index < contenders.Count; index++)
+            {
+                var enemy = contenders[index];
+                var (mode, modifier) = halfOrc.GetFirstMeleeModeThatCanAttack(enemy, battleManager);
+
+                if (mode == null)
+                {
+                    (mode, modifier) = halfOrc.GetFirstRangedModeThatCanAttack(enemy, battleManager);
+                }
+
+                if (mode == null)
+                {
+                    continue;
+                }
+
+                mode = mode.Clone();
+                mode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
+
+                var distance = (int)Behaviors.Specific.DistanceCalculation.GetDistanceFromCharacters(halfOrc, enemy);
+
+                result.Add(new ReactionRequestOrcishFury.Target(enemy, mode, modifier, distance));
+            }
+
+            return
+            [
+                .. result
+                    .Select((x, order) => (x, order))
+                    .OrderBy(t => t.x.Character == attacker ? 0 : 1)
+                    .ThenBy(t => t.x.DistanceCells)
+                    .ThenBy(t => t.order)
+                    .Select(t => t.x)
+            ];
         }
 
         #endregion
