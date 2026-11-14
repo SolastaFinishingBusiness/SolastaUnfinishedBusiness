@@ -247,6 +247,60 @@ internal static class TranslatorContext
         return text.Contains(ModNameMarker) ? text.Replace(ModNameMarker, Main.ModName) : text;
     }
 
+    // A translation text can name another term as %Category/&TermName% (e.g. %Feat/&FeatGroupOrcishFuryTitle% or the
+    // game's own %Feature/&RelentlessEnduranceTitle%); once every mod term is loaded, the marker is replaced with that
+    // term's text in the current language, so a name is written once and every text using it stays in step, in every
+    // language. One level only: a marker inside the referenced text is not resolved again. An unknown term is
+    // reported and its marker left in place.
+    private static readonly Regex TermReferenceMarker = new(@"%([A-Za-z]+/&[A-Za-z0-9_]+)%", RegexOptions.Compiled);
+
+    private static void ResolveTermReferences(
+        LanguageSourceData languageSourceData,
+        int languageIndex,
+        IEnumerable<string> terms)
+    {
+        var englishIndex = languageSourceData.GetLanguageIndexFromCode(English);
+        var resolved = new Dictionary<string, string>();
+
+        foreach (var term in terms)
+        {
+            var termData = languageSourceData.GetTermData(term);
+            var text = termData?.Languages[languageIndex];
+
+            if (text == null || !TermReferenceMarker.IsMatch(text))
+            {
+                continue;
+            }
+
+            resolved[term] = TermReferenceMarker.Replace(text, match =>
+            {
+                var referenced = languageSourceData.GetTermData(match.Groups[1].Value);
+                var referencedText = referenced?.Languages[languageIndex];
+
+                // a game term with no text in this language falls back to its English text, as the game does
+                if (string.IsNullOrEmpty(referencedText) && referenced != null && englishIndex >= 0)
+                {
+                    referencedText = referenced.Languages[englishIndex];
+                }
+
+                if (!string.IsNullOrEmpty(referencedText))
+                {
+                    return referencedText;
+                }
+
+                Main.Error($"term {term} refers to unknown term {match.Groups[1].Value}");
+
+                return match.Value;
+            });
+        }
+
+        // written after the pass, so every reference reads the texts as loaded, whatever the order
+        foreach (var pair in resolved)
+        {
+            languageSourceData.GetTermData(pair.Key).Languages[languageIndex] = pair.Value;
+        }
+    }
+
     private static bool IsModTerm(string fullName, string languageCode)
     {
         return fullName.StartsWith(languageCode) && fullName.EndsWith($"{languageCode}.txt");
@@ -379,6 +433,9 @@ internal static class TranslatorContext
         }
 
         Main.Info($"{lineCount} {languageCode} translation fixes loaded.");
+
+        // replaces %Category/&TermName% markers now that every mod term is in the language source
+        ResolveTermReferences(languageSourceData, languageIndex, englishTerms.Keys.Concat(fixedTerms.Keys));
 
         // creates a report on missing terms
         if (languageCode == English)
