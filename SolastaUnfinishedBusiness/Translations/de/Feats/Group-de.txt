@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=Waffenbeherrschung
 Feature/&MartialChampionSuperiorCriticalDescription=Ihre Waffenangriffe erzielen bei einem Ergebnis von 18, 19 oder 20 einen kritischen Treffer.
 Feat/&FeatGroupOriginDescription=Talente, die über Hintergrundmerkmale verfügbar sind.
 Feat/&FeatGroupOriginTitle=Herkunftstalente
+Reaction/&ReactionAttackOrcishFuryDescription={0} hat dich auf 0 Trefferpunkte gebracht, aber %Feature/&RelentlessEnduranceTitle% hat dich auf den Beinen gehalten. Du kannst deine Reaktion nutzen, um einen Waffenangriff gegen eine Kreatur in Reichweite auszuführen: Wähle sie unten aus oder passe.
+Reaction/&ReactionAttackOrcishFuryReactDescription=Nutze deine Reaktion zum Angriff.
+Reaction/&ReactionAttackOrcishFuryReactTitle=Attacke
+Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%

@@ -695,8 +695,11 @@ internal static partial class SpellBuilders
             {
                 case CharacterActionUsePower:
                 {
-                    actingCharacter.UsedSpecialFeatures.TryAdd(FizbanPlatinumShieldTag, 0);
-                    actingCharacter.UsedSpecialFeatures.TryAdd(FizbanPlatinumShieldTag, rulesetSpell.RemainingRounds);
+                    // Moving the shield recasts the spell; remember the rounds left so the recast below keeps
+                    // them. This used to add 0 and then TryAdd the rounds, which never overwrites, so the stored
+                    // value was always 0 and a moved shield started a fresh minute (moving it every turn kept it
+                    // up forever).
+                    actingCharacter.SetSpecialFeatureUses(FizbanPlatinumShieldTag, rulesetSpell.RemainingRounds);
 
                     var spellRepertoire = rulesetSpell.SpellRepertoire;
 
@@ -717,7 +720,8 @@ internal static partial class SpellBuilders
                         activeCondition.RemainingRounds = value;
                     }
 
-                    actingCharacter.UsedSpecialFeatures.TryAdd(FizbanPlatinumShieldTag, 0);
+                    // Consumed: a later ordinary cast of the spell gets its full duration.
+                    actingCharacter.SetSpecialFeatureUses(FizbanPlatinumShieldTag, 0);
                     break;
             }
         }
