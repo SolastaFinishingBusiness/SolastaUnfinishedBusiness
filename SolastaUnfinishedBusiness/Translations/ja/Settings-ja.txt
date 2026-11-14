@@ -1,4 +1,57 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 知覚されていない10マス以内の対象に気付くため、知覚判定を行う</i>
+ModUi/&DungeonMakerCategories=カテゴリー
+ModUi/&DungeonMakerCategoryArmorClass=アーマークラス
+ModUi/&DungeonMakerCategoryAuthor=作者
+ModUi/&DungeonMakerCategoryAutoStart=自動開始
+ModUi/&DungeonMakerCategoryBaseCreature=基本クリーチャー
+ModUi/&DungeonMakerCategoryBaseItem=基本アイテム
+ModUi/&DungeonMakerCategoryBuyback=買取率 %
+ModUi/&DungeonMakerCategoryCampaignStart=キャンペーン開始地点
+ModUi/&DungeonMakerCategoryChallengeRating=脅威度
+ModUi/&DungeonMakerCategoryCharisma=魅力
+ModUi/&DungeonMakerCategoryConstitution=耐久力
+ModUi/&DungeonMakerCategoryCost=価格
+ModUi/&DungeonMakerCategoryCurrentValue=現在の値
+ModUi/&DungeonMakerCategoryDexterity=敏捷力
+ModUi/&DungeonMakerCategoryDialogStates=ステート数
+ModUi/&DungeonMakerCategoryEncounterTable=遭遇表
+ModUi/&DungeonMakerCategoryEntries=項目数
+ModUi/&DungeonMakerCategoryEnvironment=環境
+ModUi/&DungeonMakerCategoryHitPoints=ヒット・ポイント
+ModUi/&DungeonMakerCategoryIdentifyFee=鑑定料
+ModUi/&DungeonMakerCategoryIntelligence=知力
+ModUi/&DungeonMakerCategoryLabel={0}：
+ModUi/&DungeonMakerCategoryLanguage=言語
+ModUi/&DungeonMakerCategoryMapSize=マップサイズ
+ModUi/&DungeonMakerCategoryMarkup=上乗せ率 %
+ModUi/&DungeonMakerCategoryMaxStartLevel=最大開始レベル
+ModUi/&DungeonMakerCategoryMinStartLevel=最小開始レベル
+ModUi/&DungeonMakerCategoryMonsterCount=モンスター項目数
+ModUi/&DungeonMakerCategoryNo=いいえ
+ModUi/&DungeonMakerCategoryNoList=開いているリストなし
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=カテゴリー
+ModUi/&DungeonMakerCategoryScope=スコープ
+ModUi/&DungeonMakerCategoryStartingValue=初期値
+ModUi/&DungeonMakerCategoryStepCount=ステップ数
+ModUi/&DungeonMakerCategoryStockEntries=在庫項目数
+ModUi/&DungeonMakerCategoryStrength=筋力
+ModUi/&DungeonMakerCategoryTerrain=地形
+ModUi/&DungeonMakerCategoryVariableType=種類
+ModUi/&DungeonMakerCategoryVariables=変数
+ModUi/&DungeonMakerCategoryVisualMood=ビジュアルムード
+ModUi/&DungeonMakerCategoryWisdom=判断力
+ModUi/&DungeonMakerCategoryYes=はい
+ModUi/&DungeonMakerNameValue={0}：{1}
+ModUi/&DungeonMakerSearch=検索...
+ModUi/&DungeonMakerSearchClear=クリア
+ModUi/&DungeonMakerSortAscending=昇順
+ModUi/&DungeonMakerSortDefault=既定
+ModUi/&DungeonMakerSortDescending=降順
+ModUi/&DungeonMakerSortLabel=並び順：
+ModUi/&DungeonMakerSortName=名前
+ModUi/&DungeonMakerSortTitle=タイトル
+ModUi/&DungeonMakerSortType=種類
 ModUi/&SyncAiPerceptionChecks=AIは行動を決める前に、共有された知覚判定を最大3秒待ち、それでも届かない判定はAIを動かしているコンピューターで振る <i><color=#F0DAA0>[知覚されていない対象に知覚判定を行うルールのオプションが有効な場合；オフ：従来どおりAIを実行しているコンピューターで判定し、全プレイヤーがゲーム本体の「ゲーム > ゲームプレイ > ランダムシードを保存する」を同じ設定にしていない限り、非同期が起きる可能性が非常に高い（同じでも起こり得る）；マルチプレイのみ]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=ACと変更された攻撃ロール結果の違いが10以上の場合、クリティカルヒットとミスを有効にします
 ModUI/&EnableDamageOnFailedJumpCheck=失敗したジャンプチェックに1D4ダメージを適用します
@@ -257,7 +310,6 @@ ModUi/&EnableSorcererMetamagic2024=<color=#D89555>メタマジック</color>を�
 ModUi/&EnableSorcererOrigin2024=<color=#D89555>オリジン</color>をレベル1ではなくレベル3で有効にする
 ModUi/&EnableSorcererQuickenedAction=<color=#D89555>クイック呪文</color>アクションを有効にすると、クイック呪文メタマジックを適用したメインアクション呪文をキャストできるようになります。
 ModUi/&EnableSorcererSorcerousRestoration2024=レベル5で<color=#D89555>魔法による回復</color>を有効にする
-ModUi/&EnableSortingDungeonMakerAssets=ダンジョンメーカーエディタでアセットの並べ替えを有効にする
 ModUi/&EnableSpeech=カスタム キャンペーンでスピーチを有効にする <i><color=#F0DAA0>[ナレーションとヒーローのみ]</color></i>
 ModUi/&EnableSpeechActorHelp=• 俳優を選択
 ModUi/&EnableSpeechOnNpcs=<i>+ NPC のスピーチを有効にする <color=#F0DAA0>[キャンペーン マッピングまたは自動割り当てから]</color></i>

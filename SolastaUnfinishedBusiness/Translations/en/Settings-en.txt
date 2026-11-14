@@ -9,6 +9,59 @@ ModUi/&AddHumanoidFavoredEnemyToRanger=Enable <color=#D89555>Humanoid</color> pr
 ModUi/&AddNewScrollsToShops=Add scrolls for new spells to appropriate shops <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewScrollsToTreasure=Add scrolls for new spells to appropriate treasure packs <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddNewWeaponsAndRecipesToShops=Add new weapons and recipes to shops <i><color=#F0DAA0>[hand wraps, halberds, pikes, long maces, hand crossbows]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
+ModUi/&DungeonMakerCategories=Categories
+ModUi/&DungeonMakerCategoryArmorClass=Armor class
+ModUi/&DungeonMakerCategoryAuthor=Author
+ModUi/&DungeonMakerCategoryAutoStart=Auto-start
+ModUi/&DungeonMakerCategoryBaseCreature=Base creature
+ModUi/&DungeonMakerCategoryBaseItem=Base item
+ModUi/&DungeonMakerCategoryBuyback=Buyback %
+ModUi/&DungeonMakerCategoryCampaignStart=Campaign start
+ModUi/&DungeonMakerCategoryChallengeRating=Challenge rating
+ModUi/&DungeonMakerCategoryCharisma=Charisma
+ModUi/&DungeonMakerCategoryConstitution=Constitution
+ModUi/&DungeonMakerCategoryCost=Cost
+ModUi/&DungeonMakerCategoryCurrentValue=Current value
+ModUi/&DungeonMakerCategoryDexterity=Dexterity
+ModUi/&DungeonMakerCategoryDialogStates=States
+ModUi/&DungeonMakerCategoryEncounterTable=Encounter table
+ModUi/&DungeonMakerCategoryEntries=Entries
+ModUi/&DungeonMakerCategoryEnvironment=Environment
+ModUi/&DungeonMakerCategoryHitPoints=Hit points
+ModUi/&DungeonMakerCategoryIdentifyFee=Identify fee
+ModUi/&DungeonMakerCategoryIntelligence=Intelligence
+ModUi/&DungeonMakerCategoryLabel={0}:
+ModUi/&DungeonMakerCategoryLanguage=Language
+ModUi/&DungeonMakerCategoryMapSize=Map size
+ModUi/&DungeonMakerCategoryMarkup=Markup %
+ModUi/&DungeonMakerCategoryMaxStartLevel=Max. start level
+ModUi/&DungeonMakerCategoryMinStartLevel=Min. start level
+ModUi/&DungeonMakerCategoryMonsterCount=Monster entries
+ModUi/&DungeonMakerCategoryNo=No
+ModUi/&DungeonMakerCategoryNoList=No list open
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=Category
+ModUi/&DungeonMakerCategoryScope=Scope
+ModUi/&DungeonMakerCategoryStartingValue=Starting value
+ModUi/&DungeonMakerCategoryStepCount=Steps
+ModUi/&DungeonMakerCategoryStockEntries=Stock entries
+ModUi/&DungeonMakerCategoryStrength=Strength
+ModUi/&DungeonMakerCategoryTerrain=Terrain
+ModUi/&DungeonMakerCategoryVariableType=Type
+ModUi/&DungeonMakerCategoryVariables=Variables
+ModUi/&DungeonMakerCategoryVisualMood=Visual mood
+ModUi/&DungeonMakerCategoryWisdom=Wisdom
+ModUi/&DungeonMakerCategoryYes=Yes
+ModUi/&DungeonMakerNameValue={0}: {1}
+ModUi/&DungeonMakerSearch=Search...
+ModUi/&DungeonMakerSearchClear=Clear
+ModUi/&DungeonMakerSortAscending=Ascending
+ModUi/&DungeonMakerSortDefault=Default
+ModUi/&DungeonMakerSortDescending=Descending
+ModUi/&DungeonMakerSortLabel=Sort:
+ModUi/&DungeonMakerSortName=Name
+ModUi/&DungeonMakerSortTitle=Title
+ModUi/&DungeonMakerSortType=Type
 ModUi/&NewWeaponsAndRecipesBaseInsteadOfPrimed=<i>+ Use base weapons and armor as ingredients instead of Primed versions</i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&NewWeaponsAndRecipesSimplified=<i>+ Use simple all-in-one recipes <color=#F0DAA0>[base ingredients only, does not affect custom items from campaigns]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AddOriginFeatsToAutoLearn= + Add Origin Feats to Auto-Learn
@@ -260,7 +313,6 @@ ModUi/&EnableSorcererMetamagic2024=Enable <color=#D89555>Metamagic</color> at le
 ModUi/&EnableSorcererOrigin2024=Enable <color=#D89555>Origin</color> at level 3 instead of 1
 ModUi/&EnableSorcererQuickenedAction=Enable <color=#D89555>Quickened Spell</color> action to allow cast main action spell with quickened metamagic applied
 ModUi/&EnableSorcererSorcerousRestoration2024=Enable <color=#D89555>Sorcerous Restoration</color> at level 5
-ModUi/&EnableSortingDungeonMakerAssets=Enable assets sorting on Dungeon Maker editor
 ModUi/&EnableSpeech=Enable speech on custom campaigns <i><color=#F0DAA0>[narration and heroes only]</color></i>
 ModUi/&EnableSpeechActorHelp=• Select an actor
 ModUi/&EnableSpeechOnNpcs=<i>+ Enable speech on NPCs <color=#F0DAA0>[either from campaign mapping or auto assignment]</color></i>

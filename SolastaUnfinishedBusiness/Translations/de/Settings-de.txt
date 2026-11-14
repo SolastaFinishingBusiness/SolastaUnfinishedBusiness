@@ -1,4 +1,57 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Würfelt auf Wahrnehmung, um nicht wahrgenommene Ziele innerhalb von 10 Feldern zu bemerken</i>
+ModUi/&DungeonMakerCategories=Kategorien
+ModUi/&DungeonMakerCategoryArmorClass=Rüstungsklasse
+ModUi/&DungeonMakerCategoryAuthor=Autor
+ModUi/&DungeonMakerCategoryAutoStart=Automatisch starten
+ModUi/&DungeonMakerCategoryBaseCreature=Basiskreatur
+ModUi/&DungeonMakerCategoryBaseItem=Basisgegenstand
+ModUi/&DungeonMakerCategoryBuyback=Rückkauf %
+ModUi/&DungeonMakerCategoryCampaignStart=Kampagnenstart
+ModUi/&DungeonMakerCategoryChallengeRating=Herausforderungsgrad
+ModUi/&DungeonMakerCategoryCharisma=Charisma
+ModUi/&DungeonMakerCategoryConstitution=Konstitution
+ModUi/&DungeonMakerCategoryCost=Kosten
+ModUi/&DungeonMakerCategoryCurrentValue=Aktueller Wert
+ModUi/&DungeonMakerCategoryDexterity=Geschicklichkeit
+ModUi/&DungeonMakerCategoryDialogStates=Zustände
+ModUi/&DungeonMakerCategoryEncounterTable=Begegnungstabelle
+ModUi/&DungeonMakerCategoryEntries=Einträge
+ModUi/&DungeonMakerCategoryEnvironment=Umgebung
+ModUi/&DungeonMakerCategoryHitPoints=Trefferpunkte
+ModUi/&DungeonMakerCategoryIdentifyFee=Identifizierungsgebühr
+ModUi/&DungeonMakerCategoryIntelligence=Intelligenz
+ModUi/&DungeonMakerCategoryLabel={0}:
+ModUi/&DungeonMakerCategoryLanguage=Sprache
+ModUi/&DungeonMakerCategoryMapSize=Kartengröße
+ModUi/&DungeonMakerCategoryMarkup=Aufschlag %
+ModUi/&DungeonMakerCategoryMaxStartLevel=Max. Startstufe
+ModUi/&DungeonMakerCategoryMinStartLevel=Min. Startstufe
+ModUi/&DungeonMakerCategoryMonsterCount=Monstereinträge
+ModUi/&DungeonMakerCategoryNo=Nein
+ModUi/&DungeonMakerCategoryNoList=Keine Liste offen
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=Kategorie
+ModUi/&DungeonMakerCategoryScope=Bereich
+ModUi/&DungeonMakerCategoryStartingValue=Startwert
+ModUi/&DungeonMakerCategoryStepCount=Schritte
+ModUi/&DungeonMakerCategoryStockEntries=Sortimentseinträge
+ModUi/&DungeonMakerCategoryStrength=Stärke
+ModUi/&DungeonMakerCategoryTerrain=Gelände
+ModUi/&DungeonMakerCategoryVariableType=Typ
+ModUi/&DungeonMakerCategoryVariables=Variablen
+ModUi/&DungeonMakerCategoryVisualMood=Visuelle Stimmung
+ModUi/&DungeonMakerCategoryWisdom=Weisheit
+ModUi/&DungeonMakerCategoryYes=Ja
+ModUi/&DungeonMakerNameValue={0}: {1}
+ModUi/&DungeonMakerSearch=Suchen...
+ModUi/&DungeonMakerSearchClear=Leeren
+ModUi/&DungeonMakerSortAscending=Aufsteigend
+ModUi/&DungeonMakerSortDefault=Standard
+ModUi/&DungeonMakerSortDescending=Absteigend
+ModUi/&DungeonMakerSortLabel=Sortierung:
+ModUi/&DungeonMakerSortName=Name
+ModUi/&DungeonMakerSortTitle=Titel
+ModUi/&DungeonMakerSortType=Typ
 ModUi/&SyncAiPerceptionChecks=KI wartet vor ihrer Entscheidung bis zu 3 Sekunden auf gemeinsame Wahrnehmungswürfe und würfelt danach noch fehlende auf dem Computer, auf dem sie läuft <i><color=#F0DAA0>[mit der Regeloption, die auf Wahrnehmung für nicht wahrgenommene Ziele würfelt; aus: die KI würfelt sie wie bisher auf dem Rechner, auf dem sie läuft, und Desyncs sind sehr wahrscheinlich, außer alle Spieler haben die Spieloption Spiel > Gameplay > Zufällige Samen erhalten gleich eingestellt (und auch dann noch möglich); nur Mehrspielerpartien]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Ermöglichen
 ModUI/&EnableDamageOnFailedJumpCheck=Wendet 1W4 -Schäden bei fehlgeschlagenen Sprungprüfungen an
@@ -257,7 +310,6 @@ ModUi/&EnableSorcererMetamagic2024=Aktiviere <color=#D89555>Metamagic</color> au
 ModUi/&EnableSorcererOrigin2024=Aktiviere <color=#D89555>Origins</color> auf Level 3 statt auf Level 1.
 ModUi/&EnableSorcererQuickenedAction=Aktivieren Sie die Aktion <color=#D89555>Beschleunigter Zauber</color>, um das Wirken des Hauptaktionszaubers mit angewandter beschleunigter Metamagie zu ermöglichen.
 ModUi/&EnableSorcererSorcerousRestoration2024=Aktiviere <color=#D89555>Zauberhafte Wiederherstellung</color> auf Stufe 5.
-ModUi/&EnableSortingDungeonMakerAssets=Aktivieren Sie die Sortierung von Assets im Dungeon Maker-Editor.
 ModUi/&EnableSpeech=Aktivieren Sie die Sprachausgabe in benutzerdefinierten Kampagnen <i><color=#F0DAA0>[nur Erzählung und Helden]</color></i>
 ModUi/&EnableSpeechActorHelp=• Wählen Sie einen Schauspieler
 ModUi/&EnableSpeechOnNpcs=<i>+ Sprache für NPCs aktivieren <color=#F0DAA0>[entweder über Kampagnenzuordnung oder automatische Zuweisung]</color></i>

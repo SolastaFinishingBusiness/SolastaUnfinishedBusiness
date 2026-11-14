@@ -1,4 +1,57 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Rola Percepção para notar alvos não percebidos a até 10 casas</i>
+ModUi/&DungeonMakerCategories=Categorias
+ModUi/&DungeonMakerCategoryArmorClass=Classe de armadura
+ModUi/&DungeonMakerCategoryAuthor=Autor
+ModUi/&DungeonMakerCategoryAutoStart=Início automático
+ModUi/&DungeonMakerCategoryBaseCreature=Criatura base
+ModUi/&DungeonMakerCategoryBaseItem=Item base
+ModUi/&DungeonMakerCategoryBuyback=Recompra %
+ModUi/&DungeonMakerCategoryCampaignStart=Início da campanha
+ModUi/&DungeonMakerCategoryChallengeRating=Nível de desafio
+ModUi/&DungeonMakerCategoryCharisma=Carisma
+ModUi/&DungeonMakerCategoryConstitution=Constituição
+ModUi/&DungeonMakerCategoryCost=Custo
+ModUi/&DungeonMakerCategoryCurrentValue=Valor atual
+ModUi/&DungeonMakerCategoryDexterity=Destreza
+ModUi/&DungeonMakerCategoryDialogStates=Estados
+ModUi/&DungeonMakerCategoryEncounterTable=Tabela de encontros
+ModUi/&DungeonMakerCategoryEntries=Entradas
+ModUi/&DungeonMakerCategoryEnvironment=Ambiente
+ModUi/&DungeonMakerCategoryHitPoints=Pontos de vida
+ModUi/&DungeonMakerCategoryIdentifyFee=Taxa de identificação
+ModUi/&DungeonMakerCategoryIntelligence=Inteligência
+ModUi/&DungeonMakerCategoryLabel={0}:
+ModUi/&DungeonMakerCategoryLanguage=Idioma
+ModUi/&DungeonMakerCategoryMapSize=Tamanho do mapa
+ModUi/&DungeonMakerCategoryMarkup=Acréscimo %
+ModUi/&DungeonMakerCategoryMaxStartLevel=Nível inicial máx.
+ModUi/&DungeonMakerCategoryMinStartLevel=Nível inicial mín.
+ModUi/&DungeonMakerCategoryMonsterCount=Entradas de monstros
+ModUi/&DungeonMakerCategoryNo=Não
+ModUi/&DungeonMakerCategoryNoList=Nenhuma lista aberta
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=Categoria
+ModUi/&DungeonMakerCategoryScope=Escopo
+ModUi/&DungeonMakerCategoryStartingValue=Valor inicial
+ModUi/&DungeonMakerCategoryStepCount=Etapas
+ModUi/&DungeonMakerCategoryStockEntries=Entradas de estoque
+ModUi/&DungeonMakerCategoryStrength=Força
+ModUi/&DungeonMakerCategoryTerrain=Terreno
+ModUi/&DungeonMakerCategoryVariableType=Tipo
+ModUi/&DungeonMakerCategoryVariables=Variáveis
+ModUi/&DungeonMakerCategoryVisualMood=Clima visual
+ModUi/&DungeonMakerCategoryWisdom=Sabedoria
+ModUi/&DungeonMakerCategoryYes=Sim
+ModUi/&DungeonMakerNameValue={0}: {1}
+ModUi/&DungeonMakerSearch=Buscar...
+ModUi/&DungeonMakerSearchClear=Limpar
+ModUi/&DungeonMakerSortAscending=Crescente
+ModUi/&DungeonMakerSortDefault=Padrão
+ModUi/&DungeonMakerSortDescending=Decrescente
+ModUi/&DungeonMakerSortLabel=Ordem:
+ModUi/&DungeonMakerSortName=Nome
+ModUi/&DungeonMakerSortTitle=Título
+ModUi/&DungeonMakerSortType=Tipo
 ModUi/&SyncAiPerceptionChecks=A IA espera até 3 segundos por rolagens de Percepção compartilhadas antes de decidir o que fazer; as que ainda faltarem são roladas no computador que a executa <i><color=#F0DAA0>[com a opção de Regras que rola Percepção para alvos não percebidos; desligado: a IA as rola no computador que a executa, como antes, e dessincronizações são muito prováveis a menos que todos os jogadores tenham a opção do jogo Jogo > Jogo > Preservar Sorteios Aleatórios configurada igual (e ainda possíveis mesmo assim); só partidas multijogador]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Ativar sucessos e erros críticos quando a diferença entre o resultado do rolo de ataque AC e o ataque é 10 ou mais
 ModUI/&EnableDamageOnFailedJumpCheck=Aplica 1d4 Danos em verificações de salto falhas
@@ -257,7 +310,6 @@ ModUi/&EnableSorcererMetamagic2024=Habilitar <color=#D89555>Metamagic</color> no
 ModUi/&EnableSorcererOrigin2024=Habilitar <color=#D89555>Origens</color> no nível 3 em vez de 1
 ModUi/&EnableSorcererQuickenedAction=Habilitar ação <color=#D89555>Feitiço Acelerado</color> para permitir conjurar feitiço de ação principal com metamagia acelerada aplicada
 ModUi/&EnableSorcererSorcerousRestoration2024=Habilitar <color=#D89555>Restauração Feiticeira</color> no nível 5
-ModUi/&EnableSortingDungeonMakerAssets=Habilitar classificação de ativos no editor do Dungeon Maker
 ModUi/&EnableSpeech=Habilitar fala em campanhas personalizadas <i><color=#F0DAA0>[somente narração e heróis]</color></i>
 ModUi/&EnableSpeechActorHelp=• Selecione um ator
 ModUi/&EnableSpeechOnNpcs=<i>+ Habilitar fala em NPCs <color=#F0DAA0>[por mapeamento de campanha ou atribuição automática]</color></i>

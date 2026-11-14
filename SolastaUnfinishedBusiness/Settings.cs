@@ -383,7 +383,22 @@ public class Settings : UnityModManager.ModSettings
     //
 
     public bool EnableLoggingInvalidReferencesInUserCampaigns { get; set; }
-    public bool EnableSortingDungeonMakerAssets { get; set; }
+
+    // How the Dungeon Maker editor's content lists, the variable picker and the campaign variables cheat panel are
+    // shown (CustomUI/DungeonMakerListTools.cs): 0 the campaign's own order, 1 by name, 2 by title or type; and
+    // whether that order is reversed. Set with the bar on those screens. Only what is shown changes, never the
+    // campaign's lists.
+    public int DungeonMakerListSort { get; set; }
+    public bool DungeonMakerListSortDescending { get; set; }
+
+    // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"
+    // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by
+    // DungeonMakerListTools.CategoryChoice; a list that isn't there has none.
+    public string DungeonMakerCategorySorts { get; set; } = string.Empty;
+
+    // The sections themselves (the campaign editor's twelve lists, a palette's categories) in title order instead of
+    // the game's; the "Categories:" toggle on those bars (issue #42).
+    public bool DungeonMakerCategoriesAlphabetical { get; set; }
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }

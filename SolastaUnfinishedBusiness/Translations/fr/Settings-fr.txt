@@ -1,4 +1,57 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Lance un jet de Perception pour remarquer les cibles non perçues à 10 cases ou moins</i>
+ModUi/&DungeonMakerCategories=Catégories
+ModUi/&DungeonMakerCategoryArmorClass=Classe d'armure
+ModUi/&DungeonMakerCategoryAuthor=Auteur
+ModUi/&DungeonMakerCategoryAutoStart=Démarrage auto
+ModUi/&DungeonMakerCategoryBaseCreature=Créature de base
+ModUi/&DungeonMakerCategoryBaseItem=Objet de base
+ModUi/&DungeonMakerCategoryBuyback=Rachat %
+ModUi/&DungeonMakerCategoryCampaignStart=Début de campagne
+ModUi/&DungeonMakerCategoryChallengeRating=Facteur de puissance
+ModUi/&DungeonMakerCategoryCharisma=Charisme
+ModUi/&DungeonMakerCategoryConstitution=Constitution
+ModUi/&DungeonMakerCategoryCost=Coût
+ModUi/&DungeonMakerCategoryCurrentValue=Valeur actuelle
+ModUi/&DungeonMakerCategoryDexterity=Dextérité
+ModUi/&DungeonMakerCategoryDialogStates=États
+ModUi/&DungeonMakerCategoryEncounterTable=Table de rencontres
+ModUi/&DungeonMakerCategoryEntries=Entrées
+ModUi/&DungeonMakerCategoryEnvironment=Environnement
+ModUi/&DungeonMakerCategoryHitPoints=Points de vie
+ModUi/&DungeonMakerCategoryIdentifyFee=Prix d'identification
+ModUi/&DungeonMakerCategoryIntelligence=Intelligence
+ModUi/&DungeonMakerCategoryLabel={0} :
+ModUi/&DungeonMakerCategoryLanguage=Langue
+ModUi/&DungeonMakerCategoryMapSize=Taille de la carte
+ModUi/&DungeonMakerCategoryMarkup=Majoration %
+ModUi/&DungeonMakerCategoryMaxStartLevel=Niveau de départ max.
+ModUi/&DungeonMakerCategoryMinStartLevel=Niveau de départ min.
+ModUi/&DungeonMakerCategoryMonsterCount=Entrées de monstres
+ModUi/&DungeonMakerCategoryNo=Non
+ModUi/&DungeonMakerCategoryNoList=Aucune liste ouverte
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=Catégorie
+ModUi/&DungeonMakerCategoryScope=Portée
+ModUi/&DungeonMakerCategoryStartingValue=Valeur initiale
+ModUi/&DungeonMakerCategoryStepCount=Étapes
+ModUi/&DungeonMakerCategoryStockEntries=Entrées de stock
+ModUi/&DungeonMakerCategoryStrength=Force
+ModUi/&DungeonMakerCategoryTerrain=Terrain
+ModUi/&DungeonMakerCategoryVariableType=Type
+ModUi/&DungeonMakerCategoryVariables=Variables
+ModUi/&DungeonMakerCategoryVisualMood=Ambiance visuelle
+ModUi/&DungeonMakerCategoryWisdom=Sagesse
+ModUi/&DungeonMakerCategoryYes=Oui
+ModUi/&DungeonMakerNameValue={0} : {1}
+ModUi/&DungeonMakerSearch=Rechercher...
+ModUi/&DungeonMakerSearchClear=Effacer
+ModUi/&DungeonMakerSortAscending=Croissant
+ModUi/&DungeonMakerSortDefault=Par défaut
+ModUi/&DungeonMakerSortDescending=Décroissant
+ModUi/&DungeonMakerSortLabel=Tri :
+ModUi/&DungeonMakerSortName=Nom
+ModUi/&DungeonMakerSortTitle=Titre
+ModUi/&DungeonMakerSortType=Type
 ModUi/&SyncAiPerceptionChecks=L'IA attend jusqu'à 3 secondes des jets de Perception partagés avant de choisir son action, puis lance ceux qui manquent encore sur l'ordinateur qui l'exécute <i><color=#F0DAA0>[avec l'option de Règles qui lance la Perception pour les cibles non perçues ; désactivé : l'IA les lance sur l'ordinateur qui l'exécute, comme avant, et les désynchronisations sont très probables sauf si tous les joueurs ont réglé de la même façon l'option du jeu Jeu > Gameplay > Préserver le germe aléatoire (et restent possibles même alors) ; parties multijoueur uniquement]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Activer les coups et les manques critiques lorsque la différence entre le résultat AC et le résultat du rouleau d'attaque modifié est de 10 ou plus
 ModUI/&EnableDamageOnFailedJumpCheck=Applique 1d4 dégâts sur les contrôles de saut défaillants
@@ -257,7 +310,6 @@ ModUi/&EnableSorcererMetamagic2024=Activer <color=#D89555>Metamagic</color> au n
 ModUi/&EnableSorcererOrigin2024=Activer <color=#D89555>Origines</color> au niveau 3 au lieu de 1
 ModUi/&EnableSorcererQuickenedAction=Activez l'action <color=#D89555>Sort accéléré</color> pour permettre de lancer le sort d'action principal avec la métamagie accélérée appliquée
 ModUi/&EnableSorcererSorcerousRestoration2024=Activer la <color=#D89555>Restauration magique</color> au niveau 5
-ModUi/&EnableSortingDungeonMakerAssets=Activer le tri des ressources sur l'éditeur Dungeon Maker
 ModUi/&EnableSpeech=Activer la parole dans les campagnes personnalisées <i><color=#F0DAA0>[narration et héros uniquement]</color></i>
 ModUi/&EnableSpeechActorHelp=• Sélectionnez un acteur
 ModUi/&EnableSpeechOnNpcs=<i>+ Activer la parole sur les PNJ <color=#F0DAA0>[soit à partir de la cartographie de campagne, soit à partir de l'attribution automatique]</color></i>
