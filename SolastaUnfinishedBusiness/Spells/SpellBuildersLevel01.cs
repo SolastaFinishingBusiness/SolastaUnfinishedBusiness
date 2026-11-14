@@ -1621,8 +1621,10 @@ internal static partial class SpellBuilders
 
             var rulesetTarget = target.RulesetCharacter;
 
-            if (rulesetTarget.HasConditionOfCategoryAndType(
-                    AttributeDefinitions.TagEffect, RuleDefinitions.ConditionSurprised))
+            // The game adds Surprised under the combat category when a battle starts (GameLocationCharacter.StartBattle,
+            // TagCombat); this looked only under TagEffect, so a surprised creature could be targeted (#64).
+            // HasConditionOfType looks in every category, as the Slayer's critical-hit rule does.
+            if (rulesetTarget.HasConditionOfType(RuleDefinitions.ConditionSurprised))
             {
                 failureFlags.Add("Failure/&FailureFlagTargetMustNotBeSurprised");
                 return false;
