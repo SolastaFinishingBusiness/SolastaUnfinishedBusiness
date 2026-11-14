@@ -449,8 +449,11 @@ public sealed class MartialWarlord : AbstractSubclass
             var halfMaxTacticalMoves = (targetCharacter.MaxTacticalMoves + 1) / 2; // half-rounded up
             var boxInt = new BoxInt(targetCharacter.LocationPosition, int3.zero, int3.zero);
 
-            if (Main.Settings.EnableForceAllyMovementAllowsFlight) { boxInt.Inflate(halfMaxTacticalMoves); }
-            else { boxInt.Inflate(halfMaxTacticalMoves, 0, halfMaxTacticalMoves); }
+            // every height within reach, as the game's own position cursor searches
+            // (CursorLocationSelectPosition.ComputeValidPositions). The mod's setting that kept the search at the
+            // creature's own height unless it was on was removed (user, 2026-11-15: "Completely remove the current
+            // feature and leave it to Solasta's default implementation"; #66).
+            boxInt.Inflate(halfMaxTacticalMoves);
 
             foreach (var position in boxInt.EnumerateAllPositionsWithin())
             {

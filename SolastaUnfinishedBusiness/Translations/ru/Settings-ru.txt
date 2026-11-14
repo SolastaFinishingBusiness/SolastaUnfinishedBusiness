@@ -110,7 +110,6 @@ ModUi/&EnableActionSwitching=Включить панель переключен�
 ModUi/&EnableAdditionalBackstoryDisplay=Включить отображение дополнительной предыстории при просмотре происхождения
 ModUi/&EnableAdditionalIconsOnLevelMap=Включить дополнительные значки для лагерей, выходов и телепортов на карте уровня
 ModUi/&EnableAdditionalItemsInDungeonMaker=Добавить предметы мода в редактор
-ModUi/&EnableAllyMovementAllowsFlight=Позволить умениям, перемещающим персонажа или союзника, достигать твёрдой земли на другой высоте, но не в воздухе (например <color=#D89555>Атака с манёвром</color> или <color=#D89555>Инстинктивный бросок</color>) <i><color=#F0DAA0>[выкл.: только на той же высоте, где летающее существо может и остаться в воздухе]</color></i>
 ModUi/&EnableAlternateHuman=Включить альтернативное происхождение <color=#D89555>Человека</color> <i><color=#F0DAA0>[+1 черта / +2 очка характеристик / +1 навык]</color></i>
 ModUi/&EnableAlternateVotingSystem=Включить альтернативную систему голосования <i><color=#F0DAA0>[весомость выбора = голоса * модификатор Харизмы героя]</color></i>
 ModUi/&EnableBG3AbjurationArcaneWard=Включить реализацию <color=#D89555>Магической защиты</color> Волшебника школы <b>Ограждения</b> как в BG3

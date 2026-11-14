@@ -543,8 +543,11 @@ public static partial class Tabletop2024Context
             var halfMaxTacticalMoves = (actingCharacter.MaxTacticalMoves + 1) / 2; // half-rounded up
             var boxInt = new BoxInt(actingCharacter.LocationPosition, int3.zero, int3.zero);
 
-            if (Main.Settings.EnableForceAllyMovementAllowsFlight) { boxInt.Inflate(halfMaxTacticalMoves); }
-            else { boxInt.Inflate(halfMaxTacticalMoves, 0, halfMaxTacticalMoves); }
+            // every height within reach, as the game's own position cursor searches
+            // (CursorLocationSelectPosition.ComputeValidPositions). The mod's setting that kept the search at the
+            // creature's own height unless it was on was removed (user, 2026-11-15: "Completely remove the current
+            // feature and leave it to Solasta's default implementation"; #66).
+            boxInt.Inflate(halfMaxTacticalMoves);
 
             foreach (var position in boxInt.EnumerateAllPositionsWithin())
             {
@@ -554,12 +557,9 @@ public static partial class Tabletop2024Context
                         actingCharacter, position, CellHelpers.PlacementMode.Station) ||
                     !positioningService.CanCharacterStayAtPosition_Floor(
                         actingCharacter, position,
-                        // Passed as it is, on purpose: "true" makes the game skip its flying check and demand real
-                        // ground (GameLocationPositioningManager.CanStandOnFloor). So with the setting on, the search
-                        // above reaches other heights but only solid ground; with it off, it stays at the creature's
-                        // height, where a flier can stay in mid-air. The label says so (user, 2026-11-15: keep the
-                        // behaviour, "fix the text according to the actual behaviour currently in game"; #66).
-                        onlyCheckCellsWithRealGround: Main.Settings.EnableForceAllyMovementAllowsFlight))
+                        // the game's own rule: only a teleport must end on real ground. These moves are walks
+                        // (a TacticalMove), so the flag is off and a flier may stop in mid-air, a walker needs a floor.
+                        onlyCheckCellsWithRealGround: cursorLocationSelectPosition.isTeleportingSpell))
                 {
                     continue;
                 }
