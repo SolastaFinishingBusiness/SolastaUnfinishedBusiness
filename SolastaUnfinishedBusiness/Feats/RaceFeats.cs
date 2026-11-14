@@ -1657,7 +1657,6 @@ internal static class RaceFeats
             }
 
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
-            Diag($"before-hit on {defender.Name} by {attacker.Name}: pending set, tag {defender.GetSpecialFeatureUses(_knockOutPreventedTag, 0)}");
 
             yield break;
         }
@@ -1705,7 +1704,6 @@ internal static class RaceFeats
             }
 
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
-            Diag($"before-hit on {defender.Name} by {attacker.Name}: pending set, tag {defender.GetSpecialFeatureUses(_knockOutPreventedTag, 0)}");
 
             yield break;
         }
@@ -1726,7 +1724,6 @@ internal static class RaceFeats
         {
             var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-            Diag($"knock-out prevented on {rulesetCharacter.Name}: source {source?.Name}, match {source == DamageAffinityHalfOrcRelentlessEndurance}, location character {character != null}");
 
             character.SetSpecialFeatureUses(
                 _knockOutPreventedTag, source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0);
@@ -1741,7 +1738,6 @@ internal static class RaceFeats
             // write them. They used to be read from the attacker, whose knock-out tag had just been set to 0, so the
             // attack after Relentless Endurance never happened; and the resets were TryAdd calls, which never
             // overwrite an existing key.
-            Diag($"finish on {target.Name} by {action.ActingCharacter?.Name}: pending {target.GetSpecialFeatureUses(powerOrcishFury.Name, 0)}, tag {target.GetSpecialFeatureUses(_knockOutPreventedTag, 0)}");
 
             if (target.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
             {
@@ -1763,7 +1759,6 @@ internal static class RaceFeats
 
             var attacker = action.ActingCharacter;
 
-            Diag($"knock-out tag seen on {target.Name}: battle {Gui.Battle != null}, initiative {Gui.Battle?.InitiativeRollFinished}, can act {target.CanAct()}, reaction available {target.IsReactionAvailable()}, reaction status {target.GetActionTypeStatus(ActionDefinitions.ActionType.Reaction)}");
 
             battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
@@ -1793,7 +1788,6 @@ internal static class RaceFeats
             // away with the main-hand mode, unchecked; then (0ff72e2b) it was offered against the attacker only.
             var targets = GetOrcishFuryTargets(target, attacker, battleManager);
 
-            Diag($"{targets.Count} targets for {target.Name}");
 
             if (targets.Count == 0)
             {
@@ -1814,18 +1808,11 @@ internal static class RaceFeats
 
             yield return battleManager.WaitForReactions(attacker ?? target, actionManager, count);
 
-            Diag($"answered: validated {reactionParams.ReactionValidated}, target {reactionParams.TargetCharacters[0].Name}");
 
             if (reactionParams.ReactionValidated)
             {
                 rulesetTarget.LogCharacterUsedPower(powerOrcishFury);
             }
-        }
-
-        // TEMPORARY diagnostics for the Orcish Fury prompt not showing in game (38a42048); remove once found
-        private static void Diag(string message)
-        {
-            Main.Info($"[OrcishFury] {message}");
         }
 
         // The enemies the half-orc can attack now, each with a weapon mode that reaches it (melee first, then
@@ -1846,14 +1833,12 @@ internal static class RaceFeats
             {
                 var enemy = contenders[index];
                 var (mode, modifier) = halfOrc.GetFirstMeleeModeThatCanAttack(enemy, battleManager);
-                var melee = mode != null;
 
                 if (mode == null)
                 {
                     (mode, modifier) = halfOrc.GetFirstRangedModeThatCanAttack(enemy, battleManager);
                 }
 
-                Diag($"contender {enemy.Name}: melee {melee}, ranged {!melee && mode != null}, modes {halfOrc.RulesetCharacter.AttackModes.Count}");
 
                 if (mode == null)
                 {

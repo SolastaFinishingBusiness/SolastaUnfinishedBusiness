@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} vous a fait tomber à 0 point 
 Reaction/&ReactionAttackOrcishFuryReactDescription=Utilisez votre réaction pour attaquer.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Attaque
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 case)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} cases)

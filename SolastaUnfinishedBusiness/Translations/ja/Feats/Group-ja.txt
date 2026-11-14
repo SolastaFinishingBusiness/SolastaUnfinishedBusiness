@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} によってヒット・ポイ
 Reaction/&ReactionAttackOrcishFuryReactDescription=反応を利用して攻撃します。
 Reaction/&ReactionAttackOrcishFuryReactTitle=攻撃
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1マス)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1}マス)

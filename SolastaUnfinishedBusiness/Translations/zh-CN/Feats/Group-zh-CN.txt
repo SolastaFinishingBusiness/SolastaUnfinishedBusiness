@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} 将你的生命值降至 0，�
 Reaction/&ReactionAttackOrcishFuryReactDescription=利用你的反应来攻击。
 Reaction/&ReactionAttackOrcishFuryReactTitle=攻击
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1格)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1}格)

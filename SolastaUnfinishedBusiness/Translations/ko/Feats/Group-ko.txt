@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0}이(가) 당신의 HP를 0으�
 Reaction/&ReactionAttackOrcishFuryReactDescription=반응을 이용해 공격하세요.
 Reaction/&ReactionAttackOrcishFuryReactTitle=공격
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1칸)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1}칸)

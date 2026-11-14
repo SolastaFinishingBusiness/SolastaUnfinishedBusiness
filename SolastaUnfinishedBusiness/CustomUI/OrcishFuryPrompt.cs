@@ -8,7 +8,12 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 ///     <see cref="ReactionRequestOrcishFury" /> (user, 2026-11-15: "Let the player hit any creature of their choice in
 ///     range. Make it a list selection (one button per enemy) or to pass to not do the attack"):
 ///     <list type="bullet">
-///         <item>one button per creature a weapon can reach, with its name and distance, two to a row;</item>
+///         <item>
+///             one button per creature a weapon can reach, each on its own row, with its name and hit points as the
+///             game shows them on its portrait, or ?? / ?? when the game hides them (user, 2026-11-15: "make each entry
+///             fill one row by itself, and show "Monster name (HP/HP)"", "If the HP is unknown, use ??/??", "Make sure
+///             to keep the space. So, for example "14 / 30" and "?? / ??"");
+///         </item>
 ///         <item>the game's own Pass button, kept as it is, which declines (and is what the timer presses).</item>
 ///     </list>
 ///     The game's React button is hidden: it would attack the first creature without saying which. A creature's
@@ -43,28 +48,30 @@ internal static class OrcishFuryPrompt
         rootLayout.childForceExpandWidth = true;
         rootLayout.childForceExpandHeight = false;
 
-        Transform row = null;
-
         for (var index = 0; index < request.Targets.Count; index++)
         {
-            if (index % 2 == 0)
-            {
-                row = EldritchBlastMovePrompt.AddRow(root.transform);
-            }
-
-            var target = request.Targets[index];
-            var name = new GuiCharacter(target.Character).Name;
-            var text = target.DistanceCells == 1
-                ? Gui.Format("Reaction/&ReactionAttackOrcishFuryTargetCell", name)
-                : Gui.Format("Reaction/&ReactionAttackOrcishFuryTargetCells", name, target.DistanceCells.ToString());
+            var row = EldritchBlastMovePrompt.AddRow(root.transform);
             var option = index;
 
-            EldritchBlastMovePrompt.AddButton(row, item.ReactButton.gameObject, text, () => Answer(item, request, option));
+            EldritchBlastMovePrompt.AddButton(row, item.ReactButton.gameObject, Label(request.Targets[index]),
+                () => Answer(item, request, option));
         }
 
         // only React goes: Pass stays the game's own, with its own handling (and the timer's)
         item.ReactButton.gameObject.SetActive(false);
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)item.transform);
+    }
+
+    // "Name (14 / 30)", or "Name (?? / ??)" when the game hides the creature's hit points: the same rule as the
+    // game's own health label on the portrait (GuiCharacter.FormatHealthLabel checks HasHitPointsKnowledge).
+    private static string Label(ReactionRequestOrcishFury.Target target)
+    {
+        var character = new GuiCharacter(target.Character);
+        var hitPoints = character.HasHitPointsKnowledge
+            ? $"{character.CurrentHitPoints} / {character.HitPoints}"
+            : "?? / ??";
+
+        return $"{character.Name} ({hitPoints})";
     }
 
     /// <summary>Takes the buttons out of <paramref name="item" /> and shows the game's React button again.</summary>

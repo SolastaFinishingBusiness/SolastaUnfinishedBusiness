@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} te ha dejado a 0 puntos de gol
 Reaction/&ReactionAttackOrcishFuryReactDescription=Usa tu reacción para atacar.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Ataque
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 casilla)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} casillas)

@@ -152,6 +152,4 @@ Feature/&MartialChampionSuperiorCriticalDescription=Your weapon attacks score a 
 Reaction/&ReactionAttackOrcishFuryDescription={0} dropped you to 0 hit points, but %Feature/&RelentlessEnduranceTitle% kept you up. You can use your reaction to make one weapon attack against a creature in range: pick it below, or pass.
 Reaction/&ReactionAttackOrcishFuryReactDescription=Use your reaction to attack.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Attack
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 cell)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} cells)
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%

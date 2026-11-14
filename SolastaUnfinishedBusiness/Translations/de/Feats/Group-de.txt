@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} hat dich auf 0 Trefferpunkte g
 Reaction/&ReactionAttackOrcishFuryReactDescription=Nutze deine Reaktion zum Angriff.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Attacke
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 Feld)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} Felder)

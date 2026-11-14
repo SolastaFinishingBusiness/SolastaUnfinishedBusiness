@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} опустил ваши хит
 Reaction/&ReactionAttackOrcishFuryReactDescription=Воспользуйтесь реакцией для атаки.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Атака
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 кл.)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} кл.)

@@ -153,5 +153,3 @@ Reaction/&ReactionAttackOrcishFuryDescription={0} reduziu você a 0 pontos de vi
 Reaction/&ReactionAttackOrcishFuryReactDescription=Use sua reação para atacar.
 Reaction/&ReactionAttackOrcishFuryReactTitle=Ataque
 Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%
-Reaction/&ReactionAttackOrcishFuryTargetCell={0} (1 casa)
-Reaction/&ReactionAttackOrcishFuryTargetCells={0} ({1} casas)
