@@ -1664,7 +1664,7 @@ internal static class RaceFeats
             GameLocationCharacter defender,
             List<GameLocationCharacter> targets)
         {
-            yield return HandleKnockOutBehavior(action, defender, action.ActionParams?.RulesetEffect, null);
+            yield return HandleKnockOutBehavior(action, defender, action.ActionParams?.RulesetEffect, true, null);
         }
 
         public IEnumerator OnPhysicalAttackBeforeHitConfirmedOnMe(
@@ -1693,7 +1693,15 @@ internal static class RaceFeats
             RollOutcome rollOutcome,
             int damageAmount)
         {
-            yield return HandleKnockOutBehavior(action, defender, action.ActingCharacter, battleManager);
+            // A weapon attack's record is identified by its attacker, not by the attack (the before-hit interface
+            // carries no action), so a record left by a finish the game skipped could match that attacker's next
+            // finish (Codex's review of f3be1746). The before-hit runs only for a hit
+            // (CharacterActionAttack: HandleCharacterAttackHitConfirmed only on Success or CriticalSuccess), so a
+            // hit's finish always finds its own record as the newest; a miss's finish never acts. Either way the
+            // finish retires every record of its attacker: one attacker's weapon attacks on the same half-orc never
+            // nest, so the others are stale.
+            yield return HandleKnockOutBehavior(action, defender, action.ActingCharacter,
+                rollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess, battleManager, true);
         }
 
         // Adds (or, for another beam of the same effect, keeps) the record of a hit on the half-orc, and makes sure
@@ -1711,6 +1719,9 @@ internal static class RaceFeats
                 hits = [];
                 _pendingHits.Add(defender, hits);
             }
+
+            // records whose attacker or effect is gone can never match again
+            hits.RemoveAll(x => x.IsGone);
 
             if (keepSameSource && hits.Exists(x => x.Is(source)))
             {
@@ -1742,7 +1753,9 @@ internal static class RaceFeats
             CharacterAction action,
             GameLocationCharacter target,
             object finishSource,
-            GameLocationBattleManager battleManager)
+            bool mayAct,
+            GameLocationBattleManager battleManager,
+            bool retireAllOfSource = false)
         {
             if (!_pendingHits.TryGetValue(target, out var hits))
             {
@@ -1750,7 +1763,8 @@ internal static class RaceFeats
             }
 
             // only this attack's or effect's own record, the newest if a stale one has the same source; a finish of
-            // something that didn't hit the half-orc (a heal, a miss) finds none and leaves the others alone
+            // something that didn't hit the half-orc (a heal) finds none and leaves the others alone, and a weapon
+            // miss may find a stale record of its attacker, which it retires without acting (mayAct is false)
             var index = hits.FindLastIndex(x => x.Is(finishSource));
 
             if (index < 0)
@@ -1761,7 +1775,14 @@ internal static class RaceFeats
             var pending = hits[index];
             var rulesetTarget = target.RulesetCharacter;
 
-            hits.RemoveAt(index);
+            if (retireAllOfSource)
+            {
+                hits.RemoveAll(x => x.Is(finishSource));
+            }
+            else
+            {
+                hits.RemoveAt(index);
+            }
 
             if (hits.Count == 0)
             {
@@ -1769,7 +1790,7 @@ internal static class RaceFeats
                 rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
             }
 
-            if (!pending.EnduranceFired)
+            if (!mayAct || !pending.EnduranceFired)
             {
                 yield break;
             }
@@ -1891,6 +1912,8 @@ internal static class RaceFeats
             private readonly WeakReference<object> _source = new(source);
 
             internal bool EnduranceFired { get; set; }
+
+            internal bool IsGone => !_source.TryGetTarget(out _);
 
             internal bool Is(object candidate)
             {
