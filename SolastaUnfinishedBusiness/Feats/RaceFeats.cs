@@ -1637,11 +1637,13 @@ internal static class RaceFeats
         {
             var rulesetDefender = defender.RulesetCharacter;
 
+            // Every Orcish Fury flag lives on the half-orc being hit (the defender), not on the attacker:
+            // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
+            // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
+            // the knock-out tag records whether Relentless Endurance fired during this hit.
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-            attacker.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
-            attacker.UsedSpecialFeatures[powerOrcishFury.Name] = 1;
-            attacker.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            attacker.UsedSpecialFeatures[_knockOutPreventedTag] = 0;
+            defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
+            defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
             yield break;
         }
@@ -1671,11 +1673,13 @@ internal static class RaceFeats
         {
             var rulesetDefender = defender.RulesetCharacter;
 
+            // Every Orcish Fury flag lives on the half-orc being hit (the defender), not on the attacker:
+            // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
+            // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
+            // the knock-out tag records whether Relentless Endurance fired during this hit.
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-            attacker.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
-            attacker.UsedSpecialFeatures[powerOrcishFury.Name] = 1;
-            attacker.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            attacker.UsedSpecialFeatures[_knockOutPreventedTag] = 0;
+            defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
+            defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
             yield break;
         }
@@ -1698,34 +1702,33 @@ internal static class RaceFeats
         {
             var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-            character.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            character.UsedSpecialFeatures[_knockOutPreventedTag] =
-                source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0;
+            character.SetSpecialFeatureUses(
+                _knockOutPreventedTag, source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0);
         }
 
         private void HandleKnockOutBehavior(CharacterAction action, GameLocationCharacter target)
         {
-            var actingCharacter = action.ActingCharacter;
-
-            if (!actingCharacter.UsedSpecialFeatures.TryGetValue(powerOrcishFury.Name, out var value) ||
-                value == 0)
+            // The flags are on the half-orc (target), where the before-hit handlers and KnockOutPreventedHandler
+            // write them. They used to be read from the attacker, whose knock-out tag had just been set to 0, so the
+            // attack after Relentless Endurance never happened; and the resets were TryAdd calls, which never
+            // overwrite an existing key.
+            if (target.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
             {
                 return;
             }
 
-            actingCharacter.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
+            target.SetSpecialFeatureUses(powerOrcishFury.Name, 0);
 
             var rulesetTarget = target.RulesetCharacter;
 
             rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
 
-            if (!actingCharacter.UsedSpecialFeatures.TryGetValue(_knockOutPreventedTag, out var knockOutPrevented) ||
-                knockOutPrevented == 0)
+            if (target.GetSpecialFeatureUses(_knockOutPreventedTag, 0) == 0)
             {
                 return;
             }
 
-            actingCharacter.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
+            target.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
             if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact())
             {

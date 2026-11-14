@@ -545,8 +545,9 @@ internal static partial class SpellBuilders
 
         conditionCircleOfMagicalNegation.GuiPresentation.description = "Condition/&ConditionCircleOfMagicalNegationDescription";
 
-        conditionCircleOfMagicalNegation.AddCustomSubFeatures(
-            new MagicEffectBeforeHitConfirmedOnMeCircleOfMagicalNegation(conditionCircleOfMagicalNegation));
+        // The "no damage on a successful save" part is applied in the game's own damage step, see
+        // CircleOfMagicalNegationNegatesHalfDamage below.
+        _conditionCircleOfMagicalNegation = conditionCircleOfMagicalNegation;
 
         var spell = SpellDefinitionBuilder
             .Create(NAME)
@@ -574,59 +575,32 @@ internal static partial class SpellBuilders
         return spell;
     }
 
-    private sealed class MagicEffectBeforeHitConfirmedOnMeCircleOfMagicalNegation(
-        ConditionDefinition conditionCircleOfMagicalNegation)
-        : IMagicEffectBeforeHitConfirmedOnMe, IRollSavingThrowFinished
+    private static ConditionDefinition _conditionCircleOfMagicalNegation;
+
+    /// <summary>
+    ///     Circle of Magical Negation: "when an affected creature succeeds on a saving throw made against a spell or
+    ///     magical effect that allows it to make a saving throw to take only half damage, it instead takes no damage".
+    ///     Called from the game's RulesetImplementationManager.ApplyDamageForm (RulesetImplementationManagerPatcher)
+    ///     only on its successful-save path for a form whose save halves damage, where the game asks
+    ///     HasSpecialHalfDamage (Evasion) whether that half becomes none. So it uses the save's final outcome, after
+    ///     rerolls and reactions, and changes no effect form list.
+    /// </summary>
+    /// <remarks>
+    ///     It used to remove the half-damage forms in a "before hit confirmed on me" hook, using a flag set by the
+    ///     save hook. For spells that hook runs before the save is rolled, so a spell used the flag left by the
+    ///     creature's previous successful save, and the flag (written with TryAdd) stayed until the next spell.
+    /// </remarks>
+    internal static bool CircleOfMagicalNegationNegatesHalfDamage(RulesetActor target)
     {
-        private const string CircleOfMagicalNegationSavedTag = "CircleOfMagicalNegationSaved";
-
-        public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
-            GameLocationBattleManager battleManager,
-            GameLocationCharacter attacker,
-            GameLocationCharacter defender,
-            ActionModifier actionModifier,
-            RulesetEffect rulesetEffect,
-            List<EffectForm> actualEffectForms,
-            bool firstTarget,
-            bool criticalHit)
+        if (_conditionCircleOfMagicalNegation == null ||
+            !target.HasConditionOfType(_conditionCircleOfMagicalNegation.Name))
         {
-            if (!defender.UsedSpecialFeatures.Remove(CircleOfMagicalNegationSavedTag))
-            {
-                yield break;
-            }
-
-            var removed = actualEffectForms.RemoveAll(x =>
-                x.HasSavingThrow
-                && x.FormType == EffectForm.EffectFormType.Damage
-                && x.SavingThrowAffinity == EffectSavingThrowType.HalfDamage);
-
-            if (removed > 0)
-            {
-                defender.RulesetCharacter.LogCharacterAffectedByCondition(conditionCircleOfMagicalNegation);
-            }
+            return false;
         }
 
-        public void OnSavingThrowFinished(
-            RulesetActor rulesetActorCaster,
-            RulesetActor rulesetActorDefender,
-            int saveBonus,
-            string abilityScoreName,
-            BaseDefinition sourceDefinition,
-            List<TrendInfo> modifierTrends,
-            List<TrendInfo> advantageTrends,
-            int rollModifier,
-            int saveDC,
-            bool hasHitVisual,
-            ref RollOutcome outcome,
-            ref int outcomeDelta,
-            List<EffectForm> effectForms)
-        {
-            if (outcome == RollOutcome.Success)
-            {
-                GameLocationCharacter.GetFromActor(rulesetActorDefender).UsedSpecialFeatures
-                    .TryAdd(CircleOfMagicalNegationSavedTag, 0);
-            }
-        }
+        (target as RulesetCharacter)?.LogCharacterAffectedByCondition(_conditionCircleOfMagicalNegation);
+
+        return true;
     }
 
     #endregion

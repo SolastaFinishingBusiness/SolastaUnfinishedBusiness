@@ -12,6 +12,7 @@ using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Interfaces;
 using SolastaUnfinishedBusiness.Models;
+using SolastaUnfinishedBusiness.Spells;
 using SolastaUnfinishedBusiness.Subclasses;
 using SolastaUnfinishedBusiness.Validators;
 using UnityEngine;
@@ -326,6 +327,10 @@ public static class RulesetImplementationManagerPatcher
                 new Func<int, List<DiceByRank>, bool, EffectForm, RulesetImplementationDefinitions.ApplyFormsParams,
                     int>(GetDiceOfRank).Method;
             var myDamageRollReductionMethod = new Func<ActionModifier, int>(GetDamageRollReduction).Method;
+            var hasSpecialHalfDamageMethod = typeof(RulesetActor).GetMethod(nameof(RulesetActor.HasSpecialHalfDamage));
+            var myHasSpecialHalfDamageOnSuccessMethod =
+                new Func<RulesetActor, string, RulesetImplementationDefinitions.ApplyFormsParams, bool>(
+                    HasSpecialHalfDamageOnSuccessfulSave).Method;
 
             return instructions
                 .ReplaceCalls(rollDamageMethod,
@@ -339,7 +344,28 @@ public static class RulesetImplementationManagerPatcher
                     "RulesetImplementationManager.GetDiceOfRank",
                     new CodeInstruction(OpCodes.Ldarg_1),
                     new CodeInstruction(OpCodes.Ldarg_2),
-                    new CodeInstruction(OpCodes.Call, myGetDiceOfRankMethod));
+                    new CodeInstruction(OpCodes.Call, myGetDiceOfRankMethod))
+                //PATCH: supports Circle of Magical Negation (no damage on a successful half-damage save)
+                // The game calls HasSpecialHalfDamage twice here: first on the path of a successful save against a
+                // form whose save halves damage (true: no damage), then on the failed-save path (true: half damage).
+                // Only the first is replaced, so the circle never halves damage on a failed save.
+                .ReplaceCall(hasSpecialHalfDamageMethod, 1,
+                    "RulesetImplementationManager.ApplyDamageForm.HasSpecialHalfDamage",
+                    new CodeInstruction(OpCodes.Ldarg_2),
+                    new CodeInstruction(OpCodes.Call, myHasSpecialHalfDamageOnSuccessMethod));
+        }
+
+        // Stack: the target and the save's ability, as for RulesetActor.HasSpecialHalfDamage(string), plus the
+        // forms params (argument 2 of ApplyDamageForm). The circle covers spells and magical effects only, i.e. damage
+        // with an active effect (a spell or power), as the hook it replaces did.
+        private static bool HasSpecialHalfDamageOnSuccessfulSave(
+            RulesetActor target,
+            string savingThrowAbility,
+            RulesetImplementationDefinitions.ApplyFormsParams formsParams)
+        {
+            return target.HasSpecialHalfDamage(savingThrowAbility) ||
+                   (formsParams.activeEffect != null &&
+                    SpellBuilders.CircleOfMagicalNegationNegatesHalfDamage(target));
         }
 
         //BUGFIX: let damage roll reduction be handled above after damage is determined and before returned

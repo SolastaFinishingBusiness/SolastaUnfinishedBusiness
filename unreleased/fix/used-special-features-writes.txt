@@ -1,0 +1,7 @@
+- Psion, Supreme Will: after its first use, every later spell (even one without concentration) spent another use and sorcery points. It now costs them only for the spell it was used on.
+- Psion, Mind Sculpt: after one spell's damage was turned psychic, later effects (a heal, for example) kept spending a sorcery point. It now costs one point per spell it changes.
+- Orcish Fury: the attack after Relentless Endurance keeps you up now happens, as described. It never did.
+- Fizban's Platinum Shield: moving the shield to another creature keeps the spell's remaining duration, as described. It used to start a fresh minute each time, so moving it every turn kept it up forever.
+- Circle of Power: a successful save against a spell or magical effect that deals half damage now deals no damage for that effect, and follows the save's final result (after rerolls and reactions). For spells it used the creature's previous successful save, so a failed save could take no damage and a successful one half.
+- Psi Warrior, Psionic Adept: the push or knock prone choice is only offered on the hit that used Force-Powered Strike. When that strike dropped its target, the choice was offered again on a later hit that turn.
+- Not tested in game: all of the above except Fizban's Platinum Shield and Supreme Will (see the pull request for what was run), and anything on two computers.
