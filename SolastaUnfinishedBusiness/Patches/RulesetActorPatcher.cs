@@ -921,12 +921,16 @@ public static class RulesetActorPatcher
                 RulesetActor,
                 List<FeatureDefinition>,
                 Dictionary<FeatureDefinition, FeatureOrigin>,
+                RulesetImplementationDefinitions.ApplyFormsParams,
                 ulong
             >(EnumerateIDamageAffinityProvider).Method;
 
             return instructions
                 .ReplaceEnumerateFeaturesToBrowse<IDamageAffinityProvider>(-1,
                     "RulesetActor.ModulateSustainedDamage",
+                    // ModulateSustainedDamage(ApplyFormsParams formsParams, string damageType, int originalDamage,
+                    // ulong sourceGuid, ...): argument 1 says what deals the damage (#44), argument 4 who
+                    new CodeInstruction(OpCodes.Ldarg_1), // forms params
                     new CodeInstruction(OpCodes.Ldarg, 4), // source guid
                     new CodeInstruction(OpCodes.Call, myEnumerate));
         }
@@ -935,6 +939,7 @@ public static class RulesetActorPatcher
             RulesetActor actor,
             List<FeatureDefinition> featuresToBrowse,
             Dictionary<FeatureDefinition, FeatureOrigin> featuresOrigin,
+            RulesetImplementationDefinitions.ApplyFormsParams formsParams,
             ulong guid)
         {
             //PATCH: supports IIgnoreDamageAffinity   
@@ -950,22 +955,40 @@ public static class RulesetActorPatcher
                 _ => null
             };
 
-            if (caster != null)
-            {
-                var features = caster.GetSubFeaturesByType<IModifyDamageAffinity>();
+            //PATCH: allow to remove damage affinities if necessary (#44)
+            // Each kind of hook runs only for the side it belongs to. The damage source's IModifyDamageAffinity
+            // hooks ("my damage ignores resistance") change how the damaged creature's affinities apply to the
+            // source's damage; the damaged creature's IModifyOwnDamageAffinity hooks ("this mark costs me a
+            // resistance") change its own. The original code ran the IModifyDamageAffinity hooks of both creatures,
+            // so a hook such as Elemental Adept's also stripped its owner's own resistance whenever the owner was
+            // the one taking damage, from any source. The context tells the hooks what deals the damage, and is
+            // cleared afterwards so no later call sees a stale effect.
+            ModifyDamageAffinityContext.ActiveEffect = formsParams.activeEffect;
+            ModifyDamageAffinityContext.AttackMode = formsParams.attackMode;
 
-                foreach (var feature in features)
+            try
+            {
+                if (caster != null)
+                {
+                    var features = caster.GetSubFeaturesByType<IModifyDamageAffinity>();
+
+                    foreach (var feature in features)
+                    {
+                        feature.ModifyDamageAffinity(actor, caster, featuresToBrowse);
+                    }
+                }
+
+                var featuresActor = actor.GetSubFeaturesByType<IModifyOwnDamageAffinity>();
+
+                foreach (var feature in featuresActor)
                 {
                     feature.ModifyDamageAffinity(actor, caster, featuresToBrowse);
                 }
             }
-
-            //PATCH: allow to remove damage affinities if necessary
-            var featuresActor = actor.GetSubFeaturesByType<IModifyDamageAffinity>();
-
-            foreach (var feature in featuresActor)
+            finally
             {
-                feature.ModifyDamageAffinity(actor, caster, featuresToBrowse);
+                ModifyDamageAffinityContext.ActiveEffect = null;
+                ModifyDamageAffinityContext.AttackMode = null;
             }
 
             if (actor is not RulesetCharacterHero hero)
