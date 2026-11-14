@@ -302,9 +302,17 @@ public sealed class RangerHellWalker : AbstractSubclass
             return isValid;
         }
 
+        // Runs only for damage the ranger deals (#44). The mark is on the damaged creature, put there by this
+        // ranger's power: "It loses resistance against your fire damage attacks." The original checked the attacker
+        // for the mark, so it never worked on a marked enemy; it ran instead when a marked enemy hit the ranger,
+        // stripping the ranger's own fire immunity, and it removed immunity where the text says resistance.
         public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
-            if (!attacker.HasConditionOfType(conditionDefinition.Name))
+            if (defender == null ||
+                attacker == null ||
+                !defender.ConditionsByCategory
+                    .SelectMany(x => x.Value)
+                    .Any(x => x.ConditionDefinition == conditionDefinition && x.SourceGuid == attacker.Guid))
             {
                 return;
             }
@@ -312,7 +320,7 @@ public sealed class RangerHellWalker : AbstractSubclass
             features.RemoveAll(x =>
                 x is IDamageAffinityProvider
                 {
-                    DamageAffinityType: DamageAffinityType.Immunity, DamageType: DamageTypeFire
+                    DamageAffinityType: DamageAffinityType.Resistance, DamageType: DamageTypeFire
                 });
         }
 
