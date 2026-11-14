@@ -955,6 +955,25 @@ public static class RulesetActorPatcher
                 _ => null
             };
 
+            //PATCH: add `IDamageAffinityProvider` from dynamic item properties
+            //fixes game not applying damage reductions from dynamic item properties
+            //used for Inventor's Resistant Armor infusions
+            // Collected before the hooks below run (#44, Codex's review of PR #60): added afterwards, a resistance
+            // from an infusion could never be removed by them, so for example Elemental Adept's fire spells were
+            // still halved by a target's fire-resistant armour infusion.
+            if (actor is RulesetCharacterHero hero)
+            {
+                foreach (var equipedItem in hero.CharacterInventory.InventorySlotsByName
+                             .Select(keyValuePair => keyValuePair.Value)
+                             .Where(slot => slot.EquipedItem != null && !slot.Disabled && !slot.ConfigSlot)
+                             .Select(slot => slot.EquipedItem))
+                {
+                    featuresToBrowse.AddRange(equipedItem.DynamicItemProperties
+                        .Select(dynamicItemProperty => dynamicItemProperty.FeatureDefinition)
+                        .Where(definition => definition is IDamageAffinityProvider));
+                }
+            }
+
             //PATCH: allow to remove damage affinities if necessary (#44)
             // Each kind of hook runs only for the side it belongs to. The damage source's IModifyDamageAffinity
             // hooks ("my damage ignores resistance") change how the damaged creature's affinities apply to the
@@ -989,24 +1008,6 @@ public static class RulesetActorPatcher
             {
                 ModifyDamageAffinityContext.ActiveEffect = null;
                 ModifyDamageAffinityContext.AttackMode = null;
-            }
-
-            if (actor is not RulesetCharacterHero hero)
-            {
-                return;
-            }
-
-            //PATCH: add `IDamageAffinityProvider` from dynamic item properties
-            //fixes game not applying damage reductions from dynamic item properties
-            //used for Inventor's Resistant Armor infusions
-            foreach (var equipedItem in hero.CharacterInventory.InventorySlotsByName
-                         .Select(keyValuePair => keyValuePair.Value)
-                         .Where(slot => slot.EquipedItem != null && !slot.Disabled && !slot.ConfigSlot)
-                         .Select(slot => slot.EquipedItem))
-            {
-                featuresToBrowse.AddRange(equipedItem.DynamicItemProperties
-                    .Select(dynamicItemProperty => dynamicItemProperty.FeatureDefinition)
-                    .Where(definition => definition is IDamageAffinityProvider));
             }
         }
     }
