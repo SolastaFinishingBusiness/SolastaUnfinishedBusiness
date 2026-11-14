@@ -1623,7 +1623,20 @@ internal static class RaceFeats
 
         #region Knock-Out
 
-        private readonly string _knockOutPreventedTag = powerOrcishFury.Name + "KnockoutPrevented";
+        // One record per half-orc with a hit in progress (Codex's reviews of 0ff72e2b and 60787771). Keyed on the
+        // half-orc being hit, so two half-orcs caught by one spell stay apart, and owned by what made the hit: the
+        // attacking character for a weapon attack, the RulesetEffect for a spell or power. Only the finish of that same
+        // attack or effect acts on it:
+        // - a weapon attack has one before-hit and one finish, so each before-hit starts a new record;
+        // - a spell or power with several beams on one creature has a before-hit per beam and one finish, all with the
+        //   same RulesetEffect (both read it from the action's params), so a later beam keeps the record and doesn't
+        //   erase that an earlier one set off Relentless Endurance;
+        // - the game skips the finish for a target left unconscious; that record is then left behind, and the next
+        //   finish of anything else on the half-orc (a heal, say) only clears it instead of offering an attack
+        //   against whoever made that action. The next before-hit replaces it too.
+        // The flags used to live in UsedSpecialFeatures, written with TryAdd (never overwriting) and read from the
+        // attacker, so the attack never happened.
+        private readonly Dictionary<GameLocationCharacter, PendingHit> _pendingHits = new();
 
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
             GameLocationBattleManager battleManager,
@@ -1635,28 +1648,7 @@ internal static class RaceFeats
             bool firstTarget,
             bool criticalHit)
         {
-            var rulesetDefender = defender.RulesetCharacter;
-
-            // Every Orcish Fury flag lives on the half-orc being hit (the defender), not on the attacker:
-            // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
-            // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
-            // the knock-out tag records whether Relentless Endurance fired during this hit.
-            // Removed first so the half-orc holds at most one subscription: several hits in one action (beams,
-            // multiple targets) each get here, but the finish removes it once, and the game skips the finish for a
-            // target left unconscious. A leftover subscription only writes the knock-out tag, which every hit resets
-            // above and only a finish with the pending flag reads.
-            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
-            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-
-            // The knock-out tag is cleared only when no hit is pending: several hits of one action (rays, beams)
-            // each get here before that action's single finish, and a later hit must not erase that an earlier one
-            // already set off Relentless Endurance (Codex's review of 0ff72e2b).
-            if (defender.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
-            {
-                defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
-            }
-
-            defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
+            BeginHit(defender, rulesetEffect, true);
 
             yield break;
         }
@@ -1667,7 +1659,7 @@ internal static class RaceFeats
             GameLocationCharacter defender,
             List<GameLocationCharacter> targets)
         {
-            yield return HandleKnockOutBehavior(action, defender, null);
+            yield return HandleKnockOutBehavior(action, defender, action.ActionParams?.RulesetEffect, null);
         }
 
         public IEnumerator OnPhysicalAttackBeforeHitConfirmedOnMe(
@@ -1682,28 +1674,7 @@ internal static class RaceFeats
             bool firstTarget,
             bool criticalHit)
         {
-            var rulesetDefender = defender.RulesetCharacter;
-
-            // Every Orcish Fury flag lives on the half-orc being hit (the defender), not on the attacker:
-            // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
-            // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
-            // the knock-out tag records whether Relentless Endurance fired during this hit.
-            // Removed first so the half-orc holds at most one subscription: several hits in one action (beams,
-            // multiple targets) each get here, but the finish removes it once, and the game skips the finish for a
-            // target left unconscious. A leftover subscription only writes the knock-out tag, which every hit resets
-            // above and only a finish with the pending flag reads.
-            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
-            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-
-            // The knock-out tag is cleared only when no hit is pending: several hits of one action (rays, beams)
-            // each get here before that action's single finish, and a later hit must not erase that an earlier one
-            // already set off Relentless Endurance (Codex's review of 0ff72e2b).
-            if (defender.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
-            {
-                defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
-            }
-
-            defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
+            BeginHit(defender, attacker, false);
 
             yield break;
         }
@@ -1717,48 +1688,70 @@ internal static class RaceFeats
             RollOutcome rollOutcome,
             int damageAmount)
         {
-            yield return HandleKnockOutBehavior(action, defender, battleManager);
+            yield return HandleKnockOutBehavior(action, defender, action.ActingCharacter, battleManager);
         }
 
+        // Starts (or, for another beam of the same effect, keeps) the record of a hit on the half-orc, and makes sure
+        // KnockOutPreventedHandler listens: removed first, so the half-orc holds at most one subscription however many
+        // hits there are and whether or not their finish runs.
+        private void BeginHit(GameLocationCharacter defender, object source, bool keepSameSource)
+        {
+            var rulesetDefender = defender.RulesetCharacter;
+
+            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
+            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
+
+            if (keepSameSource &&
+                _pendingHits.TryGetValue(defender, out var pending) &&
+                ReferenceEquals(pending.Source, source))
+            {
+                return;
+            }
+
+            _pendingHits[defender] = new PendingHit(source);
+        }
+
+        // Only Relentless Endurance counts, and it only ever sets the mark: another feature that prevents a knock-out
+        // later in the same action must not erase it (it used to write 0 for any other source).
         private void KnockOutPreventedHandler(RulesetCharacter rulesetCharacter, BaseDefinition source)
         {
+            if (source != DamageAffinityHalfOrcRelentlessEndurance)
+            {
+                return;
+            }
+
             var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-
-            character.SetSpecialFeatureUses(
-                _knockOutPreventedTag, source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0);
+            if (character != null && _pendingHits.TryGetValue(character, out var pending))
+            {
+                pending.EnduranceFired = true;
+            }
         }
 
         private IEnumerator HandleKnockOutBehavior(
             CharacterAction action,
             GameLocationCharacter target,
+            object finishSource,
             GameLocationBattleManager battleManager)
         {
-            // The flags are on the half-orc (target), where the before-hit handlers and KnockOutPreventedHandler
-            // write them. They used to be read from the attacker, whose knock-out tag had just been set to 0, so the
-            // attack after Relentless Endurance never happened; and the resets were TryAdd calls, which never
-            // overwrite an existing key.
-
-            if (target.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
+            if (!_pendingHits.TryGetValue(target, out var pending))
             {
                 yield break;
             }
 
-            target.SetSpecialFeatureUses(powerOrcishFury.Name, 0);
+            _pendingHits.Remove(target);
 
             var rulesetTarget = target.RulesetCharacter;
 
             rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
 
-            if (target.GetSpecialFeatureUses(_knockOutPreventedTag, 0) == 0)
+            // a record of another attack or effect (its finish was skipped) is only cleared
+            if (!ReferenceEquals(pending.Source, finishSource) || !pending.EnduranceFired)
             {
                 yield break;
             }
 
-            target.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
-
             var attacker = action.ActingCharacter;
-
 
             battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
@@ -1788,7 +1781,6 @@ internal static class RaceFeats
             // away with the main-hand mode, unchecked; then (0ff72e2b) it was offered against the attacker only.
             var targets = GetOrcishFuryTargets(target, attacker, battleManager);
 
-
             if (targets.Count == 0)
             {
                 yield break;
@@ -1807,7 +1799,6 @@ internal static class RaceFeats
             actionManager.AddInterruptRequest(reactionRequest);
 
             yield return battleManager.WaitForReactions(attacker ?? target, actionManager, count);
-
 
             if (reactionParams.ReactionValidated)
             {
@@ -1845,7 +1836,13 @@ internal static class RaceFeats
                     continue;
                 }
 
-                mode = mode.Clone();
+                // a plain copy, not one borrowed from the game's pool (RulesetAttackModeExtensions.Clone): one is made per
+                // listed creature and only the chosen one is used, so pooled ones would never go back (Codex's review
+                // of 60787771); the game itself makes attack modes with new (CharacterActionItemForm)
+                var copy = new RulesetAttackMode();
+
+                copy.Copy(mode);
+                mode = copy;
                 mode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
 
                 var distance = (int)Behaviors.Specific.DistanceCalculation.GetDistanceFromCharacters(halfOrc, enemy);
@@ -1862,6 +1859,13 @@ internal static class RaceFeats
                     .ThenBy(t => t.order)
                     .Select(t => t.x)
             ];
+        }
+
+        // a hit on a half-orc waiting for its finish: what made it, and whether Relentless Endurance fired meanwhile
+        private sealed class PendingHit(object source)
+        {
+            internal object Source { get; } = source;
+            internal bool EnduranceFired { get; set; }
         }
 
         #endregion
