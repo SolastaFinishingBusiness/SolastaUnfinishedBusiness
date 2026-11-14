@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=Maestría en armas
 Feature/&MartialChampionSuperiorCriticalDescription=Tus ataques con armas obtienen un impacto crítico con un resultado de 18, 19 o 20.
 Feat/&FeatGroupOriginDescription=Dotes disponibles mediante rasgos de trasfondo.
 Feat/&FeatGroupOriginTitle=Dotes de origen
+Reaction/&ReactionAttackOrcishFuryDescription={0} te ha dejado a 0 puntos de golpe, pero sigues en pie. Puedes usar tu reacción para hacer un ataque con arma contra él.
+Reaction/&ReactionAttackOrcishFuryReactDescription=Usa tu reacción para atacar.
+Reaction/&ReactionAttackOrcishFuryReactTitle=Ataque
+Reaction/&ReactionAttackOrcishFuryTitle=Furia orca

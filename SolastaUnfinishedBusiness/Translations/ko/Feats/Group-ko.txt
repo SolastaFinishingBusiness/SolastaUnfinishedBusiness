@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=무기 마스터리
 Feature/&MartialChampionSuperiorCriticalDescription=무기 공격은 주사위를 굴려 18, 19, 20이 나오면 치명타가 됩니다.
 Feat/&FeatGroupOriginDescription=배경 특성으로 얻을 수 있는 재주입니다.
 Feat/&FeatGroupOriginTitle=출신 재주
+Reaction/&ReactionAttackOrcishFuryDescription={0}이(가) 당신의 HP를 0으로 만들었지만, 당신은 버텨 냈습니다. 반응을 사용하여 그 대상에게 무기 공격을 1회 가할 수 있습니다.
+Reaction/&ReactionAttackOrcishFuryReactDescription=반응을 이용해 공격하세요.
+Reaction/&ReactionAttackOrcishFuryReactTitle=공격
+Reaction/&ReactionAttackOrcishFuryTitle=오크의 분노

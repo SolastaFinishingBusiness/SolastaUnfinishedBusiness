@@ -1641,6 +1641,11 @@ internal static class RaceFeats
             // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
             // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
             // the knock-out tag records whether Relentless Endurance fired during this hit.
+            // Removed first so the half-orc holds at most one subscription: several hits in one action (beams,
+            // multiple targets) each get here, but the finish removes it once, and the game skips the finish for a
+            // target left unconscious. A leftover subscription only writes the knock-out tag, which every hit resets
+            // above and only a finish with the pending flag reads.
+            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
             defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
@@ -1654,9 +1659,7 @@ internal static class RaceFeats
             GameLocationCharacter defender,
             List<GameLocationCharacter> targets)
         {
-            HandleKnockOutBehavior(action, defender);
-
-            yield break;
+            yield return HandleKnockOutBehavior(action, defender, null);
         }
 
         public IEnumerator OnPhysicalAttackBeforeHitConfirmedOnMe(
@@ -1677,6 +1680,11 @@ internal static class RaceFeats
             // KnockOutPreventedHandler can only reach the half-orc, and keying on the defender keeps two half-orcs
             // caught by one spell apart. "Pending" marks a hit whose finish still has to unsubscribe the handler;
             // the knock-out tag records whether Relentless Endurance fired during this hit.
+            // Removed first so the half-orc holds at most one subscription: several hits in one action (beams,
+            // multiple targets) each get here, but the finish removes it once, and the game skips the finish for a
+            // target left unconscious. A leftover subscription only writes the knock-out tag, which every hit resets
+            // above and only a finish with the pending flag reads.
+            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
             rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
             defender.SetSpecialFeatureUses(powerOrcishFury.Name, 1);
             defender.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
@@ -1693,9 +1701,7 @@ internal static class RaceFeats
             RollOutcome rollOutcome,
             int damageAmount)
         {
-            HandleKnockOutBehavior(action, defender);
-
-            yield break;
+            yield return HandleKnockOutBehavior(action, defender, battleManager);
         }
 
         private void KnockOutPreventedHandler(RulesetCharacter rulesetCharacter, BaseDefinition source)
@@ -1706,7 +1712,10 @@ internal static class RaceFeats
                 _knockOutPreventedTag, source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0);
         }
 
-        private void HandleKnockOutBehavior(CharacterAction action, GameLocationCharacter target)
+        private IEnumerator HandleKnockOutBehavior(
+            CharacterAction action,
+            GameLocationCharacter target,
+            GameLocationBattleManager battleManager)
         {
             // The flags are on the half-orc (target), where the before-hit handlers and KnockOutPreventedHandler
             // write them. They used to be read from the attacker, whose knock-out tag had just been set to 0, so the
@@ -1714,7 +1723,7 @@ internal static class RaceFeats
             // overwrite an existing key.
             if (target.GetSpecialFeatureUses(powerOrcishFury.Name, 0) == 0)
             {
-                return;
+                yield break;
             }
 
             target.SetSpecialFeatureUses(powerOrcishFury.Name, 0);
@@ -1725,25 +1734,56 @@ internal static class RaceFeats
 
             if (target.GetSpecialFeatureUses(_knockOutPreventedTag, 0) == 0)
             {
-                return;
+                yield break;
             }
 
             target.SetSpecialFeatureUses(_knockOutPreventedTag, 0);
 
-            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact())
+            var attacker = action.ActingCharacter;
+
+            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact() ||
+                attacker == null || attacker == target ||
+                attacker.RulesetActor is not { IsDeadOrDyingOrUnconscious: false })
             {
-                return;
+                yield break;
             }
 
-            rulesetTarget.LogCharacterUsedPower(powerOrcishFury);
+            battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
-            var attackMode = target.FindActionAttackMode(ActionDefinitions.Id.AttackMain);
+            if (!battleManager)
+            {
+                yield break;
+            }
 
-            target.MyExecuteActionAttack(
-                ActionDefinitions.Id.AttackOpportunity,
-                action.ActingCharacter,
-                attackMode,
-                new ActionModifier());
+            // "Immediately after you use your Relentless Endurance trait, you can use your reaction to make one
+            // weapon attack": a choice, so it goes through the normal reaction prompt (the half-orc may have been
+            // hit by an ally, or not want to use the reaction), with a weapon mode that can actually reach the
+            // creature that hit it, melee first, then ranged, as Wyrmkin's Reactive Retribution does. It used to
+            // execute an opportunity attack straight away with the main-hand mode, unchecked.
+            var (retaliationMode, retaliationModifier) =
+                target.GetFirstMeleeModeThatCanAttack(attacker, battleManager);
+
+            if (retaliationMode == null)
+            {
+                (retaliationMode, retaliationModifier) =
+                    target.GetFirstRangedModeThatCanAttack(attacker, battleManager);
+            }
+
+            if (retaliationMode == null)
+            {
+                yield break;
+            }
+
+            retaliationMode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
+
+            yield return target.MyReactForOpportunityAttack(
+                attacker,
+                attacker,
+                retaliationMode,
+                retaliationModifier,
+                "OrcishFury",
+                () => rulesetTarget.LogCharacterUsedPower(powerOrcishFury),
+                battleManager);
         }
 
         #endregion

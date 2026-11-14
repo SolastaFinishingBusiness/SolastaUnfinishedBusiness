@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=Оружейное мастерство
 Feature/&MartialChampionSuperiorCriticalDescription=Ваши атаки оружием вызывают критическое попадание при бросках 18, 19 и 20.
 Feat/&FeatGroupOriginDescription=Черты, доступные через умения предыстории.
 Feat/&FeatGroupOriginTitle=Черты происхождения
+Reaction/&ReactionAttackOrcishFuryDescription={0} опустил ваши хиты до 0, но вы устояли на ногах. Реакцией вы можете совершить по нему одну атаку оружием.
+Reaction/&ReactionAttackOrcishFuryReactDescription=Воспользуйтесь реакцией для атаки.
+Reaction/&ReactionAttackOrcishFuryReactTitle=Атака
+Reaction/&ReactionAttackOrcishFuryTitle=Орочье буйство
