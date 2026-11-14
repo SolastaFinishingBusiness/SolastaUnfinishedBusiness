@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
+using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.CustomUI;
@@ -158,8 +159,19 @@ public sealed class WizardGraviturgist : AbstractSubclass
                             .SetMotionForm(MotionForm.MotionType.PushFromOrigin, 1)
                             .Build())
                     .Build())
-            .AddCustomSubFeatures(new ValidatorsValidatePowerUse(c =>
-                c.IsToggleEnabled((ActionDefinitions.Id)ExtraActionId.OverChannelToggle)))
+            // The push only happens while the Graviturgist's own Gravity Well toggle (granted with this power at
+            // level 6 by actionAffinityGravityWellToggle) is on. The original code checked OverChannelToggle, the
+            // Evocation wizard's toggle, which a Graviturgist never has, so the power was always refused (#57).
+            .AddCustomSubFeatures(
+                new ValidatorsValidatePowerUse(c =>
+                    c.IsToggleEnabled((ActionDefinitions.Id)ExtraActionId.GravityWellToggle)),
+                // The text promises the push on "spell attacks" only, but the game fires OnAttackOrSpellHitAuto
+                // powers on every attack hit, weapons included (GameLocationBattleManager.
+                // HandleAttackerTriggeringPowerOnCharacterAttackHitConfirmed has no check for that activation
+                // time). A spell attack's hit comes with no attack mode and the spell's effect, so only those
+                // pass; weapon hits (attack mode set) and powers' attacks don't (#57).
+                new RestrictReactionAttackMode((_, _, _, mode, effect) =>
+                    mode == null && effect is RulesetEffectSpell))
             .AddToDB();
 
         // LEVEL 10
