@@ -399,8 +399,10 @@ public sealed class DomainSmith : AbstractSubclass
     }
 
     private sealed class ModifyDamageAffinityBlessedMetal(
-        params FeatureDefinitionDamageAffinity[] damageAffinities) : IModifyDamageAffinity
+        params FeatureDefinitionDamageAffinity[] damageAffinities) : IModifyOwnDamageAffinity
     {
+        // Removes the Smith's own Blessed Metal affinities while it wears no armour, so it is one of the damaged
+        // creature's own hooks (IModifyOwnDamageAffinity, #44); as the damage source it has nothing to do.
         public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
             if (defender is RulesetCharacter rulesetCharacter &&

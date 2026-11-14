@@ -52,7 +52,7 @@ public static class CharacterReactionItemPatcher
         {
             var request = __instance.ReactionRequest;
             var size = request is ReactionRequestWarcaster or ReactionRequestSpendBundlePower
-                or ReactionRequestSelectSmiteSpell or ReactionRequestEldritchBlastMove
+                or ReactionRequestSelectSmiteSpell or ReactionRequestEldritchBlastMove or ReactionRequestOrcishFury
                 ? 400
                 : 290;
 
@@ -65,6 +65,16 @@ public static class CharacterReactionItemPatcher
             else
             {
                 EldritchBlastMovePrompt.Remove(__instance);
+            }
+
+            //PATCH: Orcish Fury's reaction lists the creatures it can attack, one button each (#62)
+            if (request is ReactionRequestOrcishFury orcishFuryRequest)
+            {
+                OrcishFuryPrompt.Show(__instance, orcishFuryRequest);
+            }
+            else
+            {
+                OrcishFuryPrompt.Remove(__instance);
             }
 
             __instance.GetComponent<RectTransform>()
@@ -195,8 +205,10 @@ public static class CharacterReactionItemPatcher
         [UsedImplicitly]
         public static void Prefix([NotNull] CharacterReactionItem __instance)
         {
-            //PATCH: take the Eldritch Blast move prompt's controls out of the item before it goes back to the pool
+            //PATCH: take the Eldritch Blast move prompt's and Orcish Fury's controls out of the item before it goes
+            //back to the pool
             EldritchBlastMovePrompt.Remove(__instance);
+            OrcishFuryPrompt.Remove(__instance);
         }
     }
 

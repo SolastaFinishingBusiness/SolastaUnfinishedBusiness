@@ -1312,8 +1312,17 @@ internal static class MeleeCombatFeats
 
     private sealed class ModifyDamageAffinityDevastatingStrikes : IModifyDamageAffinity
     {
+        // ConditionDevastatingStrikes is on the attacker from a melee critical hit until its next attack or the end
+        // of its turn, and this hook runs only for damage the attacker deals (#44). The text promises "ignore target
+        // creature's resistances for that attack", so only an attack's own damage ignores them: a spell or other
+        // effect the hero uses while the condition lasts doesn't.
         public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
+            if (ModifyDamageAffinityContext.AttackMode == null)
+            {
+                return;
+            }
+
             features.RemoveAll(x =>
                 x is IDamageAffinityProvider { DamageAffinityType: DamageAffinityType.Resistance });
         }

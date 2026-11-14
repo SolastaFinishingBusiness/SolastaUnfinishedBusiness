@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=武器精通
 Feature/&MartialChampionSuperiorCriticalDescription=如果掷出 18、19 或 20，您的武器攻击将产生致命一击。
 Feat/&FeatGroupOriginDescription=通过背景特性获得的专长。
 Feat/&FeatGroupOriginTitle=起源专长
+Reaction/&ReactionAttackOrcishFuryDescription={0} 将你的生命值降至 0，但%Feature/&RelentlessEnduranceTitle%让你保持站立。你可以利用自己的反应对触及范围内的一个生物进行一次武器攻击：在下方选择它，或者跳过。
+Reaction/&ReactionAttackOrcishFuryReactDescription=利用你的反应来攻击。
+Reaction/&ReactionAttackOrcishFuryReactTitle=攻击
+Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%

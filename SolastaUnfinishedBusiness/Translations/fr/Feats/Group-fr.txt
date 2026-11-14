@@ -149,3 +149,7 @@ Feat/&FeatGroupWeaponMasteryTitle=Maîtrise des armes
 Feature/&MartialChampionSuperiorCriticalDescription=Vos attaques d'armes infligent un coup critique sur un résultat de 18, 19 ou 20.
 Feat/&FeatGroupOriginDescription=Dons disponibles via les aptitudes d'historique.
 Feat/&FeatGroupOriginTitle=Dons d'origine
+Reaction/&ReactionAttackOrcishFuryDescription={0} vous a fait tomber à 0 point de vie, mais %Feature/&RelentlessEnduranceTitle% vous a maintenu debout. Vous pouvez utiliser votre réaction pour faire une attaque avec une arme contre une créature à portée : choisissez-la ci-dessous, ou passez.
+Reaction/&ReactionAttackOrcishFuryReactDescription=Utilisez votre réaction pour attaquer.
+Reaction/&ReactionAttackOrcishFuryReactTitle=Attaque
+Reaction/&ReactionAttackOrcishFuryTitle=%Feat/&FeatGroupOrcishFuryTitle%

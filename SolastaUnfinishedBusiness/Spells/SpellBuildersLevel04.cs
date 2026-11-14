@@ -1224,8 +1224,12 @@ internal static partial class SpellBuilders
         string damageType,
         FeatureDefinitionPower powerElementalBane,
         ConditionDefinition conditionMark)
-        : IModifyDamageAffinity, IOnConditionAddedOrRemoved, ICharacterTurnStartListener
+        : IModifyOwnDamageAffinity, IOnConditionAddedOrRemoved, ICharacterTurnStartListener
     {
+        // This behavior sits on the condition put on the spell's target, so its affinity hook is one of the damaged
+        // creature's own (IModifyOwnDamageAffinity, #44): the marked creature loses its resistance to the chosen
+        // type when it takes that damage. As an IModifyDamageAffinity it also ran when the marked creature dealt
+        // damage, so the damage it dealt of that type ignored its victims' resistance.
         // required to ensure the behavior will still work after loading a save
         public void OnCharacterTurnStarted(GameLocationCharacter locationCharacter)
         {

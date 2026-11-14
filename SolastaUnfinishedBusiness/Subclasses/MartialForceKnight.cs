@@ -617,7 +617,11 @@ public sealed class MartialForceKnight : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
-            attacker.UsedSpecialFeatures.TryAdd(powerPsionicAdept.Name, 0);
+            // Every attack starts without a Psionic Adept offer; only a Force-Powered Strike below sets it. This
+            // used to be TryAdd, which never overwrites: when a strike's target dropped (or the attack missed, or the
+            // fighter was below level 7) the flag stayed 1, and a later hit that turn got the push/prone choice
+            // without a strike.
+            attacker.SetSpecialFeatureUses(powerPsionicAdept.Name, 0);
 
             var rulesetAttacker = attacker.RulesetCharacter;
 
@@ -628,8 +632,9 @@ public sealed class MartialForceKnight : AbstractSubclass
                 yield break;
             }
 
+            // Marks the strike as used this turn (OnceInMyTurnIsValid checks only that the key exists).
             attacker.UsedSpecialFeatures.TryAdd(conditionForcePoweredStrike.Name, 0);
-            attacker.UsedSpecialFeatures[powerPsionicAdept.Name] = 1;
+            attacker.SetSpecialFeatureUses(powerPsionicAdept.Name, 1);
             rulesetAttacker.UpdateUsageForPower(PowerPsionicInitiate, 1);
             rulesetAttacker.InflictCondition(
                 conditionForcePoweredStrike.Name,
@@ -658,15 +663,20 @@ public sealed class MartialForceKnight : AbstractSubclass
             var rulesetAttacker = attacker.RulesetCharacter;
             var levels = rulesetAttacker.GetClassLevel(CharacterClassDefinitions.Fighter);
 
-            if (!attacker.UsedSpecialFeatures.TryGetValue(powerPsionicAdept.Name, out var value) || value == 0 ||
-                defender.RulesetActor is not { IsDeadOrDyingOrUnconscious: false } ||
+            if (attacker.GetSpecialFeatureUses(powerPsionicAdept.Name, 0) == 0)
+            {
+                yield break;
+            }
+
+            // Spent by this attack whether or not the offer below is made.
+            attacker.SetSpecialFeatureUses(powerPsionicAdept.Name, 0);
+
+            if (defender.RulesetActor is not { IsDeadOrDyingOrUnconscious: false } ||
                 (rollOutcome != RollOutcome.Success && rollOutcome != RollOutcome.CriticalSuccess) ||
                 levels < 7)
             {
                 yield break;
             }
-
-            attacker.UsedSpecialFeatures[powerPsionicAdept.Name] = 0;
 
             var usablePower = PowerProvider.Get(powerPsionicAdept, rulesetAttacker);
 

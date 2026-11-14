@@ -288,10 +288,10 @@ public static class CharacterActionSpendPowerPatcher
                     // END PATCH
 
                     //PATCH: Eldritch Blast's pushes and pulls: a creature moved over a drop falls only after the
-                    // cast's last move on it (issue #37, EldritchBlastFallContext, a setting). From here the target
+                    // cast's last move on it (issue #37, ForcedMovementFallContext, a setting). From here the target
                     // is held if this action is one of those moves, and the push its effect queues is noted as the
                     // cast's. Does nothing for any other power, or with the setting off.
-                    EldritchBlastFallContext.EnterLeg(__instance, target);
+                    ForcedMovementFallContext.EnterLeg(__instance, target);
 
                     bool damageAbsorbedByTemporaryHitPoints;
 
@@ -308,7 +308,7 @@ public static class CharacterActionSpendPowerPatcher
                     }
                     finally
                     {
-                        EldritchBlastFallContext.ExitLeg();
+                        ForcedMovementFallContext.ExitLeg();
                     }
 
                     //BUGFIX: vanilla doesn't handle triggers on enemy death

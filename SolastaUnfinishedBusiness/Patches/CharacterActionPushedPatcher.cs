@@ -14,8 +14,9 @@ namespace SolastaUnfinishedBusiness.Patches;
 [UsedImplicitly]
 public static class CharacterActionPushedPatcher
 {
-    //PATCH: Eldritch Blast's pushes and pulls: a creature moved over a drop falls only after the cast's last move on
-    // it, and the cast's pushes don't play the falling pose (issue #37, EldritchBlastFallContext, a setting).
+    //PATCH: falls put off until an action's last push or pull: a creature moved over a drop falls only after its
+    // action's last move, and that action's pushes don't play the falling pose (issues #37 and #39,
+    // ForcedMovementFallContext, a setting).
     //
     // After a push has landed, the game's push action waits for the creature's "back on its feet" animation event,
     // unless the creature is falling (or taking damage, or can't be shoved). That event is only sent when the push
@@ -46,7 +47,7 @@ public static class CharacterActionPushedPatcher
             var fallingMethod = typeof(GameLocationCharacter).GetProperty(nameof(GameLocationCharacter.Falling))!
                 .GetGetMethod();
             var myFallingMethod =
-                new Func<GameLocationCharacter, bool>(EldritchBlastFallContext.IsFallingOrLeftInAir).Method;
+                new Func<GameLocationCharacter, bool>(ForcedMovementFallContext.IsFallingOrLeftInAir).Method;
 
             return instructions.ReplaceCalls(fallingMethod,
                 "CharacterActionPushed.ExecuteImpl",
@@ -81,7 +82,7 @@ public static class CharacterActionPushedPatcher
             var poseMethod = typeof(GraphicsCharacter).GetProperty(nameof(GraphicsCharacter.IsFalling))!
                 .GetSetMethod();
             var myPoseMethod =
-                new Action<GraphicsCharacter, bool>(EldritchBlastFallContext.SetFallingPose).Method;
+                new Action<GraphicsCharacter, bool>(ForcedMovementFallContext.SetFallingPose).Method;
 
             // the first of the two calls is the one at the start of a forced move
             return instructions.ReplaceCall(poseMethod,

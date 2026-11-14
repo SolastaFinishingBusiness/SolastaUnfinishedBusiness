@@ -1959,8 +1959,16 @@ internal static class OtherFeats
             return !attackModeDamage && damageTypes.Contains(damageForm.DamageType);
         }
 
-        public void ModifyDamageAffinity(RulesetActor attacker, RulesetActor defender, List<FeatureDefinition> features)
+        // Runs only for damage the hero deals (#44): "{0} damage type spells you cast ignore target's resistance".
+        // So only a spell's damage ignores the resistance; weapon attacks and powers of the type don't, and the
+        // hero's own resistance to the type (Elemental Master's included) is kept.
+        public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
+            if (!ModifyDamageAffinityContext.IsSpellDamage)
+            {
+                return;
+            }
+
             features.RemoveAll(x =>
                 x is IDamageAffinityProvider { DamageAffinityType: DamageAffinityType.Resistance } y &&
                 damageTypes.Contains(y.DamageType));
@@ -2028,8 +2036,15 @@ internal static class OtherFeats
     private sealed class ModifyDamageResistanceElementalMaster(params string[] damageTypes)
         : IModifyDamageAffinity, IValidateDieRollModifier
     {
+        // Runs only for damage the hero deals (#44): "{0} damage type spells you cast ignore target's immunity".
+        // So only a spell's damage ignores the immunity, and the hero's own immunity to the type is kept.
         public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
+            if (!ModifyDamageAffinityContext.IsSpellDamage)
+            {
+                return;
+            }
+
             features.RemoveAll(x =>
                 x is IDamageAffinityProvider { DamageAffinityType: DamageAffinityType.Immunity } y &&
                 damageTypes.Contains(y.DamageType));

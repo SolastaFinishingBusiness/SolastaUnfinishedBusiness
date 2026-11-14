@@ -436,8 +436,11 @@ internal static partial class SpellBuilders
         }
     }
 
-    private sealed class ModifyDamageAffinitySoulExpulsion : IModifyDamageAffinity
+    private sealed class ModifyDamageAffinitySoulExpulsion : IModifyOwnDamageAffinity
     {
+        // On the condition Soul Expulsion puts on an undead target, so it is one of the damaged creature's own hooks
+        // (IModifyOwnDamageAffinity, #44): the marked undead loses its necrotic resistance and immunity until it is
+        // next attacked (the condition's interruption).
         public void ModifyDamageAffinity(RulesetActor defender, RulesetActor attacker, List<FeatureDefinition> features)
         {
             if (defender is RulesetCharacterMonster rulesetCharacterMonster &&

@@ -123,6 +123,11 @@ public static class CharacterActionPatcher
         {
             var actingCharacter = __instance.ActingCharacter;
 
+            //PATCH: falls put off until an action's last push or pull (issue #39): note the action as running, and
+            // join a power started in the middle of another action of its character to that action. Its end is
+            // noted by Execute_FallGroups_Patch below.
+            ForcedMovementFallContext.ActionStarting(__instance);
+
             //BUGFIX: vanilla always consume a main action on battle surprise phase even if a bonus power or spell
             if (Gui.Battle != null &&
                 Gui.Battle.CurrentRound == 1 &&
@@ -155,7 +160,7 @@ public static class CharacterActionPatcher
                 case CharacterActionPushedCustom:
                     ForcedMovementContext.PushStarting(__instance);
                     //PATCH: Eldritch Blast's pushes and pulls (issue #37): which of a held creature's pushes runs
-                    EldritchBlastFallContext.PushStarting(__instance);
+                    ForcedMovementFallContext.PushStarting(__instance);
                     break;
 
                 case CharacterActionMoveStepBase characterActionMoveStepBase:
@@ -235,7 +240,7 @@ public static class CharacterActionPatcher
                 {
                     //PATCH: forced movement through areas (issue #32): the push is over, its cells are done with
                     ForcedMovementContext.PushEnded(actingCharacter);
-                    EldritchBlastFallContext.PushEnded(__instance);
+                    ForcedMovementFallContext.PushEnded(__instance);
 
                     yield return CircleOfTheWildfire.HandleCauterizingFlamesBehavior(actingCharacter);
 
@@ -259,6 +264,34 @@ public static class CharacterActionPatcher
             {
                 rulesetCharacter.ProcessConditionsMatchingInterruption(
                     (ConditionInterruption)ExtraConditionInterruption.UsesBonusAction);
+            }
+        }
+    }
+
+    //PATCH: falls put off until an action's last push or pull (issue #39, ForcedMovementFallContext): the end of an
+    // action, noted after everything else the mod runs at its end (Priority.Last makes this postfix the outermost
+    // wrapper, so what Execute_Patch's postfix sets off at the end still counts as part of the action). In a finally,
+    // so it is also noted when the coroutine is disposed before it finishes. Its start is noted in Execute_Patch's
+    // prefix.
+    [HarmonyPatch(typeof(CharacterAction), nameof(CharacterAction.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Execute_FallGroups_Patch
+    {
+        [UsedImplicitly]
+        [HarmonyPriority(Priority.Last)]
+        public static IEnumerator Postfix(IEnumerator values, CharacterAction __instance)
+        {
+            try
+            {
+                while (values.MoveNext())
+                {
+                    yield return values.Current;
+                }
+            }
+            finally
+            {
+                ForcedMovementFallContext.ActionEnded(__instance);
             }
         }
     }

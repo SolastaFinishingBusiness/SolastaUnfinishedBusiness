@@ -244,7 +244,8 @@ internal static class EldritchBlastMovePrompt
         }
     }
 
-    private static Transform AddRow(Transform parent)
+    // also used by the Orcish Fury prompt (OrcishFuryPrompt)
+    internal static Transform AddRow(Transform parent)
     {
         var row = new GameObject("Row", typeof(RectTransform));
 
@@ -416,7 +417,8 @@ internal static class EldritchBlastMovePrompt
 
     // A copy of one of the item's own buttons with a new text and click. It is copied under an inactive holder so
     // none of the copy's components start up before they are changed (as the enemy-turn speed-up button is).
-    private static Button AddButton(Transform parent, GameObject source, string text, UnityEngine.Events.UnityAction click)
+    // also used by the Orcish Fury prompt (OrcishFuryPrompt)
+    internal static Button AddButton(Transform parent, GameObject source, string text, UnityEngine.Events.UnityAction click)
     {
         var holder = new GameObject("FbHolder");
 

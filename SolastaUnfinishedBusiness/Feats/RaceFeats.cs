@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -1623,7 +1624,24 @@ internal static class RaceFeats
 
         #region Knock-Out
 
-        private readonly string _knockOutPreventedTag = powerOrcishFury.Name + "KnockoutPrevented";
+        // The hits in progress on each half-orc, in the order they began (Codex's reviews of 0ff72e2b, 60787771 and
+        // 66260705). Keyed on the half-orc being hit, so two half-orcs caught by one spell stay apart; each record is
+        // owned by what made the hit: the attacking character for a weapon attack, the RulesetEffect for a spell or
+        // power. Only the finish of that same attack or effect acts on a record:
+        // - a weapon attack has one before-hit and one finish, so each before-hit adds a record;
+        // - a spell or power with several beams on one creature has a before-hit per beam and one finish, all with the
+        //   same RulesetEffect (both read it from the action's params), so a later beam keeps the record and doesn't
+        //   erase that an earlier one set off Relentless Endurance;
+        // - an attack that starts while another is still going (a reaction attack in the middle of it) adds its own
+        //   record, and its finish removes only that one, so the outer attack's record survives;
+        // - the game skips the finish for a target left unconscious, so that record is never removed by a finish. It
+        //   matches nothing else (a heal, say, can't set off an attack against the healer), and goes with the
+        //   half-orc's location character: the table holds the half-orc weakly (WeakKeyTable, as a ConditionalWeakTable
+        //   never lets go on this runtime) and each record holds its source weakly, so nothing here keeps a character
+        //   or effect alive after a reload or a location change, and no clean-up hook is needed.
+        // The flags used to live in UsedSpecialFeatures, written with TryAdd (never overwriting) and read from the
+        // attacker, so the attack never happened.
+        private readonly WeakKeyTable<GameLocationCharacter, List<PendingHit>> _pendingHits = new();
 
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
             GameLocationBattleManager battleManager,
@@ -1635,13 +1653,7 @@ internal static class RaceFeats
             bool firstTarget,
             bool criticalHit)
         {
-            var rulesetDefender = defender.RulesetCharacter;
-
-            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-            attacker.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
-            attacker.UsedSpecialFeatures[powerOrcishFury.Name] = 1;
-            attacker.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            attacker.UsedSpecialFeatures[_knockOutPreventedTag] = 0;
+            BeginHit(defender, rulesetEffect, true);
 
             yield break;
         }
@@ -1652,9 +1664,7 @@ internal static class RaceFeats
             GameLocationCharacter defender,
             List<GameLocationCharacter> targets)
         {
-            HandleKnockOutBehavior(action, defender);
-
-            yield break;
+            yield return HandleKnockOutBehavior(action, defender, action.ActionParams?.RulesetEffect, true, null);
         }
 
         public IEnumerator OnPhysicalAttackBeforeHitConfirmedOnMe(
@@ -1669,13 +1679,7 @@ internal static class RaceFeats
             bool firstTarget,
             bool criticalHit)
         {
-            var rulesetDefender = defender.RulesetCharacter;
-
-            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
-            attacker.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
-            attacker.UsedSpecialFeatures[powerOrcishFury.Name] = 1;
-            attacker.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            attacker.UsedSpecialFeatures[_knockOutPreventedTag] = 0;
+            BeginHit(defender, attacker, false);
 
             yield break;
         }
@@ -1689,58 +1693,232 @@ internal static class RaceFeats
             RollOutcome rollOutcome,
             int damageAmount)
         {
-            HandleKnockOutBehavior(action, defender);
-
-            yield break;
+            // A weapon attack's record is identified by its attacker, not by the attack (the before-hit interface
+            // carries no action), so a record left by a finish the game skipped could match that attacker's next
+            // finish (Codex's review of f3be1746). The before-hit runs only for a hit
+            // (CharacterActionAttack: HandleCharacterAttackHitConfirmed only on Success or CriticalSuccess), so a
+            // hit's finish always finds its own record as the newest; a miss's finish never acts. Either way the
+            // finish retires every record of its attacker: one attacker's weapon attacks on the same half-orc never
+            // nest, so the others are stale.
+            yield return HandleKnockOutBehavior(action, defender, action.ActingCharacter,
+                rollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess, battleManager, true);
         }
 
+        // Adds (or, for another beam of the same effect, keeps) the record of a hit on the half-orc, and makes sure
+        // KnockOutPreventedHandler listens: removed first, so the half-orc holds at most one subscription however many
+        // hits there are and whether or not their finish runs.
+        private void BeginHit(GameLocationCharacter defender, object source, bool keepSameSource)
+        {
+            var rulesetDefender = defender.RulesetCharacter;
+
+            rulesetDefender.KnockOutPrevented -= KnockOutPreventedHandler;
+            rulesetDefender.KnockOutPrevented += KnockOutPreventedHandler;
+
+            if (!_pendingHits.TryGetValue(defender, out var hits))
+            {
+                hits = [];
+                _pendingHits.Add(defender, hits);
+            }
+
+            // records whose attacker or effect is gone can never match again
+            hits.RemoveAll(x => x.IsGone);
+
+            if (keepSameSource && hits.Exists(x => x.Is(source)))
+            {
+                return;
+            }
+
+            hits.Add(new PendingHit(source));
+        }
+
+        // Only Relentless Endurance counts, and it only ever sets the mark: another feature that prevents a knock-out
+        // later in the same action must not erase it (it used to write 0 for any other source).
         private void KnockOutPreventedHandler(RulesetCharacter rulesetCharacter, BaseDefinition source)
         {
+            if (source != DamageAffinityHalfOrcRelentlessEndurance)
+            {
+                return;
+            }
+
             var character = GameLocationCharacter.GetFromActor(rulesetCharacter);
 
-            character.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-            character.UsedSpecialFeatures[_knockOutPreventedTag] =
-                source == DamageAffinityHalfOrcRelentlessEndurance ? 1 : 0;
+            // the newest hit is the one being resolved: an outer attack's record is older
+            if (character != null && _pendingHits.TryGetValue(character, out var hits) && hits.Count > 0)
+            {
+                hits[hits.Count - 1].EnduranceFired = true;
+            }
         }
 
-        private void HandleKnockOutBehavior(CharacterAction action, GameLocationCharacter target)
+        private IEnumerator HandleKnockOutBehavior(
+            CharacterAction action,
+            GameLocationCharacter target,
+            object finishSource,
+            bool mayAct,
+            GameLocationBattleManager battleManager,
+            bool retireAllOfSource = false)
         {
-            var actingCharacter = action.ActingCharacter;
-
-            if (!actingCharacter.UsedSpecialFeatures.TryGetValue(powerOrcishFury.Name, out var value) ||
-                value == 0)
+            if (!_pendingHits.TryGetValue(target, out var hits))
             {
-                return;
+                yield break;
             }
 
-            actingCharacter.UsedSpecialFeatures.TryAdd(powerOrcishFury.Name, 0);
+            // only this attack's or effect's own record, the newest if a stale one has the same source; a finish of
+            // something that didn't hit the half-orc (a heal) finds none and leaves the others alone, and a weapon
+            // miss may find a stale record of its attacker, which it retires without acting (mayAct is false)
+            var index = hits.FindLastIndex(x => x.Is(finishSource));
 
+            if (index < 0)
+            {
+                yield break;
+            }
+
+            var pending = hits[index];
             var rulesetTarget = target.RulesetCharacter;
 
-            rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
-
-            if (!actingCharacter.UsedSpecialFeatures.TryGetValue(_knockOutPreventedTag, out var knockOutPrevented) ||
-                knockOutPrevented == 0)
+            if (retireAllOfSource)
             {
-                return;
+                hits.RemoveAll(x => x.Is(finishSource));
+            }
+            else
+            {
+                hits.RemoveAt(index);
             }
 
-            actingCharacter.UsedSpecialFeatures.TryAdd(_knockOutPreventedTag, 0);
-
-            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact())
+            if (hits.Count == 0)
             {
-                return;
+                _pendingHits.Remove(target);
+                rulesetTarget.KnockOutPrevented -= KnockOutPreventedHandler;
             }
 
-            rulesetTarget.LogCharacterUsedPower(powerOrcishFury);
+            if (!mayAct || !pending.EnduranceFired)
+            {
+                yield break;
+            }
 
-            var attackMode = target.FindActionAttackMode(ActionDefinitions.Id.AttackMain);
+            var attacker = action.ActingCharacter;
 
-            target.MyExecuteActionAttack(
+            battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
+
+            // A battle must be running. This used to check Gui.Battle.InitiativeRollFinished (original UB code), which
+            // the game clears when a battle's initiative starts and sets only when RollInitiative finishes; nothing
+            // else writes it, the battle's save data included. So in a battle continued from a save it stays false
+            // for the whole fight, and Orcish Fury's attack was silently never offered there (seen in game on
+            // 38a42048 with [OrcishFury] diagnostics: everything else passed). IsBattleInProgress is what the mod's
+            // other reactions check.
+            if (Gui.Battle == null || battleManager is not { IsBattleInProgress: true } || !target.CanReact())
+            {
+                yield break;
+            }
+
+            var actionManager =
+                ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;
+
+            if (!battleManager || !actionManager)
+            {
+                yield break;
+            }
+
+            // "Immediately after you use your Relentless Endurance trait, you can use your reaction to make one
+            // weapon attack": any creature a weapon can reach, of the player's choice (user, 2026-11-15: "Let the
+            // player hit any creature of their choice in range. Make it a list selection (one button per enemy) or to
+            // pass to not do the attack"). It used to execute an opportunity attack against the attacker straight
+            // away with the main-hand mode, unchecked; then (0ff72e2b) it was offered against the attacker only.
+            var targets = GetOrcishFuryTargets(target, attacker, battleManager);
+
+            if (targets.Count == 0)
+            {
+                yield break;
+            }
+
+            var first = targets[0];
+            var reactionParams = new CharacterActionParams(
+                target,
                 ActionDefinitions.Id.AttackOpportunity,
-                action.ActingCharacter,
-                attackMode,
-                new ActionModifier());
+                first.Mode,
+                first.Character,
+                first.Modifier) { StringParameter2 = "OrcishFury" };
+            var reactionRequest = new ReactionRequestOrcishFury(reactionParams, attacker ?? target, targets);
+            var count = actionManager.PendingReactionRequestGroups.Count;
+
+            actionManager.AddInterruptRequest(reactionRequest);
+
+            yield return battleManager.WaitForReactions(attacker ?? target, actionManager, count);
+
+            if (reactionParams.ReactionValidated)
+            {
+                rulesetTarget.LogCharacterUsedPower(powerOrcishFury);
+            }
+        }
+
+        // The enemies the half-orc can attack now, each with a weapon mode that reaches it (melee first, then
+        // ranged, as Wyrmkin's Reactive Retribution picks), in a fixed order so every computer builds the same list:
+        // the creature that hit first, then the others by distance, then battle order. The modes are copies: the found
+        // mode is the hero's own (RulesetCharacter.AttackModes), and the tag would stay on it even if the prompt is
+        // declined, so a later real opportunity attack with it would count as not one (Blade Mastery's advantage, for
+        // one) (Codex's review of 0ff72e2b).
+        private static List<ReactionRequestOrcishFury.Target> GetOrcishFuryTargets(
+            GameLocationCharacter halfOrc,
+            GameLocationCharacter attacker,
+            GameLocationBattleManager battleManager)
+        {
+            var result = new List<ReactionRequestOrcishFury.Target>();
+            var contenders = Gui.Battle.GetContenders(halfOrc);
+
+            for (var index = 0; index < contenders.Count; index++)
+            {
+                var enemy = contenders[index];
+                var (mode, modifier) = halfOrc.GetFirstMeleeModeThatCanAttack(enemy, battleManager);
+
+                if (mode == null)
+                {
+                    (mode, modifier) = halfOrc.GetFirstRangedModeThatCanAttack(enemy, battleManager);
+                }
+
+
+                if (mode == null)
+                {
+                    continue;
+                }
+
+                // a plain copy, not one borrowed from the game's pool (RulesetAttackModeExtensions.Clone): one is made per
+                // listed creature and only the chosen one is used, so pooled ones would never go back (Codex's review
+                // of 60787771); the game itself makes attack modes with new (CharacterActionItemForm)
+                var copy = new RulesetAttackMode();
+
+                copy.Copy(mode);
+                mode = copy;
+                mode.AddAttackTagAsNeeded(Behaviors.Specific.AttacksOfOpportunity.NotAoOTag);
+
+                var distance = (int)Behaviors.Specific.DistanceCalculation.GetDistanceFromCharacters(halfOrc, enemy);
+
+                result.Add(new ReactionRequestOrcishFury.Target(enemy, mode, modifier, distance));
+            }
+
+            return
+            [
+                .. result
+                    .Select((x, order) => (x, order))
+                    .OrderBy(t => t.x.Character == attacker ? 0 : 1)
+                    .ThenBy(t => t.x.DistanceCells)
+                    .ThenBy(t => t.order)
+                    .Select(t => t.x)
+            ];
+        }
+
+        // A hit on a half-orc waiting for its finish: what made it (held weakly, so it never keeps an attacker or an
+        // effect alive, nor through them the half-orc that keys the table), and whether Relentless Endurance fired.
+        private sealed class PendingHit(object source)
+        {
+            private readonly WeakReference<object> _source = new(source);
+
+            internal bool EnduranceFired { get; set; }
+
+            internal bool IsGone => !_source.TryGetTarget(out _);
+
+            internal bool Is(object candidate)
+            {
+                return candidate != null && _source.TryGetTarget(out var target) && ReferenceEquals(target, candidate);
+            }
         }
 
         #endregion
