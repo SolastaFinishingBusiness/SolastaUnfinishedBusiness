@@ -393,6 +393,12 @@ internal static class CampaignsDisplay
                 Main.Settings.NeverMoveCameraOnEnemyTurn = toggle;
             }
 
+            toggle = Main.Settings.EnableAllyMovementToWalls;
+            if (UI.Toggle(Gui.Localize("ModUi/&EnableAllyMovementToWalls"), ref toggle, UI.AutoWidth()))
+            {
+                Main.Settings.EnableAllyMovementToWalls = toggle;
+            }
+
             UI.Label();
         }
 

@@ -110,6 +110,7 @@ ModUi/&EnableActionSwitching=Habilitar la barra de cambio de acciones <i><color=
 ModUi/&EnableAdditionalBackstoryDisplay=Habilitar visualización de antecedentes adicionales en la inspección de antecedentes
 ModUi/&EnableAdditionalIconsOnLevelMap=Habilitar íconos adicionales para campamentos, salidas y teletransportadores en el mapa de niveles
 ModUi/&EnableAdditionalItemsInDungeonMaker=Agregar elementos modificados al editor
+ModUi/&EnableAllyMovementToWalls=Permitir paredes como destino para criaturas que pueden moverse por paredes (por ejemplo, <color=#D89555>%Spell/&SpiderClimbTitle%</color>) cuando las características te mueven a ti o a tus aliados (por ejemplo, <color=#D89555>%Feature/&FeatureBarbarianInstinctivePounceTitle%</color>, <color=#D89555>%Feature/&GambitCoordinatedAttackTitle%</color>)
 ModUi/&EnableAlternateHuman=Habilitar el <color=#D89555>Humano</color> alternativo <i><color=#F0DAA0>[+1 dote / +2 opciones de atributo / +1 habilidad]</color></i>
 ModUi/&EnableAlternateVotingSystem=Habilitar sistema de votación alternativo <i><color=#F0DAA0>[peso de la elección = votos * modificador de Carisma del héroe]</color></i>
 ModUi/&EnableBG3AbjurationArcaneWard=Habilitar la implementación de <color=#D89555>Arcane Ward</color> de Abjurer para que se comporte como BG3

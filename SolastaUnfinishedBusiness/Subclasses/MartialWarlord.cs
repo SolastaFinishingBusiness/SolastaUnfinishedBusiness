@@ -459,9 +459,8 @@ public sealed class MartialWarlord : AbstractSubclass
             {
                 if (!positioningService.CanPlaceCharacter(
                         targetCharacter, position, CellHelpers.PlacementMode.Station) ||
-                    !positioningService.CanCharacterStayAtPosition_Floor(
-                        targetCharacter, position,
-                        onlyCheckCellsWithRealGround: cursorLocationSelectPosition.isTeleportingSpell))
+                    // floor as the game's picker, or a climbable wall for a creature that can move on walls
+                    !cursorLocationSelectPosition.CanEndMoveAt(positioningService, targetCharacter, position))
                 {
                     continue;
                 }

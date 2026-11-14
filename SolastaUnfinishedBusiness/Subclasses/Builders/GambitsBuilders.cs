@@ -1870,11 +1870,8 @@ internal static class GambitsBuilders
                     (double)halfMaxTacticalMoves ||
                     !positioningService.CanPlaceCharacter(
                         targetCharacter, position, CellHelpers.PlacementMode.Station) ||
-                    !positioningService.CanCharacterStayAtPosition_Floor(
-                        targetCharacter, position,
-                        // the game's own rule: only a teleport must end on real ground. These moves are walks
-                        // (a TacticalMove), so the flag is off and a flier may stop in mid-air, a walker needs a floor.
-                        onlyCheckCellsWithRealGround: cursorLocationSelectPosition.isTeleportingSpell))
+                    // floor as the game's picker, or a climbable wall for a creature that can move on walls
+                    !cursorLocationSelectPosition.CanEndMoveAt(positioningService, targetCharacter, position))
                 {
                     continue;
                 }
