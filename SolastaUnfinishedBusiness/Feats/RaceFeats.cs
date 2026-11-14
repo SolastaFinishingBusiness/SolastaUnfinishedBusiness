@@ -1765,12 +1765,18 @@ internal static class RaceFeats
 
             Diag($"knock-out tag seen on {target.Name}: battle {Gui.Battle != null}, initiative {Gui.Battle?.InitiativeRollFinished}, can act {target.CanAct()}, reaction available {target.IsReactionAvailable()}, reaction status {target.GetActionTypeStatus(ActionDefinitions.ActionType.Reaction)}");
 
-            if (Gui.Battle == null || !Gui.Battle.InitiativeRollFinished || !target.CanReact())
+            battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
+
+            // A battle must be running. This used to check Gui.Battle.InitiativeRollFinished (original UB code), which
+            // the game clears when a battle's initiative starts and sets only when RollInitiative finishes; nothing
+            // else writes it, the battle's save data included. So in a battle continued from a save it stays false
+            // for the whole fight, and Orcish Fury's attack was silently never offered there (seen in game on
+            // 38a42048 with [OrcishFury] diagnostics: everything else passed). IsBattleInProgress is what the mod's
+            // other reactions check.
+            if (Gui.Battle == null || battleManager is not { IsBattleInProgress: true } || !target.CanReact())
             {
                 yield break;
             }
-
-            battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
             var actionManager =
                 ServiceRepository.GetService<IGameLocationActionService>() as GameLocationActionManager;
