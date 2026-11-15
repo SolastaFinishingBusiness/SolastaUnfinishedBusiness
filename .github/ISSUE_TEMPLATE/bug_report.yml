@@ -1,0 +1,58 @@
+name: Bug report
+description: Something in Finishing Business doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. Please check the [open issues](https://github.com/SolastaFinishingBusiness/SolastaUnfinishedBusiness/issues) first, in case it's already known.
+        New issues are labelled `not-started` until someone works on them.
+  - type: input
+    id: version
+    attributes:
+      label: Mod version
+      description: Shown in the mod manager (Ctrl+F10) next to Finishing Business, e.g. 1.16.0.
+      placeholder: "1.16.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Where did it happen?
+      options:
+        - Single player
+        - Multiplayer, as the host
+        - Multiplayer, as a client
+        - Dungeon Maker
+        - Main menu or character creation
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw. Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      description: The steps, and any mod settings that matter (Mod UI > ...).
+      placeholder: |
+        1. Load a save where ...
+        2. Cast ...
+        3. See ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        If you can, attach `Player.log` from `%USERPROFILE%\AppData\LocalLow\Tactical Adventures\Solasta`, copied right
+        after it happened (the game replaces it at the next launch).

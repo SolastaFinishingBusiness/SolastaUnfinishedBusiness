@@ -1,0 +1,36 @@
+name: Feature request
+description: An idea for a new feature, option or rule.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [open issues](https://github.com/SolastaFinishingBusiness/SolastaUnfinishedBusiness/issues) first, in case it's already suggested.
+        New issues are labelled `not-started` until someone works on them.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+      description: What the feature does, from a player's point of view.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What it solves or makes better.
+  - type: dropdown
+    id: rules
+    attributes:
+      label: Rules it follows
+      description: If it's about game rules.
+      options:
+        - Not about rules
+        - D&D 2014
+        - D&D 2024
+        - Both, as an option
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else
+      description: Rules text, links, examples, or whether it should be an option and on by default.
