@@ -396,9 +396,19 @@ public static partial class Tabletop2024Context
                 continue;
             }
 
+            // A pool keeps its spent count while its class's 2024 option is off (the count shows again if the option
+            // is turned back on), and it still recovers on a rest so those uses aren't left spent until then.
             if (!simulate)
             {
                 SetChannelDivinityUsed(character, pool, restType == RestType.ShortRest ? used - 1 : 0);
+            }
+
+            // Such an unused pool isn't shown anywhere, so it isn't listed either: otherwise the rest screen shows
+            // "Channel Divinity" a second time beside the game's own line for the shared pool (seen in game on
+            // a70bbacf with both options off and a use left in the Paladin pool from earlier).
+            if (GetChannelDivinityMax(character, pool) == 0)
+            {
+                continue;
             }
 
             // the rest screen lists the recovered Channel Divinity under its class
