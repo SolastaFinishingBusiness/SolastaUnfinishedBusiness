@@ -1,0 +1,36 @@
+# Keeps the issue status labels (not-started, in progress, pending approval, pending release) in step with issues and
+# pull requests (user direction, 2026-11-15: "Add forms and status bot"). The logic and the rules it follows are in
+# .github/scripts/issue-status.js; the "released" step runs at the end of dotnet.yml's version tag run.
+#
+# pull_request_target, not pull_request, so that PRs from forks get a token that can label issues. It is safe here
+# because the job checks out only the default branch's own script and never the PR's code.
+
+name: Issue status labels
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened, reopened, edited, ready_for_review, converted_to_draft, closed]
+    branches: [develop]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the default branch's copy of the script, whatever the PR changes
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const run = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/issue-status.js`);
+            await run({ github, context, core });
