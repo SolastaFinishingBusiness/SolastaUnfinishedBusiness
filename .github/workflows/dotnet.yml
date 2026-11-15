@@ -24,6 +24,9 @@ env:
   SolastaInstallDir: ../SolastaFiles
 permissions:
   contents: write
+  # for the last step of a tag's run: relabelling the issues fixed in the release (.github/scripts/issue-status.js)
+  issues: write
+  pull-requests: read
 jobs:
   build:
 
@@ -163,3 +166,14 @@ jobs:
             --title "$GITHUB_REF_NAME (Solasta $game_version)" \
             --notes-file release-notes.md \
             SolastaUnfinishedBusiness.zip SolastaFiles/Mods/SolastaUnfinishedBusiness/Info.json
+      - name: Mark the issues fixed in this release as released
+        if: github.ref_type == 'tag'
+        # Here rather than in a workflow started by the release: a release created with the workflow's own token
+        # starts no other workflow. The release is already published, so a failure here must not fail the run; the
+        # run's summary lists the issues relabelled, which still need their release comments.
+        continue-on-error: true
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const run = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/issue-status.js`);
+            await run({ github, context, core });
