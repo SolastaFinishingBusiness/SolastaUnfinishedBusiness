@@ -245,7 +245,10 @@ public static partial class Tabletop2024Context
             return;
         }
 
-        character.InflictCondition(
+        // InflictCondition's amount is only a source amount; the condition's own amount comes from its AmountOrigin,
+        // which these conditions don't set, so it starts at 0 and is set here (Codex's review: else a pool's first use
+        // was free)
+        var newCondition = character.InflictCondition(
             conditionName,
             DurationType.Permanent,
             0,
@@ -258,6 +261,8 @@ public static partial class Tabletop2024Context
             used,
             0,
             0);
+
+        newCondition.Amount = used;
     }
 
     internal static int GetChannelDivinityRemaining(RulesetCharacter character, ChannelDivinityPool pool)
@@ -287,7 +292,32 @@ public static partial class Tabletop2024Context
     {
         var usablePower = character.UsablePowers.FirstOrDefault(x => x.PowerDefinition == power);
 
-        return GetChannelDivinityPool(character, usablePower?.OriginClass);
+        return GetChannelDivinityPool(character, ChannelDivinityOriginClass(character, power, usablePower?.OriginClass));
+    }
+
+    // The class a Channel Divinity power belongs to. A bundle's sub-power (such as Divine Spark's Heal, Necrotic and
+    // Radiant) has no class origin of its own, only its master power does, so the master's is used; without this the
+    // sub-powers fell into the shared pool, which has no uses when every Channel Divinity class is on the 2024 rules
+    // (seen in game on bb80c00b: Divine Spark's choices were greyed out).
+    private static CharacterClassDefinition ChannelDivinityOriginClass(
+        RulesetCharacter character, FeatureDefinitionPower power, CharacterClassDefinition originClass)
+    {
+        if (originClass)
+        {
+            return originClass;
+        }
+
+        foreach (var master in Behaviors.Specific.PowerBundle.GetMasterPowersBySubPower(power))
+        {
+            var masterUsablePower = character.UsablePowers.FirstOrDefault(x => x.PowerDefinition == master);
+
+            if (masterUsablePower?.OriginClass)
+            {
+                return masterUsablePower.OriginClass;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>The pools a character has uses in, for the portrait counter and the reaction cost.</summary>
@@ -323,7 +353,8 @@ public static partial class Tabletop2024Context
             return;
         }
 
-        var pool = GetChannelDivinityPool(character, usablePower.OriginClass);
+        var pool = GetChannelDivinityPool(character,
+            ChannelDivinityOriginClass(character, usablePower.PowerDefinition, usablePower.OriginClass));
 
         if (pool == ChannelDivinityPool.Shared)
         {
@@ -344,7 +375,8 @@ public static partial class Tabletop2024Context
             return;
         }
 
-        var pool = GetChannelDivinityPool(character, usablePower.OriginClass);
+        var pool = GetChannelDivinityPool(character,
+            ChannelDivinityOriginClass(character, usablePower.PowerDefinition, usablePower.OriginClass));
 
         result = remaining
             ? GetChannelDivinityRemaining(character, pool) / Math.Max(1, usablePower.PowerDefinition.CostPerUse)
