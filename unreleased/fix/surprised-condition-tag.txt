@@ -1,3 +1,0 @@
-- Command can no longer target a surprised creature, as described; the check looked for Surprised in the wrong place, so it never applied.
-- Slayer, Fatal Strike (level 17): a hit on a surprised creature now makes it roll the Constitution save, as described. It never happened, for the same reason.
-- Not tested in game: either change (no test save starts a battle with a surprised creature), and anything on two computers.
