@@ -97,9 +97,9 @@ public static class GameLocationCharacterPatcher
             GameLocationCharacter __instance,
             int3 start, int3 finish, bool landingFailed)
         {
-            if (Main.Settings.ModifyJumpRulesForArmorAndEncumberance
-                && landingFailed
-                )
+            // its own option, "Applies 1d4 damage on failed jump checks" (#55); this read
+            // ModifyJumpRulesForArmorAndEncumberance, so the damage came with the armour option and couldn't be set alone
+            if (Main.Settings.EnableDamageOnFailedJumpCheck && landingFailed)
             {
                 var damageForm = new DamageForm
                 {

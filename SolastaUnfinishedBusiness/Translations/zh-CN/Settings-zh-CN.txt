@@ -110,7 +110,7 @@ ModUi/&EnableActionSwitching=启用动作切换功能<i><color=#F0DAA0>[允许�
 ModUi/&EnableAdditionalBackstoryDisplay=在背景检查中启用额外的背景故事显示
 ModUi/&EnableAdditionalIconsOnLevelMap=在关卡地图上启用营地、出口和传送器的附加图标
 ModUi/&EnableAdditionalItemsInDungeonMaker=将经过修改的物品添加到编辑器
-ModUi/&EnableAllyMovementAllowsFlight=若该生物处于飞行状态，允许使自身或盟友移动的特性将空中位置视为可用目标（例如<color=#D89555>机动打击</color>、<color=#D89555>本能猛扑</color>）
+ModUi/&EnableAllyMovementToWalls=当特性移动自身或盟友时（例如<color=#D89555>%Feature/&FeatureBarbarianInstinctivePounceTitle%</color>、<color=#D89555>%Feature/&GambitCoordinatedAttackTitle%</color>），允许能在墙上移动的生物（例如<color=#D89555>%Spell/&SpiderClimbTitle%</color>）以墙面为目的地
 ModUi/&EnableAlternateHuman=启用<color=#D89555>变体人类</color> <i><color=#F0DAA0>[+1 专长 / +2 属性选择 / +1 技能]</color></i>
 ModUi/&EnableAlternateVotingSystem=启用替代投票系统<i><color=#F0DAA0>[选择权重 = 投票数 * 英雄魅力调整值]</color></i>
 ModUi/&EnableBG3AbjurationArcaneWard=启用 <b>防护师</b> 的 <color=#D89555>奥术守御</color> 以博得之门3方式运行
