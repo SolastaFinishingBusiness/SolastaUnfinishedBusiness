@@ -1925,29 +1925,23 @@ public static class RulesetCharacterPatcher
                 }
             }
 
-            //PATCH: support for Paladins to regain one channel divinity usage at short rests
-            if (Main.Settings.EnablePaladinChannelDivinity2024 && __instance.GetClassLevel(Paladin) >= 3 &&
-                __instance.UsedChannelDivinity > 0)
+            //PATCH: 2024 Channel Divinity: one use back on a short rest (Paladin 3+, Cleric 2+)
+            // The game keeps one count of used Channel Divinity per character (UsedChannelDivinity), whichever class
+            // gives the feature. There were a Paladin block and a Cleric block here, each taking one off that same
+            // count, so a Paladin 3+ / Cleric 2+ with both 2024 options got two uses back (#66). One use now, and only
+            // when the count was kept from the game's own reset (HidesChannelDivinityFromShortRest, every Channel
+            // Divinity class on its 2024 option); otherwise the game already gave every use back.
+            if (HidesChannelDivinityFromShortRest(__instance) && __instance.UsedChannelDivinity > 0)
             {
                 if (!simulate)
                 {
                     __instance.UsedChannelDivinity -= 1;
                 }
 
-                __instance.recoveredFeatures.Add(AttributeModifierPaladinChannelDivinity);
-            }
-
-            //PATCH: support for Clerics to regain one channel divinity usage at short rests
-            // ReSharper disable once InvertIf
-            if (Main.Settings.EnableClericChannelDivinity2024 && __instance.GetClassLevel(Cleric) >= 2 &&
-                __instance.UsedChannelDivinity > 0)
-            {
-                if (!simulate)
-                {
-                    __instance.UsedChannelDivinity -= 1;
-                }
-
-                __instance.recoveredFeatures.Add(AttributeModifierClericChannelDivinity);
+                // the rest screen lists one recovered Channel Divinity, under a class that gives it
+                __instance.recoveredFeatures.Add(__instance.GetClassLevel(Paladin) >= 3
+                    ? AttributeModifierPaladinChannelDivinity
+                    : AttributeModifierClericChannelDivinity);
             }
 
             //PATCH: support for Druids to regain one wildshape usage at short rests
