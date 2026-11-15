@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Truque da Ordem Primordial
 Tag/&ThaumaturgeCantripSpecialTagTitle=Truque do Wonderworker
 ToolTip/&CheckBoxDefaultPartyTitle=Marque esta caixa para definir seu grupo padrão ao iniciar novas aventuras ou testar locais personalizados. Você pode selecionar até {0} heróis em uma base de primeiro a entrar / primeiro a sair
 Tooltip/&AdvancementByCasterLevelFormat=Nos níveis de personagem 5, 11 e 17
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: você tem {0} de {1} usos de Canalizar Divindade.\nUm uso é recuperado em um descanso curto e todos em um descanso longo.
 Tooltip/&ChannelDivinityPortraitPoolFormat=Você tem {0} de {1} usos de Canalizar Divindade.\nTodos os usos são restaurados em descansos curtos ou longos.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=Você tem {0} de {1} usos de Ataque Coordenado.\nTodos os usos são restaurados em um descanso longo.
 Tooltip/&CustomMapMarkerCamp=Acampamento

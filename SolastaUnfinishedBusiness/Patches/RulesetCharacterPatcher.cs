@@ -570,6 +570,9 @@ public static class RulesetCharacterPatcher
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, ref int __result, RulesetUsablePower usablePower)
         {
+            //PATCH: Channel Divinity's maximum follows the current options, per pool (#68)
+            Tabletop2024Context.ModifyChannelDivinityUses(__instance, usablePower, ref __result, false);
+
             __result += __instance.GetSubFeaturesByType<IModifyPowerPoolAmount>()
                 .Where(m => m.PowerPool == usablePower.PowerDefinition)
                 .Sum(m => m.PoolChangeAmount(__instance));
@@ -1182,6 +1185,9 @@ public static class RulesetCharacterPatcher
                         break;
                 }
             }
+
+            //PATCH: a Channel Divinity use of a class on the 2024 rules goes to that class's own pool (#68)
+            Tabletop2024Context.MoveChannelDivinityUse(__instance, usablePower);
 
             //PATCH: update usage for power pools 
             __instance.UpdateUsageForPower(usablePower, usablePower.PowerDefinition.CostPerUse);
@@ -1816,45 +1822,15 @@ public static class RulesetCharacterPatcher
             }
         }
 
-        // The game gives every Channel Divinity use back on a short rest (the 2014 rule). The 2024 options give one back
-        // instead (below), so the count is hidden from the game's reset. This hid it whenever either option was on, for
-        // every character, then gave a use back only to the class whose own option is on: with only the Cleric option
-        // on, a Paladin got nothing back on a short rest, and the other way round (#55). It's hidden now only when every
-        // class that gives the character Channel Divinity (Paladin 3+, Cleric 2+) follows its 2024 option; with a 2014
-        // one among them, the game's own reset applies, as that class's rule says. The class levels don't change during
-        // a rest, so the prefix and the postfix agree.
-        private static bool HidesChannelDivinityFromShortRest(RulesetCharacter character)
-        {
-            var paladin = character.GetClassLevel(Paladin) >= 3;
-            var cleric = character.GetClassLevel(Cleric) >= 2;
-
-            return (paladin || cleric) &&
-                   (!paladin || Main.Settings.EnablePaladinChannelDivinity2024) &&
-                   (!cleric || Main.Settings.EnableClericChannelDivinity2024);
-        }
-
         [UsedImplicitly]
         public static void Prefix(RulesetCharacter __instance, RestType restType)
         {
-            // invert used channel divinity sign on a short rest to avoid double dip, for a character whose channel
-            // divinity follows the 2024 rules (see HidesChannelDivinityFromShortRest)
-            if (restType == RestType.ShortRest && HidesChannelDivinityFromShortRest(__instance))
-            {
-                __instance.UsedChannelDivinity = -__instance.UsedChannelDivinity;
-            }
-
             SwitchBindChainPowers(restType, RechargeRate.LongRest);
         }
 
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RestType restType, bool simulate)
         {
-            // put back used channel divinity sign on a short rest, as above
-            if (restType == RestType.ShortRest && HidesChannelDivinityFromShortRest(__instance))
-            {
-                __instance.UsedChannelDivinity = -__instance.UsedChannelDivinity;
-            }
-
             SwitchBindChainPowers(restType, RechargeRate.BindChain);
 
             //PATCH: update usage for power pools
@@ -1885,6 +1861,10 @@ public static class RulesetCharacterPatcher
                     invocation.Recharge();
                 }
             }
+
+            //PATCH: Channel Divinity pools of classes on the 2024 rules: one use back on a short rest, all on a long
+            // rest; the game's own shared pool (2014 classes) is reset by the game on any rest (#68)
+            Tabletop2024Context.RestChannelDivinityPools(__instance, restType, simulate);
 
             //TODO: time to make this an interface to support scenarios like below
             if (restType != RestType.ShortRest)
@@ -1923,25 +1903,6 @@ public static class RulesetCharacterPatcher
 
                     __instance.recoveredFeatures.Add(PowerFighterSecondWind);
                 }
-            }
-
-            //PATCH: 2024 Channel Divinity: one use back on a short rest (Paladin 3+, Cleric 2+)
-            // The game keeps one count of used Channel Divinity per character (UsedChannelDivinity), whichever class
-            // gives the feature. There were a Paladin block and a Cleric block here, each taking one off that same
-            // count, so a Paladin 3+ / Cleric 2+ with both 2024 options got two uses back (#66). One use now, and only
-            // when the count was kept from the game's own reset (HidesChannelDivinityFromShortRest, every Channel
-            // Divinity class on its 2024 option); otherwise the game already gave every use back.
-            if (HidesChannelDivinityFromShortRest(__instance) && __instance.UsedChannelDivinity > 0)
-            {
-                if (!simulate)
-                {
-                    __instance.UsedChannelDivinity -= 1;
-                }
-
-                // the rest screen lists one recovered Channel Divinity, under a class that gives it
-                __instance.recoveredFeatures.Add(__instance.GetClassLevel(Paladin) >= 3
-                    ? AttributeModifierPaladinChannelDivinity
-                    : AttributeModifierClericChannelDivinity);
             }
 
             //PATCH: support for Druids to regain one wildshape usage at short rests
@@ -2539,6 +2500,9 @@ public static class RulesetCharacterPatcher
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RulesetUsablePower usablePower, ref int __result)
         {
+            //PATCH: Channel Divinity's remaining uses come from the power's pool and the current maximum (#68)
+            Tabletop2024Context.ModifyChannelDivinityUses(__instance, usablePower, ref __result, true);
+
             InfusionTrackingContext.AllowReplacingWhenFull(__instance, usablePower, ref __result);
         }
     }

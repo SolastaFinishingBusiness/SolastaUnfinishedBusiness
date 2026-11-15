@@ -249,8 +249,9 @@ internal static class PowerBundle
                         character.UsedBindChain) /
                        power.CostPerUse;
             case RechargeRate.ChannelDivinity:
-                return (character.TryGetAttributeValue(AttributeDefinitions.ChannelDivinityNumber) -
-                        character.UsedChannelDivinity) /
+                // the power's own pool and the maximum of the current options (#68)
+                return Tabletop2024Context.GetChannelDivinityRemaining(
+                           character, Tabletop2024Context.GetChannelDivinityPool(character, power)) /
                        power.CostPerUse;
             case RechargeRate.HealingPool:
                 return character.TryGetAttributeValue(AttributeDefinitions.HealingPool) - character.UsedHealingPool;

@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=原始秩序の呪文
 Tag/&ThaumaturgeCantripSpecialTagTitle=ワンダーワーカーキャントリップ
 ToolTip/&CheckBoxDefaultPartyTitle=新しい冒険を開始するとき、またはカスタムの場所をテストするときにデフォルトのパーティーを設定するには、このボックスをチェックします。先入れ先出し方式で最大 {0} 人のヒーローを選択できます
 Tooltip/&AdvancementByCasterLevelFormat=キャラクターレベル5、11、17の場合
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: チャンネル ディヴィニティの使用回数は {1} 回中 {0} 回残っています。\n小休憩で 1 回、大休憩ですべて回復します。
 Tooltip/&ChannelDivinityPortraitPoolFormat=チャンネル ディヴィニティの使用回数は {1} 回中 {0} 回です。\nすべての使用量は短時間または長期の休憩で回復します。
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=連携攻撃の使用回数は {1} 回中 {0} 回です。\nすべての使用回数は長い休憩で回復します。
 Tooltip/&CustomMapMarkerCamp=キャンプ

@@ -1,4 +1,5 @@
-﻿using SolastaUnfinishedBusiness.Interfaces;
+﻿using SolastaUnfinishedBusiness.Models;
+using SolastaUnfinishedBusiness.Interfaces;
 using UnityEngine.AddressableAssets;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
@@ -15,8 +16,7 @@ public class ReactionResourceChannelDivinity : ICustomReactionResource
 
     public string GetUses(RulesetCharacter character)
     {
-        var max = character.TryGetAttributeValue(AttributeDefinitions.ChannelDivinityNumber);
-        var used = character.UsedChannelDivinity;
-        return $"{max - used}";
+        // every pool's remaining uses together: the shared one and any 2024 class's own (#68)
+        return $"{Tabletop2024Context.GetChannelDivinityTotalRemaining(character)}";
     }
 }

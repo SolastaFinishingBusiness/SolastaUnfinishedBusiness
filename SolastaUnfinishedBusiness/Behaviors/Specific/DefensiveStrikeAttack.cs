@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using SolastaUnfinishedBusiness.Api;
+using SolastaUnfinishedBusiness.Models;
+using System.Collections;
 using System.Linq;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
@@ -70,10 +72,12 @@ internal static class DefensiveStrikeAttack
             yield break;
         }
 
-        //Does unit has enough Channel Divinity uses left?
-        var maxUses = unitCharacter.TryGetAttributeValue(AttributeDefinitions.ChannelDivinityNumber);
+        //Does unit has enough Channel Divinity uses left? Defensive Strike is the Oath of Altruism's, so it spends from
+        // the Paladin's pool: its own one when the Paladin's 2024 option is on (#68)
+        var pool = Tabletop2024Context.GetChannelDivinityPool(
+            unitCharacter, DatabaseHelper.CharacterClassDefinitions.Paladin);
 
-        if (unitCharacter.UsedChannelDivinity >= maxUses)
+        if (Tabletop2024Context.GetChannelDivinityRemaining(unitCharacter, pool) <= 0)
         {
             yield break;
         }
@@ -105,7 +109,7 @@ internal static class DefensiveStrikeAttack
         void ReactionValidated()
         {
             //spend resources
-            unitCharacter.UsedChannelDivinity++;
+            Tabletop2024Context.SpendChannelDivinity(unitCharacter, pool);
 
             //create attack mode copy so we won't affect real one
             var attackMode = RulesetAttackMode.AttackModesPool.Get();

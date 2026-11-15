@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Truco de la Orden Primordial
 Tag/&ThaumaturgeCantripSpecialTagTitle=Truco del trabajador maravilloso
 ToolTip/&CheckBoxDefaultPartyTitle=Marca esta casilla para configurar tu grupo predeterminado al iniciar nuevas aventuras o probar ubicaciones personalizadas. Puedes seleccionar hasta {0} héroes por orden de llegada
 Tooltip/&AdvancementByCasterLevelFormat=En los niveles de personaje 5, 11 y 17
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: tienes {0} de {1} usos de Canalizar divinidad.\nUn uso se recupera con un descanso corto y todos con un descanso largo.
 Tooltip/&ChannelDivinityPortraitPoolFormat=Tienes {0} de {1} usos de Canalizar divinidad.\nTodos los usos se restauran con descansos cortos o prolongados.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=Tienes {0} de {1} usos de Asalto coordinado.\nTodos los usos se restauran con un descanso prolongado.
 Tooltip/&CustomMapMarkerCamp=Acampar
