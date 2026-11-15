@@ -1,0 +1,4 @@
+- Channel Divinity under the 2024 rules: a Paladin or Cleric whose 2024 Channel Divinity option is on now has that class's own uses (a Paladin/Cleric with both options on has two separate pools). Its powers spend from its own pool; a short rest gives one use back to each 2024 pool and a long rest all. Classes on the 2014 rules keep the shared pool, with as many uses as the higher class gives, all back on any rest.
+- The number of Channel Divinity uses now follows the current options: switching a 2024 option on or off raises or lowers the maximum at once, even for heroes that levelled up with the other setting. A Blessed Soul feat's extra use still counts. The hero's saved data isn't changed.
+- The portrait counter and the reaction cost show every pool's remaining uses together; the portrait tooltip has a line per pool.
+- Not tested in game: any of these, and anything on two computers.

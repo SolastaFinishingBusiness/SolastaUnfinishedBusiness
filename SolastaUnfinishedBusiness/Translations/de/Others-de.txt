@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Zauberspruch der Urordnung
 Tag/&ThaumaturgeCantripSpecialTagTitle=Wundertäter-Cantrip
 ToolTip/&CheckBoxDefaultPartyTitle=Aktivieren Sie dieses Kontrollkästchen, um Ihre Standardgruppe festzulegen, wenn Sie neue Abenteuer beginnen oder benutzerdefinierte Orte testen. Sie können bis zu {0} Helden nach dem First-In/First-Out-Prinzip auswählen.
 Tooltip/&AdvancementByCasterLevelFormat=Auf den Charakterstufen 5, 11 und 17
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: Sie haben {0} von {1} Anwendungen von Channel Divinity.\nEine Anwendung wird bei einer kurzen Rast wiederhergestellt, alle bei einer langen Rast.
 Tooltip/&ChannelDivinityPortraitPoolFormat=Sie haben {0} von {1} Anwendungen von Channel Divinity.\nAlle Anwendungen werden nach einer kurzen oder langen Pause wiederhergestellt.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=Sie haben {0} von {1} Anwendungen von Coordinated Assault.\nAlle Anwendungen werden nach einer langen Pause wiederhergestellt.
 Tooltip/&CustomMapMarkerCamp=Lager

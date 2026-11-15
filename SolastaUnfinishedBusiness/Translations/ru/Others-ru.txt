@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Заговор Первобытного �
 Tag/&ThaumaturgeCantripSpecialTagTitle=Заговор Чудотворца
 ToolTip/&CheckBoxDefaultPartyTitle=Отметьте этот пункт, чтобы задать группу по умолчанию для начала нового приключения или тестирования кастомных локаций. Вы можете выбрать вплоть до {0} персонажей по приципу первый на вход / первый на выход
 Tooltip/&AdvancementByCasterLevelFormat=На уровнях персонажа 5, 11 и 17.
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: у вас {0} из {1} использований Божественного канала.\nОдно использование восстанавливается после короткого отдыха, все — после продолжительного.
 Tooltip/&ChannelDivinityPortraitPoolFormat=У вас {0} из {1} использований Божественного канала.\nВсе использования восстановятся после короткого или продолжительного отдыха.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=У вас {0} из {1} использований Скоординированного нападения.\nВсе использования восстановятся после продолжительного отдыха.
 Tooltip/&CustomMapMarkerCamp=Лагерь

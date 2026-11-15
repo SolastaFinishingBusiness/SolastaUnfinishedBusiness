@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Sort de l'Ordre Primaire
 Tag/&ThaumaturgeCantripSpecialTagTitle=Thaumaturge Cantrip
 ToolTip/&CheckBoxDefaultPartyTitle=Cochez cette case pour définir votre groupe par défaut lorsque vous démarrez de nouvelles aventures ou testez des emplacements personnalisés. Vous pouvez sélectionner jusqu'à {0} héros selon le principe du premier entré/premier sorti
 Tooltip/&AdvancementByCasterLevelFormat=Aux niveaux de personnage 5, 11 et 17
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2} : vous avez {0} utilisations sur {1} de Canalisation divine.\nUne utilisation est récupérée lors d'un repos court, toutes lors d'un repos long.
 Tooltip/&ChannelDivinityPortraitPoolFormat=Vous avez {0} utilisations sur {1} de Canalisation divine.\nToutes les utilisations sont restaurées lors d'un repos court ou long.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=Vous avez {0} sur {1} utilisations d'Assaut coordonné.\nToutes les utilisations sont restaurées lors d'un repos long.
 Tooltip/&CustomMapMarkerCamp=Camp
