@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -475,6 +476,45 @@ public static class DungeonMakerCommandsPatcher
             {
                 DungeonMakerCommandsContext.AfterVariablesSaved();
             }
+        }
+    }
+
+    //PATCH: Dungeon Maker editor: hints above the text fields where a variable's name, or the gadget name a
+    //command variable is given, is typed (DungeonMakerNameHints says what and where). Each of these three methods
+    //is where the game ties one of those fields to what it edits; the postfix only puts a listener on the field.
+    [HarmonyPatch(typeof(UserContentEditionModal), nameof(UserContentEditionModal.Show))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserContentEditionModal_Show
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserContentEditionModal __instance)
+        {
+            DungeonMakerNameHints.ForContentModal(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(GadgetParameterLine), nameof(GadgetParameterLine.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GadgetParameterLine_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(GadgetParameterLine __instance)
+        {
+            DungeonMakerNameHints.ForGadgetLine(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(UserParameterItem), nameof(UserParameterItem.CommondBind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserParameterItem_CommondBind
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserParameterItem __instance)
+        {
+            DungeonMakerNameHints.ForParameterItem(__instance);
         }
     }
 
