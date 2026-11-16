@@ -651,3 +651,13 @@ ModUi/&SearchClear=クリア
 ModUi/&SearchNoResults=「{0}」に一致する設定はありません。
 ModUi/&SearchSettings=設定を検索：
 ModUi/&WarnBeforeCrafting=製作開始時に、素材がすぐに消費されることと製作の判定が失敗しうることを警告する <i><color=#F0DAA0>[プライムド品の代わりに使われる通常の武器や防具も一覧表示]</color></i>
+ModUi/&HideCancellingCustomWeaponBonuses=ダンジョンメーカーのカスタム武器で、互いに打ち消し合うダメージボーナスをダメージ内訳から隠す <i><color=#F0DAA0>[Alt を押している間は表示]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>ダンジョンメーカー画面の検索・並べ替えツール：</color>
+ModUi/&DungeonMakerListToolsEditor=キャンペーンエディター
+ModUi/&DungeonMakerListToolsPicker=変数の選択
+ModUi/&DungeonMakerListToolsCheats=チート > キャンペーン変数
+ModUi/&DungeonMakerListToolsPalettes=ロケーションエディターのパレット（ガジェット、小道具、部屋）
+ModUi/&DungeonMakerListToolsSearch=検索
+ModUi/&DungeonMakerListToolsPageSort=ページの並べ替え（並べ替え：と方向の矢印）
+ModUi/&DungeonMakerListToolsCategoryOrder=カテゴリの並べ替え（カテゴリの順序：デフォルトまたは A-Z）
+ModUi/&DungeonMakerListToolsListSort=カテゴリ別の並べ替え（各リスト独自の並べ替え：、行に値を表示）

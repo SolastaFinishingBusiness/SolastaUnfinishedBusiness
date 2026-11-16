@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,11 +26,33 @@ namespace SolastaUnfinishedBusiness.Patches;
 //
 // The dice line of the tooltip is right already (the game adds the enhancement to the form's bonus there), and it
 // reads the same DamageRollModifier value, so that value is not touched.
+//
+// The breakdown (2) is shortened only while "Hide a custom weapon's damage bonuses that cancel each other" is on (Mod
+// UI > Dungeon Maker, on by default). The full list is then still there while Alt is held, the way the game shows a
+// detailed tooltip (see ShowTooltip below).
+//
+// Entries with no name: Gui.FormatTrendInfo prints an entry's source name, or the title it finds for it, and some
+// entries carry an empty name, which showed as "+1:" with nothing after it (the Main Attack tooltip of a custom
+// weapon, in the original author's report). Wherever a breakdown entry would print nothing, its source is traced
+// (NameOfUnnamed): the object the entry was made from, the weapon of the attack being shown, or else the kind of
+// source ("Item", "Spell"...).
 internal static class WeaponDamageDisplay
 {
     // true while GuiEffectsFormater.Bind runs: the one place a damage form's bonus breakdown is formatted.
     // Gui.FormatTrendsList is also used for attack rolls, saving throws and checks, which are left alone.
     internal static bool InDamageFormatter;
+
+    // The weapon of the attack whose box is being filled (AttackModeBox.Bind), while it is: the breakdown's
+    // enhancement entry doesn't always name its weapon, so this is how the entry is tied to it. Null elsewhere.
+    internal static ItemDefinition AttackWeapon;
+
+    // A breakdown just shortened by WithoutCancellingPair, and the full one, until the effect line that shows it
+    // takes them (FeatureElementEffectLine.Bind, right after the formatter returned).
+    private static string _pendingShort;
+    private static string _pendingFull;
+
+    // the effect lines' tooltips showing a shortened breakdown, with both texts
+    private static readonly ConditionalWeakTable<GuiTooltip, Breakdown> Breakdowns = new();
 
     // the flat damage a custom weapon's own effect adds (what the Dungeon Maker's Weapon Effects damage box writes)
     internal static int CustomFlatDamage(ItemDefinition definition)
@@ -44,13 +68,17 @@ internal static class WeaponDamageDisplay
     }
 
     // The breakdown without a custom weapon's two bonuses when they cancel each other. RefreshAttackMode adds the
-    // form's own bonus as (value, Base, "", null) and the weapon's enhancement as (value, Equipment, the weapon's
-    // name, null). A pair is dropped only when the Equipment entry names a custom weapon whose typed-in bonus is
-    // exactly the Base entry and whose enhancement is its opposite: an opposite modifier from the ammunition or
-    // from anything else stays. The game's own list is not changed; a filtered copy is returned.
+    // form's own bonus as (value, Base, "", null) and the weapon's enhancement as an Equipment entry. The
+    // enhancement entry is matched to a custom weapon whose typed-in bonus is exactly the Base entry, either by its
+    // name or, when it has none, as the weapon of the attack being shown (AttackWeapon): an opposite modifier from
+    // the ammunition or from anything else that is named stays. The game's own list is not changed; a filtered
+    // copy is returned, or the same list when nothing is dropped.
+    //
+    // Before, only the name was used, and the enhancement entry of the original author's weapon had none, so the
+    // pair was never dropped ("-1: Base", "+1:" in his screenshot).
     internal static List<RuleDefinitions.TrendInfo> WithoutCancellingPair(List<RuleDefinitions.TrendInfo> trends)
     {
-        if (trends == null || trends.Count < 2)
+        if (!Main.Settings.HideCancellingCustomWeaponBonuses || trends == null || trends.Count < 2)
         {
             return trends;
         }
@@ -68,8 +96,9 @@ internal static class WeaponDamageDisplay
 
             var j = trends.FindIndex(x =>
                 x.sourceType == RuleDefinitions.FeatureSourceType.Equipment && x.value == -own.value &&
-                !string.IsNullOrEmpty(x.sourceName) && items.TryGetElement(x.sourceName, out var weapon) &&
-                CustomFlatDamage(weapon) == own.value);
+                (string.IsNullOrEmpty(x.sourceName)
+                    ? CustomFlatDamage(AttackWeapon) == own.value
+                    : items.TryGetElement(x.sourceName, out var weapon) && CustomFlatDamage(weapon) == own.value));
 
             if (j < 0)
             {
@@ -86,6 +115,128 @@ internal static class WeaponDamageDisplay
         }
 
         return trends;
+    }
+
+    // the formatter shortened a breakdown: keep both texts for the effect line that is about to show it
+    internal static void NoteHiddenPair(string shortText, string fullText)
+    {
+        _pendingShort = shortText;
+        _pendingFull = fullText;
+    }
+
+    // FeatureElementEffectLine.Bind has put a breakdown in its tooltip. If it is the one just shortened, the
+    // tooltip keeps both texts; a tooltip reused for another breakdown forgets what it had.
+    internal static void NoteEffectLineBound(GuiTooltip tooltip, string damageBreakdown)
+    {
+        if (!tooltip)
+        {
+            return;
+        }
+
+        Breakdowns.Remove(tooltip);
+
+        if (_pendingShort != null && damageBreakdown == _pendingShort)
+        {
+            Breakdowns.Add(tooltip, new Breakdown { Short = _pendingShort, Full = _pendingFull });
+            tooltip.Content = WithHint(_pendingShort);
+        }
+
+        _pendingShort = null;
+        _pendingFull = null;
+    }
+
+    // TooltipScreen.ShowTooltip is about to show a tooltip. For a shortened breakdown, the full one is shown when
+    // the game would show a detailed tooltip: with Alt held (or the controller's hold button), turned round by the
+    // mod's "invert tooltip behaviour" setting, the same rule TooltipScreen and TooltipPanelPatcher apply.
+    internal static void BeforeShowTooltip(ITooltip tooltip)
+    {
+        if (tooltip is not GuiTooltip guiTooltip || !Breakdowns.TryGetValue(guiTooltip, out var breakdown))
+        {
+            return;
+        }
+
+        var detailed = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt) ||
+                       TooltipFeatureHoldInfo.ConsoleHeld;
+
+        if (SettingsContext.GuiModManagerInstance.InvertTooltipBehavior)
+        {
+            detailed = !detailed;
+        }
+
+        guiTooltip.Content = detailed ? breakdown.Full : WithHint(breakdown.Short);
+    }
+
+    // the short breakdown, with a line saying how to see the rest
+    private static string WithHint(string shortText)
+    {
+        var hint = Gui.Localize(SettingsContext.GuiModManagerInstance.InvertTooltipBehavior
+            ? "UI/&BreakdownFullHintInverted"
+            : "UI/&BreakdownFullHint");
+
+        return $"{shortText}\n{hint}";
+    }
+
+    // Gui.FormatTrendInfo printed nothing for an entry: what to print instead. In order: the object the entry was
+    // made from (an item, a definition, a character); for an item entry, the weapon of the attack being shown;
+    // otherwise the kind of source in words ("+1: Item").
+    internal static string NameOfUnnamed(RuleDefinitions.TrendInfo trend)
+    {
+        var fromSource = trend.source switch
+        {
+            RulesetItem item => TitleOf(item.ItemDefinition),
+            BaseDefinition definition => TitleOf(definition),
+            RulesetEntity entity => entity.Name,
+            _ => null
+        };
+
+        if (!string.IsNullOrEmpty(fromSource))
+        {
+            return fromSource;
+        }
+
+        if (trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment && AttackWeapon)
+        {
+            var weapon = TitleOf(AttackWeapon);
+
+            if (!string.IsNullOrEmpty(weapon))
+            {
+                return weapon;
+            }
+        }
+
+        return Gui.Localize(trend.sourceType switch
+        {
+            RuleDefinitions.FeatureSourceType.Equipment => "UI/&TrendSourceItem",
+            RuleDefinitions.FeatureSourceType.Condition => "UI/&TrendSourceCondition",
+            RuleDefinitions.FeatureSourceType.Spell or RuleDefinitions.FeatureSourceType.KnownSpell =>
+                "UI/&TrendSourceSpell",
+            RuleDefinitions.FeatureSourceType.Power => "UI/&TrendSourcePower",
+            RuleDefinitions.FeatureSourceType.Feat => "UI/&TrendSourceFeat",
+            RuleDefinitions.FeatureSourceType.FightingStyle => "UI/&TrendSourceFightingStyle",
+            RuleDefinitions.FeatureSourceType.Invocation => "UI/&TrendSourceInvocation",
+            RuleDefinitions.FeatureSourceType.Metamagic => "UI/&TrendSourceMetamagic",
+            RuleDefinitions.FeatureSourceType.Proficiency or RuleDefinitions.FeatureSourceType.MissingProficiency =>
+                "UI/&TrendSourceProficiency",
+            RuleDefinitions.FeatureSourceType.AbilityScore => "UI/&TrendSourceAbilityScore",
+            RuleDefinitions.FeatureSourceType.Lighting => "UI/&TrendSourceLighting",
+            RuleDefinitions.FeatureSourceType.Cover => "UI/&TrendSourceCover",
+            RuleDefinitions.FeatureSourceType.CharacterFeature or RuleDefinitions.FeatureSourceType.MonsterFeature
+                or RuleDefinitions.FeatureSourceType.ExplicitFeature => "UI/&TrendSourceFeature",
+            _ => "UI/&TrendSourceOther"
+        });
+    }
+
+    private static string TitleOf(BaseDefinition definition)
+    {
+        var title = definition?.GuiPresentation?.Title;
+
+        return string.IsNullOrEmpty(title) ? null : Gui.Localize(title);
+    }
+
+    private sealed class Breakdown
+    {
+        internal string Full;
+        internal string Short;
     }
 }
 
@@ -214,6 +365,74 @@ public static class WeaponDamageDisplayPatcher
             WeaponDamageDisplay.InDamageFormatter = false;
 
             return __exception;
+        }
+    }
+
+    //PATCH: the weapon of the attack whose box is filled, for the breakdown's entries that don't name it (the
+    //inventory's Main Attack box and the attack boxes of the character screens)
+    [HarmonyPatch(typeof(AttackModeBox), nameof(AttackModeBox.Bind), typeof(RulesetAttackMode))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class AttackModeBox_Bind
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetAttackMode attackMode)
+        {
+            WeaponDamageDisplay.AttackWeapon = attackMode?.SourceDefinition as ItemDefinition ??
+                                               (attackMode?.SourceObject as RulesetItem)?.ItemDefinition;
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception)
+        {
+            WeaponDamageDisplay.AttackWeapon = null;
+
+            return __exception;
+        }
+    }
+
+    //PATCH: the effect line has put a damage breakdown in its tooltip: a shortened one keeps the full text too
+    [HarmonyPatch(typeof(FeatureElementEffectLine), nameof(FeatureElementEffectLine.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FeatureElementEffectLine_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(FeatureElementEffectLine __instance, string damageBreakdown)
+        {
+            WeaponDamageDisplay.NoteEffectLineBound(__instance.tooltip, damageBreakdown);
+        }
+    }
+
+    //PATCH: a shortened damage breakdown shows in full when the tooltip opens with Alt held (the game's detailed
+    //tooltip rule)
+    [HarmonyPatch(typeof(TooltipScreen), nameof(TooltipScreen.ShowTooltip))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class TooltipScreen_ShowTooltip
+    {
+        [UsedImplicitly]
+        public static void Prefix(ITooltip tooltip)
+        {
+            WeaponDamageDisplay.BeforeShowTooltip(tooltip);
+        }
+    }
+
+    //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
+    //the attack shown, or the kind of source. Every breakdown goes through Gui.FormatTrendInfo, so this covers all
+    //of them, not only damage.
+    [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Gui_FormatTrendInfo
+    {
+        [UsedImplicitly]
+        public static void Postfix(RuleDefinitions.TrendInfo trend, ref string __result)
+        {
+            if (string.IsNullOrEmpty(__result))
+            {
+                __result = WeaponDamageDisplay.NameOfUnnamed(trend);
+            }
         }
     }
 }

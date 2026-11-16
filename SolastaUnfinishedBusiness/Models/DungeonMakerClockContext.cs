@@ -589,10 +589,23 @@ internal static class DungeonMakerClockContext
         return false;
     }
 
-    private static void Reject(string name, string reason)
+    // A skip request that can't be made: its status says Failed, the log says why, and the player sees the game's
+    // alert (in battle, the reason itself; otherwise that it failed, the reason being in the log).
+    private static void Reject(string name, string reason, bool inBattle = false)
     {
         DungeonMakerCommandsContext.WriteStatus(name, DungeonMakerCommandsContext.StatusFailed);
         Main.Info($"DM clock: {reason}.");
+
+        try
+        {
+            DungeonMakerCommandsContext.ShowFailureAlert(inBattle
+                ? Gui.Format("Message/&DungeonMakerClockInBattle", name)
+                : Gui.Format("Message/&DungeonMakerClockFailed", name));
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
+        }
     }
 
     // the clock in seconds from TimeInfo's origin (its minutes fit an int; its seconds would not)
@@ -617,7 +630,7 @@ internal static class DungeonMakerClockContext
 
             if (value != 0)
             {
-                Reject(name, $"{name} {value} ignored: time can't be skipped during a battle");
+                Reject(name, $"{name} {value} ignored: time can't be skipped during a battle", true);
             }
         }
     }

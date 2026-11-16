@@ -651,3 +651,13 @@ ModUi/&SearchClear=Leeren
 ModUi/&SearchNoResults=Keine Einstellungen passen zu "{0}".
 ModUi/&SearchSettings=Einstellungen suchen:
 ModUi/&WarnBeforeCrafting=Vor dem Herstellen warnen, dass die Zutaten sofort verbraucht werden und Herstellungswürfe misslingen können <i><color=#F0DAA0>[listet auch einfache Waffen oder Rüstungen auf, die anstelle präparierter verwendet werden]</color></i>
+ModUi/&HideCancellingCustomWeaponBonuses=Schadensboni einer eigenen Dungeon-Maker-Waffe, die sich gegenseitig aufheben, in der Schadensaufschlüsselung ausblenden <i><color=#F0DAA0>[Alt gedrückt halten, um sie zu sehen]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Such- und Sortierwerkzeuge in den Dungeon-Maker-Bildschirmen:</color>
+ModUi/&DungeonMakerListToolsEditor=Kampagneneditor
+ModUi/&DungeonMakerListToolsPicker=Variablenauswahl
+ModUi/&DungeonMakerListToolsCheats=Cheats > Kampagnenvariablen
+ModUi/&DungeonMakerListToolsPalettes=Paletten des Ortseditors (Gadgets, Requisiten, Räume)
+ModUi/&DungeonMakerListToolsSearch=Suche
+ModUi/&DungeonMakerListToolsPageSort=Seitensortierung (Sortieren: und Richtungspfeil)
+ModUi/&DungeonMakerListToolsCategoryOrder=Kategoriesortierung (Reihenfolge der Kategorien: Standard oder A-Z)
+ModUi/&DungeonMakerListToolsListSort=Kategoriespezifische Sortierung (eigenes Sortieren: jeder Liste, mit den Werten in den Zeilen)

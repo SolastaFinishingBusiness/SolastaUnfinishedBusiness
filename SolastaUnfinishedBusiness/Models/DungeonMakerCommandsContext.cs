@@ -35,8 +35,15 @@ namespace SolastaUnfinishedBusiness.Models;
 //     once (the party entering the location, a party teleport), nobody "walked in": it then only works if exactly
 //     one party member is in the area;
 //   - when a character interacts with something, it is that character;
+//   - when one of those gadgets activates another gadget (its Dungeon Maker "Activate" operation, e.g. an Area
+//     Activator activating a Variable Operation gadget that writes the variable), the activated gadget's flow acts
+//     for the same character, through any number of gadgets (NoteConditionToggled, issue #42: the original author's
+//     test campaign is built this way). If the start of such a chain isn't traced to one character, the one
+//     eligible character the game passed along the chain acts, if there is exactly one;
 //   - anything else (a timer, a variable or condition activator, a quest step, a variable set from a dialogue, a
-//     save loaded while the command was waiting) has no acting character, so the command fails and says so.
+//     save loaded while the command was waiting, or a chain they start) has no acting character, so the command
+//     fails and says so: a line in the log with what wrote the variable, the chain, what started it and the
+//     characters passed along (LogResolution), and the game's alert at the top of the screen (AlertFailure).
 //   For Roll_Trigger the character must still be a conscious party member in the location when the command runs.
 //   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member.
 //   Teleport_PartyNode needs nobody.
@@ -191,6 +198,9 @@ internal static class DungeonMakerCommandsContext
     // the Variable Operation functor that is running right now, if any (see BeginVariableOperation)
     private static FunctorParametersDescription _operation;
 
+    // the Activate (or Enable) operation that is running right now, if any (see BeginGadgetActivation)
+    private static FunctorParametersDescription _activating;
+
     private static IGameVariableService _subscribedTo;
     private static GameLocation _torchLocation;
     private static bool _listRequested;
@@ -290,6 +300,7 @@ internal static class DungeonMakerCommandsContext
         Torches.Clear();
         _torchLocation = null;
         _operation = null;
+        _activating = null;
         _causes = new ConditionalWeakTable<GameGadgetListener, Activation>();
         _runs = new ConditionalWeakTable<GameGadgetListener, Activation>();
         GroupMovers.Clear();
@@ -379,6 +390,7 @@ internal static class DungeonMakerCommandsContext
 
         if (triggeredAfter && !triggeredBefore)
         {
+            var gadgetName = GadgetNameOf(listener);
             var activation = new Activation
             {
                 MoverKnown = mover != null,
@@ -386,7 +398,10 @@ internal static class DungeonMakerCommandsContext
                 MoverGuid = mover?.Guid ?? 0,
                 MoverName = mover?.Name,
                 // the party is put down together when a location is entered: no one character "walked in"
-                Group = ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: true }
+                Group = ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: true },
+                Origin = $"{DescribeTrigger(listener)} '{gadgetName}'" +
+                         (mover != null ? $" ({mover.Name} moved into it)" : " (no character moved)"),
+                Chain = gadgetName
             };
 
             if (_groupDepth > 0)
@@ -444,11 +459,143 @@ internal static class DungeonMakerCommandsContext
             MoverKnown = actor != null,
             SoloTeleportEligible = CanTriggerSoloTeleport(actor),
             MoverGuid = actor?.Guid ?? 0,
-            MoverName = actor?.Name
+            MoverName = actor?.Name,
+            Origin = $"'{gadget.UniqueNameId}'" + (actor != null ? $" (used by {actor.Name})" : " (used)"),
+            Chain = gadget.UniqueNameId
         };
 
         _causes.Add(listener, activation);
         ExpectSoloTeleport(listener, activation);
+    }
+
+    // FunctorUserGadgetOperation.Execute, around each step of it: a gadget's flow is running a Dungeon Maker
+    // "Activate" (or "Enable") operation on other gadgets. The game sets each target's RemoteActivated (or
+    // RemoteEnabled) condition inside it, passing on this flow's ActingCharacters
+    // (GameGadget.SetCondition(index, state, functorParameters.ActingCharacters)). The returned token goes back to
+    // EndGadgetActivation.
+    internal static FunctorParametersDescription BeginGadgetActivation(FunctorParametersDescription parameters)
+    {
+        var token = _activating;
+
+        _activating = parameters;
+
+        return token;
+    }
+
+    internal static void EndGadgetActivation(FunctorParametersDescription token)
+    {
+        _activating = token;
+    }
+
+    // GameGadgetListenerConditionToggle.ConditionStatusChanged: a gadget's condition changed, and this flow of it
+    // may have been switched on by it. That is how a Dungeon Maker gadget is "activated" by another one: the
+    // activating flow's Activate operation sets the RemoteActivated condition, and the target's flow waiting on that
+    // condition is triggered. The game copies the activating flow's ActingCharacters to the target's flow, but for
+    // an Area Activator those are everyone standing in it, not the one who walked in, so the activation recorded for
+    // the activating flow (who walked in, or who used the gadget) is carried over instead, and the chain grows by
+    // one gadget. A chain can go on for any number of gadgets this way.
+    //
+    // When the activating flow has no recorded activation (it was started by a timer, a variable, a quest, or a
+    // trigger kept in a save), the target gets a record that says so (Untraced), so a command its flow writes can
+    // say what started the chain. A change made by anything else than an Activate operation (a dialogue, a torch,
+    // a condition functor) carries nothing: ResolveActor then reports it as an untraced activation.
+    internal static void NoteConditionToggled(GameGadgetListener listener, bool triggeredBefore, bool triggeredAfter)
+    {
+        if (triggeredBefore || !triggeredAfter || CurrentLocation == null)
+        {
+            return;
+        }
+
+        var targetName = GadgetNameOf(listener);
+        var source = ListenerOf(_activating);
+        Activation carried;
+
+        if (_activating == null)
+        {
+            // Switched on by something that is not an Activate operation. Nothing is recorded; if this flow then
+            // writes a command, ResolveActor reports it as untraced (logging every such change here would log
+            // every torch the game lights).
+            ForgetExpected(listener);
+            _causes.Remove(listener);
+
+            return;
+        }
+
+        if (source != null && _runs.TryGetValue(source, out var from))
+        {
+            carried = new Activation
+            {
+                MoverKnown = from.MoverKnown,
+                SoloTeleportEligible = from.SoloTeleportEligible,
+                MoverGuid = from.MoverGuid,
+                MoverName = from.MoverName,
+                Group = from.Group,
+                Untraced = from.Untraced,
+                Origin = from.Origin,
+                OriginTerm = from.OriginTerm,
+                Chain = $"{from.Chain} > {targetName}"
+            };
+        }
+        else
+        {
+            var sourceName = source != null ? GadgetNameOf(source) : "an unknown gadget";
+
+            carried = new Activation
+            {
+                Untraced = true,
+                Origin = source != null ? $"{DescribeTrigger(source)} '{sourceName}'" : sourceName,
+                OriginTerm = TriggerTerm(source),
+                Chain = $"{sourceName} > {targetName}"
+            };
+        }
+
+        ForgetExpected(listener);
+        _causes.Remove(listener);
+        _causes.Add(listener, carried);
+        ExpectSoloTeleport(listener, carried);
+    }
+
+    // the unique name of the gadget a flow belongs to, for the log
+    private static string GadgetNameOf(GameGadgetListener listener)
+    {
+        return listener?.SourceGadget ? listener.SourceGadget.GameGadget?.UniqueNameId ?? listener.SourceGadget.name
+            : "?";
+    }
+
+    // What kind of trigger a gadget flow has, in words, for the log; and the translation term naming it to the
+    // player, for the alert when a command can't tell who acts (Message/&DungeonMakerTrigger<Kind>).
+    private static string DescribeTrigger(GameGadgetListener listener)
+    {
+        return listener switch
+        {
+            GameGadgetListenerVolumetricTrigger => "the Area Activator",
+            GameGadgetListenerPressurePlate => "the pressure plate",
+            GameGadgetListenerCharacterInteraction => "the interaction with",
+            GameGadgetListenerConditionToggle => "the activation of",
+            GameGadgetListenerElapsedTime => "the \"after a time\" timer of",
+            GameGadgetListenerHourUpdate => "the \"every N hours\" timer of",
+            GameGadgetListenerVariableChanged => "the Variable Activator",
+            GameGadgetListenerQuestUpdated => "the quest step listened to by",
+            GameGadgetListenerLocationReady or GameGadgetListenerLocationEntered
+                or GameGadgetListenerLocationFinalized => "the location loading, through",
+            GameGadgetListenerBattleEvent => "a battle event, through",
+            GameGadgetListenerConditionChanged => "a character condition change, through",
+            null => "an unknown trigger of",
+            _ => $"a {listener.GetType().Name.Replace("GameGadgetListener", string.Empty)} trigger of"
+        };
+    }
+
+    private static string TriggerTerm(GameGadgetListener listener)
+    {
+        return listener switch
+        {
+            GameGadgetListenerElapsedTime or GameGadgetListenerHourUpdate => "Message/&DungeonMakerTriggerTimer",
+            GameGadgetListenerVariableChanged => "Message/&DungeonMakerTriggerVariable",
+            GameGadgetListenerQuestUpdated => "Message/&DungeonMakerTriggerQuest",
+            GameGadgetListenerLocationReady or GameGadgetListenerLocationEntered
+                or GameGadgetListenerLocationFinalized => "Message/&DungeonMakerTriggerLocation",
+            _ => "Message/&DungeonMakerTriggerOther"
+        };
     }
 
     // Adds a place to the queue of one-character teleports for this flow, if the flow has a Variable Operation on
@@ -684,6 +831,12 @@ internal static class DungeonMakerCommandsContext
         request.IssuedAt = GameSeconds();
 
         ResolveActor(operation, request);
+
+        if (kind is Kind.Roll or Kind.TeleportOne or Kind.Dialog)
+        {
+            LogResolution(operation, request);
+        }
+
         NewestSerial[variableName] = request.Serial;
 
         if (kept != null)
@@ -783,6 +936,7 @@ internal static class DungeonMakerCommandsContext
         {
             request.ActorProblem = "no object's Variable Operation set the variable (a quest, a dialogue, a cheat, " +
                                    "or a save loaded while it was waiting), so no character is tied to it";
+            request.ProblemTerm = "Message/&DungeonMakerTriggerNoGadget";
 
             return;
         }
@@ -873,13 +1027,96 @@ internal static class DungeonMakerCommandsContext
                 }
 
                 break;
+
+            // A gadget activated by another gadget's Activate operation (an Area Activator whose flow activates a
+            // Variable Operation gadget, and so on). NoteConditionToggled carried the first gadget's activation
+            // down the chain, so the flow acts for whoever set the first one off.
+            case GameGadgetListenerConditionToggle:
+                _runs.TryGetValue(listener, out var chained);
+                request.Chain = chained?.Chain;
+                request.Origin = chained?.Origin;
+
+                if (chained is { Untraced: false, Group: false, MoverKnown: true })
+                {
+                    if (anyCharacter && !chained.SoloTeleportEligible)
+                    {
+                        request.ActorProblem = "the triggering character was outside the party and guest rosters";
+                    }
+                    else
+                    {
+                        // whether it is a conscious party member is checked when the command runs
+                        request.ActorGuid = chained.MoverGuid;
+                        request.ActorKnown = true;
+                        request.ActorName = chained.MoverName;
+                    }
+                }
+                else if (heroes.Count == 1 && singleActorEligible)
+                {
+                    // The start of the chain wasn't traced to one character (the party arriving together, a flow
+                    // kept in a save, a change the mod doesn't follow), but the game passed exactly one eligible
+                    // character along the chain: that one acts, by the same rule as an area the party arrives in.
+                    // A timer, a variable or a quest passes nobody, so a chain they start never gets here.
+                    request.ActorGuid = heroes[0];
+                    request.ActorKnown = true;
+                    request.ActorNote = "the start of the chain was not traced to one character; the one eligible " +
+                                        "character the game passed along the chain acts";
+                }
+                else if (chained == null)
+                {
+                    request.ActorProblem = $"'{gadgetName}' was switched on by a condition change the mod does not " +
+                                           "trace (not another gadget's Activate operation), so no character is " +
+                                           "tied to it";
+                    request.ProblemTerm = "Message/&DungeonMakerTriggerOther";
+                }
+                else if (chained.Untraced)
+                {
+                    request.ActorProblem = $"the chain {chained.Chain} was started by {chained.Origin}, which " +
+                                           $"passes no character ({heroes.Count} {who}s passed along)";
+                    request.ProblemTerm = chained.OriginTerm;
+                }
+                else
+                {
+                    request.ActorProblem = $"the chain {chained.Chain} was started by characters being placed " +
+                                           $"together ({heroes.Count} {who}s in it), so no single one caused it";
+                }
+
+                break;
             default:
                 request.ActorProblem = listener == null
                     ? "the object that set the variable could not be identified"
-                    : $"'{gadgetName}' set it from a {listener.GetType().Name.Replace("GameGadgetListener", "")} " +
-                      "activation (a timer, a variable or another event), which has no acting character";
+                    : $"'{gadgetName}' set it from {DescribeTrigger(listener)} '{gadgetName}', which has no " +
+                      "acting character";
+                request.ProblemTerm = TriggerTerm(listener);
                 break;
         }
+    }
+
+    // One detailed line per write of a command that acts for a character: what wrote it, how the flow was set
+    // off, what the game passed along, and who acts or why nobody does. This is the record to read when a
+    // command didn't do what the campaign meant.
+    private static void LogResolution(FunctorParametersDescription operation, Request request)
+    {
+        var gadget = operation?.SourceGadget ? operation.SourceGadget.GameGadget : null;
+        var listener = ListenerOf(operation);
+        var passed = operation?.ActingCharacters?.Where(x => x != null).Select(x => x.Name).ToList() ?? [];
+        if (request.Chain == null && listener != null && _runs.TryGetValue(listener, out var run))
+        {
+            request.Chain = run.Chain;
+            request.Origin = run.Origin;
+        }
+
+        var outcome = request.ActorKnown
+            ? $"acts for {request.ActorName ?? FindCharacter(request.ActorGuid)?.Name ?? "?"}" +
+              (request.ActorNote != null ? $" ({request.ActorNote})" : string.Empty)
+            : $"no acting character: {request.ActorProblem}";
+
+        Main.Info($"DM command {request.Variable} = '{request.Target}': written by " +
+                  (gadget == null
+                      ? "no gadget's Variable Operation"
+                      : $"'{gadget.UniqueNameId}' (flow {operation.ListenerIndex}, {DescribeTrigger(listener)})") +
+                  (request.Chain != null ? $"; chain {request.Chain}" : string.Empty) +
+                  (request.Origin != null ? $"; started by {request.Origin}" : string.Empty) +
+                  $"; characters passed: [{string.Join(", ", passed)}]; {outcome}.");
     }
 
     private static bool CanTriggerSoloTeleport(GameLocationCharacter character)
@@ -1503,6 +1740,38 @@ internal static class DungeonMakerCommandsContext
         {
             Main.Info($"DM command {request.Variable} '{request.Target}' {status.ToLowerInvariant()}: {reason}.");
         }
+
+        if (status == StatusFailed)
+        {
+            AlertFailure(request);
+        }
+    }
+
+    // Tells the player in game that a command failed, with the game's own alert (the small message at the top of
+    // the screen); the reason in full is in the log. A roll or a one-character teleport that can't tell who acts
+    // says what started it, as the way it was set off is the part the campaign's author can change.
+    private static void AlertFailure(Request request)
+    {
+        try
+        {
+            var text = request.Kind is Kind.Roll or Kind.TeleportOne && !request.ActorKnown &&
+                       request.ProblemTerm != null
+                ? Gui.Format("Message/&DungeonMakerCommandNoActor", request.Variable, Gui.Localize(request.ProblemTerm))
+                : Gui.Format("Message/&DungeonMakerCommandFailed", request.Variable, request.Target);
+
+            ShowFailureAlert(text);
+        }
+        catch (Exception e)
+        {
+            // a failed alert must not turn a failed command into an exception in the gadget update
+            Main.Error(e);
+        }
+    }
+
+    // the game's alert, in the failure colour; nothing when no screen can show it (loading)
+    internal static void ShowFailureAlert(string text)
+    {
+        Gui.GuiService?.ShowAlert(text, Gui.ColorFailure, 6f);
     }
 
     // The location is going away: waiting requests end as Cancelled, and a teleport still running is released
@@ -1879,8 +2148,15 @@ internal static class DungeonMakerCommandsContext
 
         if (Torches.Count == 0 && (manual != 0 || auto != 0))
         {
-            ReportOnce(ref _lastTorchReport,
-                $"DM torches: a torch variable is in use but no gadget with '{TorchNameFilter}' in its name is in this location.");
+            var report = $"DM torches: a torch variable is in use but no gadget with '{TorchNameFilter}' in its name is in this location.";
+
+            // once per location, as the log line: the alert names the problem, the log the details
+            if (report != _lastTorchReport)
+            {
+                ShowFailureAlert(Gui.Localize("Message/&DungeonMakerTorchesNone"));
+            }
+
+            ReportOnce(ref _lastTorchReport, report);
         }
 
         var notBuilt = false;
@@ -1956,6 +2232,7 @@ internal static class DungeonMakerCommandsContext
             if (!torch.Reported)
             {
                 torch.Reported = true;
+                ShowFailureAlert(Gui.Format("Message/&DungeonMakerTorchNoCondition", torch.World.name));
                 Main.Info(
                     $"DM torches: '{torch.World.name}' has no lit condition; its conditions are [{string.Join(", ", ConditionChoices(torch.World))}].");
             }
@@ -1994,6 +2271,17 @@ internal static class DungeonMakerCommandsContext
         internal bool ActorKnown;
         internal string ActorName;
         internal string ActorProblem;
+
+        // why a fallback was used to find the acting character, for the log
+        internal string ActorNote;
+
+        // For a command that needs its acting character and can't have one: the translation term naming, to the
+        // player, the kind of trigger that started it (a timer, a Variable Activator...), for the alert.
+        internal string ProblemTerm;
+
+        // the gadgets the activation went through, and how it started (from the Activation), for the log
+        internal string Chain;
+        internal string Origin;
         internal int Flow;
         internal GameGadget Gadget;
 
@@ -2020,7 +2308,9 @@ internal static class DungeonMakerCommandsContext
         internal readonly Dictionary<ulong, TA.int3> Placed = [];
     }
 
-    // one activation of an Area Activator or pressure plate: the character whose move switched its trigger on
+    // One activation of an Area Activator, a pressure plate or an interaction: the character whose move or use
+    // switched its trigger on. A gadget activated by another gadget's Activate operation gets a copy, with the
+    // gadget added to Chain (see NoteConditionToggled).
     private sealed class Activation
     {
         // the place this activation keeps in the queue of one-character teleports, until its flow writes
@@ -2032,6 +2322,18 @@ internal static class DungeonMakerCommandsContext
         internal bool MoverKnown;
         internal bool SoloTeleportEligible;
         internal string MoverName;
+
+        // How it started, in words, and the gadgets it went through, oldest first, for the log: "Area Activator
+        // 'ActivatorArea22' (Hero A walked in)" and "ActivatorArea22 > VariableOperation19".
+        internal string Origin;
+        internal string Chain;
+
+        // for an untraced chain, the translation term naming what started it to the player (see TriggerTerm)
+        internal string OriginTerm;
+
+        // the start of the chain is not known to the mod (its flow had no recorded activation), so who caused it
+        // is not known either; Origin then says what started it as far as it can tell
+        internal bool Untraced;
     }
 
     private sealed class Torch

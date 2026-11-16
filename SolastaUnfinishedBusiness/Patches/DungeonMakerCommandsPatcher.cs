@@ -69,6 +69,84 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: know which gadget flow is activating other gadgets while a Dungeon Maker "Activate" (or Enable)
+    //operation runs (FunctorUserGadgetOperation sets each target's RemoteActivated or RemoteEnabled condition). The
+    //target's flow then acts for the character this flow acts for (see DungeonMakerCommandsContext,
+    //NoteConditionToggled). Bracketed step by step, as the Variable Operation above.
+    [HarmonyPatch(typeof(FunctorUserGadgetOperation), nameof(FunctorUserGadgetOperation.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FunctorUserGadgetOperation_Execute
+    {
+        [UsedImplicitly]
+        public static IEnumerator Postfix(IEnumerator values, FunctorParametersDescription functorParameters)
+        {
+            try
+            {
+                while (true)
+                {
+                    var token = DungeonMakerCommandsContext.BeginGadgetActivation(functorParameters);
+                    bool more;
+
+                    try
+                    {
+                        more = values.MoveNext();
+                    }
+                    finally
+                    {
+                        DungeonMakerCommandsContext.EndGadgetActivation(token);
+                    }
+
+                    if (!more)
+                    {
+                        yield break;
+                    }
+
+                    yield return values.Current;
+                }
+            }
+            finally
+            {
+                (values as IDisposable)?.Dispose();
+            }
+        }
+    }
+
+    //PATCH: a gadget's "activated" or "enabled" condition changed: if that switched one of its flows on while
+    //another gadget's Activate operation ran, the flow inherits who set the first gadget off
+    [HarmonyPatch(typeof(GameGadgetListenerConditionToggle),
+        nameof(GameGadgetListenerConditionToggle.ConditionStatusChanged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerConditionToggle_ConditionStatusChanged
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListenerConditionToggle __instance, out bool __state)
+        {
+            __state = __instance.IsTriggered;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GameGadgetListenerConditionToggle __instance, bool __state)
+        {
+            DungeonMakerCommandsContext.NoteConditionToggled(__instance, __state, __instance.IsTriggered);
+        }
+    }
+
+    //PATCH: the game starts the flow of an activated gadget: it acts for the character carried over to it
+    [HarmonyPatch(typeof(GameGadgetListenerConditionToggle),
+        nameof(GameGadgetListenerConditionToggle.AcknowledgeTrigger))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerConditionToggle_AcknowledgeTrigger
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListenerConditionToggle __instance)
+        {
+            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
+        }
+    }
+
     //PATCH: know when the game's Teleport functor is moving characters: an area several of them land in was
     //activated by a group arriving together, not by one character walking in
     [HarmonyPatch(typeof(FunctorTeleport), nameof(FunctorTeleport.Execute))]

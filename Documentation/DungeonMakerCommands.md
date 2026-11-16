@@ -68,17 +68,24 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 |---|---|
 | an Area Activator or pressure plate | the character whose move made it fire, whoever else stands in it |
 | something a character interacted with | that character |
-| a timer, a variable or condition activator, a quest, a dialogue | none: the command fails and says so |
+| a gadget that one of the above activated (its "Activate" target, for example a Variable Operation), through any number of gadgets | the character that set off the first gadget |
+| a timer, a variable or condition activator, a quest, a dialogue, or a gadget activated by one of these | none: the command fails and says so |
 
 - When several characters arrive at once (the party entering the location, a party teleport), nobody "walked in".
-  The command then only works if exactly one character is in the area.
+  The command then only works if exactly one character is in the area. The same goes for a chain of activated
+  gadgets whose start the mod couldn't trace to one character.
+- When a command fails, a message at the top of the screen says so. For `Roll_Trigger` and `Teleport_Node` it also
+  says what started it when that can't tell who acts (a timer, a Variable Activator, a quest step...). The mod's log
+  (also in `Player.log`) has a line for each such write: the gadget that wrote it, the gadgets it went through, what
+  started it, the characters the game passed along, and who acts or why nobody does.
 - For `Roll_Trigger` the character must still be a conscious party member in that location when the command runs.
 - A game saved while one of these commands was waiting loads without its acting character, so the command fails after
   loading. `Dialog_Trigger` and `Teleport_PartyNode` are not affected.
 - `Dialog_Trigger` uses the acting character when there is one, otherwise the first conscious party member.
 
 Typical set-up for an automatic check: an Area Activator whose Variable Operation sets `Roll_Trigger` to the name of
-the Roll Activator. Whoever walks in rolls.
+the Roll Activator. Whoever walks in rolls. It works the same when the Area Activator instead activates a separate
+Variable Operation gadget that sets `Roll_Trigger`.
 
 ## Teleporting one character
 

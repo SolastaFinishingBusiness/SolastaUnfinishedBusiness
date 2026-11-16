@@ -94,6 +94,14 @@ internal static class Main
         ModEntry.Logger.Log(msg);
     }
 
+    // Writes the settings now, through the same handler as when the mod manager window closes (ModManager's
+    // HandleSaveGUI, which in multiplayer saves this computer's own settings, not the host's). For a choice made
+    // on a game screen rather than in the mod menu, so it isn't lost if the game ends without saving them.
+    internal static void SaveSettingsNow()
+    {
+        ModEntry?.OnSaveGUI?.Invoke(ModEntry);
+    }
+
     internal static void EnsureFolderExists(string path)
     {
         if (!Directory.Exists(path))

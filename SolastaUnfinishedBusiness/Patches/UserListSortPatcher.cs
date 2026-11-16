@@ -478,7 +478,7 @@ public static class UserListSortPatcher
             // dropped when the search leaves the selected row out. Either way Edit and Delete never act on an
             // item that isn't shown. The refresh asked for works the list's buttons out again with nothing
             // selected; it can't come back here in a loop, as Clear then finds nothing selected.
-            var option = DungeonMakerListTools.ChosenOption(list.Id, list.Options, out var descending);
+            var option = DungeonMakerListTools.ChosenOption(Editor, list.Id, list.Options, out var descending);
             var hidSelected = DungeonMakerListTools.Apply(
                 list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending,
                 option?.Display);
@@ -581,7 +581,7 @@ public static class UserListSortPatcher
                 GameOrder.Add(screen, groups);
             }
 
-            DungeonMakerListTools.OrderSections(groups, x =>
+            DungeonMakerListTools.OrderSections(Editor, groups, x =>
             {
                 var header = x.GetComponent<CampaignContentGroupItem>()?.HeaderLabel;
 
@@ -672,7 +672,7 @@ public static class UserListSortPatcher
         // isn't shown. The refresh works Validate's state out again.
         internal static void ApplyTo(UserVariableSelectionModal picker)
         {
-            var option = DungeonMakerListTools.ChosenOption(PickerList, VariableOptions, out var descending);
+            var option = DungeonMakerListTools.ChosenOption(Picker, PickerList, VariableOptions, out var descending);
 
             if (!DungeonMakerListTools.Apply(
                     picker.userVariablesTable, Picker, ContentName, ContentTitle, IsSelected, option?.Key,
@@ -748,7 +748,7 @@ public static class UserListSortPatcher
         {
             var table = panel.variableLinesTable;
 
-            var option = DungeonMakerListTools.ChosenOption(CheatsList, CheatOptions, out var descending);
+            var option = DungeonMakerListTools.ChosenOption(Cheats, CheatsList, CheatOptions, out var descending);
 
             DungeonMakerListTools.Apply(
                 table, Cheats, VariableName, VariableType, null, option?.Key, descending, option?.Display);

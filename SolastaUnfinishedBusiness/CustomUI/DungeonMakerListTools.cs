@@ -85,6 +85,152 @@ internal static class DungeonMakerListTools
         Second
     }
 
+    // The screens with these tools, and the tools each can have, each a setting of its own under its page's setting
+    // (user direction, 2026-11-16: "For each page, there is a nested toggle for each sort/search UI element/feature.
+    // Disabling the page will disable all subtoggles automatically, but the user can enable the page and choose which
+    // features wanted on the page"). A tool switched off is not shown and changes nothing: its sort, search or
+    // order is left out of the view, so a page with all its tools off looks and behaves as without the mod.
+    internal enum Page
+    {
+        Editor,
+        Picker,
+        Cheats,
+        Palettes
+    }
+
+    internal enum Feature
+    {
+        // the search field and Clear
+        Search,
+
+        // "Sort:", its dropdown and the direction arrow: the order of the rows within each list
+        PageSort,
+
+        // the "Categories" toggle: the order of the sections themselves (the editor's lists, a palette's categories)
+        CategoryOrder,
+
+        // each list's own sort (the editor's "Sort:" row in each list; the picker's and cheats panel's second row),
+        // with its value overlays
+        ListSort
+    }
+
+    // each page's setting, and each of its features' settings, in the order the mod menu shows them
+    private static readonly Dictionary<Page, (Func<bool> Get, Action<bool> Set)> PageSettings = new()
+    {
+        { Page.Editor, (() => Main.Settings.DungeonMakerEditorTools, v => Main.Settings.DungeonMakerEditorTools = v) },
+        { Page.Picker, (() => Main.Settings.DungeonMakerPickerTools, v => Main.Settings.DungeonMakerPickerTools = v) },
+        { Page.Cheats, (() => Main.Settings.DungeonMakerCheatsTools, v => Main.Settings.DungeonMakerCheatsTools = v) },
+        {
+            Page.Palettes,
+            (() => Main.Settings.DungeonMakerPaletteTools, v => Main.Settings.DungeonMakerPaletteTools = v)
+        }
+    };
+
+    internal static readonly Dictionary<Page, List<(Feature Feature, Func<bool> Get, Action<bool> Set)>>
+        FeatureSettings = new()
+        {
+            {
+                Page.Editor,
+                [
+                    (Feature.Search, () => Main.Settings.DungeonMakerEditorSearch,
+                        v => Main.Settings.DungeonMakerEditorSearch = v),
+                    (Feature.PageSort, () => Main.Settings.DungeonMakerEditorPageSort,
+                        v => Main.Settings.DungeonMakerEditorPageSort = v),
+                    (Feature.CategoryOrder, () => Main.Settings.DungeonMakerEditorCategoryOrder,
+                        v => Main.Settings.DungeonMakerEditorCategoryOrder = v),
+                    (Feature.ListSort, () => Main.Settings.DungeonMakerEditorListSort,
+                        v => Main.Settings.DungeonMakerEditorListSort = v)
+                ]
+            },
+            {
+                Page.Picker,
+                [
+                    (Feature.Search, () => Main.Settings.DungeonMakerPickerSearch,
+                        v => Main.Settings.DungeonMakerPickerSearch = v),
+                    (Feature.PageSort, () => Main.Settings.DungeonMakerPickerPageSort,
+                        v => Main.Settings.DungeonMakerPickerPageSort = v),
+                    (Feature.ListSort, () => Main.Settings.DungeonMakerPickerListSort,
+                        v => Main.Settings.DungeonMakerPickerListSort = v)
+                ]
+            },
+            {
+                Page.Cheats,
+                [
+                    (Feature.Search, () => Main.Settings.DungeonMakerCheatsSearch,
+                        v => Main.Settings.DungeonMakerCheatsSearch = v),
+                    (Feature.PageSort, () => Main.Settings.DungeonMakerCheatsPageSort,
+                        v => Main.Settings.DungeonMakerCheatsPageSort = v),
+                    (Feature.ListSort, () => Main.Settings.DungeonMakerCheatsListSort,
+                        v => Main.Settings.DungeonMakerCheatsListSort = v)
+                ]
+            },
+            {
+                Page.Palettes,
+                [
+                    (Feature.Search, () => Main.Settings.DungeonMakerPaletteSearch,
+                        v => Main.Settings.DungeonMakerPaletteSearch = v),
+                    (Feature.PageSort, () => Main.Settings.DungeonMakerPalettePageSort,
+                        v => Main.Settings.DungeonMakerPalettePageSort = v),
+                    (Feature.CategoryOrder, () => Main.Settings.DungeonMakerPaletteCategoryOrder,
+                        v => Main.Settings.DungeonMakerPaletteCategoryOrder = v)
+                ]
+            }
+        };
+
+    // the page a screen key belongs to (the editor, picker and cheats panel pass fixed keys; each palette passes
+    // its type's name)
+    internal static Page PageOf(string screen)
+    {
+        return screen switch
+        {
+            "editor" => Page.Editor,
+            "picker" => Page.Picker,
+            "cheats" => Page.Cheats,
+            _ => Page.Palettes
+        };
+    }
+
+    internal static bool PageOn(Page page)
+    {
+        return PageSettings[page].Get();
+    }
+
+    // Switching a page sets all its features with it (the user's rule: off switches them all off; on brings them
+    // all back, so a page switched on is never an empty bar), after which each can be switched on its own.
+    internal static void SetPage(Page page, bool on)
+    {
+        PageSettings[page].Set(on);
+
+        foreach (var feature in FeatureSettings[page])
+        {
+            feature.Set(on);
+        }
+    }
+
+    // a tool is there on a screen when its page and itself are on (and the page has it at all)
+    internal static bool On(string screen, Feature feature)
+    {
+        var page = PageOf(screen);
+
+        return PageOn(page) && FeatureSettings[page].Any(x => x.Feature == feature && x.Get());
+    }
+
+    // A choice made on a bar is saved at once. The mod's settings are otherwise written when the mod manager window
+    // closes or the game quits, so a crash before that lost the sorts chosen in that session (the user's question,
+    // 2026-11-16, whether the sorts are kept). The mod's own save handler is used, which in multiplayer saves this
+    // computer's settings, not the host's.
+    private static void SaveChoice()
+    {
+        try
+        {
+            Main.SaveSettingsNow();
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
+        }
+    }
+
     private const string BarName = "FbListTools";
     private const string SortName = "Sort";
     private const string DirectionName = "Direction";
@@ -140,6 +286,14 @@ internal static class DungeonMakerListTools
 
     // the search text of each screen, by the key the screen passes
     private static readonly Dictionary<string, string> Searches = [];
+
+    // each list's top edge before the bar took a strip of it (see AddBar and Arrange)
+    private static readonly ConditionalWeakTable<RectTransform, ListTop> ListTops = new();
+
+    private sealed class ListTop
+    {
+        internal float Top;
+    }
 
     private static string _lastProblem = string.Empty;
 
@@ -216,6 +370,7 @@ internal static class DungeonMakerListTools
         }
 
         Main.Settings.DungeonMakerCategorySorts = string.Join(";", entries);
+        SaveChoice();
     }
 
     // Brings a screen's bar's controls up to date (sort, direction, category order), keeping its search.
@@ -275,7 +430,17 @@ internal static class DungeonMakerListTools
     // the list is shown exactly as the game shows it: its own order, top to bottom, nothing left out
     internal static bool IsPlain(string screen)
     {
-        return Kind == Sort.Default && !Descending && Search(screen).Length == 0;
+        return (!On(screen, Feature.PageSort) || (Kind == Sort.Default && !Descending)) &&
+               (!On(screen, Feature.Search) || Search(screen).Length == 0);
+    }
+
+    // a list's category sort option, or null when it has none or the screen's per-list sort is switched off
+    internal static CategoryOption ChosenOption(
+        string screen, string list, IReadOnlyList<CategoryOption> options, out bool descending)
+    {
+        var option = ChosenOption(list, options, out descending);
+
+        return On(screen, Feature.ListSort) ? option : null;
     }
 
     #region The view
@@ -323,7 +488,14 @@ internal static class DungeonMakerListTools
 
         var hidSelected = false;
 
-        var search = Search(screen);
+        // only the tools switched on for this screen take part (see Page and Feature)
+        var search = On(screen, Feature.Search) ? Search(screen) : string.Empty;
+
+        if (!On(screen, Feature.ListSort))
+        {
+            category = null;
+        }
+
         var items = new List<Row>();
 
         foreach (var row in rows)
@@ -348,8 +520,9 @@ internal static class DungeonMakerListTools
         // main sort in its direction, and last the campaign's order, so rows that are equal on every key keep
         // their campaign order in both directions. The campaign's own order as the main sort, descending, is the
         // list from its end.
-        var kind = Kind;
-        var descending = Descending;
+        var pageSort = On(screen, Feature.PageSort);
+        var kind = pageSort ? Kind : Sort.Default;
+        var descending = pageSort && Descending;
 
         items.Sort((a, b) =>
         {
@@ -418,7 +591,8 @@ internal static class DungeonMakerListTools
     // moved them) or by title. The sections change places among the places they hold, which must follow each other
     // (they do: the palette's bound categories are its table's first children, the editor's twelve groups the
     // content's). Returns the sections in the order they now stand.
-    internal static List<Transform> OrderSections(IReadOnlyList<Transform> original, Func<Transform, string> title)
+    internal static List<Transform> OrderSections(
+        string screen, IReadOnlyList<Transform> original, Func<Transform, string> title)
     {
         var sections = original.Where(x => x).ToList();
 
@@ -427,7 +601,7 @@ internal static class DungeonMakerListTools
             return sections;
         }
 
-        var ordered = CategoriesAlphabetical
+        var ordered = CategoriesAlphabetical && On(screen, Feature.CategoryOrder)
             ? sections
                 .Select((x, i) => (Section: x, Index: i, Title: title(x) ?? string.Empty))
                 .OrderBy(x => x.Title, StringComparer.CurrentCultureIgnoreCase)
@@ -638,6 +812,7 @@ internal static class DungeonMakerListTools
             sort.onValueChanged.AddListener(value =>
             {
                 Main.Settings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
+                SaveChoice();
                 Changed();
             });
         }
@@ -666,6 +841,7 @@ internal static class DungeonMakerListTools
             categoryOrder.onClick.AddListener(() =>
             {
                 Main.Settings.DungeonMakerCategoriesAlphabetical = !Main.Settings.DungeonMakerCategoriesAlphabetical;
+                SaveChoice();
                 Changed();
             });
         }
@@ -696,6 +872,7 @@ internal static class DungeonMakerListTools
             direction.onClick.AddListener(() =>
             {
                 Main.Settings.DungeonMakerListSortDescending = !Main.Settings.DungeonMakerListSortDescending;
+                SaveChoice();
                 Changed();
             });
         }
@@ -725,7 +902,89 @@ internal static class DungeonMakerListTools
         }
 
         Refreshers[screen] = Refresh;
+        Arrange(list, bar, screen, stacked, sections, category != null);
         Refresh();
+    }
+
+    // Shows the bar's controls this screen has switched on in the mod menu, and no others: a row with nothing left
+    // goes, the bar is as tall as its rows, and the list's top edge moves to just under it (or back to where it was
+    // before the mod, when no tool is on). Done each time the screen is shown, as the settings may have changed.
+    private static void Arrange(
+        RectTransform list, Transform bar, string screen, bool stacked, bool sections, bool hasCategoryRow)
+    {
+        var pageSort = On(screen, Feature.PageSort);
+        var search = On(screen, Feature.Search);
+        var categoryOrder = sections && On(screen, Feature.CategoryOrder);
+        var listSort = hasCategoryRow && On(screen, Feature.ListSort);
+
+        SetShown(FindDeep(bar, SortLabelName), pageSort);
+        SetShown(FindDeep(bar, SortName), pageSort);
+        SetShown(FindDeep(bar, DirectionName), pageSort);
+        SetShown(FindDeep(bar, CategoryOrderName), categoryOrder);
+        SetShown(FindDeep(bar, SearchName), search);
+        SetShown(FindDeep(bar, ClearName), search);
+
+        var rows = 0;
+
+        foreach (Transform row in bar)
+        {
+            var wanted = row.name switch
+            {
+                CategoryRowName => listSort,
+                SearchRowName => search,
+                _ => ArrangeGaps(row)
+            };
+
+            SetShown(row, wanted);
+            rows += wanted ? 1 : 0;
+        }
+
+        if (!ListTops.TryGetValue(list, out var top))
+        {
+            return;
+        }
+
+        var height = rows == 0 ? 0f : (rows * ControlHeight) + ((rows - 1) * Spacing);
+        var rect = (RectTransform)bar;
+
+        SetShown(bar, rows > 0);
+        rect.offsetMin = new Vector2(rect.offsetMin.x, top.Top - height);
+        rect.offsetMax = new Vector2(rect.offsetMax.x, top.Top);
+        list.offsetMax = new Vector2(list.offsetMax.x,
+            rows == 0 ? top.Top : top.Top - height - (stacked ? PaletteGap : Gap));
+    }
+
+    // A row's gaps are shown only between two shown controls; a stretching space (the palette's, which pushes the
+    // category toggle to the right end) whenever something shown follows it. Returns whether the row shows anything.
+    private static bool ArrangeGaps(Transform row)
+    {
+        var children = row.Cast<Transform>().ToList();
+        bool IsGap(Transform x) => x.name == GapName;
+        bool Shown(Transform x) => x.gameObject.activeSelf;
+
+        for (var i = 0; i < children.Count; i++)
+        {
+            if (!IsGap(children[i]))
+            {
+                continue;
+            }
+
+            var after = children.Skip(i + 1).Any(x => !IsGap(x) && Shown(x));
+            var before = children.Take(i).Any(x => !IsGap(x) && Shown(x));
+            var stretch = children[i].TryGetComponent<LayoutElement>(out var layout) && layout.flexibleWidth > 0;
+
+            SetShown(children[i], after && (before || stretch));
+        }
+
+        return children.Any(x => !IsGap(x) && Shown(x));
+    }
+
+    private static void SetShown(Transform target, bool shown)
+    {
+        if (target && target.gameObject.activeSelf != shown)
+        {
+            target.gameObject.SetActive(shown);
+        }
     }
 
     // The campaign editor's category sort row for one list: "Sort:", a dropdown and an arrow, inside the list's
@@ -997,6 +1256,9 @@ internal static class DungeonMakerListTools
     {
         var row = group ? group.Find(ListSortRowName) : null;
 
+        // the campaign editor's per-list sort, when switched off in the mod menu, isn't shown at all
+        shown &= On("editor", Feature.ListSort);
+
         if (row && row.gameObject.activeSelf != shown)
         {
             row.gameObject.SetActive(shown);
@@ -1131,6 +1393,9 @@ internal static class DungeonMakerListTools
         rows += categoryRow ? 1 : 0;
 
         var height = (rows * ControlHeight) + ((rows - 1) * Spacing);
+
+        // the list's top edge as the screen had it, for Arrange to measure from
+        ListTops.Add(list, new ListTop { Top = list.offsetMax.y });
 
         // anchored like the scroll view from side to side, and to its top edge, as tall as its rows
         rect.SetParent(list.parent, false);

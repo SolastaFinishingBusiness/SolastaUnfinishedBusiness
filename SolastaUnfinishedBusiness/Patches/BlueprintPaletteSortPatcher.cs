@@ -179,7 +179,8 @@ public static class BlueprintPaletteSortPatcher
         }
 
         var key = KeyOf(panel);
-        var searching = DungeonMakerListTools.Search(key).Length > 0;
+        var searching = DungeonMakerListTools.On(key, DungeonMakerListTools.Feature.Search) &&
+                        DungeonMakerListTools.Search(key).Length > 0;
 
         foreach (var category in categories.Where(x => x && x.transform.parent == panel.categoriesTable))
         {
@@ -198,7 +199,7 @@ public static class BlueprintPaletteSortPatcher
 
         // the categories in the game's order (the order bound) or by title, and the separators of the ones shown
         var ordered = DungeonMakerListTools.OrderSections(
-            categories.Where(x => x && x.transform.parent == panel.categoriesTable).Select(x => x.transform).ToList(),
+            key, categories.Where(x => x && x.transform.parent == panel.categoriesTable).Select(x => x.transform).ToList(),
             x => DungeonMakerListTools.PlainText(x.GetComponent<BlueprintCategoryItem>()?.categoryTitle?.TMP_Text?.text));
         var shown = ordered
             .Where(x => x.gameObject.activeSelf)

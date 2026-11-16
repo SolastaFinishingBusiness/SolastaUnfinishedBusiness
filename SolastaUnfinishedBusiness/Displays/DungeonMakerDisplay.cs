@@ -2,6 +2,7 @@
 using System.Linq;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Api.ModKit;
+using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
 using SolastaUnfinishedBusiness.Models.TranslationServices;
 using UnityEngine;
@@ -15,6 +16,46 @@ internal static class DungeonMakerDisplay
     private static bool _showCategoryProgress;
     private static string _openAIApiKeyInput = string.Empty;
     private static bool _apiKeyInitialized;
+
+    // The list tools' settings (issue #42): one per screen, and under each the tools that screen can have, indented.
+    // A page switched off switches its tools off with it and hides them here; switched on, all its tools come back
+    // and each can then be switched off on its own (CustomUI/DungeonMakerListTools.SetPage). A screen that is open
+    // picks the change up the next time it is shown.
+    private static void DisplayListTools()
+    {
+        UI.Label();
+        UI.Label(Gui.Localize("ModUi/&DungeonMakerListToolsHeader"));
+
+        foreach (var page in DungeonMakerListTools.FeatureSettings.Keys)
+        {
+            var pageOn = DungeonMakerListTools.PageOn(page);
+
+            if (UI.Toggle(Gui.Localize($"ModUi/&DungeonMakerListTools{page}"), ref pageOn))
+            {
+                DungeonMakerListTools.SetPage(page, pageOn);
+            }
+
+            if (!pageOn)
+            {
+                continue;
+            }
+
+            foreach (var (feature, get, set) in DungeonMakerListTools.FeatureSettings[page])
+            {
+                using (UI.HorizontalScope())
+                {
+                    UI.Space(30f);
+
+                    var featureOn = get();
+
+                    if (UI.Toggle(Gui.Localize($"ModUi/&DungeonMakerListTools{feature}"), ref featureOn))
+                    {
+                        set(featureOn);
+                    }
+                }
+            }
+        }
+    }
 
     internal static void DisplayDungeonMaker()
     {
@@ -87,6 +128,14 @@ internal static class DungeonMakerDisplay
         {
             Main.Settings.UnleashEnemyAsNpc = toggle;
         }
+
+        toggle = Main.Settings.HideCancellingCustomWeaponBonuses;
+        if (UI.Toggle(Gui.Localize("ModUi/&HideCancellingCustomWeaponBonuses"), ref toggle))
+        {
+            Main.Settings.HideCancellingCustomWeaponBonuses = toggle;
+        }
+
+        DisplayListTools();
 
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&Advanced"));

@@ -651,3 +651,13 @@ ModUi/&MultiplayerTurnSpeedUpTooltip=Plays the enemy turns faster until clicked 
 ModUi/&MultiplayerTurnSpeedUpPending=Waiting for the host…
 ModUi/&MultiplayerTurnSpeedUpWaiting=Waiting for {0}; the speed stays as it is until the host confirms the change
 ModUi/&MultiplayerTurnSpeedUpWaitingOthers=Waiting for the other players; the speed stays as it is until the host confirms the change
+ModUi/&HideCancellingCustomWeaponBonuses=Hide a Dungeon Maker custom weapon's damage bonuses that cancel each other out in its damage breakdown <i><color=#F0DAA0>[hold Alt to see them]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Search and sort tools on the Dungeon Maker screens:</color>
+ModUi/&DungeonMakerListToolsEditor=Campaign editor
+ModUi/&DungeonMakerListToolsPicker=Variable picker
+ModUi/&DungeonMakerListToolsCheats=Cheats > Campaign Variables panel
+ModUi/&DungeonMakerListToolsPalettes=Location editor palettes (gadgets, props, rooms)
+ModUi/&DungeonMakerListToolsSearch=Search
+ModUi/&DungeonMakerListToolsPageSort=Page sort (Sort: and its direction arrow)
+ModUi/&DungeonMakerListToolsCategoryOrder=Category sort (the order of the categories: Default or A-Z)
+ModUi/&DungeonMakerListToolsListSort=Category-specific sort (each list's own Sort:, with its values shown on the rows)

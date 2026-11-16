@@ -651,3 +651,13 @@ ModUi/&SearchClear=지우기
 ModUi/&SearchNoResults="{0}"와(과) 일치하는 설정이 없습니다.
 ModUi/&SearchSettings=설정 검색:
 ModUi/&WarnBeforeCrafting=제작 시작 시 재료가 즉시 소모되고 제작 판정이 실패할 수 있음을 경고 <i><color=#F0DAA0>[준비된 아이템 대신 쓰이는 일반 무기나 방어구도 표시]</color></i>
+ModUi/&HideCancellingCustomWeaponBonuses=던전 메이커 사용자 무기의 서로 상쇄되는 피해 보너스를 피해 내역에서 숨기기 <i><color=#F0DAA0>[Alt를 누르고 있으면 표시]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>던전 메이커 화면의 검색 및 정렬 도구:</color>
+ModUi/&DungeonMakerListToolsEditor=캠페인 편집기
+ModUi/&DungeonMakerListToolsPicker=변수 선택기
+ModUi/&DungeonMakerListToolsCheats=치트 > 캠페인 변수
+ModUi/&DungeonMakerListToolsPalettes=장소 편집기 팔레트 (장치, 소품, 방)
+ModUi/&DungeonMakerListToolsSearch=검색
+ModUi/&DungeonMakerListToolsPageSort=페이지 정렬 (정렬: 및 방향 화살표)
+ModUi/&DungeonMakerListToolsCategoryOrder=카테고리 정렬 (카테고리 순서: 기본 또는 A-Z)
+ModUi/&DungeonMakerListToolsListSort=카테고리별 정렬 (각 목록의 정렬:, 행에 값 표시)

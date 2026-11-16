@@ -400,6 +400,33 @@ public class Settings : UnityModManager.ModSettings
     // The sections themselves (the campaign editor's twelve lists, a palette's categories) in title order instead of
     // the game's; the "Categories:" toggle on those bars (issue #42).
     public bool DungeonMakerCategoriesAlphabetical { get; set; }
+
+    // Which of those tools each screen has (Mod UI > Dungeon Maker; issue #42, user direction 2026-11-16: "For each
+    // page, there is a nested toggle for each sort/search UI element/feature. Disabling the page will disable all
+    // subtoggles automatically"). A feature is there when its page and itself are on; all on by default. See
+    // DungeonMakerListTools.On. The palettes have no per-list sort, the picker and the cheats panel no category order.
+    public bool DungeonMakerEditorTools { get; set; } = true;
+    public bool DungeonMakerEditorSearch { get; set; } = true;
+    public bool DungeonMakerEditorPageSort { get; set; } = true;
+    public bool DungeonMakerEditorCategoryOrder { get; set; } = true;
+    public bool DungeonMakerEditorListSort { get; set; } = true;
+    public bool DungeonMakerPickerTools { get; set; } = true;
+    public bool DungeonMakerPickerSearch { get; set; } = true;
+    public bool DungeonMakerPickerPageSort { get; set; } = true;
+    public bool DungeonMakerPickerListSort { get; set; } = true;
+    public bool DungeonMakerCheatsTools { get; set; } = true;
+    public bool DungeonMakerCheatsSearch { get; set; } = true;
+    public bool DungeonMakerCheatsPageSort { get; set; } = true;
+    public bool DungeonMakerCheatsListSort { get; set; } = true;
+    public bool DungeonMakerPaletteTools { get; set; } = true;
+    public bool DungeonMakerPaletteSearch { get; set; } = true;
+    public bool DungeonMakerPalettePageSort { get; set; } = true;
+    public bool DungeonMakerPaletteCategoryOrder { get; set; } = true;
+
+    // A Dungeon Maker custom weapon's typed-in damage bonus and the enhancement of the item it was made from are left
+    // out of its damage breakdown when they cancel each other; the full breakdown is shown while Alt is held
+    // (issue #42; Patches/WeaponDamageDisplayPatcher.cs). Off: always the full breakdown.
+    public bool HideCancellingCustomWeaponBonuses { get; set; } = true;
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }
