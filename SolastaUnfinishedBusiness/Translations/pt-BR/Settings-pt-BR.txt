@@ -651,7 +651,7 @@ ModUi/&SearchClear=Limpar
 ModUi/&SearchNoResults=Nenhuma configuração corresponde a "{0}".
 ModUi/&SearchSettings=Buscar configurações:
 ModUi/&WarnBeforeCrafting=Avisar ao começar a criar que os ingredientes são gastos na hora e que as jogadas de criação podem falhar <i><color=#F0DAA0>[também lista armas ou armaduras comuns usadas no lugar das preparadas]</color></i>
-ModUi/&HideCancellingCustomWeaponBonuses=Ocultar no detalhamento de dano os bônus de uma arma personalizada do Dungeon Maker que se anulam <i><color=#F0DAA0>[segure Alt para vê-los]</color></i>
+ModUi/&HideCancellingWeaponDamageBonuses=Ocultar os bônus de dano de armas que se anulam <i><color=#F0DAA0>[segure Alt para vê-los]</color></i>
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Ferramentas de busca e ordenação nas telas do Dungeon Maker:</color>
 ModUi/&DungeonMakerListToolsEditor=Editor de campanha
 ModUi/&DungeonMakerListToolsPicker=Seletor de variáveis

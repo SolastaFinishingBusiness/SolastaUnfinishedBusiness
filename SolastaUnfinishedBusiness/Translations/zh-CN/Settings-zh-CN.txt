@@ -651,7 +651,7 @@ ModUi/&SearchClear=清除
 ModUi/&SearchNoResults=没有与“{0}”匹配的设置。
 ModUi/&SearchSettings=搜索设置：
 ModUi/&WarnBeforeCrafting=开始制作前警告材料会立即消耗且制作检定可能失败 <i><color=#F0DAA0>[也会列出代替预备物品使用的普通武器或护甲]</color></i>
-ModUi/&HideCancellingCustomWeaponBonuses=在伤害明细中隐藏地下城制作器自定义武器相互抵消的伤害加值 <i><color=#F0DAA0>[按住 Alt 可查看]</color></i>
+ModUi/&HideCancellingWeaponDamageBonuses=隐藏相互抵消的武器伤害加值 <i><color=#F0DAA0>[按住 Alt 可查看]</color></i>
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>地下城制作器界面中的搜索与排序工具：</color>
 ModUi/&DungeonMakerListToolsEditor=战役编辑器
 ModUi/&DungeonMakerListToolsPicker=变量选择器

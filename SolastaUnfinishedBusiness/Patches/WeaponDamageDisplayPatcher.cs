@@ -27,8 +27,10 @@ namespace SolastaUnfinishedBusiness.Patches;
 // The dice line of the tooltip is right already (the game adds the enhancement to the form's bonus there), and it
 // reads the same DamageRollModifier value, so that value is not touched.
 //
-// The breakdown (2) is shortened only while "Hide a custom weapon's damage bonuses that cancel each other" is on (Mod
-// UI > Dungeon Maker, on by default). The full list is then still there while Alt is held, the way the game shows a
+// The breakdown (2) is shortened only while "Hide weapon damage bonuses that cancel each other out" is on (Mod UI >
+// Dungeon Maker, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of its item
+// (user, 2026-11-16: "applying to all and not just the Dungeon Maker ones (though, generally only Dungeon Maker ones
+// would have these I guess)"). The full list is then still there while Alt is held, the way the game shows a
 // detailed tooltip (see ShowTooltip below).
 //
 // Entries with no name: Gui.FormatTrendInfo prints an entry's source name, or the title it finds for it, and some
@@ -54,10 +56,17 @@ internal static class WeaponDamageDisplay
     // the effect lines' tooltips showing a shortened breakdown, with both texts
     private static readonly ConditionalWeakTable<GuiTooltip, Breakdown> Breakdowns = new();
 
-    // the flat damage a custom weapon's own effect adds (what the Dungeon Maker's Weapon Effects damage box writes)
+    // the flat damage a custom weapon's own effect adds (what the Dungeon Maker's Weapon Effects damage box writes);
+    // the weapon tooltip's row (part 1) is only corrected for those
     internal static int CustomFlatDamage(ItemDefinition definition)
     {
-        if (definition == null || !definition.IsUserContent || !definition.IsWeapon)
+        return definition != null && definition.IsUserContent ? OwnFlatDamage(definition) : 0;
+    }
+
+    // the flat damage any weapon's own damage form adds, which the breakdown lists as its Base entry
+    internal static int OwnFlatDamage(ItemDefinition definition)
+    {
+        if (definition == null || !definition.IsWeapon)
         {
             return 0;
         }
@@ -67,9 +76,9 @@ internal static class WeaponDamageDisplay
             .DamageForm.BonusDamage ?? 0;
     }
 
-    // The breakdown without a custom weapon's two bonuses when they cancel each other. RefreshAttackMode adds the
+    // The breakdown without a weapon's two bonuses when they cancel each other. RefreshAttackMode adds the
     // form's own bonus as (value, Base, "", null) and the weapon's enhancement as an Equipment entry. The
-    // enhancement entry is matched to a custom weapon whose typed-in bonus is exactly the Base entry, either by its
+    // enhancement entry is matched to a weapon whose own damage bonus is exactly the Base entry, either by its
     // name or, when it has none, as the weapon of the attack being shown (AttackWeapon): an opposite modifier from
     // the ammunition or from anything else that is named stays. The game's own list is not changed; a filtered
     // copy is returned, or the same list when nothing is dropped.
@@ -78,7 +87,7 @@ internal static class WeaponDamageDisplay
     // pair was never dropped ("-1: Base", "+1:" in his screenshot).
     internal static List<RuleDefinitions.TrendInfo> WithoutCancellingPair(List<RuleDefinitions.TrendInfo> trends)
     {
-        if (!Main.Settings.HideCancellingCustomWeaponBonuses || trends == null || trends.Count < 2)
+        if (!Main.Settings.HideCancellingWeaponDamageBonuses || trends == null || trends.Count < 2)
         {
             return trends;
         }
@@ -97,8 +106,8 @@ internal static class WeaponDamageDisplay
             var j = trends.FindIndex(x =>
                 x.sourceType == RuleDefinitions.FeatureSourceType.Equipment && x.value == -own.value &&
                 (string.IsNullOrEmpty(x.sourceName)
-                    ? CustomFlatDamage(AttackWeapon) == own.value
-                    : items.TryGetElement(x.sourceName, out var weapon) && CustomFlatDamage(weapon) == own.value));
+                    ? OwnFlatDamage(AttackWeapon) == own.value
+                    : items.TryGetElement(x.sourceName, out var weapon) && OwnFlatDamage(weapon) == own.value));
 
             if (j < 0)
             {

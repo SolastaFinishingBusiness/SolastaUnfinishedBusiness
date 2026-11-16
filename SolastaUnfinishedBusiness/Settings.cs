@@ -423,10 +423,10 @@ public class Settings : UnityModManager.ModSettings
     public bool DungeonMakerPalettePageSort { get; set; } = true;
     public bool DungeonMakerPaletteCategoryOrder { get; set; } = true;
 
-    // A Dungeon Maker custom weapon's typed-in damage bonus and the enhancement of the item it was made from are left
-    // out of its damage breakdown when they cancel each other; the full breakdown is shown while Alt is held
-    // (issue #42; Patches/WeaponDamageDisplayPatcher.cs). Off: always the full breakdown.
-    public bool HideCancellingCustomWeaponBonuses { get; set; } = true;
+    // A weapon's own damage bonus and the enhancement of its item are left out of its damage breakdown when they
+    // cancel each other (in practice a Dungeon Maker custom weapon with a number typed in); the full breakdown is
+    // shown while Alt is held (issue #42; Patches/WeaponDamageDisplayPatcher.cs). Off: always the full breakdown.
+    public bool HideCancellingWeaponDamageBonuses { get; set; } = true;
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }
