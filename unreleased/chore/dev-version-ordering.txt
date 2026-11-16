@@ -1,0 +1,2 @@
+- The in-game updater now treats a test build as older than the release with the same number, so testers are offered that release once it is out. Test builds now carry the next version (1.18.0) instead of the last release's.
+- Not tested in game: the update offer from a 1.18.0 test build to a release.

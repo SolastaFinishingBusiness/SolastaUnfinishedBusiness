@@ -158,7 +158,7 @@ points it out while you type (next section).
 ## The mod's version in campaign files
 
 When the Dungeon Maker saves a campaign, or a location on its own, the mod adds its version to the file as one
-extra field at the start (`"finishingBusinessVersion"`), for instance `1.17.0` or `1.17.0-dev.0be2ed8d`.
+extra field at the start (`"finishingBusinessVersion"`), for instance `1.18.0` or `1.18.0-dev.0330274b`.
 
 - A game without the mod loads the file as before: the field is ignored. If that game saves the campaign again,
   the field is gone, so a file never claims a version that didn't write it.

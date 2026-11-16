@@ -13,7 +13,7 @@ namespace SolastaUnfinishedBusiness.Models;
 // of the UserCampaign object, written by UserCampaignPoolManager.SaveUserCampaign (UserLocationPoolManager.
 // SaveUserLocation), which also hands the same bytes to the platform's cloud storage. The mod adds one field of
 // its own at the very start of that text:
-//     {"finishingBusinessVersion":"1.17.0-dev.0be2ed8d","dungeonMakerVersion":...
+//     {"finishingBusinessVersion":"1.18.0-dev.0330274b","dungeonMakerVersion":...
 //   - Reading is not disturbed: JsonUtility.FromJson ignores a field the object has no member for. The game
 //     relies on that itself: it first reads the whole campaign text as the much smaller UserContent, to check its
 //     kind (ReadCampaignFromDisk). So a game without the mod loads the file as before.
@@ -25,16 +25,15 @@ namespace SolastaUnfinishedBusiness.Models;
 //   - The text is changed where the game makes it (the call to ToJson in the two save methods is replaced by
 //     StampedJson), so the file and the cloud copy are the same.
 //
-// WHAT IS RECORDED: the version of the code that is running (UpdateContext.LoadedBuildVersion): "1.17.0" for a
+// WHAT IS RECORDED: the version of the code that is running (UpdateContext.LoadedBuildVersion): "1.18.0" for a
 // release, "<version>-dev.<first 8 characters of the commit>" for a development build.
 //
 // HOW TWO VERSIONS ARE ORDERED is the updater's business, not decided here: UpdateContext.CompareVersions is
-// used as it is. Once PR #72 is merged that is Semantic Versioning's pre-release order: develop carries the NEXT
-// version, so a development build is older than the release with the same numbers (1.17.0 < 1.17.1 <
-// 1.18.0-dev.<commit> < 1.18.0). Until then CompareVersions leaves the "-dev." mark out, so a development build
-// and the release with its numbers compare equal. Either way "equal" only means "the same numbers": two
-// development builds of one version differ by their commit alone, which says which code it was, not which is
-// newer, so the log then says that the commits differ.
+// used as it is. That is Semantic Versioning's pre-release order (PR #72, on develop since 1.18.0): develop carries
+// the NEXT version, so a development build is older than the release with the same numbers (1.17.0 < 1.17.1 <
+// 1.18.0-dev.<commit> < 1.18.0). Builds stamped "1.17.0-dev.*", made before that change, read as older than 1.17.0.
+// "Equal" only means "the same numbers": two development builds of one version differ by their commit alone,
+// which says which code it was, not which is newer, so the log then says that the commits differ.
 //
 // WHAT IS DONE WITH IT: nothing is compared or refused yet. The version a campaign file was saved with is
 // remembered when the file is read and written to the log, there and when the campaign is played.
