@@ -398,6 +398,14 @@ public class Settings : UnityModManager.ModSettings
     // list either way.
     public bool DungeonMakerHideCommandsPopup { get; set; }
 
+    // The editors' help while a variable name or a command's value is typed, or the pointer is on a variable row
+    // (user, 2026-11-17: "add a toggle in the mod settings that can disable all command hints (but be off by
+    // default). Additionally, add the ability to disable the suggestions as well (but be off by default)"):
+    // on, no hint panel (CustomUI/DungeonMakerNameHints.Show) / no list of gadget names to pick from
+    // (CustomUI/DungeonMakerNameSuggestions.Show). Names keep their colours, and the "?" list stays.
+    public bool DisableDungeonMakerCommandHints { get; set; }
+    public bool DisableDungeonMakerNameSuggestions { get; set; }
+
     // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"
     // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by
     // DungeonMakerListTools.CategoryChoice; a list that isn't there has none.

@@ -35,8 +35,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // HOW IT IS BUILT: the game has no window that holds a long scrolling text with two buttons of the mod's choosing
 // (its message window shows a short text and its own buttons), so this is a panel of the mod's own in the
 // tooltip look (the hint's panel pieces): a dimmed layer over the screen that takes the clicks, a window with
-// a title, a scrolling text (mouse wheel or drag) and two buttons copied from the screen's CLOSE button. It is
-// worked with the mouse; it takes no keys, and closing it only hides it, so nothing is left holding the input.
+// a title, a scrolling text (mouse wheel or drag) and two buttons, centred: Close copied from the screen's SAVE
+// button, Hide from its CLOSE button. It is worked with the mouse; it takes no keys, and closing it only hides it,
+// so nothing is left holding the input. While it is open the editor behind takes neither the wheel nor clicks
+// (DungeonMakerCommandsPatcher.Cursor_RefreshHover).
 internal static class DungeonMakerCommandsPopup
 {
     private const string HelpButtonName = "FbCommandsHelp";
@@ -49,6 +51,11 @@ internal static class DungeonMakerCommandsPopup
     private const float TitleHeight = 40f;
     private const float ButtonsHeight = 56f;
     private const string TitleColor = "#F0DAA0";
+
+    // the bottom buttons' widths and the space between them
+    private const float CloseWidth = 180f;
+    private const float HideWidth = 320f;
+    private const float ButtonGap = 20f;
 
     // under the hint and the suggestions list, above the editor's own screens and windows
     private const int Order = DungeonMakerNameHints.HintOrder - 100;
@@ -289,7 +296,7 @@ internal static class DungeonMakerCommandsPopup
             return;
         }
 
-        EnsureWindow(canvas.transform, close);
+        EnsureWindow(canvas.transform, close, FindButton(screen, SaveMethod));
 
         _title.text = Gui.Localize("ModUi/&DungeonMakerCommandsPopupTitle");
         _text.text = BuildText(screen);
@@ -399,7 +406,7 @@ internal static class DungeonMakerCommandsPopup
         return color == null ? text : $"<color=#{ColorUtility.ToHtmlStringRGB(color.Value)}>{text}</color>";
     }
 
-    private static void EnsureWindow(Transform canvas, Button close)
+    private static void EnsureWindow(Transform canvas, Button close, Button plain)
     {
         if (_dim)
         {
@@ -484,8 +491,11 @@ internal static class DungeonMakerCommandsPopup
         _title.transform.SetAsLastSibling();
         view.SetAsLastSibling();
 
-        // the two buttons, along the bottom: copies of the screen's CLOSE button, or plain ones without it
-        var closeButton = MakeButton(close, "Close", Gui.Localize("ModUi/&DungeonMakerCommandsPopupClose"), Close);
+        // The two buttons, along the bottom (user, 2026-11-17: "the buttons at the bottom should be centered, and
+        // close should be a normal button, not a red button"): Close is a copy of the screen's SAVE button, the
+        // editor's ordinary dark one (as the ? is), Hide a copy of its red CLOSE; plain ones without them.
+        var closeButton = MakeButton(plain ? plain : close, "Close",
+            Gui.Localize("ModUi/&DungeonMakerCommandsPopupClose"), Close);
         var hideButton = MakeButton(close, "Hide", Gui.Localize("ModUi/&DungeonMakerCommandsPopupHide"), () =>
         {
             Main.Settings.DungeonMakerHideCommandsPopup = true;
@@ -493,9 +503,12 @@ internal static class DungeonMakerCommandsPopup
             Close();
         });
 
-        // side by side around the window's middle
-        PlaceButton(closeButton, 180f, -190f);
-        PlaceButton(hideButton, 320f, 10f);
+        // side by side, the pair centred on the window's middle (the first version put Close's left edge 190 and
+        // Hide's 10 right of the middle, so the pair sat 70 units right of centre)
+        var left = -(CloseWidth + ButtonGap + HideWidth) / 2f;
+
+        PlaceButton(closeButton, CloseWidth, left);
+        PlaceButton(hideButton, HideWidth, left + CloseWidth + ButtonGap);
         _dim.SetActive(false);
     }
 

@@ -715,6 +715,16 @@ internal static class DungeonMakerNamesContext
         return _scanned;
     }
 
+    private const string SkipHoursName = "Clock_SkipHours";
+    private const string SkipDaysName = "Clock_SkipDays";
+
+    // The unit each switch and counter counts in, in the order of DungeonMakerClockContext.SwitchVariables and
+    // CounterVariables (minutes, hours, days): a word filled into the one switch text and the one counter text.
+    private static readonly string[] ClockUnitTerms =
+    [
+        "ModUi/&DungeonMakerClockUnitMinute", "ModUi/&DungeonMakerClockUnitHour", "ModUi/&DungeonMakerClockUnitDay"
+    ];
+
     // What to tell an author who is typing this as a variable's name: what the mod does with the name, and, for a
     // name the mod writes, where it writes with the campaign as it is now. Null when the mod doesn't use the name.
     internal static string NameHint(string name, UserCampaign campaign, UserLocation location)
@@ -730,8 +740,18 @@ internal static class DungeonMakerNamesContext
             case Role.Request when name == DungeonMakerCommandsContext.ListVariable:
                 text = Gui.Localize("ModUi/&DungeonMakerHintListGadgets");
                 break;
+            // the two skips by a number share one text, with the range and the unit filled in; the skips to a
+            // moment each say what they aim at
+            case Role.Request when name == SkipHoursName:
+                text = Gui.Format("ModUi/&DungeonMakerHintClockSkipBy", "168",
+                    Gui.Localize("ModUi/&DungeonMakerClockUnitHours"));
+                break;
+            case Role.Request when name == SkipDaysName:
+                text = Gui.Format("ModUi/&DungeonMakerHintClockSkipBy", "180",
+                    Gui.Localize("ModUi/&DungeonMakerClockUnitDays"));
+                break;
             case Role.Request when Array.IndexOf(DungeonMakerClockContext.SkipVariables, name) >= 0:
-                text = Gui.Localize("ModUi/&DungeonMakerHintClockSkip");
+                text = Gui.Localize("ModUi/&DungeonMakerHint" + name.Replace("_", string.Empty));
                 break;
             // the three torch names each say what they do (one text for all three said less, and the list
             // showed it three times)
@@ -744,14 +764,28 @@ internal static class DungeonMakerNamesContext
             case Role.Request:
                 text = Gui.Localize("ModUi/&DungeonMakerHintTorchOne");
                 break;
+            // (user, 2026-11-17: the switch's hint "should outright mention Clock_MinutesElapsed", with one text
+            // for every unit) a switch and its counter name each other, and the unit is a word filled in
             case Role.Switch:
-                text = Gui.Localize("ModUi/&DungeonMakerHintClockCount");
+            {
+                var i = Array.IndexOf(DungeonMakerClockContext.SwitchVariables, name);
+
+                text = Gui.Format("ModUi/&DungeonMakerHintClockCount",
+                    DungeonMakerClockContext.CounterVariables[i], Gui.Localize(ClockUnitTerms[i]));
                 break;
+            }
             case Role.Counter:
-                text = Gui.Localize("ModUi/&DungeonMakerHintClockCounter");
+            {
+                var i = Array.IndexOf(DungeonMakerClockContext.CounterVariables, name);
+
+                text = Gui.Format("ModUi/&DungeonMakerHintClockCounter",
+                    DungeonMakerClockContext.SwitchVariables[i], Gui.Localize(ClockUnitTerms[i]));
                 break;
+            }
+            // one text for every read-out, with what it holds filled in (Clock_Hour -> ...ClockHoldsHour)
             case Role.Readout:
-                text = Gui.Localize("ModUi/&DungeonMakerHintClockReadout");
+                text = Gui.Format("ModUi/&DungeonMakerHintClockReadout",
+                    Gui.Localize("ModUi/&DungeonMakerClockHolds" + name.Substring("Clock_".Length)));
                 break;
             case Role.Status:
                 text = Gui.Format("ModUi/&DungeonMakerHintStatus", statusOf);

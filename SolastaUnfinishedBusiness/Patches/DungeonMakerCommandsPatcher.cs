@@ -671,6 +671,49 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: Dungeon Maker editors: the mouse wheel and clicks over the commands list, or over the open gadget-name
+    //suggestions, are the list's alone (user, 2026-11-17: "ensure that scrolling on the popup only scrolls the
+    //popup and doesn't bleed into scrolling the background"). Cause, from the game's code: the editors' map and
+    //graph (View.HandleInputs) read the wheel straight from Input and zoom, and take mouse presses, unless the
+    //cursor says the pointer is on the interface (Cursor.HoveredGUI). The cursors decide that in RefreshHover: the
+    //base one only for an object on the game's GUI layer (Cursor.RefreshHoverBase), which the mod's panels aren't
+    //on, and the location editor's from a fixed list of its own panels and modals (CursorLocationEditor
+    //.RefreshHover). So, after every cursor's RefreshHover (each override; the outermost ends last), the pointer is
+    //said to be on the interface while one of these panels is under it. Nothing changes when none is open.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Cursor_RefreshHover
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (var type in typeof(Cursor).Assembly.GetTypes())
+            {
+                if (!typeof(Cursor).IsAssignableFrom(type))
+                {
+                    continue;
+                }
+
+                var method = AccessTools.DeclaredMethod(type, nameof(Cursor.RefreshHover), Type.EmptyTypes);
+
+                if (method is { IsAbstract: false })
+                {
+                    yield return method;
+                }
+            }
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(Cursor __instance)
+        {
+            if (DungeonMakerCommandsPopup.IsOpen || DungeonMakerNameSuggestions.PointerOverOpenList())
+            {
+                __instance.HoveredGUI = true;
+            }
+        }
+    }
+
     //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
     [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

@@ -301,6 +301,20 @@ internal static class DungeonMakerNameHints
             return;
         }
 
+        // switched off in Mod UI > Dungeon Maker: every hint comes through here, so none shows, and one still up
+        // from before the switch goes
+        if (Main.Settings.DisableDungeonMakerCommandHints)
+        {
+            if (_panel)
+            {
+                _owner = null;
+                _target = null;
+                _panel.SetActive(false);
+            }
+
+            return;
+        }
+
         EnsurePanel(canvas.transform, font);
 
         _owner = owner;

@@ -148,6 +148,18 @@ internal static class DungeonMakerDisplay
             Main.Settings.DungeonMakerHideCommandsPopup = !toggle;
         }
 
+        toggle = Main.Settings.DisableDungeonMakerCommandHints;
+        if (UI.Toggle(Gui.Localize("ModUi/&DisableDungeonMakerCommandHints"), ref toggle))
+        {
+            Main.Settings.DisableDungeonMakerCommandHints = toggle;
+        }
+
+        toggle = Main.Settings.DisableDungeonMakerNameSuggestions;
+        if (UI.Toggle(Gui.Localize("ModUi/&DisableDungeonMakerNameSuggestions"), ref toggle))
+        {
+            Main.Settings.DisableDungeonMakerNameSuggestions = toggle;
+        }
+
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&Advanced"));
         UI.Label();

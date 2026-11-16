@@ -74,7 +74,8 @@ internal static class DungeonMakerNameSuggestions
         var nearest = target ? target.GetComponentInParent<Canvas>() : null;
         var canvas = nearest ? nearest.rootCanvas : null;
 
-        if (!canvas || names == null || names.Count == 0)
+        // switched off in Mod UI > Dungeon Maker: the list never opens, so the keys stay the field's own
+        if (Main.Settings.DisableDungeonMakerNameSuggestions || !canvas || names == null || names.Count == 0)
         {
             Hide(owner);
 
@@ -173,6 +174,13 @@ internal static class DungeonMakerNameSuggestions
         var camera = root && root.renderMode != RenderMode.ScreenSpaceOverlay ? root.worldCamera : null;
 
         return RectTransformUtility.RectangleContainsScreenPoint(_rect, Input.mousePosition, camera);
+    }
+
+    // Is the mouse pointer on the open list, whichever field it belongs to? (Cursor_RefreshHover: the editor's map
+    // must not take the wheel or a click meant for the list)
+    internal static bool PointerOverOpenList()
+    {
+        return IsOpen && PointerOver(_owner);
     }
 
     // TMP_InputField.KeyPressed, before it runs, for every text field of the game: true when this key was used

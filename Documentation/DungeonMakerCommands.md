@@ -178,7 +178,11 @@ points it out while you type (next section).
 - **The "?" button** beside CLOSE in the location, dialogue and quest editors opens the list of every name the mod
   uses, with what each does and the colours' meaning. The list also opens by itself the first time you open one
   of these editors after starting the game; "Hide this from now on" stops that (Mod UI > Dungeon Maker has the
-  same choice), and the "?" still opens it.
+  same choice), and the "?" still opens it. While the list is open, the mouse wheel and clicks only act on the
+  list, not on the map or graph behind it.
+- **Switching them off:** Mod UI > Dungeon Maker has "Hide the hints about campaign commands in the editors" (no
+  hints and no warnings; names keep their colours) and "Hide the list of gadget names suggested while typing a
+  command's value". Both are off by default.
 - **Mod UI > Dungeon Maker > Campaign commands** opens this guide from the mod's folder.
 
 ## The mod's version in campaign files
