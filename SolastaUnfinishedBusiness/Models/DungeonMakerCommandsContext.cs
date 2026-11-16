@@ -2838,10 +2838,6 @@ internal static class DungeonMakerCommandsContext
     // "{0}: {1}": the playtest word and the error
     private const string PlaytestAlertTerm = "Message/&DungeonMakerPlaytestAlert";
 
-    // the same, for the game's log: the error goes in as a parameter, so a gadget's name holding braces or
-    // markup is shown as it is, never read as part of the line's format
-    private const string PlaytestLogTerm = "Feedback/&DungeonMakerPlaytestLine";
-
     // The game's log reads "{x}" as a parameter's place also inside a parameter's own text: after putting the
     // parameters in, GameRecordEntry.BreakdownFragments asks TextBreaker.HasUnassignedParameters again, which
     // takes any word whose first '}' comes two characters after its first '{' as parameter number x (IL,
@@ -2849,7 +2845,7 @@ internal static class DungeonMakerCommandsContext
     // place, "{1}" would put the error into itself again and again, and "{9}" would ask for a parameter that isn't
     // there. A zero-width space after every '{' and before every '}' keeps the text as it reads, and no '}' can
     // then be two characters after a '{' (not even in "{}", which becomes four characters).
-    private const char ZeroWidthSpace = '​';
+    private const char ZeroWidthSpace = '\u200B';
 
     private static string NoPlaceholders(string text)
     {
@@ -2857,6 +2853,11 @@ internal static class DungeonMakerCommandsContext
             ? text
             : text.Replace("{", "{" + ZeroWidthSpace).Replace("}", ZeroWidthSpace + "}");
     }
+
+    private const char FullWidthAmpersand = '\uFF06';
+
+    // "{0}:": the playtest word with its colon, the log line's first word
+    private const string PlaytestPrefixTerm = "Feedback/&DungeonMakerPlaytestPrefix";
 
     private static bool IsPlaytest()
     {
@@ -2876,10 +2877,19 @@ internal static class DungeonMakerCommandsContext
                 return;
             }
 
-            var entry = new GameConsoleEntry(PlaytestLogTerm, console.consoleTableDefinition);
+            // The error is the line itself, in the failure colour, and the prefix with its colon is its one
+            // parameter. The log breaks only its base line into words (at spaces and line breaks), and puts a
+            // parameter's text in as one piece that is never broken: with the error as a parameter (seen in game
+            // on 19c68ecb) a long error ran past the log panel's edge instead of wrapping, and in "{0}: {1}" the
+            // colon was a word of its own, shown as "Playtest :". The log runs its base line through
+            // Gui.Localize, which gives back a text that is no term unchanged unless the text holds a '&'
+            // (Gui.LocalizeImpl, IL_0043-005a: it then looks for a term and logs a missing one), so a '&' in the
+            // error is shown as a full-width one. Its braces are kept from being read as parameters as above.
+            var line = "{0} " + NoPlaceholders(text).Replace('&', FullWidthAmpersand);
+            var entry = new GameConsoleEntry(line, console.consoleTableDefinition,
+                baseType: ConsoleStyleDuplet.ParameterType.Negative);
 
-            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Base, prefix);
-            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Negative, NoPlaceholders(text));
+            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Base, Gui.Format(PlaytestPrefixTerm, prefix));
             console.AddEntry(entry);
         }
         catch (Exception e)

@@ -869,4 +869,4 @@ Message/&DungeonMakerClockFailed={0} ist fehlgeschlagen. Der Grund steht im Log 
 Message/&DungeonMakerTorchesNone=Fackelvariablen sind gesetzt, aber an diesem Ort gibt es keine Fackel.
 Message/&DungeonMakerTorchNoCondition='{0}' kann von den Fackelvariablen nicht entzündet oder gelöscht werden.
 Message/&DungeonMakerPlaytestAlert={0}: {1}
-Feedback/&DungeonMakerPlaytestLine={0}: {1}
+Feedback/&DungeonMakerPlaytestPrefix={0}:
