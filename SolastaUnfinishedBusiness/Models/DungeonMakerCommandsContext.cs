@@ -101,7 +101,8 @@ namespace SolastaUnfinishedBusiness.Models;
 // counted, and the command variables themselves; it starts those flows and the mod takes those commands again
 // after a load. Who is behind them is the mod's own knowledge, so it goes into the save too:
 //   - right before the game writes the campaign's variables (BeforeVariablesSaved), the mod puts one String
-//     variable among them, Commands_SavedState: the records of the triggered flows, the timers set going by a
+//     variable among them, Commands_SavedState (or Commands_SavedState_2, ... when the campaign has a variable of
+//     that name; it is known after a load by the signature its text starts with, not by its name): the records of the triggered flows, the timers set going by a
 //     character, the waiting commands' acting characters and the whole one-character teleport queue (SaveState).
 //     It is taken out again as soon as they are written, so it exists in the save only and the running game is
 //     not changed by saving;
@@ -133,6 +134,12 @@ namespace SolastaUnfinishedBusiness.Models;
 // DISCOVERY
 //   Dialog_ListGadgets   Int. 1 lists the interactive gadgets of the location in the log, 2 lists every gadget
 //                        object with its conditions (to find Node and torch names); the mod sets it back to 0.
+//
+// A CAMPAIGN THAT USES THESE NAMES ITSELF (DungeonMakerNamesContext has the rules): a name only the mod writes
+// (a <command>_Status, a clock read-out) that the campaign writes too is the campaign's own, and the mod writes to
+// <name>_2 instead (every write of such a name goes through DungeonMakerNamesContext.Written); a command variable
+// whose type is wrong, or whose text names nothing in the location or anywhere in the campaign, is the
+// campaign's own for the rest of the game, and is left alone without a message (NamesNothing, MarkOwnRequest).
 //
 // HOW IT RUNS, and why (the first version polled these variables from the game clock's per-frame update):
 //   - A request is taken when the variable is written, through the game's own "variable value changed" event,
@@ -168,6 +175,13 @@ internal static class DungeonMakerCommandsContext
     // waiting when the game was saved need to keep their acting character (see "SAVES" at the top).
     internal const string SavedStateVariable = "Commands_SavedState";
     private const string SavedStateVersion = "1";
+
+    // What the saved state's text starts with. The mod's variable is known by this, not by its name: when the
+    // campaign has a variable called Commands_SavedState, the mod's is Commands_SavedState_2, and so on.
+    private const string SavedStateSignature = "FB-DM-STATE";
+
+    // how many names are tried, and looked at after a load, before giving up
+    private const int SavedStateNames = 50;
 
     internal const string StatusPending = "Pending";
     internal const string StatusRunning = "Running";
@@ -284,8 +298,8 @@ internal static class DungeonMakerCommandsContext
 
     // > 0 while the game carries out the actions of a dialogue step (NarrativeState.ExecuteFunctors), and the
     // record of the dialogue they belong to, if it has one
-    // the mod put its saved-state variable into the campaign's variables for the save being written
-    private static bool _savedStateMade;
+    // the variable the mod put into the campaign's variables for the save being written, by its name
+    private static string _savedStateMade;
 
     private static int _narrativeDepth;
     private static Activation _narrativeRecord;
@@ -309,7 +323,6 @@ internal static class DungeonMakerCommandsContext
     private static bool _torchControlSeen;
     private static int _torchRetriesLeft;
     private static string _lastTorchReport = string.Empty;
-    private static string _lastTypeReport = string.Empty;
 
 
     private static GameLocation CurrentLocation => ServiceRepository.GetService<IGameLocationService>()?.GameLocation;
@@ -321,9 +334,17 @@ internal static class DungeonMakerCommandsContext
     {
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
+        // which of the mod's names this campaign owns, before anything below writes to one
+        DungeonMakerNamesContext.Refresh(CurrentLocation);
+
+        // the mod version the campaign's file was saved with, for the log
+        DungeonMakerStampContext.NotePlaying(CurrentLocation?.UserCampaign);
+
         // the variable service belongs to the game being played: move the subscription when it is another one
         if (!ReferenceEquals(_subscribedTo, variables))
         {
+            DungeonMakerNamesContext.ResetSession();
+
             if (_subscribedTo != null)
             {
                 _subscribedTo.VariableValueChanged -= OnVariableChanged;
@@ -382,7 +403,7 @@ internal static class DungeonMakerCommandsContext
         // acting character, unless the save kept one (just below).
         foreach (var command in Commands)
         {
-            if (!Waiting.ContainsKey(command.Key) &&
+            if (!DungeonMakerNamesContext.IsOwnRequest(command.Key) && !Waiting.ContainsKey(command.Key) &&
                 SoloTeleports.All(x => x.Expected || x.Variable != command.Key) &&
                 variables.TryFindVariable(command.Key, out var variable) && variable is
                 {
@@ -414,7 +435,8 @@ internal static class DungeonMakerCommandsContext
         // running now is in Started.
         foreach (var command in Commands.Keys)
         {
-            if (StringValueOf(variables, command + StatusSuffix) == StatusRunning &&
+            if (StringValueOf(variables, DungeonMakerNamesContext.Written(command + StatusSuffix)) ==
+                StatusRunning &&
                 Started.All(x => x.Variable != command))
             {
                 WriteStatus(command, StatusCancelled);
@@ -1288,15 +1310,22 @@ internal static class DungeonMakerCommandsContext
 
         var name = variable.Name;
 
+        // a command or request name this campaign uses for something else (see DungeonMakerNamesContext)
+        if (DungeonMakerNamesContext.IsOwnRequest(name))
+        {
+            return;
+        }
+
+        if (DungeonMakerNamesContext.WrongType(name, variable.Type))
+        {
+            DungeonMakerNamesContext.MarkOwnRequest(name,
+                $"it is a {variable.Type} variable, which this command never is");
+
+            return;
+        }
+
         if (Commands.TryGetValue(name, out var kind))
         {
-            if (variable.Type != GameVariableDefinitions.Type.String)
-            {
-                ReportOnce(ref _lastTypeReport, $"DM command '{name}' ignored: the variable must be a String.");
-
-                return;
-            }
-
             Capture(kind, name, variable.StringValue, _operation);
         }
         else if (name == ListVariable)
@@ -1342,28 +1371,33 @@ internal static class DungeonMakerCommandsContext
                 return false;
             }
 
-            if (variables.IsVariableRegistered(SavedStateVariable))
-            {
-                // A campaign's own variable of this name is not touched unless it is a String (WriteString); a
-                // leftover of the mod's is reused.
-                _savedStateMade = false;
-                WriteString(SavedStateVariable, text);
+            // The first of Commands_SavedState, Commands_SavedState_2, ... that is not a variable of the campaign
+            // (user direction, 2026-11-16: the mod's variable must never overwrite a campaign's). It is made here
+            // and taken out again by AfterVariablesSaved, so it is always the mod's own.
+            var name = SavedStateName(0);
 
-                return StringValueOf(variables, SavedStateVariable) == text;
+            for (var i = 1; i < SavedStateNames && variables.IsVariableRegistered(name); i++)
+            {
+                name = SavedStateName(i);
+            }
+
+            if (variables.IsVariableRegistered(name))
+            {
+                return false;
             }
 
             _writing++;
 
             try
             {
-                variables.RegisterVariable(SavedStateVariable, GameVariableDefinitions.Scope.Campaign, text);
+                variables.RegisterVariable(name, GameVariableDefinitions.Scope.Campaign, text);
             }
             finally
             {
                 _writing--;
             }
 
-            _savedStateMade = true;
+            _savedStateMade = name;
 
             return true;
         }
@@ -1380,27 +1414,29 @@ internal static class DungeonMakerCommandsContext
     {
         try
         {
-            RemoveSavedState(ServiceRepository.GetService<IGameVariableService>(), _savedStateMade);
+            if (_savedStateMade != null)
+            {
+                Unregister(ServiceRepository.GetService<IGameVariableService>(), _savedStateMade);
+            }
         }
         catch (Exception e)
         {
             Main.Error($"DM commands: could not remove the saved commands variable: {e.Message}");
         }
 
-        _savedStateMade = false;
+        _savedStateMade = null;
     }
 
-    // empties the mod's variable, and takes it out of the campaign's variables when the mod put it there
-    private static void RemoveSavedState(IGameVariableService variables, bool unregister)
+    // Commands_SavedState, then Commands_SavedState_2, _3, ...
+    private static string SavedStateName(int index)
     {
-        if (variables == null || !variables.IsVariableRegistered(SavedStateVariable))
-        {
-            return;
-        }
+        return index == 0 ? SavedStateVariable : $"{SavedStateVariable}_{index + 1}";
+    }
 
-        WriteString(SavedStateVariable, string.Empty);
-
-        if (!unregister)
+    // takes one of the mod's own variables out of the campaign's variables
+    private static void Unregister(IGameVariableService variables, string name)
+    {
+        if (variables == null || !variables.IsVariableRegistered(name))
         {
             return;
         }
@@ -1409,7 +1445,7 @@ internal static class DungeonMakerCommandsContext
 
         try
         {
-            variables.UnregisterVariable(SavedStateVariable);
+            variables.UnregisterVariable(name);
         }
         finally
         {
@@ -1417,9 +1453,40 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
+    // After a load: finds the mod's saved-state variable among Commands_SavedState, Commands_SavedState_2, ...,
+    // takes it out of the campaign's variables and returns its text, or null when the save has none. Only a
+    // String variable whose text starts with the mod's signature is the mod's; a campaign's own variable of one
+    // of these names is neither read nor touched.
+    private static string TakeSavedState(IGameVariableService variables)
+    {
+        for (var i = 0; i < SavedStateNames; i++)
+        {
+            var name = SavedStateName(i);
+
+            if (!variables.IsVariableRegistered(name))
+            {
+                // the mod took the first free name when it saved, so there is none beyond a free one
+                return null;
+            }
+
+            var text = StringValueOf(variables, name);
+
+            if (text == null || !text.StartsWith(SavedStateSignature + ";", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            Unregister(variables, name);
+
+            return text;
+        }
+
+        return null;
+    }
+
     // What is waiting, as one line of text, or "" when nothing is. Entries are separated by ';' and their fields
-    // by ','; every field is escaped (Uri.EscapeDataString), so names can hold anything. The first entry is the
-    // format's version. A flow is named by its gadget's unique name and its flow id, which is how the game itself
+    // by ','; every field is escaped (Uri.EscapeDataString), so names can hold anything. It starts with the mod's
+    // signature and the format's version. A flow is named by its gadget's unique name and its flow id, which is how the game itself
     // names them in a save (GameSector.SerializeElements, GameGadget.flowsSaveData); a character by its id, which
     // the game saves with it (RulesetEntity's "Guid" attribute).
     //   C gadget flow record   a flow that is triggered and has not started, with who is behind it
@@ -1468,7 +1535,9 @@ internal static class DungeonMakerCommandsContext
             }
         }
 
-        return entries.Count == 0 ? string.Empty : SavedStateVersion + ";" + string.Join(";", entries);
+        return entries.Count == 0
+            ? string.Empty
+            : SavedStateSignature + ";" + SavedStateVersion + ";" + string.Join(";", entries);
     }
 
     // OnLocationReady, after a load: takes the saved state out of the campaign's variables (so it is in a save
@@ -1483,14 +1552,9 @@ internal static class DungeonMakerCommandsContext
     private static Dictionary<string, string[]> RestoreState(IGameVariableService variables, GameLocation location)
     {
         var waiting = new Dictionary<string, string[]>();
-        var text = StringValueOf(variables, SavedStateVariable);
+        var entries = (TakeSavedState(variables) ?? string.Empty).Split(';');
 
-        // the mod made the variable for the save; a campaign's own variable of that name is only emptied
-        RemoveSavedState(variables, !string.IsNullOrEmpty(text));
-
-        var entries = (text ?? string.Empty).Split(';');
-
-        if (entries.Length < 2 || entries[0] != SavedStateVersion)
+        if (entries.Length < 3 || entries[0] != SavedStateSignature || entries[1] != SavedStateVersion)
         {
             return waiting;
         }
@@ -1500,7 +1564,7 @@ internal static class DungeonMakerCommandsContext
             .GroupBy(x => x.UniqueNameId)
             .Where(x => x.Count() == 1)
             .ToDictionary(x => x.Key, x => x.First());
-        var fields = entries.Skip(1).Select(Unpack).Where(x => x.Length > 0).ToList();
+        var fields = entries.Skip(2).Select(Unpack).Where(x => x.Length > 0).ToList();
         var restored = 0;
 
         GameGadgetListener Find(string gadgetName, string flowId)
@@ -1682,6 +1746,22 @@ internal static class DungeonMakerCommandsContext
     // Teleport_Node nothing is replaced: the request joins the queue.
     private static void Capture(Kind kind, string variableName, string value, FunctorParametersDescription operation)
     {
+        if (DungeonMakerNamesContext.IsOwnRequest(variableName))
+        {
+            return;
+        }
+
+        // A text that names nothing, here or anywhere in the campaign, was never meant as a command: the campaign
+        // uses this name for something of its own. Nothing is done with it, and nothing of an earlier command
+        // either (user direction, 2026-11-16).
+        if (!string.IsNullOrEmpty(value) && NamesNothing(kind, variableName, value))
+        {
+            DungeonMakerNamesContext.MarkOwnRequest(variableName,
+                $"the campaign wrote '{value}' into it, and nothing in the campaign goes by that name");
+
+            return;
+        }
+
         var queued = kind == Kind.TeleportOne;
         var replaced = !queued && Waiting.Remove(variableName);
 
@@ -1733,6 +1813,37 @@ internal static class DungeonMakerCommandsContext
         }
 
         WriteStatus(variableName, StatusPending);
+    }
+
+    // Can this text never be the target of this command? True only when nothing in the loaded location goes by
+    // the name now (looked up as the command itself would) and nothing in the campaign's data does either (every
+    // location's gadgets, and for a dialogue the campaign's NPCs, so something that is not there yet, such as an
+    // NPC that spawns later or a gadget of another location, still counts as a name). Without campaign data
+    // (the game's own campaigns) it is never true, and the command waits and fails as before.
+    private static bool NamesNothing(Kind kind, string variableName, string value)
+    {
+        var location = CurrentLocation;
+
+        if (location == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var here = kind is Kind.Dialog or Kind.Roll
+                ? FindInteractionTargets(value).Count > 0
+                : WorldGadgets().Any(x => Same(x.name, value) || Same(x.GameGadget?.UniqueNameId, value));
+
+            return !here &&
+                   !DungeonMakerNamesContext.CampaignKnows(variableName, value, location.UserCampaign,
+                       location.UserLocation, out var hasData) && hasData;
+        }
+        catch (Exception)
+        {
+            // when in doubt it is a command
+            return false;
+        }
     }
 
     // the listener (the flow) of the gadget whose Variable Operation this is
@@ -2864,7 +2975,8 @@ internal static class DungeonMakerCommandsContext
     // the optional <command>_Status variable
     internal static void WriteStatus(string commandVariable, string status)
     {
-        WriteString(commandVariable + StatusSuffix, status);
+        // to the name the mod writes to in this campaign (another one when the campaign owns that name)
+        WriteString(DungeonMakerNamesContext.Written(commandVariable + StatusSuffix), status);
     }
 
     // A request that a newer one has replaced no longer speaks for the variable. One-character teleports are not

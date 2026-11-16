@@ -102,8 +102,29 @@ internal static class DungeonMakerClockContext
     // six steps = one in-game day per gadget update; the longest skip (180 days) takes about three seconds
     private const int StepsPerTick = 6;
 
-    private static readonly string[] SkipVariables =
+    internal static readonly string[] SkipVariables =
         [SkipHoursVariable, SkipDaysVariable, SkipToDayVariable, SkipToHourVariable];
+
+    // The clock's other names by what they are, for DungeonMakerNamesContext: the read-outs only the mod writes,
+    // the switches a campaign writes, the counters both write, and the two the mod makes for a running skip.
+    internal static readonly string[] ReadoutVariables =
+    [
+        HourVariable, MinuteVariable, DayVariable, DayOfMonthVariable, MonthVariable, YearVariable,
+        CampaignDayVariable
+    ];
+
+    internal static readonly string[] SwitchVariables =
+        [CountMinutesVariable, CountHoursVariable, CountDaysVariable];
+
+    internal static readonly string[] CounterVariables =
+        [MinutesElapsedVariable, HoursElapsedVariable, DaysElapsedVariable];
+
+    internal static readonly string[] OwnVariables = [SkipRemainingVariable, SkipTargetVariable];
+
+    // The names the mod writes to for its two own variables with the campaign being played: another name when
+    // the campaign uses that one for something of its own (DungeonMakerNamesContext.Written).
+    private static string SkipRemainingName => DungeonMakerNamesContext.Written(SkipRemainingVariable);
+    private static string SkipTargetName => DungeonMakerNamesContext.Written(SkipTargetVariable);
 
     private static SkipJob _job;
     private static bool _skipRequested;
@@ -122,7 +143,7 @@ internal static class DungeonMakerClockContext
     internal static bool HoldTimers =>
         _job != null ||
         (ServiceRepository.GetService<IGameVariableService>() is { } variables &&
-         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable) > 0);
+         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName) > 0);
 
     private static bool BattleInProgress =>
         ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
@@ -150,7 +171,7 @@ internal static class DungeonMakerClockContext
         // A skip was running when this game was saved: its requests were already set back to 0 and the rest of it
         // was only in memory, so without this the remainder would be lost and its status would say Running for
         // good. The requests that belong to it are the ones whose status still says Running.
-        var remaining = (long)DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingVariable);
+        var remaining = (long)DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName);
 
         if (_job != null || remaining <= 0)
         {
@@ -160,7 +181,7 @@ internal static class DungeonMakerClockContext
         // A skip to a given hour or day ends at that moment, not after a duration: whatever time passed since the
         // checkpoint (travel between two locations) counts towards it. A skip by a number of hours or days keeps
         // what was left of it.
-        var target = DungeonMakerCommandsContext.IntValueOf(variables, SkipTargetVariable);
+        var target = DungeonMakerCommandsContext.IntValueOf(variables, SkipTargetName);
 
         if (target > 0)
         {
@@ -176,8 +197,8 @@ internal static class DungeonMakerClockContext
 
         foreach (var name in SkipVariables)
         {
-            if (DungeonMakerCommandsContext.StringValueOf(
-                    variables, name + DungeonMakerCommandsContext.StatusSuffix) ==
+            if (DungeonMakerCommandsContext.StringValueOf(variables,
+                    DungeonMakerNamesContext.Written(name + DungeonMakerCommandsContext.StatusSuffix)) ==
                 DungeonMakerCommandsContext.StatusRunning)
             {
                 _job.Variables.Add(name);
@@ -359,17 +380,17 @@ internal static class DungeonMakerClockContext
     // OnLocationReady)
     private static void Checkpoint()
     {
-        DungeonMakerCommandsContext.EnsureInt(SkipRemainingVariable);
-        DungeonMakerCommandsContext.EnsureInt(SkipTargetVariable);
-        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, (int)Math.Max(0, _job.Remaining));
-        DungeonMakerCommandsContext.WriteInt(SkipTargetVariable, _job.TargetMinute);
+        DungeonMakerCommandsContext.EnsureInt(SkipRemainingName);
+        DungeonMakerCommandsContext.EnsureInt(SkipTargetName);
+        DungeonMakerCommandsContext.WriteInt(SkipRemainingName, (int)Math.Max(0, _job.Remaining));
+        DungeonMakerCommandsContext.WriteInt(SkipTargetName, _job.TargetMinute);
     }
 
     private static void EndJob(string status)
     {
         // nothing is left to resume: the skip is done, or a battle ended it
-        DungeonMakerCommandsContext.WriteInt(SkipRemainingVariable, 0);
-        DungeonMakerCommandsContext.WriteInt(SkipTargetVariable, 0);
+        DungeonMakerCommandsContext.WriteInt(SkipRemainingName, 0);
+        DungeonMakerCommandsContext.WriteInt(SkipTargetName, 0);
 
         foreach (var name in _job.Variables)
         {
@@ -396,16 +417,24 @@ internal static class DungeonMakerClockContext
     {
         var info = time.TimeInfo;
 
-        DungeonMakerCommandsContext.WriteInt(HourVariable, info.Hour);
-        DungeonMakerCommandsContext.WriteInt(MinuteVariable, info.Minute);
-        DungeonMakerCommandsContext.WriteInt(DayVariable, time.CampaignDay);
-        DungeonMakerCommandsContext.WriteInt(DayOfMonthVariable, info.Day);
-        DungeonMakerCommandsContext.WriteInt(MonthVariable, info.Month);
-        DungeonMakerCommandsContext.WriteInt(YearVariable, info.Year);
+        // each to the name the mod writes to in this campaign (another one when the campaign owns that name)
+        Write(HourVariable, info.Hour);
+        Write(MinuteVariable, info.Minute);
+        Write(DayVariable, time.CampaignDay);
+        Write(DayOfMonthVariable, info.Day);
+        Write(MonthVariable, info.Month);
+        Write(YearVariable, info.Year);
 
         if (TryGetCampaignDay(info, out var campaignDay))
         {
-            DungeonMakerCommandsContext.WriteInt(CampaignDayVariable, campaignDay);
+            Write(CampaignDayVariable, campaignDay);
+        }
+
+        return;
+
+        static void Write(string name, int value)
+        {
+            DungeonMakerCommandsContext.WriteInt(DungeonMakerNamesContext.Written(name), value);
         }
     }
 

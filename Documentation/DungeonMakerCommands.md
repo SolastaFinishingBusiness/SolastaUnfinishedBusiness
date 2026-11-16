@@ -88,9 +88,8 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 - The mod's own writes are not links of a chain: a Variable Activator on `Roll_Trigger_Status`, on a `Clock_`
   variable or on a command variable being emptied starts a new chain with no acting character. Your own gadgets
   writing to those variables are ordinary writes, and carry their character.
-- The mod writes a status into `<command>_Status` whenever that variable exists and is a String, whatever else you
-  use it for: it overwrites what you put there. If you use such a name for something of your own, make it an Int
-  or a Bool (the mod then leaves it alone), or pick another name.
+- If your campaign uses one of the mod's names for something of its own, the mod keeps out of its way: see
+  "When your campaign already uses one of these names" below.
 - When two characters set off the same target before it has run, the game runs it once, for the first of them.
 - When a command fails, a message at the top of the screen says so. For `Roll_Trigger` and `Teleport_Node` it also
   says what started it when that can't tell who acts (a timer, a Variable Activator, a quest step...). The mod's log
@@ -100,7 +99,8 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 - A game saved while one of these commands was waiting, or in the middle of a chain, keeps its acting character:
   the mod writes who is behind each waiting command, each gadget that is set off but has not run yet, each timer a
   character set going and the queue of one-character teleports into the save, in a String variable named
-  `Commands_SavedState` that exists in the save only (don't use that name). What is lost over a save and load is
+  `Commands_SavedState` that exists in the save only. If your campaign has a variable of that name, the mod uses
+  `Commands_SavedState_2` (and so on), and never reads or changes yours. What is lost over a save and load is
   what the game itself does not keep: a gadget that was in the middle of its steps (waiting before it writes, for
   instance) is not resumed, and an Area Activator or pressure plate that had not run yet is worked out again from
   who stands in it, so it only acts if exactly one character does.
@@ -109,6 +109,63 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 Typical set-up for an automatic check: an Area Activator whose Variable Operation sets `Roll_Trigger` to the name of
 the Roll Activator. Whoever walks in rolls. It works the same when the Area Activator instead activates a separate
 Variable Operation gadget that sets `Roll_Trigger`.
+
+## When your campaign already uses one of these names
+
+A campaign made before these commands existed, or one that simply picked the same name, is not disturbed.
+
+**Names only the mod writes** are the clock read-outs (`Clock_Hour`, `Clock_Minute`, `Clock_Day`,
+`Clock_DayOfMonth`, `Clock_Month`, `Clock_Year`, `Clock_CampaignDay`), every `<command>_Status`, and the mod's own
+`Clock_SkipRemainingSeconds` and `Clock_SkipTargetMinute`.
+
+- If your campaign **writes** one of them itself (a Variable Operation gadget, or a Variable Operation among the
+  actions of a dialogue line, a quest step or a quest outcome), the name is yours. The mod then writes to
+  `<name>_2` instead, or `<name>_3`, and so on: the first one your campaign doesn't write either. Create that
+  variable if you want what the mod writes.
+- Reading one (a Variable Activator, a dialogue or quest condition) is what they are for, and changes nothing.
+- A `_Status` name is also yours when you test it for a text the mod never writes (anything but `Pending`,
+  `Running`, `Succeeded`, `Failed`, `Cancelled`). Setting a status back to an empty text does not make it yours.
+- The counters (`Clock_MinutesElapsed`, `Clock_HoursElapsed`, `Clock_DaysElapsed`) are shared on purpose: the
+  mod adds to them and you set them back, so they are never moved.
+- This is worked out from the campaign each time a location loads, and `Player.log` has one line for each name
+  moved, such as: ``DM names: `Clock_Hour` is the campaign's own; the mod writes its read-out to `Clock_Hour_2`.``
+
+**Names you write to ask for something** (`Dialog_Trigger`, `Roll_Trigger`, `Teleport_Node`,
+`Teleport_PartyNode`, `Dialog_ListGadgets`, the `Torches_` and `Torch_<name>` variables, the `Clock_Skip`
+variables) can't be moved, since you are the one writing them. Instead:
+
+- if the variable has a type the command never has (a command is a String, the others are Int), or
+- if what is written into a command names nothing in the location and nothing anywhere in the campaign,
+
+the mod takes the variable to be your own for the rest of that game: it does nothing, shows no message, leaves the
+variable as it is, and says so once in `Player.log`. A command that names something real and can't be carried
+out still fails with its message, as before. So a mistyped name is no longer reported while playing; the editor
+points it out while you type (next section).
+
+## Hints while you type, in the editor
+
+- **A variable's name** that the mod uses shows a hint above the field, as you type it: what the mod does with
+  that name, and, for a name the mod writes, the name it will use instead if your campaign writes that one
+  itself. It appears in the window that creates or renames a campaign variable, and in the variable field of a
+  gadget's parameters and of a dialogue's or quest's actions and conditions.
+- **The text written into `Dialog_Trigger`, `Roll_Trigger`, `Teleport_Node` or `Teleport_PartyNode`** shows a
+  warning above the field when nothing goes by that name, with the closest names. For a Variable Operation gadget
+  the names are those of its own location (that is where it will write); for an action of a dialogue or a quest
+  they are those of every location of the campaign. Capital and small letters don't matter, as in the commands.
+- A hint only informs: nothing is changed or refused.
+
+## The mod's version in campaign files
+
+When the Dungeon Maker saves a campaign, or a location on its own, the mod adds its version to the file as one
+extra field at the start (`"finishingBusinessVersion"`), for instance `1.17.0` or `1.17.0-dev.0be2ed8d`.
+
+- A game without the mod loads the file as before: the field is ignored. If that game saves the campaign again,
+  the field is gone, so a file never claims a version that didn't write it.
+- A development build carries the last release's number and the commit it was built from. It is **newer** than
+  that release and older than the next one (the opposite of the usual rule for a `-something` suffix). Two
+  development builds of the same number can't be ordered from the text alone.
+- Nothing is compared or refused yet. `Player.log` says which version a campaign file was saved with when the file
+  is read and when the campaign is played.
 
 ## Teleporting one character
 

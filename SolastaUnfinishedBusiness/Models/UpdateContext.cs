@@ -1232,3 +1232,99 @@ internal static class UpdateContext
         }
     }
 }
+
+// A version of this mod as a build carries it, and how two of them are ordered.
+//
+// A release is "X.Y.Z". A development build is "X.Y.Z-dev.<first 8 characters of its commit>", where X.Y.Z is the
+// LAST RELEASE's version: the version only rises in the commit that makes a release, so everything built from
+// develop in between carries the old number (the project file's FbComputeBuildVersion). The order is therefore
+//     release X.Y.Z  <  any development build X.Y.Z-dev.*  <  the next release.
+// This is the reverse of Semantic Versioning's rule for a "-something" suffix, where 1.17.0-dev would come BEFORE
+// 1.17.0. Do not compare these with a SemVer library or with System.Version (which rejects the suffix).
+//
+// Two development builds of the same X.Y.Z can't be ordered from their versions: the commit says which code it
+// was, not when. Compare returns null for them (unless they are the same commit); telling them apart needs the
+// git history. Nothing in the mod compares or refuses anything by these yet; the Dungeon Maker campaign stamp
+// (DungeonMakerStampContext) only records and logs them.
+internal readonly struct ModBuildVersion
+{
+    private const string DevelopmentMark = "-dev.";
+
+    internal readonly int Major;
+    internal readonly int Minor;
+    internal readonly int Patch;
+
+    // null for a release; the commit a development build was made from
+    [CanBeNull] internal readonly string Commit;
+
+    internal bool IsDevelopment => Commit != null;
+
+    private ModBuildVersion(int major, int minor, int patch, string commit)
+    {
+        Major = major;
+        Minor = minor;
+        Patch = patch;
+        Commit = commit;
+    }
+
+    // "1.17.0" or "1.17.0-dev.0be2ed8d"; anything else (the old four-part versions included) is not parsed
+    internal static bool TryParse([CanBeNull] string text, out ModBuildVersion version)
+    {
+        version = default;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        text = text.Trim();
+
+        string commit = null;
+        var mark = text.IndexOf(DevelopmentMark, StringComparison.Ordinal);
+
+        if (mark >= 0)
+        {
+            commit = text.Substring(mark + DevelopmentMark.Length);
+            text = text.Substring(0, mark);
+
+            if (commit.Length == 0)
+            {
+                return false;
+            }
+        }
+
+        var parts = text.Split('.');
+
+        if (parts.Length != 3 || !int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor) ||
+            !int.TryParse(parts[2], out var patch) || major < 0 || minor < 0 || patch < 0)
+        {
+            return false;
+        }
+
+        version = new ModBuildVersion(major, minor, patch, commit);
+
+        return true;
+    }
+
+    // Negative when a is older than b, positive when it is newer, 0 when they are the same build, and null when
+    // they are two different development builds of the same release, which the versions alone can't order.
+    internal static int? Compare(ModBuildVersion a, ModBuildVersion b)
+    {
+        var numbers = a.Major != b.Major ? a.Major.CompareTo(b.Major)
+            : a.Minor != b.Minor ? a.Minor.CompareTo(b.Minor)
+            : a.Patch.CompareTo(b.Patch);
+
+        if (numbers != 0)
+        {
+            return numbers;
+        }
+
+        if (!a.IsDevelopment || !b.IsDevelopment)
+        {
+            // the release comes first, a development build of it after
+            return a.IsDevelopment.CompareTo(b.IsDevelopment);
+        }
+
+        return string.Equals(a.Commit, b.Commit, StringComparison.OrdinalIgnoreCase) ? 0 : null;
+    }
+}
