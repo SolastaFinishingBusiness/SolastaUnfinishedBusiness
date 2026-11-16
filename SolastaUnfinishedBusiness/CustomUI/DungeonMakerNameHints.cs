@@ -665,10 +665,12 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
 
         // A chosen name closes the list until the author edits the text again: the name's own "value changed"
         // would otherwise open it at once on every name that starts the same (seen in game on 9f49bbd6).
+        // Both flags are set before the text: its setter raises "value changed" at once, which refreshes the
+        // list (Codex's review of 269d166a: with the flag set after, picking Node reopened the list on NodeEast).
         _picked = true;
+        _closedByPick = true;
         Field.text = name;
         _picked = false;
-        _closedByPick = true;
 
         if (Field.isFocused)
         {

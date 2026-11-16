@@ -274,6 +274,7 @@ internal static class DungeonMakerCommandsPopup
 
         _dim.SetActive(true);
         _dim.transform.SetAsLastSibling();
+        _openOn = screen;
     }
 
     private static void Close()
@@ -281,6 +282,41 @@ internal static class DungeonMakerCommandsPopup
         if (_dim)
         {
             _dim.SetActive(false);
+        }
+
+        _openOn = null;
+    }
+
+    // the editor the list was opened over, while it is open
+    private static GuiScreen _openOn;
+
+    internal static bool IsOpen => _dim && _dim.activeSelf;
+
+    // The editors' HandleInput, before it runs (Codex's review of 269d166a: the list only blocked the mouse, and
+    // the editor behind it still acted on its keys: Delete, Undo, and Escape, which left the editor with the list
+    // still on screen). While the list is open it takes the editor's commands: Cancel (Escape) closes the list,
+    // every other command is swallowed. Returns false when the editor must not act on the command.
+    internal static bool LetEditorHandle(InputCommands.Id command)
+    {
+        if (!IsOpen)
+        {
+            return true;
+        }
+
+        if (command == InputCommands.Id.Cancel)
+        {
+            Close();
+        }
+
+        return false;
+    }
+
+    // The editors' OnEndHide: the list goes with the editor it was opened over.
+    internal static void OnEditorHidden(GuiScreen screen)
+    {
+        if (IsOpen && (!_openOn || ReferenceEquals(_openOn, screen)))
+        {
+            Close();
         }
     }
 

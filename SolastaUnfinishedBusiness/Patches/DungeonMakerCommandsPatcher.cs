@@ -558,6 +558,62 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: while the commands list is open over one of these editors, it takes the editor's keyboard commands
+    //(Escape closes it, the rest do nothing), and it closes when the editor is hidden (DungeonMakerCommandsPopup)
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_HandleInput
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.HandleInput));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.HandleInput));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.HandleInput));
+        }
+
+        [UsedImplicitly]
+        public static bool Prefix(InputCommands.Id command, ref bool __result)
+        {
+            if (DungeonMakerCommandsPopup.LetEditorHandle(command))
+            {
+                return true;
+            }
+
+            // handled: the game's input service stops looking for another handler
+            __result = true;
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_OnEndHide
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.OnEndHide));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.OnEndHide));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.OnEndHide));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GuiScreen __instance)
+        {
+            DungeonMakerCommandsPopup.OnEditorHidden(__instance);
+        }
+    }
+
     //PATCH: Dungeon Maker editor: the keys of the gadget-name suggestions list (DungeonMakerNameSuggestions,
     //"CHOOSING WITH THE KEYS"). KeyPressed is where a TMP text field handles one key-down event. For the one field
     //whose list is open, Up, Down, Escape, and Enter or Tab on a highlighted row are used for the list, and the

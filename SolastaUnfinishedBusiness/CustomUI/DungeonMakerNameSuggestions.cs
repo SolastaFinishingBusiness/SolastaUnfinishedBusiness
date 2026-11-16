@@ -268,6 +268,10 @@ internal static class DungeonMakerNameSuggestions
             row.Background.raycastTarget = true;
             row.Label = DungeonMakerNameHints.NewLabel(rect, fieldText);
             row.Label.enableWordWrapping = false;
+
+            // a gadget's name is shown as typed, never read as rich text (a name holding "<size=200>" would
+            // otherwise change or hide its row; Codex's review of 269d166a)
+            row.Label.richText = false;
             row.Label.overflowMode = TextOverflowModes.Ellipsis;
             row.Label.alignment = TextAlignmentOptions.MidlineLeft;
             row.Label.rectTransform.anchorMin = row.Label.rectTransform.anchorMax =
