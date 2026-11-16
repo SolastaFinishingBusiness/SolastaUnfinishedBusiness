@@ -6,8 +6,12 @@
 # "SolastaUnfinishedBusiness-<version>-dev.<commit>" for testing, and nothing is released. Artifacts are kept for a
 # limited time (user direction, 2026-11-02: "build from any branch, but ensure that the lifespan of artifacts will be
 # limited"): 14 days for develop's builds, which are the release candidates, and 5 days for every other branch's.
-# Versions (user direction, 2026-11-02): Info.json holds the last release's version between releases; the release
-# commit raises it and renames ChangelogHistory.txt's "Unreleased:" entry to it. A development build (every build but
+# Versions (user direction, 2026-11-16, replacing 2026-11-02's "the last release's version between releases"):
+# right after a release, develop's Info.json is raised to the next minor version (1.18.0 after 1.17.0), so its
+# development builds sort above every earlier release and below their own release (SemVer pre-release order, used by
+# the in-game updater). The release commit sets the final number from what the release holds (kept, lowered to a
+# patch such as 1.17.1, or raised to a major) and gathers unreleased/ into ChangelogHistory.txt.
+# A development build (every build but
 # a tag's) is marked "<version>-dev.<first 8 characters of the commit>" in its built Info.json (the project file's
 # StampBuildVersion); a tag's build carries the plain version.
 

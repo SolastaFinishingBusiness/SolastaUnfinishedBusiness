@@ -257,9 +257,14 @@ internal static class UpdateContext
         }
     }
 
-    // part by part as numbers, so 1.6.10.0 is newer than 1.6.9.0; a missing part counts as 0. A development build's
-    // mark ("-dev.<commit>", see the project file's StampBuildVersion) is left out, so such a build counts as its
-    // release's version: no update back to that release, and an update to the next one
+    // part by part as numbers, so 1.6.10.0 is newer than 1.6.9.0; a missing part counts as 0. Ties go by SemVer's
+    // pre-release rule: a development build's mark ("-dev.<commit>", see the project file's StampBuildVersion) makes
+    // it older than the release with the same numbers, so 1.17.1 < 1.18.0-dev.<commit> < 1.18.0, and the updater
+    // offers a tester the release their build leads to.
+    // This relies on develop carrying the next version from right after a release (1.18.0 after 1.17.0, set by a
+    // commit just after the release), so its builds sort above every release before them. Before 1.18.0 develop kept
+    // the last release's number and the mark was ignored; such "1.17.0-dev" builds now read as older than 1.17.0.
+    // Two marked builds with the same numbers compare equal: the mark holds a commit, which has no order
     private static int CompareVersions(string left, string right)
     {
         var a = WithoutMark(left).Split('.');
@@ -276,7 +281,13 @@ internal static class UpdateContext
             }
         }
 
-        return 0;
+        // same numbers: a marked (development) build is older than the plain release
+        return HasMark(right).CompareTo(HasMark(left));
+    }
+
+    private static bool HasMark(string version)
+    {
+        return version.IndexOf('-') >= 0;
     }
 
     // the version without a pre-release mark: everything from the first "-" on
