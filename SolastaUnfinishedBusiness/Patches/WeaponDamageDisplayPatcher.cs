@@ -391,8 +391,19 @@ public static class WeaponDamageDisplayPatcher
         }
     }
 
-    //PATCH: the effect line has put a damage breakdown in its tooltip: a shortened one keeps the full text too
-    [HarmonyPatch(typeof(FeatureElementEffectLine), nameof(FeatureElementEffectLine.Bind))]
+    //PATCH: the effect line has put a damage breakdown in its tooltip: a shortened one keeps the full text too.
+    //Bind has two overloads (this one, and Bind(string specialFormsDescription)), so the arguments are named:
+    //without them Harmony can't tell which is meant, and the mod's loader skips a patch it can't resolve (Codex's
+    //review of 7bc7b18f), which left the pair hidden with no way to see it.
+    [HarmonyPatch(typeof(FeatureElementEffectLine), nameof(FeatureElementEffectLine.Bind),
+        [
+            typeof(EffectForm), typeof(bool), typeof(int), typeof(bool), typeof(bool), typeof(Gui.VersatilityDisplay),
+            typeof(int), typeof(string), typeof(RuleDefinitions.EffectApplication)
+        ],
+        [
+            ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Ref, ArgumentType.Normal,
+            ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal
+        ])]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class FeatureElementEffectLine_Bind
