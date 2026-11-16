@@ -27,8 +27,8 @@ namespace SolastaUnfinishedBusiness.Patches;
 // The dice line of the tooltip is right already (the game adds the enhancement to the form's bonus there), and it
 // reads the same DamageRollModifier value, so that value is not touched.
 //
-// The breakdown (2) is shortened only while "Hide weapon damage bonuses that cancel each other out" is on (Mod UI >
-// Dungeon Maker, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of its item
+// The breakdown (2) is shortened only while "Hide weapon damage bonuses that cancel each other out" is on (Gameplay >
+// Campaigns, Combat section, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of its item
 // (user, 2026-11-16: "applying to all and not just the Dungeon Maker ones (though, generally only Dungeon Maker ones
 // would have these I guess)"). The full list is then still there while Alt is held, the way the game shows a
 // detailed tooltip (see ShowTooltip below).

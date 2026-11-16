@@ -129,12 +129,6 @@ internal static class DungeonMakerDisplay
             Main.Settings.UnleashEnemyAsNpc = toggle;
         }
 
-        toggle = Main.Settings.HideCancellingWeaponDamageBonuses;
-        if (UI.Toggle(Gui.Localize("ModUi/&HideCancellingWeaponDamageBonuses"), ref toggle))
-        {
-            Main.Settings.HideCancellingWeaponDamageBonuses = toggle;
-        }
-
         DisplayListTools();
 
         UI.Label();
