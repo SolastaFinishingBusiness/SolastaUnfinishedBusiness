@@ -70,14 +70,27 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 | something a character interacted with | that character |
 | a gadget that one of the above activated (its "Activate" target, for example a Variable Operation), through any number of gadgets | the character that set off the first gadget |
 | a Success or Failure target of a Roll Activator, or a gadget one of them activated | the character who rolled |
-| a Timed, Variable, Quest or Entry Activator, a dialogue, a button set off by damage, or a gadget activated by one of these | none: the command fails and says so |
+| a Variable Activator or Quest Activator reacting to a variable or quest step that a character's gadget changed | that character |
+| a line of a dialogue (its own action), or something reacting to what a dialogue's action changed | the character whose gadget started the dialogue: who talked to the NPC, who walked into the area that starts it, or the acting character of `Dialog_Trigger` |
+| a Timed Activator that a character's gadget enabled (or whose time it reset) | that character, each time it fires, until something else enables or disables it |
+| a button or other gadget set off by damage, by a spell or effect, by a revealed tag or by a theft | the party member or guest who did it |
+| a timer that runs from the start, an Entry Activator, a quest the game advanced, the cheats panel, an enemy's hit, or a gadget activated by one of these | none: the command fails and says so |
 
+- A chain can mix these in any number: an area activates a gadget that sets a variable, a Variable Activator
+  reacts and advances a quest, a Quest Activator enables a Timed Activator, and the timer's target writes
+  `Teleport_Node`. The character who walked into the area is teleported.
 - When several characters arrive at once (the party entering the location, a party teleport), nobody "walked in".
   The command then only works if exactly one character is in the area. The same goes for a chain of activated
   gadgets whose start the mod couldn't trace to one character.
-- A chain is followed from gadget to gadget only through activations (and enabling). A variable is not a link:
-  when a gadget a character set off writes a variable and a Variable Activator reacts to it, what the Variable
-  Activator activates has no acting character. The same goes for a quest step and a Quest Activator.
+- A dialogue goes by who started it, not by who speaks: the game hands out the speaking roles itself.
+- A timer keeps the character who set it going only while it stays as that character left it. Enabled or reset
+  by something that has no character, or disabled, it has none any more.
+- The mod's own writes are not links of a chain: a Variable Activator on `Roll_Trigger_Status`, on a `Clock_`
+  variable or on a command variable being emptied starts a new chain with no acting character. Your own gadgets
+  writing to those variables are ordinary writes, and carry their character.
+- The mod writes a status into `<command>_Status` whenever that variable exists and is a String, whatever else you
+  use it for: it overwrites what you put there. If you use such a name for something of your own, make it an Int
+  or a Bool (the mod then leaves it alone), or pick another name.
 - When two characters set off the same target before it has run, the game runs it once, for the first of them.
 - When a command fails, a message at the top of the screen says so. For `Roll_Trigger` and `Teleport_Node` it also
   says what started it when that can't tell who acts (a timer, a Variable Activator, a quest step...). The mod's log

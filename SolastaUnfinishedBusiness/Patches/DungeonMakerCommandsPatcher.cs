@@ -113,42 +113,26 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: a gadget's condition changed, or an event was raised on it: if that switched one of its flows on while
-    //another flow was running, the flow inherits who set that one off. These two are the only ways the game
-    //passes an activation from one flow to another (the only callers of GameGadget.SetCondition and
-    //RaiseGadgetEvent are seven functors, and each calls them inside its own step), so every such functor is
-    //covered here without a patch of its own. The state is "triggered" before the call.
-    [HarmonyPatch]
+    //PATCH: a flow of a gadget became triggered: it gets the record of whoever is behind that (the flow that
+    //switched it on, the dialogue step, the character who set its timer going or who damaged the gadget). Every
+    //kind of flow reports its trigger to the gadget through this one method (the gadget gives it to each of its
+    //listeners as their handler), so one patch covers conditions, gadget events, variables, quest steps, timers and
+    //the rest, where a patch per kind would need some twenty methods and miss the next kind.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.ListenerStatusChanged))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class GameGadgetListener_SwitchedOn
+    public static class GameGadget_ListenerStatusChanged
     {
         [UsedImplicitly]
-        public static IEnumerable<MethodBase> TargetMethods()
+        public static void Postfix(GameGadgetListener listener)
         {
-            yield return AccessTools.Method(typeof(GameGadgetListenerConditionToggle),
-                nameof(GameGadgetListenerConditionToggle.ConditionStatusChanged));
-            yield return AccessTools.Method(typeof(GameGadgetListenerGadgetEvent),
-                nameof(GameGadgetListenerGadgetEvent.GadgetEventRaised));
-        }
-
-        [UsedImplicitly]
-        public static void Prefix(GameGadgetListener __instance, out bool __state)
-        {
-            __state = __instance.IsTriggered;
-        }
-
-        [UsedImplicitly]
-        public static void Postfix(GameGadgetListener __instance, bool __state)
-        {
-            DungeonMakerCommandsContext.NoteFlowSwitchedOn(__instance, __state, __instance.IsTriggered);
+            DungeonMakerCommandsContext.NoteListenerStatusChanged(listener);
         }
     }
 
-    //PATCH: the game starts the flow of a trigger it noted: from here on the flow acts for the character who
-    //caused that trigger (an area's or a pressure plate's, an interaction's), or who set off the flow that
-    //switched this one on (a condition's or a gadget event's). Each listener type overrides AcknowledgeTrigger
-    //itself, so each override is patched.
+    //PATCH: the game starts the flow of a trigger it noted: from here on the flow acts for whoever is behind that
+    //trigger. Each kind of flow overrides AcknowledgeTrigger itself (the base method is empty), so every override
+    //in the game is patched; they are looked up, so a kind is not left out by a list going stale.
     [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -157,22 +141,188 @@ public static class DungeonMakerCommandsPatcher
         [UsedImplicitly]
         public static IEnumerable<MethodBase> TargetMethods()
         {
-            yield return AccessTools.Method(typeof(GameGadgetListenerVolumetricTrigger),
-                nameof(GameGadgetListenerVolumetricTrigger.AcknowledgeTrigger));
-            yield return AccessTools.Method(typeof(GameGadgetListenerPressurePlate),
-                nameof(GameGadgetListenerPressurePlate.AcknowledgeTrigger));
-            yield return AccessTools.Method(typeof(GameGadgetListenerCharacterInteraction),
-                nameof(GameGadgetListenerCharacterInteraction.AcknowledgeTrigger));
-            yield return AccessTools.Method(typeof(GameGadgetListenerConditionToggle),
-                nameof(GameGadgetListenerConditionToggle.AcknowledgeTrigger));
-            yield return AccessTools.Method(typeof(GameGadgetListenerGadgetEvent),
-                nameof(GameGadgetListenerGadgetEvent.AcknowledgeTrigger));
+            foreach (var type in AccessTools.GetTypesFromAssembly(typeof(GameGadgetListener).Assembly))
+            {
+                if (!type.IsSubclassOf(typeof(GameGadgetListener)))
+                {
+                    continue;
+                }
+
+                var method = AccessTools.DeclaredMethod(type, nameof(GameGadgetListener.AcknowledgeTrigger),
+                    Type.EmptyTypes);
+
+                if (method != null && !method.IsAbstract)
+                {
+                    yield return method;
+                }
+            }
         }
 
         [UsedImplicitly]
         public static void Prefix(GameGadgetListener __instance)
         {
-            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
+            DungeonMakerCommandsContext.NoteFlowStarted(__instance);
+        }
+    }
+
+    //PATCH: a condition of a gadget changed: if that completes, or breaks, the conditions one of the gadget's
+    //timers waits for, the timer is set going, or stopped, by whoever's flow did it. The state is the condition's
+    //value before the call (null when the gadget did not have it yet). Nothing is changed.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.SetCondition))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_SetCondition
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadget __instance, int conditionIndex, out bool? __state)
+        {
+            __state = __instance.currentConditionStates != null &&
+                      __instance.currentConditionStates.TryGetValue(conditionIndex, out var before)
+                ? before
+                : null;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GameGadget __instance, int conditionIndex, bool state, bool? __state)
+        {
+            DungeonMakerCommandsContext.NoteConditionSet(__instance, conditionIndex, __state, state);
+        }
+    }
+
+    //PATCH: a flow resets its gadget's timers (the "reset time lapse" step): whoever's flow that is sets them going
+    [HarmonyPatch(typeof(FunctorResetTimeLapse), nameof(FunctorResetTimeLapse.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FunctorResetTimeLapse_Execute
+    {
+        [UsedImplicitly]
+        public static void Prefix(FunctorParametersDescription functorParameters)
+        {
+            DungeonMakerCommandsContext.NoteTimersReset(functorParameters);
+        }
+    }
+
+    //PATCH: know who did something to the character bound to a gadget (a button or lever that can be attacked)
+    //while the game tells the gadget about it. The game hands these four methods the character, but passes only
+    //the amount, the kind or the tag on to the gadget's flows. The state goes back when the method ends.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterDamaged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterDamaged
+    {
+        [UsedImplicitly]
+        public static void Prefix(ulong sourceGuid, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(sourceGuid, "damaged by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterAlterationInflicted))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterAlterationInflicted
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetActor source, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(source?.Guid ?? 0, "a spell or effect of");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterTagRevealed))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterTagRevealed
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameLocationCharacter revealedBy, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(revealedBy, "revealed by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterCharacterWasStolenItems))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterCharacterWasStolenItems
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetCharacter thief, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(thief?.Guid ?? 0, "stolen from by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    //PATCH: a gadget flow's "start dialogue" step built its dialogue (or observation): the dialogue belongs to
+    //whoever set that flow off. Both of the game's start-dialogue functors build it through these methods.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class NarrativeDirectionManager_PrepareSequence
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(NarrativeDirectionManager),
+                nameof(NarrativeDirectionManager.PrepareDialogSequence));
+            yield return AccessTools.Method(typeof(NarrativeDirectionManager),
+                nameof(NarrativeDirectionManager.PrepareObservationSequence));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(NarrativeSequence __result)
+        {
+            DungeonMakerCommandsContext.NoteSequencePrepared(__result);
+        }
+    }
+
+    //PATCH: know when the game carries out the actions of a dialogue step, and for which dialogue: what they set
+    //off (a variable, a quest step, a condition) acts for whoever the dialogue belongs to. This is the only place
+    //a dialogue runs functors (NarrativeState.End calls it).
+    [HarmonyPatch(typeof(NarrativeState), nameof(NarrativeState.ExecuteFunctors))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class NarrativeState_ExecuteFunctors
+    {
+        [UsedImplicitly]
+        public static void Prefix(NarrativeState __instance, out bool __state)
+        {
+            DungeonMakerCommandsContext.BeginNarrativeActions(__instance);
+            __state = true;
+        }
+
+        // the state says the prefix ran, so each end has its beginning
+        [UsedImplicitly]
+        public static void Finalizer(bool __state)
+        {
+            if (__state)
+            {
+                DungeonMakerCommandsContext.EndNarrativeActions();
+            }
         }
     }
 
