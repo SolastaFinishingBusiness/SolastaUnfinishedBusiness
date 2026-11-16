@@ -762,8 +762,10 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
 
         // Suggestions first: while a command's target is typed, the names to pick from take the place of any
         // hint. The one name that is already typed in full is no suggestion. With nothing to offer, the
-        // missing-name warning below gets its turn, so the two are never shown together.
-        if (active && _suggest != null && !_closedByPick)
+        // missing-name warning below gets its turn, so the two are never shown together. With the suggestions
+        // switched off in Mod UI > Dungeon Maker, this is skipped altogether, so the warning still shows (Codex's
+        // review of a5509289: the list's own guard hid the list, but returning here hid the warning too).
+        if (active && _suggest != null && !_closedByPick && !Main.Settings.DisableDungeonMakerNameSuggestions)
         {
             System.Collections.Generic.List<string> names = null;
             var typed = (Field.text ?? string.Empty).Trim();
