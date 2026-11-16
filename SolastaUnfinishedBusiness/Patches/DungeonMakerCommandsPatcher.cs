@@ -532,6 +532,30 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: Dungeon Maker editor: the keys of the gadget-name suggestions list (DungeonMakerNameSuggestions,
+    //"CHOOSING WITH THE KEYS"). KeyPressed is where a TMP text field handles one key-down event. For the one field
+    //whose list is open, Up, Down, Escape, and Enter or Tab on a highlighted row are used for the list, and the
+    //event is turned into a tab character, which a single-line field ignores (KeyPressed returns "go on editing"
+    //for it before anything else is done with the character), so the field neither ends its editing nor moves its
+    //caret. For every other field, and every other key, the prefix does nothing at all.
+    [HarmonyPatch(typeof(TMPro.TMP_InputField), "KeyPressed")]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class TMP_InputField_KeyPressed
+    {
+        [UsedImplicitly]
+        public static void Prefix(TMPro.TMP_InputField __instance, UnityEngine.Event evt)
+        {
+            if (!DungeonMakerNameSuggestions.HandleKey(__instance, evt))
+            {
+                return;
+            }
+
+            evt.keyCode = UnityEngine.KeyCode.None;
+            evt.character = '\t';
+        }
+    }
+
     //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
     [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

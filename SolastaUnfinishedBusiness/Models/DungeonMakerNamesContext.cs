@@ -522,6 +522,52 @@ internal static class DungeonMakerNamesContext
         }
     }
 
+    // The names to offer while this text is typed as a command's target (CustomUI/DungeonMakerNameSuggestions),
+    // best first, at most max of them:
+    //   - the likely names for the command before the other gadgets (TargetNames.Likely, Others);
+    //   - within each, names that start with the text, then names that contain it, then names a few letters away
+    //     from it (the same distance rule as Closest), each by how close they are and then by name;
+    //   - with nothing typed yet, every name counts as a match, so the likely names lead.
+    // Capital and small letters don't matter, as in the commands. A name that fits in none of these ways is left
+    // out, so a text that names nothing gets no suggestion and the missing-name warning shows instead.
+    internal static List<string> Suggest(TargetNames names, string value, int max)
+    {
+        if (names == null)
+        {
+            return [];
+        }
+
+        value ??= string.Empty;
+
+        var allowed = Math.Max(2, value.Length * 2 / 5);
+
+        return names.Likely.Select(x => (Name: x, Kind: 0))
+            .Concat(names.Others.Select(x => (Name: x, Kind: 1)))
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.First())
+            .Select(x => (x.Name, x.Kind, Match: MatchOf(x.Name),
+                Distance: value.Length == 0 ? 0 : Distance(x.Name, value)))
+            .Where(x => x.Match < 2 || x.Distance <= allowed)
+            .OrderBy(x => x.Kind)
+            .ThenBy(x => x.Match)
+            .ThenBy(x => x.Distance)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(max)
+            .Select(x => x.Name)
+            .ToList();
+
+        // 0: starts with the text (or nothing is typed), 1: contains it, 2: neither
+        int MatchOf(string name)
+        {
+            if (value.Length == 0 || name.StartsWith(value, StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            return name.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0 ? 1 : 2;
+        }
+    }
+
     // only: look in this location alone (a gadget writes its variable in its own location); null for the whole
     // campaign (a dialogue's or a quest's action can run anywhere). Null when there is nothing to look in.
     internal static TargetNames Targets(string command, UserCampaign campaign, UserLocation only)
@@ -615,6 +661,36 @@ internal static class DungeonMakerNamesContext
 
         return previous[b.Length];
     }
+
+    #endregion
+
+    #region Every name, for the editor's list
+
+    // Every name the mod uses, in the groups the editor's commands list shows them in (CustomUI/
+    // DungeonMakerCommandsPopup): the title's translation term and the names. What each name does is NameHint's
+    // text, so the list and the hints can't drift apart. The torch-by-name variable stands for all of its kind.
+    internal static IEnumerable<(string TitleTerm, string[] Names)> Catalogue()
+    {
+        var statuses = Commands.Concat(DungeonMakerClockContext.SkipVariables)
+            .Select(x => x + DungeonMakerCommandsContext.StatusSuffix)
+            .ToArray();
+
+        yield return ("ModUi/&DungeonMakerCommandsGroupCommands", Commands);
+        yield return ("ModUi/&DungeonMakerCommandsGroupRequests",
+        [
+            DungeonMakerCommandsContext.ListVariable, DungeonMakerCommandsContext.TorchesVariable,
+            DungeonMakerCommandsContext.TorchesAutoVariable, TorchByNameExample,
+            .. DungeonMakerClockContext.SkipVariables, .. DungeonMakerClockContext.SwitchVariables
+        ]);
+        yield return ("ModUi/&DungeonMakerCommandsGroupReadouts",
+            [.. DungeonMakerClockContext.ReadoutVariables, .. DungeonMakerClockContext.CounterVariables]);
+        yield return ("ModUi/&DungeonMakerCommandsGroupStatuses", statuses);
+        yield return ("ModUi/&DungeonMakerCommandsGroupOwn",
+            [.. DungeonMakerClockContext.OwnVariables, DungeonMakerCommandsContext.SavedStateVariable]);
+    }
+
+    // how the list writes "Torch_ followed by a torch's name" (no angle brackets: the list is rich text)
+    internal const string TorchByNameExample = DungeonMakerCommandsContext.TorchVariablePrefix + "(torch)";
 
     #endregion
 

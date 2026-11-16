@@ -1,0 +1,328 @@
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+namespace SolastaUnfinishedBusiness.CustomUI;
+
+// The list of gadget names offered while the text of a command variable is typed in the Dungeon Maker (issue #42;
+// user direction, 2026-11-16: "Suggestions for any command that would require the name of a gadget that show as
+// the user types it in, with the ability to select the one desired").
+//
+// WHERE: the text value of a Variable Operation that writes Dialog_Trigger, Roll_Trigger, Teleport_Node or
+// Teleport_PartyNode: a gadget's parameter in the location editor (the names of that location) and an action's
+// parameter in the dialogue and quest editors (the names of every location; the list sits below the field there,
+// as the hints do). Which names, and in which order, is DungeonMakerNamesContext.Suggest's business. The fields and
+// their hints are DungeonMakerNameHints'; this file is only the list.
+//
+// THE LIST is a panel of the mod's own in the tooltip look (the hint's panel pieces), with one row per name, at
+// most MaxRows, so it has a known height and is placed like a hint: clear of the field and inside the screen. It
+// is shown instead of the field's hint, never with it (DungeonMakerFieldHint.Refresh).
+//
+// CHOOSING WITH THE MOUSE, and the focus (user: "Can you not treat focus on the list as focus on the text itself
+// then? Or have them share focus"). A click outside a text field takes the focus from it: Unity's input module
+// deselects the selected object when the pointer goes down on something else, BEFORE it sends that something the
+// pointer-down (PointerInputModule.DeselectIfSelectionChanged, called first in ProcessMousePress). So when the
+// field loses the focus while the pointer is on this list, the list stays open (DungeonMakerFieldHint.
+// OnDeselected asks PointerOver), the row then gets its pointer-down, puts its name into the field and gives the
+// focus back to it. While the field is without the focus the list closes as soon as the pointer is off it, so
+// any other click closes it.
+//
+// CHOOSING WITH THE KEYS (user: "arrow keys and enter should only be used for suggestions while the actual
+// suggestion panel is open"). TMP_InputField handles its keys in KeyPressed, one call per key-down event. A prefix
+// there (DungeonMakerCommandsPatcher) hands the event to HandleKey first, and only for the one field whose list
+// is open: Up and Down move the highlight, Enter and Tab put the highlighted name in, Escape closes the list. A
+// key used here is turned into a harmless one before the field sees it (a tab character, which a single-line
+// field ignores), so Enter doesn't also end the editing and the arrows don't move the caret. With nothing
+// highlighted, Enter and Tab are the field's own, and with the list closed every key is.
+internal static class DungeonMakerNameSuggestions
+{
+    internal const int MaxRows = 8;
+
+    private const string PanelName = "FbNameSuggestions";
+    private const float MinWidth = 220f;
+    private const float MaxWidth = 520f;
+    private const float PaddingX = 10f;
+    private const float PaddingY = 6f;
+    private const float RowPaddingX = 8f;
+    private const float RowPaddingY = 3f;
+
+    private static readonly Color RowColor = new(1f, 1f, 1f, 0f);
+    private static readonly Color HighlightColor = new(1f, 1f, 1f, 0.16f);
+
+    private static RectTransform _rect;
+    private static Color _textColor = Color.white;
+    private static readonly List<Row> Rows = [];
+    private static readonly List<string> Names = [];
+    private static DungeonMakerFieldHint _owner;
+
+    // the highlighted row, by the mouse or the keys; -1 for none
+    private static int _selected = -1;
+
+    private static bool IsOpen => _rect && _rect.gameObject.activeSelf && _owner;
+
+    // Shows these names for this field, replacing whatever the list showed.
+    internal static void Show(DungeonMakerFieldHint owner, List<string> names)
+    {
+        var field = owner ? owner.Field : null;
+        var target = field ? field.transform as RectTransform : null;
+        var nearest = target ? target.GetComponentInParent<Canvas>() : null;
+        var canvas = nearest ? nearest.rootCanvas : null;
+
+        if (!canvas || names == null || names.Count == 0)
+        {
+            Hide(owner);
+
+            return;
+        }
+
+        EnsurePanel(canvas.transform, field.textComponent);
+
+        // the same names as before keep their highlight (the list is worked out again at every key)
+        var same = ReferenceEquals(_owner, owner) && Names.Count == names.Count;
+
+        for (var i = 0; same && i < names.Count; i++)
+        {
+            same = Names[i] == names[i];
+        }
+
+        _owner = owner;
+        Names.Clear();
+        Names.AddRange(names.Count > MaxRows ? names.GetRange(0, MaxRows) : names);
+
+        if (!same)
+        {
+            _selected = -1;
+        }
+
+        // as wide as the longest name needs, at least as wide as the field, up to MaxWidth
+        var width = Mathf.Max(MinWidth, target.rect.width - (2 * PaddingX));
+        var rowHeight = 0f;
+
+        for (var i = 0; i < Rows.Count; i++)
+        {
+            var row = Rows[i];
+            var used = i < Names.Count;
+
+            row.gameObject.SetActive(used);
+
+            if (!used)
+            {
+                continue;
+            }
+
+            row.Label.text = Names[i];
+
+            var wanted = row.Label.GetPreferredValues(Names[i]);
+
+            width = Mathf.Max(width, wanted.x + (2 * RowPaddingX));
+            rowHeight = Mathf.Max(rowHeight, wanted.y + (2 * RowPaddingY));
+        }
+
+        width = Mathf.Min(width, MaxWidth);
+
+        for (var i = 0; i < Names.Count; i++)
+        {
+            var rect = (RectTransform)Rows[i].transform;
+
+            rect.sizeDelta = new Vector2(width, rowHeight);
+            rect.anchoredPosition = new Vector2(0f, -PaddingY - (i * rowHeight));
+            Rows[i].Label.rectTransform.sizeDelta = new Vector2(width - (2 * RowPaddingX), rowHeight);
+        }
+
+        _rect.sizeDelta = new Vector2(width + (2 * PaddingX), (Names.Count * rowHeight) + (2 * PaddingY));
+        _rect.gameObject.SetActive(true);
+        _rect.SetAsLastSibling();
+        Highlight();
+        DungeonMakerNameHints.Place(_rect, target, owner.Below);
+    }
+
+    internal static void Hide(DungeonMakerFieldHint owner)
+    {
+        if (_rect && ReferenceEquals(_owner, owner))
+        {
+            _owner = null;
+            _selected = -1;
+            _rect.gameObject.SetActive(false);
+        }
+    }
+
+    // Is the mouse pointer on this field's open list? (Asked when the field loses the focus, and while it is
+    // without it.)
+    internal static bool PointerOver(DungeonMakerFieldHint owner)
+    {
+        if (!IsOpen || !ReferenceEquals(_owner, owner))
+        {
+            return false;
+        }
+
+        var canvas = _rect.GetComponentInParent<Canvas>();
+        var root = canvas ? canvas.rootCanvas : null;
+        var camera = root && root.renderMode != RenderMode.ScreenSpaceOverlay ? root.worldCamera : null;
+
+        return RectTransformUtility.RectangleContainsScreenPoint(_rect, Input.mousePosition, camera);
+    }
+
+    // TMP_InputField.KeyPressed, before it runs, for every text field of the game: true when this key was used
+    // for the list, and the field must not act on it. False at once for any field but the one whose list is open,
+    // and for a multi-line field (the "harmless key" the event is turned into would be typed into one).
+    internal static bool HandleKey(TMP_InputField field, Event key)
+    {
+        if (!IsOpen || key == null || !ReferenceEquals(_owner.Field, field) || field.multiLine ||
+            Names.Count == 0)
+        {
+            return false;
+        }
+
+        switch (key.keyCode)
+        {
+            case KeyCode.DownArrow:
+                _selected = _selected + 1 >= Names.Count ? 0 : _selected + 1;
+                Highlight();
+
+                return true;
+            case KeyCode.UpArrow:
+                _selected = _selected <= 0 ? Names.Count - 1 : _selected - 1;
+                Highlight();
+
+                return true;
+            case KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Tab when _selected >= 0:
+                Apply(_selected);
+
+                return true;
+            case KeyCode.Escape:
+                Hide(_owner);
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static void Apply(int index)
+    {
+        var owner = _owner;
+
+        if (!owner || index < 0 || index >= Names.Count)
+        {
+            return;
+        }
+
+        var name = Names[index];
+
+        // closed first: the field's "value changed" works the list out again, and the name typed in full offers
+        // nothing more
+        Hide(owner);
+        owner.Apply(name);
+    }
+
+    private static void Highlight()
+    {
+        for (var i = 0; i < Rows.Count; i++)
+        {
+            Rows[i].Background.color = i == _selected ? HighlightColor : RowColor;
+        }
+    }
+
+    private static void EnsurePanel(Transform canvas, TMP_Text fieldText)
+    {
+        if (_rect)
+        {
+            if (_rect.parent != canvas)
+            {
+                _rect.SetParent(canvas, false);
+            }
+
+            return;
+        }
+
+        // above the hint's panel; it takes clicks
+        _rect = DungeonMakerNameHints.NewPanel(canvas, PanelName, DungeonMakerNameHints.HintOrder + 1, true);
+
+        for (var i = 0; i < MaxRows; i++)
+        {
+            var rowObject = new GameObject($"Row{i}", typeof(RectTransform), typeof(Image));
+            var rect = rowObject.GetComponent<RectTransform>();
+
+            // rows hang from the panel's top, one under the other
+            rect.SetParent(_rect, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+
+            var row = rowObject.AddComponent<Row>();
+
+            row.Index = i;
+            row.Background = rowObject.GetComponent<Image>();
+            row.Background.color = RowColor;
+            row.Background.raycastTarget = true;
+            row.Label = DungeonMakerNameHints.NewLabel(rect, fieldText);
+            row.Label.enableWordWrapping = false;
+            row.Label.overflowMode = TextOverflowModes.Ellipsis;
+            row.Label.alignment = TextAlignmentOptions.MidlineLeft;
+            row.Label.rectTransform.anchorMin = row.Label.rectTransform.anchorMax =
+                row.Label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            row.Label.rectTransform.anchoredPosition = Vector2.zero;
+            Rows.Add(row);
+        }
+
+        // the tooltip's background layers go under the rows; every row's text gets the tooltip's font
+        _textColor = DungeonMakerNameHints.StyleLikeTooltip(_rect, Rows[0].Label) ?? _textColor;
+
+        foreach (var row in Rows)
+        {
+            row.transform.SetAsLastSibling();
+            row.Label.font = Rows[0].Label.font;
+            row.Label.fontSharedMaterial = Rows[0].Label.fontSharedMaterial;
+            row.Label.fontSize = Rows[0].Label.fontSize;
+            row.Label.fontStyle = Rows[0].Label.fontStyle;
+            row.Label.color = _textColor;
+        }
+
+        _rect.gameObject.AddComponent<Follower>();
+        _rect.gameObject.SetActive(false);
+    }
+
+    // one name of the list: highlighted under the pointer, chosen when the pointer goes down on it
+    private sealed class Row : MonoBehaviour, IPointerEnterHandler, IPointerDownHandler
+    {
+        internal Image Background;
+        internal int Index;
+        internal TextMeshProUGUI Label;
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (eventData.button == PointerEventData.InputButton.Left)
+            {
+                Apply(Index);
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            _selected = Index;
+            Highlight();
+        }
+    }
+
+    // Keeps the list on its field, and closes it when the field is gone, or is without the focus and the pointer
+    // is not on the list (a click elsewhere, or the pointer leaving after a click on the list's edge).
+    private sealed class Follower : MonoBehaviour
+    {
+        private void LateUpdate()
+        {
+            var owner = _owner;
+
+            if (!owner || !owner.isActiveAndEnabled || !owner.Field ||
+                (!owner.HasFocus && !PointerOver(owner)))
+            {
+                _owner = null;
+                _selected = -1;
+                gameObject.SetActive(false);
+
+                return;
+            }
+
+            DungeonMakerNameHints.Place(_rect, owner.Field.transform as RectTransform, owner.Below);
+        }
+    }
+}

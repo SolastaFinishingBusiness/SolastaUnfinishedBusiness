@@ -42,6 +42,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //   - It is shown only while the field has the keyboard focus and has something to say, is worked out again at
 //     every key, and goes when the field loses the focus, is hidden, or the text is fine.
 //   - It takes no clicks (nothing in it is a raycast target), and it changes nothing of the campaign.
+//   - While the text of a command variable is typed, the list of gadget names to choose from takes its place
+//     (DungeonMakerNameSuggestions); the missing-name warning shows only when that list has nothing to offer.
+// The panel pieces (NewPanel, NewLabel, StyleLikeTooltip, Place) are shared with that list and with the commands
+// list (DungeonMakerCommandsPopup).
 //
 // COLOURED NAMES (user, 2026-11-16: "mark red the variables that would explicitly clash with variables used by
 // the mod for automation? Then, mark a special colour for variables that have a special effect (like
@@ -72,6 +76,9 @@ internal static class DungeonMakerNameHints
 
     // each text's own colour, as the game left it, from the first time it is coloured
     private static readonly ConditionalWeakTable<TMP_Text, object> GameColors = new();
+
+    // the suggestions list is drawn above the hint, and the commands list's own window below both
+    internal const int HintOrder = 32000;
 
     private static GameObject _panel;
     private static RectTransform _rect;
@@ -119,22 +126,36 @@ internal static class DungeonMakerNameHints
                 IsVariable() ? DungeonMakerNamesContext.NameHint(text, line.UserCampaign, line.UserLocation) : null,
             colorName: IsVariable);
 
-        DungeonMakerFieldHint.Attach(line.stringField, true, text =>
+        // The variable this gadget writes, when this line is its text value: its "variable" parameter. Null for
+        // any other line, so the field then says and offers nothing.
+        string WrittenVariable()
         {
-            if (line.UserGadgetParameterValue?.GadgetParameterDescription?.Type !=
-                GadgetBlueprintDefinitions.Type.VariableValueString)
-            {
-                return null;
-            }
+            return line.UserGadgetParameterValue?.GadgetParameterDescription?.Type !=
+                   GadgetBlueprintDefinitions.Type.VariableValueString
+                ? null
+                : line.UserGadget?.ParameterValues?
+                    .FirstOrDefault(x =>
+                        x?.GadgetParameterDescription?.Type == GadgetBlueprintDefinitions.Type.Variable)?
+                    .StringValue;
+        }
 
-            // the variable this gadget writes: its "variable" parameter
-            var variable = line.UserGadget?.ParameterValues?
-                .FirstOrDefault(x =>
-                    x?.GadgetParameterDescription?.Type == GadgetBlueprintDefinitions.Type.Variable)?
-                .StringValue;
+        // the names of this location: that is where the gadget will write
+        DungeonMakerFieldHint.Attach(line.stringField, true,
+            text => DungeonMakerNamesContext.ValueHint(
+                WrittenVariable(), text, line.UserCampaign, line.UserLocation),
+            suggest: text => Suggestions(WrittenVariable(), text, line.UserCampaign, line.UserLocation));
+    }
 
-            return DungeonMakerNamesContext.ValueHint(variable, text, line.UserCampaign, line.UserLocation);
-        });
+    // The gadget names to offer for this text, when the variable is one of the four commands that take a name
+    // (the same lookup as the missing-name warning, DungeonMakerNamesContext.ValueHint); null otherwise.
+    private static System.Collections.Generic.List<string> Suggestions(
+        string variable, string text, UserCampaign campaign, UserLocation location)
+    {
+        return DungeonMakerNamesContext.RoleOf(variable, out _) != DungeonMakerNamesContext.Role.Command
+            ? null
+            : DungeonMakerNamesContext.Suggest(
+                DungeonMakerNamesContext.Targets(variable, campaign, location), text,
+                DungeonMakerNameSuggestions.MaxRows);
     }
 
     // UserParameterItem.CommondBind: one parameter of an action or a condition in the dialogue and quest editors
@@ -158,12 +179,18 @@ internal static class DungeonMakerNameHints
             true, IsVariable);
 
         // a Variable Operation action keeps its variable in its first text (see DungeonMakerNamesContext)
-        DungeonMakerFieldHint.Attach(item.stringField, true, text =>
-            item.parameterType == UserParameterDefinitions.Type.VariableOperationValueString &&
-            item.functorParametersDescription != null
-                ? DungeonMakerNamesContext.ValueHint(
-                    item.functorParametersDescription.StringParameter, text, item.UserCampaign, null)
-                : null, true);
+        string WrittenVariable()
+        {
+            return item.parameterType == UserParameterDefinitions.Type.VariableOperationValueString
+                ? item.functorParametersDescription?.StringParameter
+                : null;
+        }
+
+        // the names of every location: such an action can run in any of them
+        DungeonMakerFieldHint.Attach(item.stringField, true,
+            text => DungeonMakerNamesContext.ValueHint(WrittenVariable(), text, item.UserCampaign, null),
+            true,
+            suggest: text => Suggestions(WrittenVariable(), text, item.UserCampaign, null));
     }
 
     // UserVariableLine.BindSpecific: a row of the campaign editor's variable list or of the variable picker was
@@ -251,7 +278,7 @@ internal static class DungeonMakerNameHints
 
         _panel.SetActive(true);
         _rect.SetAsLastSibling();
-        Place(target);
+        Place(_rect, target, _below);
     }
 
     internal static void Hide(DungeonMakerFieldHint owner)
@@ -265,9 +292,9 @@ internal static class DungeonMakerNameHints
 
     // Above the field, centred on it and kept inside the screen; below it when there is no room above. Worked out
     // in the canvas's own space, so the canvas's scale and render mode don't matter.
-    private static void Place(RectTransform target)
+    internal static void Place(RectTransform panel, RectTransform target, bool below)
     {
-        if (!_rect || _rect.parent is not RectTransform canvas || !target)
+        if (!panel || panel.parent is not RectTransform canvas || !target)
         {
             return;
         }
@@ -277,20 +304,20 @@ internal static class DungeonMakerNameHints
         // corners: bottom left, top left, top right, bottom right
         var top = canvas.InverseTransformPoint((Corners[1] + Corners[2]) / 2f);
         var bottom = canvas.InverseTransformPoint((Corners[0] + Corners[3]) / 2f);
-        var size = _rect.sizeDelta;
+        var size = panel.sizeDelta;
         var area = canvas.rect;
         var roomAbove = top.y + Gap + size.y <= area.yMax - Margin;
         var roomBelow = bottom.y - Gap - size.y >= area.yMin + Margin;
 
         // the side the field asks for, unless only the other one has room
-        var above = _below ? !roomBelow && roomAbove : roomAbove;
+        var above = below ? !roomBelow && roomAbove : roomAbove;
         var half = size.x / 2f;
         var x = area.width > size.x + (2 * Margin)
             ? Mathf.Clamp(top.x, area.xMin + half + Margin, area.xMax - half - Margin)
             : top.x;
 
-        _rect.pivot = new Vector2(0.5f, above ? 0f : 1f);
-        _rect.localPosition = new Vector3(x, above ? top.y + Gap : bottom.y - Gap, 0f);
+        panel.pivot = new Vector2(0.5f, above ? 0f : 1f);
+        panel.localPosition = new Vector3(x, above ? top.y + Gap : bottom.y - Gap, 0f);
     }
 
     private static void EnsurePanel(Transform canvas, TMP_Text fieldText)
@@ -305,46 +332,70 @@ internal static class DungeonMakerNameHints
             return;
         }
 
-        _panel = new GameObject(PanelName, typeof(RectTransform), typeof(Image), typeof(Canvas));
-        _rect = _panel.GetComponent<RectTransform>();
-        _rect.SetParent(canvas, false);
-        _rect.anchorMin = _rect.anchorMax = new Vector2(0.5f, 0.5f);
-        _rect.localScale = Vector3.one;
+        _rect = NewPanel(canvas, PanelName, HintOrder, false);
+        _panel = _rect.gameObject;
+        _label = NewLabel(_rect, fieldText);
+        _label.rectTransform.anchorMin = _label.rectTransform.anchorMax =
+            _label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        _label.rectTransform.anchoredPosition = Vector2.zero;
+        _textColor = StyleLikeTooltip(_rect, _label) ?? _textColor;
+        _panel.AddComponent<DungeonMakerHintFollower>();
+        _panel.SetActive(false);
+    }
 
-        // above every screen and window of the editor, whatever their order in the canvas
-        var order = _panel.GetComponent<Canvas>();
+    // A panel of the mod's own on this canvas, drawn above the editor's screens and windows whatever their order
+    // in the canvas: a dark box, to be dressed with StyleLikeTooltip. clickable: it takes clicks (the suggestions
+    // list and the commands list); the hint doesn't, so that it never gets between the author and the editor.
+    internal static RectTransform NewPanel(Transform canvas, string name, int order, bool clickable)
+    {
+        var panel = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Canvas));
+        var rect = panel.GetComponent<RectTransform>();
 
-        order.overrideSorting = true;
-        order.sortingOrder = 32000;
+        rect.SetParent(canvas, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.localScale = Vector3.one;
 
-        var background = _panel.GetComponent<Image>();
+        var sorting = panel.GetComponent<Canvas>();
 
-        background.raycastTarget = false;
+        sorting.overrideSorting = true;
+        sorting.sortingOrder = order;
+
+        var background = panel.GetComponent<Image>();
+
+        background.raycastTarget = clickable;
         background.color = new Color(0.06f, 0.06f, 0.08f, 0.96f);
 
+        if (clickable)
+        {
+            // a canvas that sorts itself needs its own raycaster for its children to be clicked
+            panel.AddComponent<GraphicRaycaster>();
+        }
+
+        return rect;
+    }
+
+    // a text for such a panel: the field's font until StyleLikeTooltip gives it the tooltip's
+    internal static TextMeshProUGUI NewLabel(RectTransform parent, TMP_Text fieldText)
+    {
         var textObject = new GameObject("Text", typeof(RectTransform));
-        var textRect = textObject.GetComponent<RectTransform>();
 
-        textRect.SetParent(_rect, false);
-        textRect.anchorMin = textRect.anchorMax = textRect.pivot = new Vector2(0.5f, 0.5f);
-        textRect.anchoredPosition = Vector2.zero;
+        textObject.GetComponent<RectTransform>().SetParent(parent, false);
 
-        _label = textObject.AddComponent<TextMeshProUGUI>();
-        _label.raycastTarget = false;
-        _label.enableWordWrapping = true;
-        _label.richText = true;
-        _label.alignment = TextAlignmentOptions.TopLeft;
-        _label.fontSize = 18f;
+        var label = textObject.AddComponent<TextMeshProUGUI>();
+
+        label.raycastTarget = false;
+        label.enableWordWrapping = true;
+        label.richText = true;
+        label.alignment = TextAlignmentOptions.TopLeft;
+        label.fontSize = 18f;
 
         if (fieldText)
         {
-            _label.font = fieldText.font;
-            _label.fontSize = Mathf.Max(16f, fieldText.fontSize);
+            label.font = fieldText.font;
+            label.fontSize = Mathf.Max(16f, fieldText.fontSize);
         }
 
-        StyleLikeTooltip(background);
-        _panel.AddComponent<DungeonMakerHintFollower>();
-        _panel.SetActive(false);
+        return label;
     }
 
     // Takes the look of the game's tooltip.
@@ -367,8 +418,13 @@ internal static class DungeonMakerNameHints
     // panel prefab and so kept the input field's font, the editor's serif capitals.
     //
     // Whatever is missing keeps the plain look: a dark box and the field's font.
-    private static void StyleLikeTooltip(Image background)
+    //
+    // panel: the panel to dress (the hint's, the suggestions list's, the commands list's window); label: a text to
+    // give the tooltip's font, or null. Returns the tooltip's text colour, or null when it could not be taken.
+    internal static Color? StyleLikeTooltip(RectTransform panel, TMP_Text label)
     {
+        Color? textColor = null;
+
         try
         {
             if (ServiceRepository.GetService<ITooltipService>() is not GuiManager
@@ -376,7 +432,7 @@ internal static class DungeonMakerNameHints
                     tooltipClassDefinitions: { } classes
                 })
             {
-                return;
+                return null;
             }
 
             var definition = classes.TryGetValue(GuiManager.DefaultTooltipClass, out var standard) && standard
@@ -385,7 +441,7 @@ internal static class DungeonMakerNameHints
 
             if (!definition)
             {
-                return;
+                return null;
             }
 
             var prefab = definition.TooltipPanelPrefab;
@@ -404,7 +460,7 @@ internal static class DungeonMakerNameHints
                         continue;
                     }
 
-                    var copy = UnityEngine.Object.Instantiate(child.gameObject, _rect, false);
+                    var copy = UnityEngine.Object.Instantiate(child.gameObject, panel, false);
 
                     copy.name = child.name;
                     copy.GetComponent<Image>().raycastTarget = false;
@@ -420,20 +476,27 @@ internal static class DungeonMakerNameHints
 
             if (text)
             {
-                _label.font = text.font;
-                _label.fontSharedMaterial = text.fontSharedMaterial;
-                _label.fontSize = text.fontSize;
-                _label.fontStyle = text.fontStyle;
-                _textColor = text.color;
+                if (label)
+                {
+                    label.font = text.font;
+                    label.fontSharedMaterial = text.fontSharedMaterial;
+                    label.fontSize = text.fontSize;
+                    label.fontStyle = text.fontStyle;
+                }
+
+                textColor = text.color;
             }
 
-            Main.Info($"DM name hints: tooltip look taken from '{(prefab ? prefab.name : "?")}' ({layers} " +
-                      $"background layers) and font '{(text ? text.font.name : "the field's")}'.");
+            Main.Info($"DM name hints: tooltip look for '{panel.name}' taken from " +
+                      $"'{(prefab ? prefab.name : "?")}' ({layers} background layers) and font " +
+                      $"'{(text ? text.font.name : "the field's")}'.");
         }
         catch (Exception e)
         {
             Main.Info($"DM name hints: the game's tooltip look could not be taken, a plain one is used: {e.Message}");
         }
+
+        return textColor;
     }
 
     // keeps the panel on its field while it is shown, and takes it away when the field goes
@@ -449,7 +512,7 @@ internal static class DungeonMakerNameHints
                 return;
             }
 
-            Place(_owner.Field.transform as RectTransform);
+            Place(_rect, _owner.Field.transform as RectTransform, _below);
         }
     }
 
@@ -470,12 +533,25 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
     // whether the field's text is a variable's name to colour (asked each time, as the field is reused)
     private Func<bool> _colorName;
 
+    // the gadget names to offer for what is typed, or null when the field is not a command's target
+    private Func<string, System.Collections.Generic.List<string>> _suggest;
+
+    // after a suggestion was clicked: put the caret at the end once the field has the focus again (the field
+    // selects its whole text when it gets the focus)
+    private bool _caretToEnd;
+
+    internal bool Below => _below;
+
+    // The field has the keyboard focus. The field's own isFocused only turns true a frame after it is selected
+    // (it starts editing in its next LateUpdate), so the selection event counts too.
+    internal bool HasFocus => _focused || (Field && Field.isFocused);
+
     internal TMP_InputField Field { get; private set; }
 
     // Puts a hint on this field, or gives the field's existing one its new meaning (the editor reuses its
     // parameter lines for other parameters).
     internal static void Attach(TMP_InputField field, bool warning, Func<string, string> hint, bool below = false,
-        Func<bool> colorName = null)
+        Func<bool> colorName = null, Func<string, System.Collections.Generic.List<string>> suggest = null)
     {
         if (!field)
         {
@@ -497,6 +573,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         component._warning = warning;
         component._below = below;
         component._colorName = colorName;
+        component._suggest = suggest;
         component.UpdateColor();
 
         if (component._focused)
@@ -543,19 +620,95 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
     {
         _focused = false;
         DungeonMakerNameHints.Hide(this);
+
+        // A click on the suggestions list takes the focus from the field before the row gets the click (the
+        // input module deselects first). The list then stays, as if the focus were shared, and closes by itself
+        // when the pointer is not on it (DungeonMakerNameSuggestions).
+        if (!DungeonMakerNameSuggestions.PointerOver(this))
+        {
+            DungeonMakerNameSuggestions.Hide(this);
+        }
     }
 
     private void OnDisable()
     {
         _focused = false;
+        _caretToEnd = false;
         DungeonMakerNameHints.Hide(this);
+        DungeonMakerNameSuggestions.Hide(this);
+    }
+
+    // A suggestion was chosen: the field gets the name as if it had been typed (the text's setter raises the
+    // field's "value changed" event, and the game takes the value from the field's text in its own handlers, on
+    // that event or when the field is left), then the focus back if a click took it, with the caret at the end.
+    internal void Apply(string name)
+    {
+        if (!Field)
+        {
+            return;
+        }
+
+        Field.text = name;
+
+        if (Field.isFocused)
+        {
+            Field.MoveTextEnd(false);
+        }
+        else
+        {
+            _caretToEnd = true;
+            Field.ActivateInputField();
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (_caretToEnd && Field && Field.isFocused)
+        {
+            _caretToEnd = false;
+            Field.MoveTextEnd(false);
+        }
     }
 
     private void Refresh()
     {
         string text = null;
+        var active = Field && (_focused || Field.isFocused);
 
-        if (Field && (_focused || Field.isFocused) && _hint != null)
+        // Suggestions first: while a command's target is typed, the names to pick from take the place of any
+        // hint. The one name that is already typed in full is no suggestion. With nothing to offer, the
+        // missing-name warning below gets its turn, so the two are never shown together.
+        if (active && _suggest != null)
+        {
+            System.Collections.Generic.List<string> names = null;
+            var typed = (Field.text ?? string.Empty).Trim();
+
+            try
+            {
+                names = _suggest(typed);
+            }
+            catch (Exception e)
+            {
+                Main.Info($"DM name suggestions: {e.Message}");
+            }
+
+            if (names is { Count: 1 } && string.Equals(names[0], typed, StringComparison.OrdinalIgnoreCase))
+            {
+                names = null;
+            }
+
+            if (names is { Count: > 0 })
+            {
+                DungeonMakerNameHints.Hide(this);
+                DungeonMakerNameSuggestions.Show(this, names);
+
+                return;
+            }
+        }
+
+        DungeonMakerNameSuggestions.Hide(this);
+
+        if (active && _hint != null)
         {
             try
             {
