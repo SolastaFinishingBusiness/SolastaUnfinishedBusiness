@@ -164,8 +164,9 @@ points it out while you type (next section).
 - A hint only informs: nothing is changed or refused.
 - **Gadget names are offered as you type** the text for `Dialog_Trigger`, `Roll_Trigger`, `Teleport_Node` or
   `Teleport_PartyNode`: a small list by the field with up to eight names, the likely ones for that command first
-  (Roll Activators for a roll, Nodes for a teleport, NPCs and dialogue gadgets for a dialogue), then by how well
-  they fit what is typed. Click a name, or use Up and Down and then Enter or Tab, to put it in the field; Escape
+  (Roll Activators for a roll, Nodes for a teleport, NPCs and dialogue gadgets for a dialogue), then by name. Only
+  names that start with what you typed are offered: `ac` offers `ActivatorRoll1`, `roll` doesn't. Once a name is
+  put in, the list stays closed until you change the text again. Click a name, or use Up and Down and then Enter or Tab, to put it in the field; Escape
   closes the list. The arrow keys and Enter only belong to the list while it is open and, for Enter, a name is
   highlighted. The warning for a name nothing goes by shows only when there is nothing to offer.
 - **The "?" button** beside CLOSE in the location, dialogue and quest editors opens the list of every name the mod

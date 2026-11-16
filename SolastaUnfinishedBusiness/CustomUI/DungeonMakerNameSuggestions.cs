@@ -21,13 +21,17 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // is shown instead of the field's hint, never with it (DungeonMakerFieldHint.Refresh).
 //
 // CHOOSING WITH THE MOUSE, and the focus (user: "Can you not treat focus on the list as focus on the text itself
-// then? Or have them share focus"). A click outside a text field takes the focus from it: Unity's input module
-// deselects the selected object when the pointer goes down on something else, BEFORE it sends that something the
-// pointer-down (PointerInputModule.DeselectIfSelectionChanged, called first in ProcessMousePress). So when the
-// field loses the focus while the pointer is on this list, the list stays open (DungeonMakerFieldHint.
-// OnDeselected asks PointerOver), the row then gets its pointer-down, puts its name into the field and gives the
-// focus back to it. While the field is without the focus the list closes as soon as the pointer is off it, so
-// any other click closes it.
+// then? Or have them share focus"). A click outside a text field takes the focus from it: the game's input module
+// (InputPointerModule, a StandaloneInputModule) deselects the selected object when the pointer goes down on
+// something else, BEFORE it sends that something the pointer-down (ProcessMousePress calls
+// PointerInputModule.DeselectIfSelectionChanged first; read in UnityEngine.UI's IL). Losing the focus ends the
+// field's editing, and the game's fields save their text on that (the prefab wires TMP_InputField.onEndEdit to
+// UserParameterItem.OnStringValueChangedCb); saving makes the editor rebuild the action's parameter rows
+// (UserFunctorDescriptionItem.FunctorParameterModified -> Refresh -> ClearParameters, which deactivates every
+// row), which took the list down with its field before the row could get the click: the first version lost
+// every click that way (seen in game on 9f49bbd6). So for a press on this list the deselect is skipped
+// altogether (KeepsFocus, a prefix on DeselectIfSelectionChanged): the field keeps the focus and its editing,
+// the row gets the pointer-down and puts its name in, exactly as typing would.
 //
 // CHOOSING WITH THE KEYS (user: "arrow keys and enter should only be used for suggestions while the actual
 // suggestion panel is open"). TMP_InputField handles its keys in KeyPressed, one call per key-down event. A prefix
@@ -148,8 +152,15 @@ internal static class DungeonMakerNameSuggestions
         }
     }
 
-    // Is the mouse pointer on this field's open list? (Asked when the field loses the focus, and while it is
-    // without it.)
+    // PointerInputModule.DeselectIfSelectionChanged, before it runs: false (skip the deselect) when the pointer is
+    // going down on the open list, so the field keeps the focus (see the top of the file). Any other press is
+    // left to the game.
+    internal static bool KeepsFocus(GameObject pressed)
+    {
+        return !(IsOpen && pressed && pressed.transform.IsChildOf(_rect));
+    }
+
+    // Is the mouse pointer on this field's open list?
     internal static bool PointerOver(DungeonMakerFieldHint owner)
     {
         if (!IsOpen || !ReferenceEquals(_owner, owner))
@@ -266,7 +277,8 @@ internal static class DungeonMakerNameSuggestions
         }
 
         // the tooltip's background layers go under the rows; every row's text gets the tooltip's font
-        _textColor = DungeonMakerNameHints.StyleLikeTooltip(_rect, Rows[0].Label) ?? _textColor;
+        // no glow around the list (user: "Remove the shadow around the suggestions as well")
+        _textColor = DungeonMakerNameHints.StyleLikeTooltip(_rect, Rows[0].Label, false) ?? _textColor;
 
         foreach (var row in Rows)
         {

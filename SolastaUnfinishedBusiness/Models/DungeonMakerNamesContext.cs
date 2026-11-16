@@ -539,33 +539,21 @@ internal static class DungeonMakerNamesContext
 
         value ??= string.Empty;
 
-        var allowed = Math.Max(2, value.Length * 2 / 5);
-
+        // Only the names that start with what is typed, whatever the case of the letters (user, 2026-11-16:
+        // "the suggestions used should only compare the typed message with the start. So for example, typing "ac"
+        // would suggest ActivatorRoll, but typing "roll" will not"); with nothing typed, every name. The likely
+        // kind for the command first, then by name. A text that names nothing gets the missing-name warning
+        // instead, with its closest names (Closest).
         return names.Likely.Select(x => (Name: x, Kind: 0))
             .Concat(names.Others.Select(x => (Name: x, Kind: 1)))
             .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .Select(x => x.First())
-            .Select(x => (x.Name, x.Kind, Match: MatchOf(x.Name),
-                Distance: value.Length == 0 ? 0 : Distance(x.Name, value)))
-            .Where(x => x.Match < 2 || x.Distance <= allowed)
+            .Where(x => x.Name.StartsWith(value, StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.Kind)
-            .ThenBy(x => x.Match)
-            .ThenBy(x => x.Distance)
             .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             .Take(max)
             .Select(x => x.Name)
             .ToList();
-
-        // 0: starts with the text (or nothing is typed), 1: contains it, 2: neither
-        int MatchOf(string name)
-        {
-            if (value.Length == 0 || name.StartsWith(value, StringComparison.OrdinalIgnoreCase))
-            {
-                return 0;
-            }
-
-            return name.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0 ? 1 : 2;
-        }
     }
 
     // only: look in this location alone (a gadget writes its variable in its own location); null for the whole
@@ -611,6 +599,12 @@ internal static class DungeonMakerNamesContext
             }
         }
 
+        // TEMPORARY DIAGNOSTIC (remove once answered): in game on 9f49bbd6, with nothing typed, the suggestions for
+        // Roll_Trigger in a dialogue began with Area Activators instead of the Roll Activators, as if no gadget had
+        // been found to be of the likely kind; the reason isn't known. One line per command and campaign says what
+        // the blueprint names were.
+        LogKinds(command, campaign, places, names);
+
         if (dialogue)
         {
             foreach (var npc in campaign?.UserNpcs ?? [])
@@ -629,6 +623,26 @@ internal static class DungeonMakerNamesContext
                 list.Add(name);
             }
         }
+    }
+
+    private static readonly HashSet<string> LoggedKinds = [];
+
+    private static void LogKinds(string command, UserCampaign campaign, IEnumerable<UserLocation> places,
+        TargetNames names)
+    {
+        var key = $"{command}|{campaign?.Title}";
+
+        if (!LoggedKinds.Add(key))
+        {
+            return;
+        }
+
+        var blueprints = places.SelectMany(GadgetsOf)
+            .Select(x => $"{x.UniqueName}:{x.GadgetBlueprintName ?? "(null)"}/{(x.GadgetBlueprint ? x.GadgetBlueprint.name : "(none)")}")
+            .Take(40);
+
+        Main.Info($"DM name suggestions: {command}: {names.Likely.Count} likely, {names.Others.Count} other; " +
+                  $"gadgets: {string.Join(", ", blueprints)}");
     }
 
     // how many letters have to be changed, added or taken out to turn one text into the other, whatever their case
@@ -689,8 +703,9 @@ internal static class DungeonMakerNamesContext
             [.. DungeonMakerClockContext.OwnVariables, DungeonMakerCommandsContext.SavedStateVariable]);
     }
 
-    // how the list writes "Torch_ followed by a torch's name" (no angle brackets: the list is rich text)
-    internal const string TorchByNameExample = DungeonMakerCommandsContext.TorchVariablePrefix + "(torch)";
+    // how the list writes "Torch_ followed by a torch's name", as the guide does; the list is rich text, so it
+    // escapes the angle brackets itself (DungeonMakerCommandsPopup)
+    internal const string TorchByNameExample = DungeonMakerCommandsContext.TorchVariablePrefix + "<name>";
 
     #endregion
 
@@ -730,8 +745,16 @@ internal static class DungeonMakerNamesContext
             case Role.Request when Array.IndexOf(DungeonMakerClockContext.SkipVariables, name) >= 0:
                 text = Gui.Localize("ModUi/&DungeonMakerHintClockSkip");
                 break;
+            // the three torch names each say what they do (one text for all three said less, and the list
+            // showed it three times)
+            case Role.Request when name == DungeonMakerCommandsContext.TorchesVariable:
+                text = Gui.Localize("ModUi/&DungeonMakerHintTorchesLit");
+                break;
+            case Role.Request when name == DungeonMakerCommandsContext.TorchesAutoVariable:
+                text = Gui.Localize("ModUi/&DungeonMakerHintTorchesAuto");
+                break;
             case Role.Request:
-                text = Gui.Localize("ModUi/&DungeonMakerHintTorch");
+                text = Gui.Localize("ModUi/&DungeonMakerHintTorchOne");
                 break;
             case Role.Switch:
                 text = Gui.Localize("ModUi/&DungeonMakerHintClockCount");

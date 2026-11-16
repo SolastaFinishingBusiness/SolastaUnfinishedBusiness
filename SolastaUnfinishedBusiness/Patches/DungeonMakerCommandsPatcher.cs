@@ -582,6 +582,21 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: Dungeon Maker editor: a press on the gadget-name suggestions list doesn't take the focus from the text
+    //field the list belongs to (DungeonMakerNameSuggestions, "CHOOSING WITH THE MOUSE"). For any other press the
+    //game's own deselect runs as always.
+    [HarmonyPatch(typeof(UnityEngine.EventSystems.PointerInputModule), "DeselectIfSelectionChanged")]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class PointerInputModule_DeselectIfSelectionChanged
+    {
+        [UsedImplicitly]
+        public static bool Prefix(UnityEngine.GameObject currentOverGo)
+        {
+            return DungeonMakerNameSuggestions.KeepsFocus(currentOverGo);
+        }
+    }
+
     //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
     [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

@@ -42,6 +42,7 @@ internal static class DungeonMakerCommandsPopup
     private const string HelpButtonName = "FbCommandsHelp";
     private const string PopupName = "FbCommandsPopup";
     private const string CloseMethod = "OnCloseCb";
+    private const string SaveMethod = "OnSaveCb";
     private const float Width = 860f;
     private const float MaxHeight = 720f;
     private const float Padding = 22f;
@@ -96,15 +97,17 @@ internal static class DungeonMakerCommandsPopup
     // these screens keeps it in a field).
     private static Button FindCloseButton(GuiScreen screen)
     {
-        return screen.GetComponentsInChildren<Button>(true).FirstOrDefault(button =>
-            button.name != HelpButtonName &&
-            Enumerable.Range(0, button.onClick.GetPersistentEventCount()).Any(i =>
-                button.onClick.GetPersistentMethodName(i) == CloseMethod &&
-                ReferenceEquals(button.onClick.GetPersistentTarget(i), screen)));
+        return FindButton(screen, CloseMethod);
     }
 
     #region The ? button
 
+    // The ? button (user, 2026-11-16: "The ? shouldn't be a red button, but a normal colour button"). It is a copy
+    // of the screen's SAVE button, the editor's ordinary dark button, made square and set just right of CLOSE.
+    // The first version copied CLOSE (red) and placed it from CLOSE's RectTransform, which is narrower than the red
+    // box CLOSE draws, so the copy landed on CLOSE's right end (seen in game on 9f49bbd6). It is now placed from
+    // the edges of what CLOSE draws (every graphic under it), in world space, so whatever CLOSE's anchors and
+    // layout, the ? starts past its visible edge.
     private static void EnsureHelpButton(GuiScreen screen, Button close)
     {
         if (!close || close.transform.parent.Find(HelpButtonName))
@@ -112,52 +115,89 @@ internal static class DungeonMakerCommandsPopup
             return;
         }
 
-        var help = CopyButton(close, close.transform.parent, HelpButtonName, "?", () => Open(screen, close));
+        var look = FindButton(screen, SaveMethod) ?? close;
+        var help = CopyButton(look, close.transform.parent, HelpButtonName, "?", () => Open(screen, close));
 
         if (!help)
         {
             return;
         }
 
-        var source = (RectTransform)close.transform;
         var rect = (RectTransform)help.transform;
 
-        rect.SetSiblingIndex(source.GetSiblingIndex() + 1);
-
-        var height = source.rect.height > 0f ? source.rect.height : 40f;
-
-        if (rect.parent.GetComponent<LayoutGroup>())
+        // placed by hand, whatever the row does with its other children
+        if (!help.TryGetComponent<LayoutElement>(out var layout))
         {
-            // the row lays its buttons out itself: the copy only says how wide it wants to be
-            if (!help.TryGetComponent<LayoutElement>(out var layout))
-            {
-                layout = help.gameObject.AddComponent<LayoutElement>();
-            }
-
-            layout.ignoreLayout = false;
-            layout.minWidth = layout.preferredWidth = height;
-            layout.flexibleWidth = 0f;
-        }
-        else
-        {
-            // placed by hand: a square as high as CLOSE, just past the side of CLOSE that faces the screen's middle
-            // (CLOSE sits in a corner, so there is room on that side)
-            var root = source.GetComponentInParent<Canvas>();
-            var towardsRight = !root || root.rootCanvas.transform.InverseTransformPoint(source.position).x < 0f;
-            var step = (((source.rect.width + height) / 2f) + 8f) * (towardsRight ? 1f : -1f);
-
-            rect.anchorMin = source.anchorMin;
-            rect.anchorMax = source.anchorMax;
-            rect.pivot = source.pivot;
-            rect.sizeDelta = new Vector2(height - source.rect.width + source.sizeDelta.x, source.sizeDelta.y);
-            rect.anchoredPosition = source.anchoredPosition + new Vector2(step, 0f);
+            layout = help.gameObject.AddComponent<LayoutElement>();
         }
 
-        // the copy's tooltip, if CLOSE has one, says what the ? is for
+        layout.ignoreLayout = true;
+
+        if (!DrawnBounds(close.transform, out var min, out var max))
+        {
+            return;
+        }
+
+        var parent = (RectTransform)rect.parent;
+        var localMin = parent.InverseTransformPoint(min);
+        var localMax = parent.InverseTransformPoint(max);
+        var height = Mathf.Abs(localMax.y - localMin.y);
+
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0f, 0.5f);
+        rect.sizeDelta = new Vector2(height, height);
+        rect.localPosition = new Vector3(Mathf.Max(localMin.x, localMax.x) + HelpGap,
+            (localMin.y + localMax.y) / 2f, 0f);
+        rect.SetSiblingIndex(close.transform.GetSiblingIndex() + 1);
+
+        // the copy's tooltip, if the button has one, says what the ? is for
         if (help.TryGetComponent<GuiTooltip>(out var tooltip))
         {
             tooltip.Content = Gui.Localize("ModUi/&DungeonMakerCommandsPopupTitle");
         }
+    }
+
+    // the space between CLOSE's drawn edge and the ?, in the row's units
+    private const float HelpGap = 8f;
+
+    // the screen's button wired in its prefab to this method of the screen
+    private static Button FindButton(GuiScreen screen, string method)
+    {
+        return screen.GetComponentsInChildren<Button>(true).FirstOrDefault(button =>
+            button.name != HelpButtonName &&
+            Enumerable.Range(0, button.onClick.GetPersistentEventCount()).Any(i =>
+                button.onClick.GetPersistentMethodName(i) == method &&
+                ReferenceEquals(button.onClick.GetPersistentTarget(i), screen)));
+    }
+
+    // the world-space box around every graphic drawn under this object
+    private static bool DrawnBounds(Transform root, out Vector3 min, out Vector3 max)
+    {
+        min = new Vector3(float.MaxValue, float.MaxValue, 0f);
+        max = new Vector3(float.MinValue, float.MinValue, 0f);
+
+        var found = false;
+        var corners = new Vector3[4];
+
+        foreach (var graphic in root.GetComponentsInChildren<Graphic>(false))
+        {
+            if (!graphic.enabled || graphic.color.a <= 0f)
+            {
+                continue;
+            }
+
+            graphic.rectTransform.GetWorldCorners(corners);
+
+            foreach (var corner in corners)
+            {
+                min = Vector3.Min(min, corner);
+                max = Vector3.Max(max, corner);
+            }
+
+            found = true;
+        }
+
+        return found;
     }
 
     // A copy of one of the game's buttons with the mod's text and action: the game's own actions (set in the
@@ -272,7 +312,9 @@ internal static class DungeonMakerCommandsPopup
             {
                 var hint = DungeonMakerNamesContext.NameHint(name, campaign, place) ?? string.Empty;
 
-                text.Append("<b>").Append(Colored(DungeonMakerNameHints.NameColor(name), name)).Append("</b>  ")
+                // a name is written as it is, angle brackets included (Torch_<name>), not read as rich text
+                text.Append("<b>").Append(Colored(DungeonMakerNameHints.NameColor(name), $"<noparse>{name}</noparse>"))
+                    .Append("</b>  ")
                     .Append(hint.Replace("\n", " ")).Append('\n');
             }
         }

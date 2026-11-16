@@ -86,6 +86,9 @@ internal static class DungeonMakerNameHints
     private static Color _textColor = Color.white;
     private static DungeonMakerFieldHint _owner;
 
+    // the tooltip prefab's glow layer (TooltipPanelSimple's first child)
+    private const string ShadowLayerName = "Shadow";
+
     // whether the field being hinted wants the panel below it rather than above
     private static bool _below;
     private static readonly Vector3[] Corners = new Vector3[4];
@@ -420,8 +423,10 @@ internal static class DungeonMakerNameHints
     // Whatever is missing keeps the plain look: a dark box and the field's font.
     //
     // panel: the panel to dress (the hint's, the suggestions list's, the commands list's window); label: a text to
-    // give the tooltip's font, or null. Returns the tooltip's text colour, or null when it could not be taken.
-    internal static Color? StyleLikeTooltip(RectTransform panel, TMP_Text label)
+    // give the tooltip's font, or null; shadow: whether the prefab's Shadow layer (the soft glow around it) is
+    // copied too (user, 2026-11-16, of the suggestions list: "Remove the shadow around the suggestions as well").
+    // Returns the tooltip's text colour, or null when it could not be taken.
+    internal static Color? StyleLikeTooltip(RectTransform panel, TMP_Text label, bool shadow = true)
     {
         Color? textColor = null;
 
@@ -453,6 +458,7 @@ internal static class DungeonMakerNameHints
                 {
                     // only the picture layers; the features table and anything else of the prefab stay out
                     if (child.GetComponent<Image>() is not { } picture ||
+                        (!shadow && child.name == ShadowLayerName) ||
                         (!picture.sprite && picture.material == picture.defaultMaterial) ||
                         child.GetComponentsInChildren<Component>(true).Any(x =>
                             x is not RectTransform and not CanvasRenderer and not Image))
@@ -530,6 +536,11 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
     private bool _warning;
     private bool _below;
 
+    // a suggestion is being put in (its own "value changed" is not an edit), and the list stays closed after one
+    // until the text is edited again
+    private bool _picked;
+    private bool _closedByPick;
+
     // whether the field's text is a variable's name to colour (asked each time, as the field is reused)
     private Func<bool> _colorName;
 
@@ -584,6 +595,12 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
 
     private void OnChanged(string text)
     {
+        // any edit but the chosen name itself opens the list again
+        if (!_picked)
+        {
+            _closedByPick = false;
+        }
+
         UpdateColor();
         Refresh();
     }
@@ -613,6 +630,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
     private void OnSelected(string text)
     {
         _focused = true;
+        _closedByPick = false;
         Refresh();
     }
 
@@ -621,13 +639,10 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         _focused = false;
         DungeonMakerNameHints.Hide(this);
 
-        // A click on the suggestions list takes the focus from the field before the row gets the click (the
-        // input module deselects first). The list then stays, as if the focus were shared, and closes by itself
-        // when the pointer is not on it (DungeonMakerNameSuggestions).
-        if (!DungeonMakerNameSuggestions.PointerOver(this))
-        {
-            DungeonMakerNameSuggestions.Hide(this);
-        }
+        // A click on the suggestions list never gets here: the input module's deselect is skipped for it
+        // (DungeonMakerNameSuggestions.KeepsFocus), so the list shares the field's focus. Any other loss of
+        // the focus closes the list.
+        DungeonMakerNameSuggestions.Hide(this);
     }
 
     private void OnDisable()
@@ -648,10 +663,20 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
             return;
         }
 
+        // A chosen name closes the list until the author edits the text again: the name's own "value changed"
+        // would otherwise open it at once on every name that starts the same (seen in game on 9f49bbd6).
+        _picked = true;
         Field.text = name;
+        _picked = false;
+        _closedByPick = true;
 
         if (Field.isFocused)
         {
+            // MoveTextEnd places the caret by the label's character count (TMP_InputField.MoveTextEnd reads
+            // m_TextComponent.textInfo.characterCount), which is still the old text's until the label is redrawn:
+            // after "ro" it left the caret after the name's second letter (seen in game on 9f49bbd6). The label is
+            // redrawn first.
+            Field.ForceLabelUpdate();
             Field.MoveTextEnd(false);
         }
         else
@@ -666,6 +691,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         if (_caretToEnd && Field && Field.isFocused)
         {
             _caretToEnd = false;
+            Field.ForceLabelUpdate();
             Field.MoveTextEnd(false);
         }
     }
@@ -678,7 +704,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         // Suggestions first: while a command's target is typed, the names to pick from take the place of any
         // hint. The one name that is already typed in full is no suggestion. With nothing to offer, the
         // missing-name warning below gets its turn, so the two are never shown together.
-        if (active && _suggest != null)
+        if (active && _suggest != null && !_closedByPick)
         {
             System.Collections.Generic.List<string> names = null;
             var typed = (Field.text ?? string.Empty).Trim();
