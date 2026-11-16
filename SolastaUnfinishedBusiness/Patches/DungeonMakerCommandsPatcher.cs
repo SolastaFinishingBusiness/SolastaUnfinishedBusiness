@@ -452,6 +452,32 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: keep who is behind the waiting commands and chains in the save. The game writes the campaign's
+    //variables here; right before, the mod puts its own variable among them, and right after it takes it out
+    //again, so the variable exists in the save only (DungeonMakerCommandsContext, "SAVES"). The state says the mod
+    //put it in. Reading a save is not touched here: OnLocationReady reads the variable once the location is ready.
+    [HarmonyPatch(typeof(GameVariableManager), nameof(GameVariableManager.SerializeElements))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameVariableManager_SerializeElements
+    {
+        [UsedImplicitly]
+        public static void Prefix(IElementsSerializer serializer, out bool __state)
+        {
+            __state = serializer is { Mode: Serializer.SerializationMode.Write } &&
+                      DungeonMakerCommandsContext.BeforeVariablesSaved();
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer(bool __state)
+        {
+            if (__state)
+            {
+                DungeonMakerCommandsContext.AfterVariablesSaved();
+            }
+        }
+    }
+
     //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
     [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

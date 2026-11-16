@@ -93,9 +93,23 @@ namespace SolastaUnfinishedBusiness.Models;
 //     emptying of a command variable carry no character, and don't replace a record a flow already has. A
 //     campaign's own flow writing to such a variable is an ordinary write.
 //   - Not followed: a change made from outside any gadget flow and any dialogue (a quest's own actions when the
-//     game advances it, the cheats panel); a chain cut by a save and load (the game keeps a pending trigger in
-//     the save, the record is not saved); a flow that was running when the game was saved (the game does not
-//     resume it).
+//     game advances it, the cheats panel); a flow that was running when the game was saved (the game does not
+//     resume it after a load).
+//
+// SAVES (user direction, 2026-11-16: "Let's store the pending records then"). The game keeps in a save which
+// flows are triggered and have not started (GameGadget.flowsSaveData, "pending trigger"), how far each timer has
+// counted, and the command variables themselves; it starts those flows and the mod takes those commands again
+// after a load. Who is behind them is the mod's own knowledge, so it goes into the save too:
+//   - right before the game writes the campaign's variables (BeforeVariablesSaved), the mod puts one String
+//     variable among them, Commands_SavedState: the records of the triggered flows, the timers set going by a
+//     character, the waiting commands' acting characters and the whole one-character teleport queue (SaveState).
+//     It is taken out again as soon as they are written, so it exists in the save only and the running game is
+//     not changed by saving;
+//   - after a load (OnLocationReady), it is read, taken out of the variables, and what still fits is put back
+//     before the waiting commands are taken (RestoreState);
+//   - nothing is written when nothing is waiting, so a campaign that doesn't use the commands has no such
+//     variable in its saves, and a save loads without the mod as before (the game then has one more String
+//     variable, which nothing reads).
 //
 // ONE-CHARACTER TELEPORT (Teleport_Node), as specified in issue #42:
 //   - It moves the character that caused the activation and never another. Only a party member or a guest
@@ -149,6 +163,11 @@ internal static class DungeonMakerCommandsContext
     internal const string TorchesAutoVariable = "Torches_Auto";
     internal const string TorchVariablePrefix = "Torch_";
     internal const string StatusSuffix = "_Status";
+
+    // The mod's own String variable, which exists only inside a save: what the commands and chains that were
+    // waiting when the game was saved need to keep their acting character (see "SAVES" at the top).
+    internal const string SavedStateVariable = "Commands_SavedState";
+    private const string SavedStateVersion = "1";
 
     internal const string StatusPending = "Pending";
     internal const string StatusRunning = "Running";
@@ -223,10 +242,11 @@ internal static class DungeonMakerCommandsContext
     private static readonly Dictionary<string, int> NewestSerial = [];
 
     // Per flow, who set it off: the activation whose flow has not started yet, and the one whose flow the game is
-    // running (or ran last). An Area Activator's, a pressure plate's or an interaction's flow gets its record from
+    // running (or ran last). The first is a plain dictionary, emptied when the location is left, because it is
+    // written into saves (SaveState) and so has to be listed. An Area Activator's, a pressure plate's or an interaction's flow gets its record from
     // the character who moved or used it (NoteOccupationChanged, NoteInteracted); a condition or gadget event
     // flow gets a copy of the record of the flow that switched it on (NoteListenerStatusChanged).
-    private static ConditionalWeakTable<GameGadgetListener, Activation> _causes = new();
+    private static Dictionary<GameGadgetListener, Activation> _causes = [];
     private static ConditionalWeakTable<GameGadgetListener, Activation> _runs = new();
 
     // while the game's Teleport functor moves characters (see BeginGroupMove): who it moved, and the
@@ -256,7 +276,7 @@ internal static class DungeonMakerCommandsContext
 
     // Timers ("after a time" and "every N hours" flows) that a character's flow set going, with that character's
     // record: it is the cause of the timer's next firing (see NoteConditionSet and NoteTimerReset).
-    private static ConditionalWeakTable<GameGadgetListener, Activation> _armed = new();
+    private static Dictionary<GameGadgetListener, Activation> _armed = [];
 
     // Dialogues (and observation sequences) a gadget flow started, with that flow's record: the dialogue's
     // actions are carried out for the same character (see NoteSequencePrepared and BeginNarrativeActions).
@@ -264,6 +284,9 @@ internal static class DungeonMakerCommandsContext
 
     // > 0 while the game carries out the actions of a dialogue step (NarrativeState.ExecuteFunctors), and the
     // record of the dialogue they belong to, if it has one
+    // the mod put its saved-state variable into the campaign's variables for the save being written
+    private static bool _savedStateMade;
+
     private static int _narrativeDepth;
     private static Activation _narrativeRecord;
     private static readonly Stack<Activation> NarrativeBefore = [];
@@ -334,9 +357,29 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
+        // what a save kept of the chains and commands that were waiting: first the records and the teleport
+        // queue, then, once the commands below are taken, their acting characters
+        Dictionary<string, string[]> savedWaiting = null;
+
+        // records of flows of a location that went away without the unload hook must not be mistaken for this
+        // location's (they are listed by gadget name when a save is written)
+        var gadgetsHere = new HashSet<GameGadget>(GadgetsById().Values);
+
+        foreach (var table in new[] { _causes, _armed })
+        {
+            foreach (var gone in table.Keys
+                         .Where(x => !x.SourceGadget || !gadgetsHere.Contains(x.SourceGadget.GameGadget))
+                         .ToArray())
+            {
+                table.Remove(gone);
+            }
+        }
+
+        Guarded("saved commands", () => savedWaiting = RestoreState(variables, location));
+
         // A command variable can already hold a value here without an event having told us: a save made while it
         // was waiting, or a write made outside a location. Take it now. No gadget flow is behind it, so it has no
-        // acting character.
+        // acting character, unless the save kept one (just below).
         foreach (var command in Commands)
         {
             if (!Waiting.ContainsKey(command.Key) &&
@@ -347,6 +390,20 @@ internal static class DungeonMakerCommandsContext
                 } && !string.IsNullOrEmpty(variable.StringValue))
             {
                 Capture(command.Value, command.Key, variable.StringValue, null);
+            }
+        }
+
+        foreach (var saved in savedWaiting ?? [])
+        {
+            // the same command, still waiting for the same target, and nothing newer has named its character
+            if (Waiting.TryGetValue(saved.Key, out var request) && request.Target == saved.Value[2] &&
+                !request.ActorKnown)
+            {
+                ReadActor(request, saved.Value, 3);
+                Main.Info($"DM command {request.Variable} = '{request.Target}': acting character taken from the " +
+                          "save: " + (request.ActorKnown
+                              ? $"acts for {request.ActorName ?? "?"}"
+                              : $"no acting character: {request.ActorProblem}") + ".");
             }
         }
 
@@ -380,7 +437,7 @@ internal static class DungeonMakerCommandsContext
         _operation = null;
         _updating = null;
         _runningSync = null;
-        _armed = new ConditionalWeakTable<GameGadgetListener, Activation>();
+        _armed = [];
         _dialogues = new ConditionalWeakTable<NarrativeSequence, Activation>();
         _narrativeDepth = 0;
         _narrativeRecord = null;
@@ -388,7 +445,7 @@ internal static class DungeonMakerCommandsContext
         _causerSet = false;
         _causer = null;
         _causerHow = null;
-        _causes = new ConditionalWeakTable<GameGadgetListener, Activation>();
+        _causes = [];
         _runs = new ConditionalWeakTable<GameGadgetListener, Activation>();
         GroupMovers.Clear();
         GroupActivations.Clear();
@@ -1256,6 +1313,365 @@ internal static class DungeonMakerCommandsContext
         {
             DungeonMakerClockContext.OnVariableChanged(name);
         }
+    }
+
+    #endregion
+
+    #region Saves
+
+    // GameVariableManager.SerializeElements in write mode, before it runs: the game is about to write the campaign
+    // variables into a save (or into the copy of the game a multiplayer host sends). What is waiting is put into
+    // the mod's variable for that moment only, so it is in the save and nowhere else: AfterVariablesSaved takes
+    // it out again, and the game being played is exactly as it was (the same on a computer that saves and on one
+    // that doesn't). Returns whether it did, so that the patch knows to call AfterVariablesSaved.
+    internal static bool BeforeVariablesSaved()
+    {
+        try
+        {
+            var variables = ServiceRepository.GetService<IGameVariableService>();
+
+            if (variables == null || CurrentLocation == null)
+            {
+                return false;
+            }
+
+            var text = SaveState();
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return false;
+            }
+
+            if (variables.IsVariableRegistered(SavedStateVariable))
+            {
+                // A campaign's own variable of this name is not touched unless it is a String (WriteString); a
+                // leftover of the mod's is reused.
+                _savedStateMade = false;
+                WriteString(SavedStateVariable, text);
+
+                return StringValueOf(variables, SavedStateVariable) == text;
+            }
+
+            _writing++;
+
+            try
+            {
+                variables.RegisterVariable(SavedStateVariable, GameVariableDefinitions.Scope.Campaign, text);
+            }
+            finally
+            {
+                _writing--;
+            }
+
+            _savedStateMade = true;
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            // a save must never fail because of this
+            Main.Error($"DM commands: could not keep the waiting commands in the save: {e.Message}");
+
+            return false;
+        }
+    }
+
+    internal static void AfterVariablesSaved()
+    {
+        try
+        {
+            RemoveSavedState(ServiceRepository.GetService<IGameVariableService>(), _savedStateMade);
+        }
+        catch (Exception e)
+        {
+            Main.Error($"DM commands: could not remove the saved commands variable: {e.Message}");
+        }
+
+        _savedStateMade = false;
+    }
+
+    // empties the mod's variable, and takes it out of the campaign's variables when the mod put it there
+    private static void RemoveSavedState(IGameVariableService variables, bool unregister)
+    {
+        if (variables == null || !variables.IsVariableRegistered(SavedStateVariable))
+        {
+            return;
+        }
+
+        WriteString(SavedStateVariable, string.Empty);
+
+        if (!unregister)
+        {
+            return;
+        }
+
+        _writing++;
+
+        try
+        {
+            variables.UnregisterVariable(SavedStateVariable);
+        }
+        finally
+        {
+            _writing--;
+        }
+    }
+
+    // What is waiting, as one line of text, or "" when nothing is. Entries are separated by ';' and their fields
+    // by ','; every field is escaped (Uri.EscapeDataString), so names can hold anything. The first entry is the
+    // format's version. A flow is named by its gadget's unique name and its flow id, which is how the game itself
+    // names them in a save (GameSector.SerializeElements, GameGadget.flowsSaveData); a character by its id, which
+    // the game saves with it (RulesetEntity's "Guid" attribute).
+    //   C gadget flow record   a flow that is triggered and has not started, with who is behind it
+    //   A gadget flow record   a timer a character's flow set going
+    //   W variable target actor   a waiting Dialog_Trigger, Roll_Trigger or Teleport_PartyNode
+    //   T target actor         a waiting one-character teleport, in the queue's order
+    //   P gadget flow          a place kept in that queue for a flow of C, at its place in the order
+    // Not kept: flows that were running (the game doesn't resume them after a load, so their record and the
+    // places they kept have nothing to go with), and commands already handed to the game (cancelled on load).
+    private static string SaveState()
+    {
+        var entries = new List<string>();
+
+        foreach (var pair in _causes)
+        {
+            if (pair.Key.IsTriggered && FlowKey(pair.Key, out var gadget, out var flow))
+            {
+                entries.Add(Pack(["C", gadget, flow, .. RecordFields(pair.Value)]));
+            }
+        }
+
+        foreach (var pair in _armed)
+        {
+            if (FlowKey(pair.Key, out var gadget, out var flow))
+            {
+                entries.Add(Pack(["A", gadget, flow, .. RecordFields(pair.Value)]));
+            }
+        }
+
+        foreach (var request in Waiting.Values)
+        {
+            entries.Add(Pack(["W", request.Variable, request.Target, .. ActorFields(request)]));
+        }
+
+        foreach (var request in SoloTeleports)
+        {
+            if (!request.Expected)
+            {
+                entries.Add(Pack(["T", request.Target, .. ActorFields(request)]));
+            }
+            else if (request.Listener is { IsTriggered: true } listener &&
+                     _causes.TryGetValue(listener, out var cause) && ReferenceEquals(cause.Expected, request) &&
+                     FlowKey(listener, out var gadget, out var flow))
+            {
+                entries.Add(Pack(["P", gadget, flow]));
+            }
+        }
+
+        return entries.Count == 0 ? string.Empty : SavedStateVersion + ";" + string.Join(";", entries);
+    }
+
+    // OnLocationReady, after a load: takes the saved state out of the campaign's variables (so it is in a save
+    // only) and puts back what still fits the loaded game. Returns the waiting commands' entries by variable,
+    // for OnLocationReady to apply once it has taken the commands themselves.
+    //
+    // Nothing stale is put back: a record only for a flow that exists and is still triggered or has the game's
+    // "pending trigger kept in the save" flag (the game starts exactly those after a load; an area's or a plate's
+    // is not kept by the game, which works out again who stands in it); a gadget name that more than one gadget
+    // has names none; a kept place only for a record that was put back. A character who is gone by the time the
+    // command runs fails it there, as always (ValidActor).
+    private static Dictionary<string, string[]> RestoreState(IGameVariableService variables, GameLocation location)
+    {
+        var waiting = new Dictionary<string, string[]>();
+        var text = StringValueOf(variables, SavedStateVariable);
+
+        // the mod made the variable for the save; a campaign's own variable of that name is only emptied
+        RemoveSavedState(variables, !string.IsNullOrEmpty(text));
+
+        var entries = (text ?? string.Empty).Split(';');
+
+        if (entries.Length < 2 || entries[0] != SavedStateVersion)
+        {
+            return waiting;
+        }
+
+        var gadgets = GadgetsById().Values
+            .Where(x => x?.UniqueNameId != null)
+            .GroupBy(x => x.UniqueNameId)
+            .Where(x => x.Count() == 1)
+            .ToDictionary(x => x.Key, x => x.First());
+        var fields = entries.Skip(1).Select(Unpack).Where(x => x.Length > 0).ToList();
+        var restored = 0;
+
+        GameGadgetListener Find(string gadgetName, string flowId)
+        {
+            return gadgets.TryGetValue(gadgetName, out var gadget)
+                ? gadget.activeListeners?.FirstOrDefault(x => x != null && x.FlowId == flowId)
+                : null;
+        }
+
+        // records first: the queue's kept places refer to them
+        foreach (var entry in fields.Where(x => x.Length == 3 + RecordFieldCount && x[0] is "C" or "A"))
+        {
+            var listener = Find(entry[1], entry[2]);
+
+            if (listener == null)
+            {
+                continue;
+            }
+
+            var record = ReadRecord(entry, 3);
+
+            if (entry[0] == "A")
+            {
+                if (listener is not (GameGadgetListenerElapsedTime or GameGadgetListenerHourUpdate))
+                {
+                    continue;
+                }
+
+                _armed[listener] = record;
+                restored++;
+
+                // a timer that came due while the game loaded has fired without its record: it gets it now
+                if (!listener.IsTriggered || _causes.ContainsKey(listener))
+                {
+                    continue;
+                }
+
+                record = record.Copy(ExtendChain(record.Chain, entry[1]));
+            }
+            else if (!(listener.IsTriggered || listener.PendingSavedTrigger) || _causes.ContainsKey(listener))
+            {
+                continue;
+            }
+
+            _causes.Add(listener, record);
+            restored++;
+        }
+
+        foreach (var entry in fields)
+        {
+            switch (entry[0])
+            {
+                case "W" when entry.Length == 3 + ActorFieldCount:
+                    waiting[entry[1]] = entry;
+                    break;
+                case "T" when entry.Length == 2 + ActorFieldCount:
+                    var request = new Request
+                    {
+                        Kind = Kind.TeleportOne,
+                        Variable = TeleportNodeVariable,
+                        Location = location,
+                        Target = entry[1],
+                        Serial = ++_serial,
+                        IssuedAt = GameSeconds()
+                    };
+
+                    ReadActor(request, entry, 2);
+                    NewestSerial[TeleportNodeVariable] = request.Serial;
+                    SoloTeleports.Add(request);
+                    restored++;
+                    break;
+                case "P" when entry.Length == 3:
+                    if (Find(entry[1], entry[2]) is { } listener && _causes.TryGetValue(listener, out var cause) &&
+                        cause.Expected == null)
+                    {
+                        ExpectSoloTeleport(listener, cause);
+                    }
+
+                    break;
+            }
+        }
+
+        Main.Info($"DM commands: {restored} waiting record(s) and teleport(s) put back from the save, " +
+                  $"{waiting.Count} waiting command(s) to match.");
+
+        return waiting;
+    }
+
+    // the gadget's unique name and the flow's id, when the flow has both
+    private static bool FlowKey(GameGadgetListener listener, out string gadget, out string flow)
+    {
+        gadget = listener?.SourceGadget ? listener.SourceGadget.GameGadget?.UniqueNameId : null;
+        flow = listener?.FlowId;
+
+        return !string.IsNullOrEmpty(gadget) && !string.IsNullOrEmpty(flow);
+    }
+
+    private static string Pack(string[] fields)
+    {
+        return string.Join(",", fields.Select(x => Uri.EscapeDataString(x ?? string.Empty)));
+    }
+
+    private static string[] Unpack(string entry)
+    {
+        return string.IsNullOrEmpty(entry) ? [] : entry.Split(',').Select(Uri.UnescapeDataString).ToArray();
+    }
+
+    private static string Flag(bool value)
+    {
+        return value ? "1" : "0";
+    }
+
+    private static string Text(string field)
+    {
+        return string.IsNullOrEmpty(field) ? null : field;
+    }
+
+    private static ulong Id(string field)
+    {
+        return ulong.TryParse(field, out var id) ? id : 0;
+    }
+
+    private const int RecordFieldCount = 9;
+
+    private static string[] RecordFields(Activation record)
+    {
+        return
+        [
+            Flag(record.MoverKnown), record.MoverGuid.ToString(), record.MoverName,
+            Flag(record.SoloTeleportEligible), Flag(record.Group), Flag(record.Untraced), record.Origin,
+            record.OriginTerm, record.Chain
+        ];
+    }
+
+    private static Activation ReadRecord(string[] entry, int at)
+    {
+        return new Activation
+        {
+            MoverKnown = entry[at] == "1",
+            MoverGuid = Id(entry[at + 1]),
+            MoverName = Text(entry[at + 2]),
+            SoloTeleportEligible = entry[at + 3] == "1",
+            Group = entry[at + 4] == "1",
+            Untraced = entry[at + 5] == "1",
+            Origin = Text(entry[at + 6]),
+            OriginTerm = Text(entry[at + 7]),
+            Chain = Text(entry[at + 8])
+        };
+    }
+
+    private const int ActorFieldCount = 8;
+
+    private static string[] ActorFields(Request request)
+    {
+        return
+        [
+            Flag(request.ActorKnown), request.ActorGuid.ToString(), request.ActorName, request.ActorProblem,
+            request.ProblemTerm, request.Chain, request.Origin, request.ActorNote
+        ];
+    }
+
+    private static void ReadActor(Request request, string[] entry, int at)
+    {
+        request.ActorKnown = entry[at] == "1";
+        request.ActorGuid = Id(entry[at + 1]);
+        request.ActorName = Text(entry[at + 2]);
+        request.ActorProblem = Text(entry[at + 3]);
+        request.ProblemTerm = Text(entry[at + 4]);
+        request.Chain = Text(entry[at + 5]);
+        request.Origin = Text(entry[at + 6]);
+        request.ActorNote = Text(entry[at + 7]);
     }
 
     #endregion
