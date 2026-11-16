@@ -94,6 +94,16 @@ internal static class DungeonMakerNameHints
 
     // whether the field being hinted wants the panel below it rather than above
     private static bool _below;
+
+    // whether the hint on screen is an error hint (the missing-name warning) or an information hint, for the
+    // setting that governs it (DungeonMakerHintFollower)
+    private static bool _warningShown;
+
+    // the setting that hides this kind of hint is on (Mod UI > Dungeon Maker)
+    private static bool KindHidden(bool warning)
+    {
+        return warning ? Main.Settings.DisableDungeonMakerErrorHints : Main.Settings.DisableDungeonMakerCommandHints;
+    }
     private static readonly Vector3[] Corners = new Vector3[4];
 
     #region Which fields
@@ -306,7 +316,7 @@ internal static class DungeonMakerNameHints
         // the name written into a command (the command-value fields), false for what a name does (typing a
         // variable's name, pointing at a variable row). Every hint comes through here, so a switched-off kind
         // never shows, and one still up from before the switch goes.
-        if (warning ? Main.Settings.DisableDungeonMakerErrorHints : Main.Settings.DisableDungeonMakerCommandHints)
+        if (KindHidden(warning))
         {
             if (_panel)
             {
@@ -323,6 +333,7 @@ internal static class DungeonMakerNameHints
         _owner = owner;
         _target = target;
         _below = below;
+        _warningShown = warning;
         _label.color = warning ? WarningColor : _textColor;
         _label.text = text;
 
@@ -561,12 +572,17 @@ internal static class DungeonMakerNameHints
         return textColor;
     }
 
-    // keeps the panel on its field or row while it is shown, and takes it away when that goes
+    // Keeps the panel on its field or row while it is shown, and takes it away when that goes, or when its kind of
+    // hint is switched off (user, 2026-11-17: "The hint should also be cleared if the field is unfocused, in the
+    // case of the disable"). Losing the focus already hides a field's hint (DungeonMakerFieldHint.OnDeselected),
+    // but a hint shown before the switch was turned on stayed until the field next refreshed; it now goes on the
+    // next frame, focused or not.
     private sealed class DungeonMakerHintFollower : MonoBehaviour
     {
         private void LateUpdate()
         {
-            if (!_owner || !_owner.isActiveAndEnabled || !_target || !_target.gameObject.activeInHierarchy)
+            if (!_owner || !_owner.isActiveAndEnabled || !_target || !_target.gameObject.activeInHierarchy ||
+                KindHidden(_warningShown))
             {
                 _owner = null;
                 _target = null;
