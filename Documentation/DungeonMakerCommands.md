@@ -180,7 +180,7 @@ points it out while you type (next section).
   of these editors after starting the game; "Hide this from now on" stops that (Mod UI > Dungeon Maker has the
   same choice), and the "?" still opens it. While the list is open, the mouse wheel and clicks only act on the
   list, not on the map or graph behind it.
-- **Switching them off:** Mod UI > Dungeon Maker has "Hide information about campaign commands" (the hints on
+- **Switching them off:** Mod UI > Dungeon Maker has "Hide hints about campaign commands" (the hints on
   what a name does, typed or pointed at; names keep their colours), "Hide error hints for campaign commands" (the
   warning that nothing goes by the name written into a command) and "Hide the list of gadget names suggested
   while typing a command's value". All three are off by default.
