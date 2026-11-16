@@ -807,7 +807,7 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        if (!listener.IsTriggered)
+        if (!IsPending(listener))
         {
             // the trigger was taken back before its flow ran
             ForgetExpected(listener);
@@ -1494,6 +1494,11 @@ internal static class DungeonMakerCommandsContext
     //   W variable target actor   a waiting Dialog_Trigger, Roll_Trigger or Teleport_PartyNode
     //   T target actor         a waiting one-character teleport, in the queue's order
     //   P gadget flow          a place kept in that queue for a flow of C, at its place in the order
+    //   O variable             a command or request name the mod has found to be the campaign's own variable
+    //                          (DungeonMakerNamesContext.MarkOwnRequest). It decides whether a later write is a
+    //                          command, so a computer that loads or joins the game must know it as well as one that
+    //                          saw it happen, or the two would act differently on the same write (Codex's review
+    //                          of 02a462d3).
     // Not kept: flows that were running (the game doesn't resume them after a load, so their record and the
     // places they kept have nothing to go with), and commands already handed to the game (cancelled on load).
     private static string SaveState()
@@ -1502,7 +1507,7 @@ internal static class DungeonMakerCommandsContext
 
         foreach (var pair in _causes)
         {
-            if (pair.Key.IsTriggered && FlowKey(pair.Key, out var gadget, out var flow))
+            if (IsPending(pair.Key) && FlowKey(pair.Key, out var gadget, out var flow))
             {
                 entries.Add(Pack(["C", gadget, flow, .. RecordFields(pair.Value)]));
             }
@@ -1527,12 +1532,17 @@ internal static class DungeonMakerCommandsContext
             {
                 entries.Add(Pack(["T", request.Target, .. ActorFields(request)]));
             }
-            else if (request.Listener is { IsTriggered: true } listener &&
+            else if (request.Listener is { } listener && IsPending(listener) &&
                      _causes.TryGetValue(listener, out var cause) && ReferenceEquals(cause.Expected, request) &&
                      FlowKey(listener, out var gadget, out var flow))
             {
                 entries.Add(Pack(["P", gadget, flow]));
             }
+        }
+
+        foreach (var name in DungeonMakerNamesContext.OwnRequestNames.OrderBy(x => x, StringComparer.Ordinal))
+        {
+            entries.Add(Pack(["O", name]));
         }
 
         return entries.Count == 0
@@ -1604,7 +1614,7 @@ internal static class DungeonMakerCommandsContext
 
                 record = record.Copy(ExtendChain(record.Chain, entry[1]));
             }
-            else if (!(listener.IsTriggered || listener.PendingSavedTrigger) || _causes.ContainsKey(listener))
+            else if (!IsPending(listener) || _causes.ContainsKey(listener))
             {
                 continue;
             }
@@ -1636,6 +1646,11 @@ internal static class DungeonMakerCommandsContext
                     SoloTeleports.Add(request);
                     restored++;
                     break;
+                case "O" when entry.Length == 2:
+                    DungeonMakerNamesContext.MarkOwnRequest(entry[1],
+                        "it was the campaign's own variable when the game was saved");
+                    restored++;
+                    break;
                 case "P" when entry.Length == 3:
                     if (Find(entry[1], entry[2]) is { } listener && _causes.TryGetValue(listener, out var cause) &&
                         cause.Expected == null)
@@ -1651,6 +1666,16 @@ internal static class DungeonMakerCommandsContext
                   $"{waiting.Count} waiting command(s) to match.");
 
         return waiting;
+    }
+
+    // Is this flow waiting to be started by the game? Either its trigger is set, or it was set when the game was
+    // saved: GameGadget.PostLoad puts that back as PendingSavedTrigger, without setting the listener's own trigger,
+    // and the game's own save keeps a flow when either is set (Codex's review of 02a462d3, read in the IL). Saving,
+    // restoring and the teleport queue's kept places all ask this, so a chain loaded from a save, then saved again
+    // before it has run, keeps who is behind it.
+    private static bool IsPending(GameGadgetListener listener)
+    {
+        return listener != null && (listener.IsTriggered || listener.PendingSavedTrigger);
     }
 
     // the gadget's unique name and the flow's id, when the flow has both
@@ -1903,7 +1928,7 @@ internal static class DungeonMakerCommandsContext
             return withinTime;
         }
 
-        if (!listener.IsTriggered)
+        if (!IsPending(listener))
         {
             // ended without writing, or its trigger was taken back
             return false;

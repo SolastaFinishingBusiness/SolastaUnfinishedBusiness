@@ -41,7 +41,7 @@ namespace SolastaUnfinishedBusiness.Models;
 // treat it the author's own and ignore it. Log it in the Player.log once"). There is nothing to move these to:
 // the campaign writes them. So when a write can never be a command (the variable has the wrong type, or the text
 // names nothing in the location and nothing anywhere in the campaign's data), the variable is the campaign's
-// own for the rest of that game: nothing is done, no alert is shown, the variable is not emptied, and the log
+// own for the rest of that game (saves of it keep it too, see DungeonMakerCommandsContext "SAVES"): nothing is done, no alert is shown, the variable is not emptied, and the log
 // says so once (MarkOwnRequest). A command that names something real and fails for another reason fails as
 // before, with its alert. Typing mistakes are pointed out where they are made, in the editor (NameHint,
 // ValueHint, shown by CustomUI/DungeonMakerNameHints).
@@ -222,6 +222,10 @@ internal static class DungeonMakerNamesContext
         OwnRequests.Clear();
     }
 
+    // the names found so far, for the saved state (DungeonMakerCommandsContext.SaveState), which carries them to
+    // a computer that loads or joins the game
+    internal static IEnumerable<string> OwnRequestNames => OwnRequests;
+
     internal static bool IsOwnRequest(string name)
     {
         return OwnRequests.Count > 0 && OwnRequests.Contains(name);
@@ -233,8 +237,8 @@ internal static class DungeonMakerNamesContext
     {
         if (OwnRequests.Add(name))
         {
-            Main.Info($"DM names: `{name}` is treated as the campaign's own variable until another game is " +
-                      $"loaded, and the mod leaves it alone: {why}.");
+            Main.Info($"DM names: `{name}` is treated as the campaign's own variable in this game and its " +
+                      $"saves, and the mod leaves it alone: {why}.");
         }
     }
 

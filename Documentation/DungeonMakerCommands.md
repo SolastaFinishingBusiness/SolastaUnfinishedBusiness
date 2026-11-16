@@ -138,7 +138,7 @@ variables) can't be moved, since you are the one writing them. Instead:
 - if the variable has a type the command never has (a command is a String, the others are Int), or
 - if what is written into a command names nothing in the location and nothing anywhere in the campaign,
 
-the mod takes the variable to be your own for the rest of that game: it does nothing, shows no message, leaves the
+the mod takes the variable to be your own for the rest of that game, saves of it included: it does nothing, shows no message, leaves the
 variable as it is, and says so once in `Player.log`. A command that names something real and can't be carried
 out still fails with its message, as before. So a mistyped name is no longer reported while playing; the editor
 points it out while you type (next section).

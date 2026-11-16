@@ -254,8 +254,21 @@ internal static class DungeonMakerNameHints
         _panel.SetActive(false);
     }
 
-    // Takes the look of the game's tooltip panel: the first picture of its prefab that has a sprite (its
-    // background) and the font and colour of its first text. Whatever is missing keeps the plain look.
+    // Takes the look of the game's tooltip.
+    //
+    // The background: the game's tooltip panel prefab (TooltipPanelSimple for the default class) draws it in
+    // layers, its direct children in this order: Shadow (a soft glow around it), BackgroundBlur (the panel itself)
+    // and Frame (its border), each a stretched Image (read from the prefab, 2026-11-16). Each of those layers is
+    // copied under the hint's panel, in the same order and with the same anchors, sprite, material and colour, and
+    // the panel's own plain box is then made transparent. (The first version took only the prefab's first Image
+    // with a sprite, which is the Shadow: the hint was drawn as a near-invisible glow, seen in game on 02a462d3.)
+    //
+    // The text: the panel prefab holds no text of its own (its rows are added when a tooltip is shown), so the
+    // font, material and colour come from the class's description row (the feature prefab with a
+    // TooltipFeatureDescription, whose label is the tooltip's body text). The first version found no text in the
+    // panel prefab and so kept the input field's font, the editor's serif capitals.
+    //
+    // Whatever is missing keeps the plain look: a dark box and the field's font.
     private static void StyleLikeTooltip(Image background)
     {
         try
@@ -268,35 +281,60 @@ internal static class DungeonMakerNameHints
                 return;
             }
 
-            var prefab = (classes.TryGetValue(GuiManager.DefaultTooltipClass, out var standard) && standard
-                    ? standard
-                    : classes.Values.FirstOrDefault(x => x && x.TooltipPanelPrefab))?
-                .TooltipPanelPrefab;
+            var definition = classes.TryGetValue(GuiManager.DefaultTooltipClass, out var standard) && standard
+                ? standard
+                : classes.Values.FirstOrDefault(x => x && x.TooltipPanelPrefab);
 
-            if (!prefab)
+            if (!definition)
             {
                 return;
             }
 
-            var picture = prefab.GetComponentsInChildren<Image>(true).FirstOrDefault(x => x.sprite);
+            var prefab = definition.TooltipPanelPrefab;
+            var layers = 0;
 
-            if (picture)
+            if (prefab)
             {
-                background.sprite = picture.sprite;
-                background.type = picture.type;
-                background.color = picture.color;
-                background.material = picture.material;
-                background.pixelsPerUnitMultiplier = picture.pixelsPerUnitMultiplier;
+                foreach (Transform child in prefab.transform)
+                {
+                    // only the picture layers; the features table and anything else of the prefab stay out
+                    if (child.GetComponent<Image>() is not { } picture || !picture.sprite ||
+                        child.GetComponentsInChildren<Component>(true).Any(x =>
+                            x is not RectTransform and not CanvasRenderer and not Image))
+                    {
+                        continue;
+                    }
+
+                    var copy = UnityEngine.Object.Instantiate(child.gameObject, _rect, false);
+
+                    copy.name = child.name;
+                    copy.GetComponent<Image>().raycastTarget = false;
+                    copy.transform.SetSiblingIndex(layers++);
+                }
             }
 
-            var text = prefab.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(x => x.font);
+            if (layers > 0)
+            {
+                background.color = Color.clear;
+            }
+
+            var text = definition.TooltipFeatures?
+                .Select(x => x.featurePrefab ? x.featurePrefab.GetComponent<TooltipFeatureDescription>() : null)
+                .Where(x => x)
+                .Select(x => x.GetComponentsInChildren<TMP_Text>(true).FirstOrDefault(t => t.font))
+                .FirstOrDefault(x => x);
 
             if (text)
             {
                 _label.font = text.font;
                 _label.fontSharedMaterial = text.fontSharedMaterial;
+                _label.fontSize = text.fontSize;
+                _label.fontStyle = text.fontStyle;
                 _textColor = text.color;
             }
+
+            Main.Info($"DM name hints: tooltip look taken from '{(prefab ? prefab.name : "?")}' ({layers} " +
+                      $"background layers) and font '{(text ? text.font.name : "the field's")}'.");
         }
         catch (Exception e)
         {
