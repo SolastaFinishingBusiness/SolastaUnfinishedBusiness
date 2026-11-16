@@ -154,6 +154,12 @@ internal static class DungeonMakerDisplay
             Main.Settings.DisableDungeonMakerCommandHints = toggle;
         }
 
+        toggle = Main.Settings.DisableDungeonMakerErrorHints;
+        if (UI.Toggle(Gui.Localize("ModUi/&DisableDungeonMakerErrorHints"), ref toggle))
+        {
+            Main.Settings.DisableDungeonMakerErrorHints = toggle;
+        }
+
         toggle = Main.Settings.DisableDungeonMakerNameSuggestions;
         if (UI.Toggle(Gui.Localize("ModUi/&DisableDungeonMakerNameSuggestions"), ref toggle))
         {

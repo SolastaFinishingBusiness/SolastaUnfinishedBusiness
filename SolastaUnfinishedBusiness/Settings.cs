@@ -403,7 +403,10 @@ public class Settings : UnityModManager.ModSettings
     // default). Additionally, add the ability to disable the suggestions as well (but be off by default)"):
     // on, no hint panel (CustomUI/DungeonMakerNameHints.Show) / no list of gadget names to pick from
     // (CustomUI/DungeonMakerNameSuggestions.Show). Names keep their colours, and the "?" list stays.
+    // Then split (user, 2026-11-17: "something like 'Hide information about campaign commands' and 'Hide error
+    // hints'"): CommandHints is what a name does, ErrorHints the warning that nothing goes by a command's value.
     public bool DisableDungeonMakerCommandHints { get; set; }
+    public bool DisableDungeonMakerErrorHints { get; set; }
     public bool DisableDungeonMakerNameSuggestions { get; set; }
 
     // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"

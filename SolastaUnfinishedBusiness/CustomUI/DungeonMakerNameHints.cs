@@ -301,9 +301,12 @@ internal static class DungeonMakerNameHints
             return;
         }
 
-        // switched off in Mod UI > Dungeon Maker: every hint comes through here, so none shows, and one still up
-        // from before the switch goes
-        if (Main.Settings.DisableDungeonMakerCommandHints)
+        // switched off in Mod UI > Dungeon Maker, each kind on its own (user, 2026-11-17: "Hide information about
+        // campaign commands" and "Hide error hints"): warning is true only for the warning that nothing goes by
+        // the name written into a command (the command-value fields), false for what a name does (typing a
+        // variable's name, pointing at a variable row). Every hint comes through here, so a switched-off kind
+        // never shows, and one still up from before the switch goes.
+        if (warning ? Main.Settings.DisableDungeonMakerErrorHints : Main.Settings.DisableDungeonMakerCommandHints)
         {
             if (_panel)
             {
