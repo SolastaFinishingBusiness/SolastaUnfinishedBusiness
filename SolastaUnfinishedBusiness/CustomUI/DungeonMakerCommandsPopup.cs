@@ -236,6 +236,18 @@ internal static class DungeonMakerCommandsPopup
             plain.text = text;
         }
 
+        // The game's GuiButtonSetup is taken off the copy, before the icon slot below is switched off. On each
+        // OnEnable (the editor shown again) and each change of input scheme it runs
+        // DeactivateGamepadBindingButton, which switches its basicImage back on (SAVE's basicImage is that very
+        // slot, the Image child; read from the prefab) and RefreshHorizontalLayout, which sets the layout group's
+        // padding and alignment again and, with a basicWidth, the button's width (IL, 2026-11-16; Codex's review
+        // of 27bf71cf). It only serves the gamepad prompt, which the ? has none of. DestroyImmediate, so that
+        // its OnDisable unhooks it from the input service at once.
+        if (copy.TryGetComponent<GuiButtonSetup>(out var setup))
+        {
+            Object.DestroyImmediate(setup);
+        }
+
         // The label alone is laid out. The editors' SAVE button (read from the prefab, 2026-11-16) is a
         // HorizontalLayoutGroup, padding 10 left and right, centred, spacing 4, over its children Image (an icon
         // slot, the arrow on UNDO; on SAVE it draws nothing but is active, laid out, preferred width 16) and Label.

@@ -2842,6 +2842,22 @@ internal static class DungeonMakerCommandsContext
     // markup is shown as it is, never read as part of the line's format
     private const string PlaytestLogTerm = "Feedback/&DungeonMakerPlaytestLine";
 
+    // The game's log reads "{x}" as a parameter's place also inside a parameter's own text: after putting the
+    // parameters in, GameRecordEntry.BreakdownFragments asks TextBreaker.HasUnassignedParameters again, which
+    // takes any word whose first '}' comes two characters after its first '{' as parameter number x (IL,
+    // 2026-11-16; Codex's review of 27bf71cf). An error naming a gadget "{0}" would then show the prefix in its
+    // place, "{1}" would put the error into itself again and again, and "{9}" would ask for a parameter that isn't
+    // there. A zero-width space after every '{' and before every '}' keeps the text as it reads, and no '}' can
+    // then be two characters after a '{' (not even in "{}", which becomes four characters).
+    private const char ZeroWidthSpace = '​';
+
+    private static string NoPlaceholders(string text)
+    {
+        return string.IsNullOrEmpty(text)
+            ? text
+            : text.Replace("{", "{" + ZeroWidthSpace).Replace("}", ZeroWidthSpace + "}");
+    }
+
     private static bool IsPlaytest()
     {
         var session = ServiceRepository.GetService<ISessionService>();
@@ -2863,7 +2879,7 @@ internal static class DungeonMakerCommandsContext
             var entry = new GameConsoleEntry(PlaytestLogTerm, console.consoleTableDefinition);
 
             entry.AddParameter(ConsoleStyleDuplet.ParameterType.Base, prefix);
-            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Negative, text);
+            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Negative, NoPlaceholders(text));
             console.AddEntry(entry);
         }
         catch (Exception e)
