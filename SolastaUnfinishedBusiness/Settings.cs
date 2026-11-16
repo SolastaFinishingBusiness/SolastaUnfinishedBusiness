@@ -392,6 +392,12 @@ public class Settings : UnityModManager.ModSettings
     public int DungeonMakerListSort { get; set; }
     public bool DungeonMakerListSortDescending { get; set; }
 
+    // The list of the mod's campaign commands opens by itself the first time a location, dialogue or quest editor
+    // is shown in a game launch (issue #42, CustomUI/DungeonMakerCommandsPopup.cs), unless this is on. Set by the
+    // list's "Hide this from now on" button, and from Mod UI > Dungeon Maker; the editors' "?" button opens the
+    // list either way.
+    public bool DungeonMakerHideCommandsPopup { get; set; }
+
     // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"
     // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by
     // DungeonMakerListTools.CategoryChoice; a list that isn't there has none.

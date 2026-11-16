@@ -532,6 +532,32 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: Dungeon Maker editors where a command can be written (location, dialogue, quest): a "?" button beside
+    //their CLOSE button opens the list of the mod's commands, and the list opens by itself the first time one of
+    //them is shown (DungeonMakerCommandsPopup). OnBeginShow is where each of these screens starts being shown.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.OnBeginShow));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.OnBeginShow));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.OnBeginShow));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GuiScreen __instance)
+        {
+            DungeonMakerCommandsPopup.OnEditorShown(__instance);
+        }
+    }
+
     //PATCH: Dungeon Maker editor: the keys of the gadget-name suggestions list (DungeonMakerNameSuggestions,
     //"CHOOSING WITH THE KEYS"). KeyPressed is where a TMP text field handles one key-down event. For the one field
     //whose list is open, Up, Down, Escape, and Enter or Tab on a highlighted row are used for the list, and the

@@ -131,6 +131,23 @@ internal static class DungeonMakerDisplay
 
         DisplayListTools();
 
+        // The campaign commands (issue #42): the guide, a file in the mod's folder that this opens with the
+        // computer's own program for it, like the monster lists above; and whether the commands list opens by
+        // itself in the editors (the list's "Hide this from now on" button turns the same setting on).
+        UI.Label();
+
+        using (UI.HorizontalScope())
+        {
+            UI.ActionButton(Gui.Localize("ModUi/&DungeonMakerCommandsMenuButton").Bold().Khaki(),
+                () => UpdateContext.OpenDocumentation("DungeonMakerCommands.md"), UI.Width(DOC_BUTTON_WIDTH * 2));
+        }
+
+        toggle = !Main.Settings.DungeonMakerHideCommandsPopup;
+        if (UI.Toggle(Gui.Localize("ModUi/&DungeonMakerCommandsMenuShowPopup"), ref toggle))
+        {
+            Main.Settings.DungeonMakerHideCommandsPopup = !toggle;
+        }
+
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&Advanced"));
         UI.Label();

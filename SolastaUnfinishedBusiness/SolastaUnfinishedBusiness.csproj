@@ -306,6 +306,12 @@
     <None Update="ChangelogHistory.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- The guide of the Dungeon Maker campaign commands (issue #42) goes into the mod's Documentation folder, where
+         Mod UI > Dungeon Maker > Campaign commands opens it. The other files of that folder are written by the mod
+         itself when the game starts (DocumentationContext); this one is written by hand. -->
+    <None Include="..\Documentation\DungeonMakerCommands.md" Link="Documentation\DungeonMakerCommands.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

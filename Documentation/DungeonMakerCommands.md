@@ -162,6 +162,17 @@ points it out while you type (next section).
   - **blue:** writing it makes something happen: the commands (`Teleport_Node`, `Roll_Trigger`...), the requests
     (`Torches_Lit`, `Clock_SkipHours`...) and the counter switches (`Clock_Count...`).
 - A hint only informs: nothing is changed or refused.
+- **Gadget names are offered as you type** the text for `Dialog_Trigger`, `Roll_Trigger`, `Teleport_Node` or
+  `Teleport_PartyNode`: a small list by the field with up to eight names, the likely ones for that command first
+  (Roll Activators for a roll, Nodes for a teleport, NPCs and dialogue gadgets for a dialogue), then by how well
+  they fit what is typed. Click a name, or use Up and Down and then Enter or Tab, to put it in the field; Escape
+  closes the list. The arrow keys and Enter only belong to the list while it is open and, for Enter, a name is
+  highlighted. The warning for a name nothing goes by shows only when there is nothing to offer.
+- **The "?" button** beside CLOSE in the location, dialogue and quest editors opens the list of every name the mod
+  uses, with what each does and the colours' meaning. The list also opens by itself the first time you open one
+  of these editors after starting the game; "Hide this from now on" stops that (Mod UI > Dungeon Maker has the
+  same choice), and the "?" still opens it.
+- **Mod UI > Dungeon Maker > Campaign commands** opens this guide from the mod's folder.
 
 ## The mod's version in campaign files
 
