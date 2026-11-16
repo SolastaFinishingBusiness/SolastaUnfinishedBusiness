@@ -161,9 +161,10 @@ extra field at the start (`"finishingBusinessVersion"`), for instance `1.17.0` o
 
 - A game without the mod loads the file as before: the field is ignored. If that game saves the campaign again,
   the field is gone, so a file never claims a version that didn't write it.
-- A development build carries the last release's number and the commit it was built from. It is **newer** than
-  that release and older than the next one (the opposite of the usual rule for a `-something` suffix). Two
-  development builds of the same number can't be ordered from the text alone.
+- A development build carries the number of the release it is working towards and the commit it was built
+  from, and is **older** than that release, as usual for a `-something` suffix: `1.17.0` < `1.17.1` <
+  `1.18.0-dev.<commit>` < `1.18.0`. Two development builds with the same numbers count as the same version; only
+  the commit tells them apart, and it doesn't say which is newer.
 - Nothing is compared or refused yet. `Player.log` says which version a campaign file was saved with when the file
   is read and when the campaign is played.
 

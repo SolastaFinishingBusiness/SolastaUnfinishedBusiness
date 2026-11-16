@@ -26,8 +26,15 @@ namespace SolastaUnfinishedBusiness.Models;
 //     StampedJson), so the file and the cloud copy are the same.
 //
 // WHAT IS RECORDED: the version of the code that is running (UpdateContext.LoadedBuildVersion): "1.17.0" for a
-// release, "1.17.0-dev.0be2ed8d" for a development build, whose version is the last release's with the commit
-// it was built from. How such versions are ordered is ModBuildVersion's business (UpdateContext).
+// release, "<version>-dev.<first 8 characters of the commit>" for a development build.
+//
+// HOW TWO VERSIONS ARE ORDERED is the updater's business, not decided here: UpdateContext.CompareVersions is
+// used as it is. Once PR #72 is merged that is Semantic Versioning's pre-release order: develop carries the NEXT
+// version, so a development build is older than the release with the same numbers (1.17.0 < 1.17.1 <
+// 1.18.0-dev.<commit> < 1.18.0). Until then CompareVersions leaves the "-dev." mark out, so a development build
+// and the release with its numbers compare equal. Either way "equal" only means "the same numbers": two
+// development builds of one version differ by their commit alone, which says which code it was, not which is
+// newer, so the log then says that the commits differ.
 //
 // WHAT IS DONE WITH IT: nothing is compared or refused yet. The version a campaign file was saved with is
 // remembered when the file is read and written to the log, there and when the campaign is played.
@@ -167,23 +174,40 @@ internal static class DungeonMakerStampContext
               "the mod recorded it).");
     }
 
-    // " (older than ...)" and the like, for the log; nothing acts on it
+    // " (older than ...)" and the like, for the log; nothing acts on it. The order is UpdateContext.CompareVersions'
+    // (see "HOW TWO VERSIONS ARE ORDERED" at the top).
     private static string Compared(string stamp)
     {
         var running = UpdateContext.LoadedBuildVersion ?? Main.ModVersion;
 
-        if (!ModBuildVersion.TryParse(stamp, out var saved) || !ModBuildVersion.TryParse(running, out var current))
+        if (string.IsNullOrEmpty(stamp) || string.IsNullOrEmpty(running))
         {
             return string.Empty;
         }
 
-        return ModBuildVersion.Compare(saved, current) switch
+        if (stamp == running)
         {
-            null => $" (another development build of the same version as the running {running}; which is newer " +
-                    "can't be told from the versions)",
+            return " (the running version)";
+        }
+
+        int order;
+
+        try
+        {
+            order = UpdateContext.CompareVersions(stamp, running);
+        }
+        catch (Exception)
+        {
+            return string.Empty;
+        }
+
+        return order switch
+        {
             < 0 => $" (older than the running {running})",
             > 0 => $" (newer than the running {running})",
-            _ => " (the running version)"
+
+            // the same numbers, but not the same text: a development build's commit, or its mark, differs
+            _ => $" (the same version numbers as the running {running}, but another build: the commit differs)"
         };
     }
 }
