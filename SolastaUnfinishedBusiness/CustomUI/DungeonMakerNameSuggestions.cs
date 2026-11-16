@@ -64,7 +64,12 @@ internal static class DungeonMakerNameSuggestions
     // the highlighted row, by the mouse or the keys; -1 for none
     private static int _selected = -1;
 
-    private static bool IsOpen => _rect && _rect.gameObject.activeSelf && _owner;
+    // Open, and not switched off. The setting is read here too, not only in Show (Codex's re-review of bcc54037):
+    // switched off in the mod menu while a list is up, the list would otherwise keep taking the arrow keys, Enter,
+    // Tab and Escape until the field refreshes. So the keys, the focus rule and the hover rule drop it at once, and
+    // the Follower takes it off the screen on the next frame.
+    private static bool IsOpen => _rect && _rect.gameObject.activeSelf && _owner &&
+                                  !Main.Settings.DisableDungeonMakerNameSuggestions;
 
     // Shows these names for this field, replacing whatever the list showed.
     internal static void Show(DungeonMakerFieldHint owner, List<string> names)
@@ -337,6 +342,7 @@ internal static class DungeonMakerNameSuggestions
             var owner = _owner;
 
             if (!owner || !owner.isActiveAndEnabled || !owner.Field ||
+                Main.Settings.DisableDungeonMakerNameSuggestions ||
                 (!owner.HasFocus && !PointerOver(owner)))
             {
                 _owner = null;
