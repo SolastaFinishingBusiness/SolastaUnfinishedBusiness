@@ -257,11 +257,16 @@ internal static class DungeonMakerNameHints
     // Takes the look of the game's tooltip.
     //
     // The background: the game's tooltip panel prefab (TooltipPanelSimple for the default class) draws it in
-    // layers, its direct children in this order: Shadow (a soft glow around it), BackgroundBlur (the panel itself)
-    // and Frame (its border), each a stretched Image (read from the prefab, 2026-11-16). Each of those layers is
-    // copied under the hint's panel, in the same order and with the same anchors, sprite, material and colour, and
-    // the panel's own plain box is then made transparent. (The first version took only the prefab's first Image
-    // with a sprite, which is the Shadow: the hint was drawn as a near-invisible glow, seen in game on 02a462d3.)
+    // layers, its direct children in this order: Shadow (sprite TooltipShadow, a soft glow around it),
+    // BackgroundBlur (no sprite; material BlurredBackground, shader Custom/UI/BlurredBackground: the panel's
+    // fill) and Frame (sprite Frame1Pixel, its border), each a stretched Image (read from the prefab, 2026-11-16;
+    // Codex's review of 50f0b519 for the materials). Each layer that draws something, a sprite or a material of
+    // its own, is copied under the hint's panel, in the same order and with the same anchors, sprite, material and
+    // colour. The panel's own dark box stays under them: the blur shader samples a texture the game fills for its
+    // own tooltips (_BlurredBackground), which this editor canvas may not have, so the box keeps the hint readable
+    // whatever the blur draws. (The first version took only the prefab's first Image with a sprite, the Shadow:
+    // the hint was a near-invisible glow, seen in game on 02a462d3; the second skipped the sprite-less
+    // BackgroundBlur and cleared the box, leaving only a border, found by Codex's review of 50f0b519.)
     //
     // The text: the panel prefab holds no text of its own (its rows are added when a tooltip is shown), so the
     // font, material and colour come from the class's description row (the feature prefab with a
@@ -298,7 +303,8 @@ internal static class DungeonMakerNameHints
                 foreach (Transform child in prefab.transform)
                 {
                     // only the picture layers; the features table and anything else of the prefab stay out
-                    if (child.GetComponent<Image>() is not { } picture || !picture.sprite ||
+                    if (child.GetComponent<Image>() is not { } picture ||
+                        (!picture.sprite && picture.material == picture.defaultMaterial) ||
                         child.GetComponentsInChildren<Component>(true).Any(x =>
                             x is not RectTransform and not CanvasRenderer and not Image))
                     {
@@ -311,11 +317,6 @@ internal static class DungeonMakerNameHints
                     copy.GetComponent<Image>().raycastTarget = false;
                     copy.transform.SetSiblingIndex(layers++);
                 }
-            }
-
-            if (layers > 0)
-            {
-                background.color = Color.clear;
             }
 
             var text = definition.TooltipFeatures?
