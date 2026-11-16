@@ -1,4 +1,5 @@
-﻿using SolastaUnfinishedBusiness.Api.GameExtensions;
+﻿using SolastaUnfinishedBusiness.Models;
+using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Interfaces;
 using SolastaUnfinishedBusiness.Subclasses.Builders;
 
@@ -26,7 +27,7 @@ internal static class IconsOnPortrait
         // setup/update relevant custom controls
         var pools = character.GetSubFeaturesByType<ICustomPortraitPointPoolProvider>();
         if (Main.Settings.ShowChannelDivinityOnPortrait
-            && character.TryGetAttributeValue(AttributeDefinitions.ChannelDivinityNumber) > 0)
+            && Tabletop2024Context.GetChannelDivinityTotalMax(character) > 0)
         {
             pools.Add(PortraitPointChannelDivinity.Instance);
         }

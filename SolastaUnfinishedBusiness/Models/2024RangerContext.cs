@@ -386,7 +386,11 @@ public static partial class Tabletop2024Context
     {
         public bool RequiresConcentration(RulesetCharacter rulesetCharacter, RulesetEffectSpell rulesetEffectSpell)
         {
-            if (!Main.Settings.EnableRangerRelentlessHunter2024)
+            // Hunter's Mark loses its concentration only with the sub-option "Remove concentration requirements from
+            // Hunter's Mark instead" (#55); this read the main option, so from level 13 it never needed concentration
+            // whichever way the sub-option was set. Without the sub-option, damage just can't break it (below).
+            if (!Main.Settings.EnableRangerRelentlessHunter2024 ||
+                !Main.Settings.EnableRangerRelentlessHunter2024AsNoConcentration)
             {
                 return rulesetEffectSpell.SpellDefinition.RequiresConcentration;
             }

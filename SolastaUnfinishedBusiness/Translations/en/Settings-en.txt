@@ -158,7 +158,7 @@ ModUi/&EnableActionSwitching=Enable the action switching bar <i><color=#F0DAA0>[
 ModUi/&EnableAdditionalBackstoryDisplay=Enable additional backstory display on background inspection
 ModUi/&EnableAdditionalIconsOnLevelMap=Enable additional icons for camps, exits and teleporters on level map
 ModUi/&EnableAdditionalItemsInDungeonMaker=Add modded items to Editor
-ModUi/&EnableAllyMovementAllowsFlight=Allow features that move self or allies to include mid-air positions if that creature is flying (eg. <color=#D89555>Maneuvering Strike</color>, <color=#D89555>Instinctive Pounce</color>)
+ModUi/&EnableAllyMovementToWalls=Allow walls as destinations for creatures that can move on walls (eg. <color=#D89555>%Spell/&SpiderClimbTitle%</color>) when features move self or allies (eg. <color=#D89555>%Feature/&FeatureBarbarianInstinctivePounceTitle%</color>, <color=#D89555>%Feature/&GambitCoordinatedAttackTitle%</color>)
 ModUi/&EnableAlternateHuman=Enable the alternate <color=#D89555>Human</color> <i><color=#F0DAA0>[+1 feat / +2 attribute choices / +1 skill]</color></i>
 ModUi/&EnableAlternateVotingSystem=Enable alternate voting system <i><color=#F0DAA0>[choice weight = votes * hero Charisma modifier]</color></i>
 ModUi/&EnableBackgroundAbilityScoreIncreases=Ability score increases come from background instead of race <i><color=#F0DAA0>[Flexible Races is incompatible and will be toggled off]</color></i>

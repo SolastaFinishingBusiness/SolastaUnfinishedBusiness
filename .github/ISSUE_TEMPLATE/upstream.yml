@@ -1,0 +1,44 @@
+name: From upstream or another fork
+description: An issue or pull request from the original Unfinished Business or another fork, to bring here.
+title: "<what's wrong, in our words> (upstream PR #<number>)"
+labels: ["upstream"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tracks an outside issue or pull request in this repository. Write the original author's GitHub name in
+        backticks, without `@`, so they aren't notified before a release.
+  - type: input
+    id: link
+    attributes:
+      label: Original issue or pull request
+      description: The full link.
+      placeholder: https://github.com/<owner>/<repository>/pull/<number>
+    validations:
+      required: true
+  - type: input
+    id: author
+    attributes:
+      label: Original author
+      placeholder: "`their-github-name`"
+  - type: textarea
+    id: what
+    attributes:
+      label: What it is
+      description: The problem or feature, in our words.
+    validations:
+      required: true
+  - type: dropdown
+    id: plan
+    attributes:
+      label: Plan
+      options:
+        - Merge as is
+        - Adapt it
+        - Fix it differently
+        - Not decided yet
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Why that plan, and anything already found.

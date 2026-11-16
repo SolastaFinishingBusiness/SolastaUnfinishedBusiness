@@ -599,6 +599,7 @@ Tag/&PrimalOrderCantripSpecialTagTitle=Trucchetto dell'Ordine Primordiale
 Tag/&ThaumaturgeCantripSpecialTagTitle=Trucchetto del Taumaturgo
 ToolTip/&CheckBoxDefaultPartyTitle=Seleziona questa casella per impostare il tuo gruppo predefinito quando inizi nuove avventure o quando provi luoghi personalizzati. Puoi selezionare fino a {0} eroi in base al primo arrivato/primo uscito
 Tooltip/&AdvancementByCasterLevelFormat=Ai livelli dei personaggi 5, 11 e 17
+Tooltip/&ChannelDivinityPortraitPoolClassFormat={2}: hai {0} utilizzi su {1} di Incanalare Divinità.\nUn utilizzo viene recuperato con un riposo breve, tutti con un riposo lungo.
 Tooltip/&ChannelDivinityPortraitPoolFormat=Hai {0} utilizzi su {1} di Incanalare Divinità.\nTutti gli utilizzi vengono ripristinati con un riposo breve o lungo.
 Tooltip/&CoordinatedAssaultPortraitPoolFormat=Hai {0} su {1} utilizzi di Assalto Coordinato.\nTutti gli utilizzi vengono ripristinati con un lungo riposo.
 Tooltip/&CustomMapMarkerCamp=Campo

@@ -393,13 +393,14 @@ internal static class CampaignsDisplay
                 Main.Settings.NeverMoveCameraOnEnemyTurn = toggle;
             }
 
-            toggle = Main.Settings.EnableForceAllyMovementAllowsFlight;
-            if (UI.Toggle(Gui.Localize("ModUi/&EnableAllyMovementAllowsFlight"), ref toggle, UI.AutoWidth()))
-            {
-                Main.Settings.EnableForceAllyMovementAllowsFlight = toggle;
-            }
-
             UI.Label();
+        }
+
+        // outside the camera block above, so it shows whatever "Battle camera doesn't follow" is set to (#66)
+        toggle = Main.Settings.EnableAllyMovementToWalls;
+        if (UI.Toggle(Gui.Localize("ModUi/&EnableAllyMovementToWalls"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.EnableAllyMovementToWalls = toggle;
         }
 
         toggle = Main.Settings.EnableCancelEditOnRightMouseClick;

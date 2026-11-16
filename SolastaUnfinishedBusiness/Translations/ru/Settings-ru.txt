@@ -163,7 +163,7 @@ ModUi/&EnableActionSwitching=Включить панель переключен�
 ModUi/&EnableAdditionalBackstoryDisplay=Включить отображение дополнительной предыстории при просмотре происхождения
 ModUi/&EnableAdditionalIconsOnLevelMap=Включить дополнительные значки для лагерей, выходов и телепортов на карте уровня
 ModUi/&EnableAdditionalItemsInDungeonMaker=Добавить предметы мода в редактор
-ModUi/&EnableAllyMovementAllowsFlight=Позволить умениям, перемещающим персонажа или союзника, учитывать положение в воздухе, если существо летает (например <color=#D89555>Атака с манёвром</color> или <color=#D89555>Инстинктивный бросок</color>)
+ModUi/&EnableAllyMovementToWalls=Разрешить стены как место назначения для существ, способных передвигаться по стенам (например <color=#D89555>%Spell/&SpiderClimbTitle%</color>), когда умения перемещают персонажа или союзника (например <color=#D89555>%Feature/&FeatureBarbarianInstinctivePounceTitle%</color> или <color=#D89555>%Feature/&GambitCoordinatedAttackTitle%</color>)
 ModUi/&EnableAlternateHuman=Включить альтернативное происхождение <color=#D89555>Человека</color> <i><color=#F0DAA0>[+1 черта / +2 очка характеристик / +1 навык]</color></i>
 ModUi/&EnableAlternateVotingSystem=Включить альтернативную систему голосования <i><color=#F0DAA0>[весомость выбора = голоса * модификатор Харизмы героя]</color></i>
 ModUi/&EnableBG3AbjurationArcaneWard=Включить реализацию <color=#D89555>Магической защиты</color> Волшебника школы <b>Ограждения</b> как в BG3

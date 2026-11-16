@@ -91,6 +91,7 @@ public static partial class Tabletop2024Context
         FeatureDefinitionBuilder
             .Create("FeatureMonkPerfectFocus")
             .SetGuiPresentation(Category.Feature)
+            .AddCustomSubFeatures(new InitiativeEndListenerPerfectFocus())
             .AddToDB();
 
     internal static readonly FeatureDefinitionPower PowerMonkReturnAttacks = FeatureDefinitionPowerBuilder
@@ -508,8 +509,9 @@ public static partial class Tabletop2024Context
             x.FeatureDefinition == FeatureMonkSelfRestoration ||
             x.FeatureDefinition == FeatureSetMonkStillnessOfMind);
 
+        // its own option (#55): this read EnableMonkHeightenedFocus2024, so the Self Restoration option did nothing
         Monk.FeatureUnlocks.Add(
-            Main.Settings.EnableMonkHeightenedFocus2024
+            Main.Settings.EnableMonkSelfRestoration2024
                 ? new FeatureUnlockByLevel(FeatureMonkSelfRestoration, 10)
                 : new FeatureUnlockByLevel(FeatureSetMonkStillnessOfMind, 7));
 
@@ -985,17 +987,42 @@ public static partial class Tabletop2024Context
 
             void HandlePerfectFocus()
             {
-                if (!Main.Settings.EnableMonkHeightenedFocus2024 ||
-                    rulesetCharacter.GetClassLevel(Monk) < 15 ||
-                    rulesetCharacter.RemainingKiPoints >= 4)
-                {
-                    return;
-                }
-
-                rulesetCharacter.UsedKiPoints -= 4 - rulesetCharacter.RemainingKiPoints;
-                rulesetCharacter.KiPointsAltered?.Invoke(rulesetCharacter, rulesetCharacter.RemainingKiPoints);
-                rulesetCharacter.LogCharacterUsedFeature(FeatureMonkPerfectFocus);
+                ApplyPerfectFocus(rulesetCharacter);
             }
+        }
+    }
+
+    // "When you roll Initiative and don't use Uncanny Metabolism, you regain expended Focus Points until you have 4 if
+    // you have 3 or fewer."
+    private static void ApplyPerfectFocus(RulesetCharacter rulesetCharacter)
+    {
+        if (!Main.Settings.EnableMonkHeightenedFocus2024 ||
+            rulesetCharacter.GetClassLevel(Monk) < 15 ||
+            rulesetCharacter.RemainingKiPoints >= 4)
+        {
+            return;
+        }
+
+        rulesetCharacter.UsedKiPoints -= 4 - rulesetCharacter.RemainingKiPoints;
+        rulesetCharacter.KiPointsAltered?.Invoke(rulesetCharacter, rulesetCharacter.RemainingKiPoints);
+        rulesetCharacter.LogCharacterUsedFeature(FeatureMonkPerfectFocus);
+    }
+
+    // Perfect Focus for a Monk without Uncanny Metabolism (#55). It used to run only from Uncanny Metabolism's own
+    // initiative listener, which a Monk has only with the Uncanny Metabolism option on, so with that option off Perfect
+    // Focus never worked. A Monk who has Uncanny Metabolism still gets it there, after choosing not to use it.
+    private sealed class InitiativeEndListenerPerfectFocus : IInitiativeEndListener
+    {
+        public IEnumerator OnInitiativeEnded(GameLocationCharacter character)
+        {
+            var rulesetCharacter = character.RulesetCharacter;
+
+            if (!rulesetCharacter.HasAnyFeature(PowerMonkUncannyMetabolism))
+            {
+                ApplyPerfectFocus(rulesetCharacter);
+            }
+
+            yield break;
         }
     }
 

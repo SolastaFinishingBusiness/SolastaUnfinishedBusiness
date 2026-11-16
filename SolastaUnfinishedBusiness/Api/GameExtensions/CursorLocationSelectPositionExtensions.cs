@@ -54,4 +54,36 @@ internal static class CursorLocationSelectPositionExtensions
             }
         }
     }
+
+    /// <summary>
+    ///     Whether a creature that a feature walks to a picked spot (Instinctive Pounce, Second Wind's move, Withdraw,
+    ///     Remarkable Athlete, Maneuvering Attack, Strategic Reposition) may end its move at this position.
+    /// </summary>
+    /// <remarks>
+    ///     The floor part is the game's own picker rule (CursorLocationSelectPosition.ComputeValidPositions): only a
+    ///     teleport must end on real ground, so for these walks a flier may stop in mid-air and a walker needs a floor.
+    ///     The wall part follows the game's own movement cursor (CursorLocationExplorationCharacter
+    ///     .RefreshMovementHelper): a creature with the OnWalls motion range, which the game sets for any movement
+    ///     affinity that can move on walls (Spider Climb and others), may also end on a climbable wall
+    ///     (CanCharacterStayAtPosition_Walls, not limited to easy climbs). Behind the setting
+    ///     EnableAllyMovementToWalls, on by default (user, 2026-11-15: "allow walls as designations for characters
+    ///     who can walk on walls", default on; #66). Never for a teleport, which keeps the game's real-ground rule.
+    /// </remarks>
+    internal static bool CanEndMoveAt(
+        this CursorLocationSelectPosition cursor,
+        IGameLocationPositioningService positioningService,
+        GameLocationCharacter character,
+        int3 position)
+    {
+        if (positioningService.CanCharacterStayAtPosition_Floor(
+                character, position, onlyCheckCellsWithRealGround: cursor.isTeleportingSpell))
+        {
+            return true;
+        }
+
+        return Main.Settings.EnableAllyMovementToWalls &&
+               !cursor.isTeleportingSpell &&
+               character.CanMoveInSituation(RulesetCharacter.MotionRange.OnWalls) &&
+               positioningService.CanCharacterStayAtPosition_Walls(character, position, false);
+    }
 }

@@ -570,6 +570,9 @@ public static class RulesetCharacterPatcher
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, ref int __result, RulesetUsablePower usablePower)
         {
+            //PATCH: Channel Divinity's maximum follows the current options, per pool (#68)
+            Tabletop2024Context.ModifyChannelDivinityUses(__instance, usablePower, ref __result, false);
+
             __result += __instance.GetSubFeaturesByType<IModifyPowerPoolAmount>()
                 .Where(m => m.PowerPool == usablePower.PowerDefinition)
                 .Sum(m => m.PoolChangeAmount(__instance));
@@ -1182,6 +1185,9 @@ public static class RulesetCharacterPatcher
                         break;
                 }
             }
+
+            //PATCH: a Channel Divinity use of a class on the 2024 rules goes to that class's own pool (#68)
+            Tabletop2024Context.MoveChannelDivinityUse(__instance, usablePower);
 
             //PATCH: update usage for power pools 
             __instance.UpdateUsageForPower(usablePower, usablePower.PowerDefinition.CostPerUse);
@@ -1819,26 +1825,12 @@ public static class RulesetCharacterPatcher
         [UsedImplicitly]
         public static void Prefix(RulesetCharacter __instance, RestType restType)
         {
-            // invert used channel divinity sign if any 2024 setting enabled and a short rest to avoid double dip
-            if (restType == RestType.ShortRest &&
-                (Main.Settings.EnablePaladinChannelDivinity2024 || Main.Settings.EnableClericChannelDivinity2024))
-            {
-                __instance.UsedChannelDivinity = -__instance.UsedChannelDivinity;
-            }
-
             SwitchBindChainPowers(restType, RechargeRate.LongRest);
         }
 
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RestType restType, bool simulate)
         {
-            // put back used channel divinity sign if any 2024 setting enabled and a short rest to avoid double dip
-            if (restType == RestType.ShortRest &&
-                (Main.Settings.EnablePaladinChannelDivinity2024 || Main.Settings.EnableClericChannelDivinity2024))
-            {
-                __instance.UsedChannelDivinity = -__instance.UsedChannelDivinity;
-            }
-
             SwitchBindChainPowers(restType, RechargeRate.BindChain);
 
             //PATCH: update usage for power pools
@@ -1869,6 +1861,10 @@ public static class RulesetCharacterPatcher
                     invocation.Recharge();
                 }
             }
+
+            //PATCH: Channel Divinity pools of classes on the 2024 rules: one use back on a short rest, all on a long
+            // rest; the game's own shared pool (2014 classes) is reset by the game on any rest (#68)
+            Tabletop2024Context.RestChannelDivinityPools(__instance, restType, simulate);
 
             //TODO: time to make this an interface to support scenarios like below
             if (restType != RestType.ShortRest)
@@ -1907,31 +1903,6 @@ public static class RulesetCharacterPatcher
 
                     __instance.recoveredFeatures.Add(PowerFighterSecondWind);
                 }
-            }
-
-            //PATCH: support for Paladins to regain one channel divinity usage at short rests
-            if (Main.Settings.EnablePaladinChannelDivinity2024 && __instance.GetClassLevel(Paladin) >= 3 &&
-                __instance.UsedChannelDivinity > 0)
-            {
-                if (!simulate)
-                {
-                    __instance.UsedChannelDivinity -= 1;
-                }
-
-                __instance.recoveredFeatures.Add(AttributeModifierPaladinChannelDivinity);
-            }
-
-            //PATCH: support for Clerics to regain one channel divinity usage at short rests
-            // ReSharper disable once InvertIf
-            if (Main.Settings.EnableClericChannelDivinity2024 && __instance.GetClassLevel(Cleric) >= 2 &&
-                __instance.UsedChannelDivinity > 0)
-            {
-                if (!simulate)
-                {
-                    __instance.UsedChannelDivinity -= 1;
-                }
-
-                __instance.recoveredFeatures.Add(AttributeModifierClericChannelDivinity);
             }
 
             //PATCH: support for Druids to regain one wildshape usage at short rests
@@ -2529,6 +2500,9 @@ public static class RulesetCharacterPatcher
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RulesetUsablePower usablePower, ref int __result)
         {
+            //PATCH: Channel Divinity's remaining uses come from the power's pool and the current maximum (#68)
+            Tabletop2024Context.ModifyChannelDivinityUses(__instance, usablePower, ref __result, true);
+
             InfusionTrackingContext.AllowReplacingWhenFull(__instance, usablePower, ref __result);
         }
     }

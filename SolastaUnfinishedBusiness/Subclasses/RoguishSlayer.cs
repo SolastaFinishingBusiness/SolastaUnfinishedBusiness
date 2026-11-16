@@ -265,8 +265,11 @@ public sealed class RoguishSlayer : AbstractSubclass
         {
             var rulesetDefender = defender.RulesetActor;
 
+            // The game adds Surprised under the combat category when a battle starts (GameLocationCharacter.StartBattle,
+            // TagCombat); this looked only under TagEffect, so Fatal Strike never happened (#64). HasConditionOfType
+            // looks in every category, as this subclass's critical-hit rule (GetCriticalThreshold) does.
             if (rulesetDefender is not { IsDeadOrDyingOrUnconscious: false } ||
-                !rulesetDefender.HasConditionOfCategoryAndType(AttributeDefinitions.TagEffect, ConditionSurprised))
+                !rulesetDefender.HasConditionOfType(ConditionSurprised))
             {
                 yield break;
             }
