@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using SolastaUnfinishedBusiness.Models;
 using TMPro;
 using UnityEngine;
@@ -35,10 +36,24 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // it takes the background picture, the font and the text colour from the game's tooltip panel prefab
 // (GuiTooltipClassDefinition.TooltipPanelPrefab), falling back to a dark box with the field's own font.
 //   - It sits above the field, centred on it, and below it only when there is no room above; it never lies over
-//     the field, and it follows the field when the list it is in scrolls.
+//     the field, and it follows the field when the list it is in scrolls. In the dialogue and quest editors it
+//     sits below the field instead (user, 2026-11-16: "Move it down beneath the textbox for the dialogue
+//     editor"): above, it covered the row above it (the variable field and its Select button).
 //   - It is shown only while the field has the keyboard focus and has something to say, is worked out again at
 //     every key, and goes when the field loses the focus, is hidden, or the text is fine.
 //   - It takes no clicks (nothing in it is a raycast target), and it changes nothing of the campaign.
+//
+// COLOURED NAMES (user, 2026-11-16: "mark red the variables that would explicitly clash with variables used by
+// the mod for automation? Then, mark a special colour for variables that have a special effect (like
+// `Teleport_Node`)"). Wherever the editor shows a campaign variable's name, the name is drawn in a colour of its
+// own when the mod uses it (NameColor):
+//   - red: a name the mod itself writes, so a value the campaign keeps there is overwritten (the clock read-outs
+//     and counters, every <command>_Status, the mod's own clock-skip variables);
+//   - blue: a name that does something when the campaign writes it (the commands such as Teleport_Node, the
+//     requests such as Torches_Lit or Clock_SkipHours, the counter switches Clock_Count*).
+// Where: the rows of the campaign editor's variable list and of the variable picker (UserVariableLine), and the
+// variable fields of a gadget's parameters and of a dialogue's or quest's action or condition. A name the mod
+// doesn't use keeps the game's colour, which is put back when the game reuses a row or field for another name.
 internal static class DungeonMakerNameHints
 {
     private const string PanelName = "FbNameHint";
@@ -51,11 +66,21 @@ internal static class DungeonMakerNameHints
     // the text colour of a warning; a hint uses the tooltip's own
     private static readonly Color WarningColor = new(0.95f, 0.72f, 0.3f);
 
+    // the colours of the names the mod uses (see COLOURED NAMES at the top)
+    private static readonly Color WrittenByModColor = new(1f, 0.42f, 0.38f);
+    private static readonly Color CommandColor = new(0.45f, 0.78f, 1f);
+
+    // each text's own colour, as the game left it, from the first time it is coloured
+    private static readonly ConditionalWeakTable<TMP_Text, object> GameColors = new();
+
     private static GameObject _panel;
     private static RectTransform _rect;
     private static TextMeshProUGUI _label;
     private static Color _textColor = Color.white;
     private static DungeonMakerFieldHint _owner;
+
+    // whether the field being hinted wants the panel below it rather than above
+    private static bool _below;
     private static readonly Vector3[] Corners = new Vector3[4];
 
     #region Which fields
@@ -84,11 +109,15 @@ internal static class DungeonMakerNameHints
             return;
         }
 
+        bool IsVariable()
+        {
+            return line.UserGadgetParameterValue?.GadgetParameterDescription?.Type ==
+                   GadgetBlueprintDefinitions.Type.Variable;
+        }
+
         DungeonMakerFieldHint.Attach(line.variableField, false, text =>
-            line.UserGadgetParameterValue?.GadgetParameterDescription?.Type ==
-            GadgetBlueprintDefinitions.Type.Variable
-                ? DungeonMakerNamesContext.NameHint(text, line.UserCampaign, line.UserLocation)
-                : null);
+                IsVariable() ? DungeonMakerNamesContext.NameHint(text, line.UserCampaign, line.UserLocation) : null,
+            colorName: IsVariable);
 
         DungeonMakerFieldHint.Attach(line.stringField, true, text =>
         {
@@ -116,11 +145,17 @@ internal static class DungeonMakerNameHints
             return;
         }
 
+        bool IsVariable()
+        {
+            return item.parameterType is UserParameterDefinitions.Type.VariableOperationVariable
+                or UserParameterDefinitions.Type.VariableTestVariable;
+        }
+
+        // below the field here: the dialogue and quest editors stack their parameter rows tightly, and a hint
+        // above covered the row above (see the top of the file)
         DungeonMakerFieldHint.Attach(item.variableField, false, text =>
-            item.parameterType is UserParameterDefinitions.Type.VariableOperationVariable
-                or UserParameterDefinitions.Type.VariableTestVariable
-                ? DungeonMakerNamesContext.NameHint(text, item.UserCampaign, null)
-                : null);
+                IsVariable() ? DungeonMakerNamesContext.NameHint(text, item.UserCampaign, null) : null,
+            true, IsVariable);
 
         // a Variable Operation action keeps its variable in its first text (see DungeonMakerNamesContext)
         DungeonMakerFieldHint.Attach(item.stringField, true, text =>
@@ -128,14 +163,67 @@ internal static class DungeonMakerNameHints
             item.functorParametersDescription != null
                 ? DungeonMakerNamesContext.ValueHint(
                     item.functorParametersDescription.StringParameter, text, item.UserCampaign, null)
-                : null);
+                : null, true);
+    }
+
+    // UserVariableLine.BindSpecific: a row of the campaign editor's variable list or of the variable picker was
+    // given a variable (rows are reused as the list scrolls and changes)
+    internal static void ForVariableLine(UserVariableLine line)
+    {
+        if (!line || !line.internalNameLabel)
+        {
+            return;
+        }
+
+        ColorName(line.internalNameLabel.TMP_Text, line.UserVariable?.InternalName);
+    }
+
+    // The colour a variable's name is drawn in, when the mod uses that name (see COLOURED NAMES at the top).
+    internal static Color? NameColor(string name)
+    {
+        return DungeonMakerNamesContext.RoleOf((name ?? string.Empty).Trim(), out _) switch
+        {
+            DungeonMakerNamesContext.Role.Readout or DungeonMakerNamesContext.Role.Counter
+                or DungeonMakerNamesContext.Role.Status or DungeonMakerNamesContext.Role.Internal =>
+                WrittenByModColor,
+            DungeonMakerNamesContext.Role.Command or DungeonMakerNamesContext.Role.Request
+                or DungeonMakerNamesContext.Role.Switch => CommandColor,
+            _ => null
+        };
+    }
+
+    // Draws this text in its name's colour, or in the colour the game gave it when the name isn't one of the
+    // mod's (name null: the text isn't a name at all, and gets the game's colour back). The game's colour is kept
+    // the first time a text is coloured: the game never sets these colours again when it reuses the text.
+    internal static void ColorName(TMP_Text text, string name)
+    {
+        if (!text)
+        {
+            return;
+        }
+
+        var wanted = name == null ? null : NameColor(name);
+
+        if (!GameColors.TryGetValue(text, out var kept))
+        {
+            if (wanted == null)
+            {
+                return;
+            }
+
+            kept = text.color;
+            GameColors.Add(text, kept);
+        }
+
+        text.color = wanted ?? (Color)kept;
     }
 
     #endregion
 
     #region The panel
 
-    internal static void Show(DungeonMakerFieldHint owner, TMP_InputField field, string text, bool warning)
+    internal static void Show(DungeonMakerFieldHint owner, TMP_InputField field, string text, bool warning,
+        bool below = false)
     {
         var target = field ? field.transform as RectTransform : null;
         var nearest = target ? target.GetComponentInParent<Canvas>() : null;
@@ -149,6 +237,7 @@ internal static class DungeonMakerNameHints
         EnsurePanel(canvas.transform, field.textComponent);
 
         _owner = owner;
+        _below = below;
         _label.color = warning ? WarningColor : _textColor;
         _label.text = text;
 
@@ -190,7 +279,11 @@ internal static class DungeonMakerNameHints
         var bottom = canvas.InverseTransformPoint((Corners[0] + Corners[3]) / 2f);
         var size = _rect.sizeDelta;
         var area = canvas.rect;
-        var above = top.y + Gap + size.y <= area.yMax - Margin;
+        var roomAbove = top.y + Gap + size.y <= area.yMax - Margin;
+        var roomBelow = bottom.y - Gap - size.y >= area.yMin + Margin;
+
+        // the side the field asks for, unless only the other one has room
+        var above = _below ? !roomBelow && roomAbove : roomAbove;
         var half = size.x / 2f;
         var x = area.width > size.x + (2 * Margin)
             ? Mathf.Clamp(top.x, area.xMin + half + Margin, area.xMax - half - Margin)
@@ -372,12 +465,17 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
     // the text to show for what is typed, or null for nothing; asked again at every key
     private Func<string, string> _hint;
     private bool _warning;
+    private bool _below;
+
+    // whether the field's text is a variable's name to colour (asked each time, as the field is reused)
+    private Func<bool> _colorName;
 
     internal TMP_InputField Field { get; private set; }
 
     // Puts a hint on this field, or gives the field's existing one its new meaning (the editor reuses its
     // parameter lines for other parameters).
-    internal static void Attach(TMP_InputField field, bool warning, Func<string, string> hint)
+    internal static void Attach(TMP_InputField field, bool warning, Func<string, string> hint, bool below = false,
+        Func<bool> colorName = null)
     {
         if (!field)
         {
@@ -397,6 +495,9 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
 
         component._hint = hint;
         component._warning = warning;
+        component._below = below;
+        component._colorName = colorName;
+        component.UpdateColor();
 
         if (component._focused)
         {
@@ -406,7 +507,30 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
 
     private void OnChanged(string text)
     {
+        UpdateColor();
         Refresh();
+    }
+
+    // the name's colour, whether the field has the focus or not; any other text of the field keeps the game's
+    private void UpdateColor()
+    {
+        if (!Field)
+        {
+            return;
+        }
+
+        bool isName;
+
+        try
+        {
+            isName = _colorName != null && _colorName();
+        }
+        catch (Exception)
+        {
+            isName = false;
+        }
+
+        DungeonMakerNameHints.ColorName(Field.textComponent, isName ? Field.text ?? string.Empty : null);
     }
 
     private void OnSelected(string text)
@@ -450,7 +574,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         }
         else
         {
-            DungeonMakerNameHints.Show(this, Field, text, _warning);
+            DungeonMakerNameHints.Show(this, Field, text, _warning, _below);
         }
     }
 }

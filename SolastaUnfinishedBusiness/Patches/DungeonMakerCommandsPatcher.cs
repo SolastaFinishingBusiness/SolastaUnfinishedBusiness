@@ -518,6 +518,20 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: a row of the campaign editor's variable list or of the variable picker was given its variable: its name
+    //is coloured when the mod uses it (DungeonMakerNameHints, "COLOURED NAMES")
+    [HarmonyPatch(typeof(UserVariableLine), nameof(UserVariableLine.BindSpecific))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserVariableLine_BindSpecific
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserVariableLine __instance)
+        {
+            DungeonMakerNameHints.ForVariableLine(__instance);
+        }
+    }
+
     //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
     [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

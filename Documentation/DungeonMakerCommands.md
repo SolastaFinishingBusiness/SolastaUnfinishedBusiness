@@ -153,6 +153,14 @@ points it out while you type (next section).
   warning above the field when nothing goes by that name, with the closest names. For a Variable Operation gadget
   the names are those of its own location (that is where it will write); for an action of a dialogue or a quest
   they are those of every location of the campaign. Capital and small letters don't matter, as in the commands.
+- Hints show only while the field has the keyboard focus, and go when you click elsewhere. In the dialogue and
+  quest editors they sit below the field, so they don't cover the row above.
+- **Coloured names.** Wherever the editor shows a variable's name (the campaign's variable list, the variable
+  picker, and the variable fields of gadgets, dialogues and quests), a name the mod uses is coloured:
+  - **red:** the mod writes it itself, so anything your campaign keeps there is overwritten: the clock read-outs
+    and counters, every `_Status` variable, and the mod's own clock-skip variables;
+  - **blue:** writing it makes something happen: the commands (`Teleport_Node`, `Roll_Trigger`...), the requests
+    (`Torches_Lit`, `Clock_SkipHours`...) and the counter switches (`Clock_Count...`).
 - A hint only informs: nothing is changed or refused.
 
 ## The mod's version in campaign files
