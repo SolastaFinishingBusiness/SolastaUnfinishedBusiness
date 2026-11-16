@@ -532,6 +532,24 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
+    //PATCH: the same rows say what the mod does with their variable's name while the pointer is over them
+    //(DungeonMakerNameHints.ForVariableLineHover). Bind is UserContentLine's, shared by every list of the editor;
+    //only the variable rows are given the hover. Bind is where the row learns its campaign, which the hint reads.
+    [HarmonyPatch(typeof(UserContentLine), nameof(UserContentLine.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserContentLine_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserContentLine __instance, UserCampaign userCampaign)
+        {
+            if (__instance is UserVariableLine line)
+            {
+                DungeonMakerNameHints.ForVariableLineHover(line, userCampaign);
+            }
+        }
+    }
+
     //PATCH: Dungeon Maker editors where a command can be written (location, dialogue, quest): a "?" button beside
     //their CLOSE button opens the list of the mod's commands, and the list opens by itself the first time one of
     //them is shown (DungeonMakerCommandsPopup). OnBeginShow is where each of these screens starts being shown.

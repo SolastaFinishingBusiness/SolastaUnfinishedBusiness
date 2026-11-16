@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0}：戦闘中は時間を進められませ
 Message/&DungeonMakerClockFailed={0} は失敗しました。理由は MOD のログにあります。
 Message/&DungeonMakerTorchesNone=松明の変数が設定されていますが、このロケーションに松明がありません。
 Message/&DungeonMakerTorchNoCondition='{0}' は松明の変数で点けたり消したりできません。
+Message/&DungeonMakerPlaytestAlert={0}：{1}
+Feedback/&DungeonMakerPlaytestLine={0}：{1}

@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0} : impossible de passer le temps pendant u
 Message/&DungeonMakerClockFailed={0} a échoué. Le journal du mod en donne la raison.
 Message/&DungeonMakerTorchesNone=Des variables de torches sont définies, mais ce lieu n'a aucune torche.
 Message/&DungeonMakerTorchNoCondition='{0}' ne peut pas être allumé ou éteint par les variables de torches.
+Message/&DungeonMakerPlaytestAlert={0}: {1}
+Feedback/&DungeonMakerPlaytestLine={0}: {1}

@@ -95,6 +95,10 @@ run its flow during a fight, so it doesn't write its command until the fight is 
   says what started it when that can't tell who acts (a timer, a Variable Activator, a quest step...). The mod's log
   (also in `Player.log`) has a line for each such write: the gadget that wrote it, the gadgets it went through, what
   started it, the characters the game passed along, and who acts or why nobody does.
+- While you play a location or the campaign map with the editor's **Playtest** button, every such message (a
+  failed command, a torch or clock problem) starts with "Playtest:" and is also added to the game's log at the
+  bottom of the screen, so it stays there to read after the message has faded. In a normal game the message is as
+  above and nothing goes into the game's log.
 - For `Roll_Trigger` the character must still be a conscious party member in that location when the command runs.
 - A game saved while one of these commands was waiting, or in the middle of a chain, keeps its acting character:
   the mod writes who is behind each waiting command, each gadget that is set off but has not run yet, each timer a
@@ -161,6 +165,8 @@ points it out while you type (next section).
     and counters, every `_Status` variable, and the mod's own clock-skip variables;
   - **blue:** writing it makes something happen: the commands (`Teleport_Node`, `Roll_Trigger`...), the requests
     (`Torches_Lit`, `Clock_SkipHours`...) and the counter switches (`Clock_Count...`).
+- **Pointing at a name** in the variable picker or in the campaign's variable list shows the same hint below the
+  row, for every name the mod uses.
 - A hint only informs: nothing is changed or refused.
 - **Gadget names are offered as you type** the text for `Dialog_Trigger`, `Roll_Trigger`, `Teleport_Node` or
   `Teleport_PartyNode`: a small list by the field with up to eight names, the likely ones for that command first

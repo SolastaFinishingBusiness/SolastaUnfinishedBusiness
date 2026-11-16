@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using SolastaUnfinishedBusiness.Models;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
@@ -84,7 +85,9 @@ internal static class DungeonMakerNameHints
     private static RectTransform _rect;
     private static TextMeshProUGUI _label;
     private static Color _textColor = Color.white;
-    private static DungeonMakerFieldHint _owner;
+    // who shows the panel now (a field's hint, or a row's of the variable lists) and what it is placed on
+    private static MonoBehaviour _owner;
+    private static RectTransform _target;
 
     // the tooltip prefab's glow layer (TooltipPanelSimple's first child)
     private const string ShadowLayerName = "Shadow";
@@ -208,6 +211,29 @@ internal static class DungeonMakerNameHints
         ColorName(line.internalNameLabel.TMP_Text, line.UserVariable?.InternalName);
     }
 
+    // UserContentLine.Bind of a UserVariableLine: the row says what the mod does with its variable's name while
+    // the pointer is over it (user, 2026-11-16: "can you modify the variable selector to allow hovering over mod
+    // commands to show the hint as well"). The text is the one a field shows while that name is typed
+    // (DungeonMakerNamesContext.NameHint), so a name the mod writes also says where it is written with the
+    // campaign as it is. Rows are reused as the list scrolls, so the row asks for its variable when the pointer
+    // comes in, and a name the mod doesn't use shows nothing. The campaign editor's variable list uses the same
+    // rows, so it gets the hover too.
+    internal static void ForVariableLineHover(UserVariableLine line, UserCampaign campaign)
+    {
+        if (!line)
+        {
+            return;
+        }
+
+        if (!line.TryGetComponent<DungeonMakerRowHint>(out var hover))
+        {
+            hover = line.gameObject.AddComponent<DungeonMakerRowHint>();
+        }
+
+        hover.Line = line;
+        hover.Campaign = campaign;
+    }
+
     // The colour a variable's name is drawn in, when the mod uses that name (see COLOURED NAMES at the top).
     internal static Color? NameColor(string name)
     {
@@ -255,7 +281,18 @@ internal static class DungeonMakerNameHints
     internal static void Show(DungeonMakerFieldHint owner, TMP_InputField field, string text, bool warning,
         bool below = false)
     {
-        var target = field ? field.transform as RectTransform : null;
+        if (field)
+        {
+            Show(owner, field.transform as RectTransform, field.textComponent, text, warning, below);
+        }
+    }
+
+    // The panel on any element: target is what it is placed against, font a text whose font it takes until the
+    // tooltip's look is found. owner: who hides it again (Hide with the same owner); the panel also goes when the
+    // owner is switched off or destroyed.
+    internal static void Show(MonoBehaviour owner, RectTransform target, TMP_Text font, string text, bool warning,
+        bool below)
+    {
         var nearest = target ? target.GetComponentInParent<Canvas>() : null;
         var canvas = nearest ? nearest.rootCanvas : null;
 
@@ -264,9 +301,10 @@ internal static class DungeonMakerNameHints
             return;
         }
 
-        EnsurePanel(canvas.transform, field.textComponent);
+        EnsurePanel(canvas.transform, font);
 
         _owner = owner;
+        _target = target;
         _below = below;
         _label.color = warning ? WarningColor : _textColor;
         _label.text = text;
@@ -284,11 +322,12 @@ internal static class DungeonMakerNameHints
         Place(_rect, target, _below);
     }
 
-    internal static void Hide(DungeonMakerFieldHint owner)
+    internal static void Hide(MonoBehaviour owner)
     {
         if (_panel && ReferenceEquals(_owner, owner))
         {
             _owner = null;
+            _target = null;
             _panel.SetActive(false);
         }
     }
@@ -505,20 +544,21 @@ internal static class DungeonMakerNameHints
         return textColor;
     }
 
-    // keeps the panel on its field while it is shown, and takes it away when the field goes
+    // keeps the panel on its field or row while it is shown, and takes it away when that goes
     private sealed class DungeonMakerHintFollower : MonoBehaviour
     {
         private void LateUpdate()
         {
-            if (!_owner || !_owner.isActiveAndEnabled || !_owner.Field)
+            if (!_owner || !_owner.isActiveAndEnabled || !_target || !_target.gameObject.activeInHierarchy)
             {
                 _owner = null;
+                _target = null;
                 gameObject.SetActive(false);
 
                 return;
             }
 
-            Place(_rect, _owner.Field.transform as RectTransform, _below);
+            Place(_rect, _target, _below);
         }
     }
 
@@ -757,5 +797,42 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         {
             DungeonMakerNameHints.Show(this, Field, text, _warning, _below);
         }
+    }
+}
+
+// Sits on a row of the variable picker or of the campaign editor's variable list, and shows the name's hint (see
+// DungeonMakerNameHints.ForVariableLineHover) under the row while the pointer is over it. The pointer events reach
+// it from the row's own graphics (Unity sends "pointer entered" to the object hit and each of its parents). It
+// changes nothing of the row or the campaign, and takes no clicks.
+internal sealed class DungeonMakerRowHint : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    internal UserVariableLine Line;
+    internal UserCampaign Campaign;
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        var name = Line ? Line.UserVariable?.InternalName : null;
+        var text = string.IsNullOrEmpty(name) ? null : DungeonMakerNamesContext.NameHint(name, Campaign, null);
+
+        if (text == null)
+        {
+            DungeonMakerNameHints.Hide(this);
+
+            return;
+        }
+
+        var label = Line.internalNameLabel ? Line.internalNameLabel.TMP_Text : null;
+
+        DungeonMakerNameHints.Show(this, (RectTransform)transform, label, text, false, true);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        DungeonMakerNameHints.Hide(this);
+    }
+
+    private void OnDisable()
+    {
+        DungeonMakerNameHints.Hide(this);
     }
 }

@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0}: 전투 중에는 시간을 건너뛸 수
 Message/&DungeonMakerClockFailed={0} 실패. 이유는 모드 로그에 있습니다.
 Message/&DungeonMakerTorchesNone=횃불 변수가 설정되어 있지만 이 장소에는 횃불이 없습니다.
 Message/&DungeonMakerTorchNoCondition='{0}'은(는) 횃불 변수로 켜거나 끌 수 없습니다.
+Message/&DungeonMakerPlaytestAlert={0}: {1}
+Feedback/&DungeonMakerPlaytestLine={0}: {1}

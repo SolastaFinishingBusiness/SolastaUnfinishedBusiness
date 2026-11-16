@@ -236,6 +236,28 @@ internal static class DungeonMakerCommandsPopup
             plain.text = text;
         }
 
+        // The label alone is laid out. The editors' SAVE button (read from the prefab, 2026-11-16) is a
+        // HorizontalLayoutGroup, padding 10 left and right, centred, spacing 4, over its children Image (an icon
+        // slot, the arrow on UNDO; on SAVE it draws nothing but is active, laid out, preferred width 16) and Label.
+        // The empty slot and the spacing (16 + 4) put the label 10 units right of the button's middle, so the ?
+        // was drawn off centre (user, on bac0aa92: "The ? Button is still not centered"). Every other laid-out
+        // child of the copy is switched off; the backgrounds (LayoutElement.ignoreLayout set in the prefab) and the
+        // inactive gamepad prompt stay as they are.
+        var labelObject = label ? label.gameObject : copy.GetComponentInChildren<TMP_Text>(true)?.gameObject;
+
+        foreach (Transform child in copy.transform)
+        {
+            if (labelObject && (child.gameObject == labelObject || labelObject.transform.IsChildOf(child)))
+            {
+                continue;
+            }
+
+            if (child.TryGetComponent<LayoutElement>(out var element) && !element.ignoreLayout)
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+
         copy.SetActive(true);
 
         return button;

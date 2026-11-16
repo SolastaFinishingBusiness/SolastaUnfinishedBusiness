@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0}: во время боя время про
 Message/&DungeonMakerClockFailed={0} не выполнено. Причина в журнале мода.
 Message/&DungeonMakerTorchesNone=Переменные факелов заданы, но в этой локации нет факелов.
 Message/&DungeonMakerTorchNoCondition='{0}' нельзя зажечь или погасить переменными факелов.
+Message/&DungeonMakerPlaytestAlert={0}: {1}
+Feedback/&DungeonMakerPlaytestLine={0}: {1}

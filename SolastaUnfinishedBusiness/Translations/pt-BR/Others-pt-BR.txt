@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0}: não é possível avançar o tempo duran
 Message/&DungeonMakerClockFailed={0} falhou. O log do mod diz o motivo.
 Message/&DungeonMakerTorchesNone=Há variáveis de tocha definidas, mas não há tochas neste local.
 Message/&DungeonMakerTorchNoCondition='{0}' não pode ser aceso nem apagado pelas variáveis de tocha.
+Message/&DungeonMakerPlaytestAlert={0}: {1}
+Feedback/&DungeonMakerPlaytestLine={0}: {1}

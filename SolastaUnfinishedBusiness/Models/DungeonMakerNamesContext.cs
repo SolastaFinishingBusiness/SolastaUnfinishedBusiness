@@ -572,7 +572,7 @@ internal static class DungeonMakerNamesContext
 
         foreach (var gadget in places.SelectMany(GadgetsOf))
         {
-            var blueprint = gadget.GadgetBlueprintName ?? string.Empty;
+            var blueprint = KindOf(gadget);
             var npc = gadget.ParameterValues?
                 .FirstOrDefault(x => x?.GadgetParameterDescription?.Type == GadgetBlueprintDefinitions.Type.Npc)?
                 .StringValue;
@@ -599,12 +599,6 @@ internal static class DungeonMakerNamesContext
             }
         }
 
-        // TEMPORARY DIAGNOSTIC (remove once answered): in game on 9f49bbd6, with nothing typed, the suggestions for
-        // Roll_Trigger in a dialogue began with Area Activators instead of the Roll Activators, as if no gadget had
-        // been found to be of the likely kind; the reason isn't known. One line per command and campaign says what
-        // the blueprint names were.
-        LogKinds(command, campaign, places, names);
-
         if (dialogue)
         {
             foreach (var npc in campaign?.UserNpcs ?? [])
@@ -625,24 +619,18 @@ internal static class DungeonMakerNamesContext
         }
     }
 
-    private static readonly HashSet<string> LoggedKinds = [];
-
-    private static void LogKinds(string command, UserCampaign campaign, IEnumerable<UserLocation> places,
-        TargetNames names)
+    // What kind of gadget this is (its blueprint's name, e.g. ActivatorRoll, Node, NpcDialog). The gadget's own
+    // GadgetBlueprintName is an empty string in the campaigns read so far: a diagnostic line in game on bac0aa92
+    // listed 76 gadgets of a campaign, every one with an empty GadgetBlueprintName and its kind only in the name of
+    // its GadgetBlueprint object ("ActivatorArea21:/ActivatorArea"). Reading only the former, no gadget was ever
+    // of the likely kind, and with nothing typed the suggestions came in campaign order (Area Activators first for
+    // Roll_Trigger). The blueprint object comes first; the name stays as a fallback for a gadget whose blueprint
+    // isn't loaded.
+    private static string KindOf(UserGadget gadget)
     {
-        var key = $"{command}|{campaign?.Title}";
+        var blueprint = gadget.GadgetBlueprint;
 
-        if (!LoggedKinds.Add(key))
-        {
-            return;
-        }
-
-        var blueprints = places.SelectMany(GadgetsOf)
-            .Select(x => $"{x.UniqueName}:{x.GadgetBlueprintName ?? "(null)"}/{(x.GadgetBlueprint ? x.GadgetBlueprint.name : "(none)")}")
-            .Take(40);
-
-        Main.Info($"DM name suggestions: {command}: {names.Likely.Count} likely, {names.Others.Count} other; " +
-                  $"gadgets: {string.Join(", ", blueprints)}");
+        return blueprint ? blueprint.name : gadget.GadgetBlueprintName ?? string.Empty;
     }
 
     // how many letters have to be changed, added or taken out to turn one text into the other, whatever their case

@@ -2807,10 +2807,70 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
-    // the game's alert, in the failure colour; nothing when no screen can show it (loading)
+    // The game's alert, in the failure colour; nothing when no screen can show it (loading). Every error the
+    // commands, the torches and the clock show in game comes through here.
+    //
+    // PLAYTEST (user, 2026-11-16: "when the map is being played in Playtest mode, can any errors detected in
+    // commands be shown as both a notification in-game with a "Playtest: " prefix? It should also appear as a
+    // line in the in-game log as "Playtest: " as well"): while the location or campaign map being played is a
+    // Dungeon Maker playtest (the session service's PlaytestingUserLocation / PlaytestingUserCampaignMap, set by
+    // the editors' Playtest buttons), the alert starts with the game's own word for Playtest (its term
+    // MainMenu/&UserLocationsPlaytestTitle, so it reads right in every language), and the same text is added to
+    // the game's log (the console at the bottom of the screen) as a line of its own, in the log's failure
+    // colour. Outside a playtest the alert is as before and nothing goes into the log.
     internal static void ShowFailureAlert(string text)
     {
-        Gui.GuiService?.ShowAlert(text, Gui.ColorFailure, 6f);
+        if (!IsPlaytest())
+        {
+            Gui.GuiService?.ShowAlert(text, Gui.ColorFailure, 6f);
+
+            return;
+        }
+
+        var prefix = Gui.Localize(PlaytestTitleTerm);
+
+        Gui.GuiService?.ShowAlert(Gui.Format(PlaytestAlertTerm, prefix, text), Gui.ColorFailure, 6f);
+        AddPlaytestLogLine(prefix, text);
+    }
+
+    private const string PlaytestTitleTerm = "MainMenu/&UserLocationsPlaytestTitle";
+
+    // "{0}: {1}": the playtest word and the error
+    private const string PlaytestAlertTerm = "Message/&DungeonMakerPlaytestAlert";
+
+    // the same, for the game's log: the error goes in as a parameter, so a gadget's name holding braces or
+    // markup is shown as it is, never read as part of the line's format
+    private const string PlaytestLogTerm = "Feedback/&DungeonMakerPlaytestLine";
+
+    private static bool IsPlaytest()
+    {
+        var session = ServiceRepository.GetService<ISessionService>();
+
+        return session != null && (session.PlaytestingUserLocation || session.PlaytestingUserCampaignMap);
+    }
+
+    private static void AddPlaytestLogLine(string prefix, string text)
+    {
+        try
+        {
+            var console = Gui.Game?.GameConsole;
+
+            if (console == null)
+            {
+                return;
+            }
+
+            var entry = new GameConsoleEntry(PlaytestLogTerm, console.consoleTableDefinition);
+
+            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Base, prefix);
+            entry.AddParameter(ConsoleStyleDuplet.ParameterType.Negative, text);
+            console.AddEntry(entry);
+        }
+        catch (Exception e)
+        {
+            // the log line is a help to the author; failing to add it must not stop the alert's caller
+            Main.Error(e);
+        }
     }
 
     // The location is going away: waiting requests end as Cancelled, and a teleport still running is released

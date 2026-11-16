@@ -868,3 +868,5 @@ Message/&DungeonMakerClockInBattle={0}: no se puede saltar el tiempo durante un 
 Message/&DungeonMakerClockFailed={0} ha fallado. El registro del mod indica el motivo.
 Message/&DungeonMakerTorchesNone=Hay variables de antorchas, pero no hay ninguna antorcha en esta ubicación.
 Message/&DungeonMakerTorchNoCondition='{0}' no se puede encender ni apagar con las variables de antorchas.
+Message/&DungeonMakerPlaytestAlert={0}: {1}
+Feedback/&DungeonMakerPlaytestLine={0}: {1}
