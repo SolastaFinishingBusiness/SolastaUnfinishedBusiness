@@ -2818,19 +2818,51 @@ internal static class DungeonMakerCommandsContext
     // MainMenu/&UserLocationsPlaytestTitle, so it reads right in every language), and the same text is added to
     // the game's log (the console at the bottom of the screen) as a line of its own, in the log's failure
     // colour. Outside a playtest the alert is as before and nothing goes into the log.
+    //
+    // MULTIPLAYER: callers run inside the gadget update, which every computer runs in step. Showing a message is
+    // the one part that depends on each computer's own screen, so it may never throw into its caller: an
+    // exception on one computer only would skip the rest of that caller's work there (a torch pass, for instance)
+    // and leave the computers different. Hence the catch around all of it, whoever calls.
     internal static void ShowFailureAlert(string text)
     {
-        if (!IsPlaytest())
+        try
         {
-            Gui.GuiService?.ShowAlert(text, Gui.ColorFailure, 6f);
+            if (!IsPlaytest())
+            {
+                Gui.GuiService?.ShowAlert(text, Gui.ColorFailure, 6f);
+
+                return;
+            }
+
+            var prefix = Gui.Localize(PlaytestTitleTerm);
+
+            Gui.GuiService?.ShowAlert(Gui.Format(PlaytestAlertTerm, prefix, text), Gui.ColorFailure, 6f);
+            AddPlaytestLogLine(prefix, text);
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
+        }
+    }
+
+    // The same for a message made from a term (and its arguments): the term is looked up inside the guard too,
+    // so a failing lookup can't escape either (the torch messages use this).
+    private static void ShowFailureAlertTerm(string term, params object[] args)
+    {
+        string text;
+
+        try
+        {
+            text = args.Length == 0 ? Gui.Localize(term) : Gui.Format(term, args.Select(x => $"{x}").ToArray());
+        }
+        catch (Exception e)
+        {
+            Main.Error(e);
 
             return;
         }
 
-        var prefix = Gui.Localize(PlaytestTitleTerm);
-
-        Gui.GuiService?.ShowAlert(Gui.Format(PlaytestAlertTerm, prefix, text), Gui.ColorFailure, 6f);
-        AddPlaytestLogLine(prefix, text);
+        ShowFailureAlert(text);
     }
 
     private const string PlaytestTitleTerm = "MainMenu/&UserLocationsPlaytestTitle";
@@ -3279,7 +3311,7 @@ internal static class DungeonMakerCommandsContext
             // once per location, as the log line: the alert names the problem, the log the details
             if (report != _lastTorchReport)
             {
-                ShowFailureAlert(Gui.Localize("Message/&DungeonMakerTorchesNone"));
+                ShowFailureAlertTerm("Message/&DungeonMakerTorchesNone");
             }
 
             ReportOnce(ref _lastTorchReport, report);
@@ -3358,7 +3390,7 @@ internal static class DungeonMakerCommandsContext
             if (!torch.Reported)
             {
                 torch.Reported = true;
-                ShowFailureAlert(Gui.Format("Message/&DungeonMakerTorchNoCondition", torch.World.name));
+                ShowFailureAlertTerm("Message/&DungeonMakerTorchNoCondition", torch.World.name);
                 Main.Info(
                     $"DM torches: '{torch.World.name}' has no lit condition; its conditions are [{string.Join(", ", ConditionChoices(torch.World))}].");
             }
