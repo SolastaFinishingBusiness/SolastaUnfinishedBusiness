@@ -30,7 +30,8 @@ namespace SolastaUnfinishedBusiness.Models;
 // with a Variable Activator, a dialogue condition or a quest condition, is what the read-outs are for and makes
 // nothing the campaign's own. Two finer points for the _Status names, which a campaign is meant to read and may
 // well tidy up:
-//   - a campaign that sets one back to an empty text does not own it;
+//   - a campaign that sets one back to an empty text, from one place only, does not own it; writing a real
+//     value into it, or writing into it from more than one place, makes it the campaign's own;
 //   - a campaign that tests one for a text the mod never writes (anything but Pending, Running, Succeeded,
 //     Failed, Cancelled) owns it: it is plainly using the name for something else.
 // The choice is worked out from the campaign's contents each time a location is loaded (Refresh), so it is the
@@ -305,8 +306,12 @@ internal static class DungeonMakerNamesContext
         // Is this name the campaign's own? asStatus: judge it as a status name (see the top of the file).
         private bool Owns(string name, bool asStatus)
         {
+            // A status name is the campaign's own when it writes a real value into it, or when it writes into it from
+            // more than one place (user, 2026-11-16: the reset is fine "as long as the campaign never reassigns an
+            // actual value to it and does not keep writing to it across the span of the campaign"). One Variable
+            // Operation that sets it back to an empty text is a tidy-up, and the mod keeps writing there.
             if (_writes.TryGetValue(name, out var written) &&
-                (!asStatus || written.Any(x => !string.IsNullOrEmpty(x))))
+                (!asStatus || written.Count > 1 || written.Any(x => !string.IsNullOrEmpty(x))))
             {
                 return true;
             }

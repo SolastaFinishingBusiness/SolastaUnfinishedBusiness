@@ -124,7 +124,8 @@ A campaign made before these commands existed, or one that simply picked the sam
   variable if you want what the mod writes.
 - Reading one (a Variable Activator, a dialogue or quest condition) is what they are for, and changes nothing.
 - A `_Status` name is also yours when you test it for a text the mod never writes (anything but `Pending`,
-  `Running`, `Succeeded`, `Failed`, `Cancelled`). Setting a status back to an empty text does not make it yours.
+  `Running`, `Succeeded`, `Failed`, `Cancelled`). Setting a status back to an empty text from one place does not
+  make it yours; writing any other text into it, or writing into it from more than one place, does.
 - The counters (`Clock_MinutesElapsed`, `Clock_HoursElapsed`, `Clock_DaysElapsed`) are shared on purpose: the
   mod adds to them and you set them back, so they are never moved.
 - This is worked out from the campaign each time a location loads, and `Player.log` has one line for each name
