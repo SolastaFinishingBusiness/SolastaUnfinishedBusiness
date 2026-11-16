@@ -35,18 +35,44 @@ namespace SolastaUnfinishedBusiness.Models;
 //     once (the party entering the location, a party teleport), nobody "walked in": it then only works if exactly
 //     one party member is in the area;
 //   - when a character interacts with something, it is that character;
-//   - when one of those gadgets activates another gadget (its Dungeon Maker "Activate" operation, e.g. an Area
-//     Activator activating a Variable Operation gadget that writes the variable), the activated gadget's flow acts
-//     for the same character, through any number of gadgets (NoteConditionToggled, issue #42: the original author's
-//     test campaign is built this way). If the start of such a chain isn't traced to one character, the one
-//     eligible character the game passed along the chain acts, if there is exactly one;
-//   - anything else (a timer, a variable or condition activator, a quest step, a variable set from a dialogue, a
-//     save loaded while the command was waiting, or a chain they start) has no acting character, so the command
-//     fails and says so: a line in the log with what wrote the variable, the chain, what started it and the
-//     characters passed along (LogResolution), and the game's alert at the top of the screen (AlertFailure).
+//   - when the flow that character set off switches on another flow, the other flow acts for the same character,
+//     and so on through any number of flows and gadgets (issue #42: the original author's test campaign is built
+//     this way, an Area Activator activating a Variable Operation gadget that writes the variable). See "FOLLOWING
+//     A CHAIN" below. If the start of such a chain isn't traced to one character, the one eligible character the
+//     game passed along the chain acts, if there is exactly one;
+//   - anything else (a timer, a Variable Activator, a quest step, a variable set from a dialogue, a save loaded
+//     while the command was waiting, or a chain they start) has no acting character, so the command fails and
+//     says so: a line in the log with what wrote the variable, the chain, what started it and the characters
+//     passed along (LogResolution), and the game's alert at the top of the screen (AlertFailure).
 //   For Roll_Trigger the character must still be a conscious party member in the location when the command runs.
 //   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member.
 //   Teleport_PartyNode needs nobody.
+//
+// FOLLOWING A CHAIN. The game's own gadgets pass an activation on in several steps, each a flow that switches on
+// the next one. An Area Activator takes three to reach its targets (read from its prefab):
+//     the area's flow sets the gadget's own "Activated" condition         (SetGadgetCondition)
+//       > the flow waiting on that condition raises the event TriggeredOn (RaiseGadgetEvent)
+//       > the flow waiting on that event runs the Activate operation      (UserGadgetOperation)
+//       > the target gadget's flow waiting on its RemoteActivated condition starts.
+//   The pressure plates and buttons do the same, a Roll Activator goes from its roll to the Success or Failure
+//   targets through a condition, and an author's own gadgets can be chained in any number.
+//   - Only seven game functors switch another flow on (the only callers of GameGadget.SetCondition and
+//     RaiseGadgetEvent): SetGadgetCondition, SetGadgetConditionByAbilityCheck, ...BySavingThrow, ...ByTime,
+//     ...Randomly, RaiseGadgetEvent and UserGadgetOperation. All of them do it at once, inside their own step, and
+//     the flow they switch on (a "condition" or a "gadget event" flow) starts at a later gadget update.
+//   - So one rule covers them all, without a patch per functor: while the game runs a flow's steps (RunningFlow),
+//     a condition or gadget event flow that becomes triggered was switched on by that flow, and gets a copy of
+//     its record of who set it off (NoteFlowSwitchedOn). The game starts the new flow later, and the record goes
+//     with it (NoteTriggerAcknowledged).
+//   - The game hands its own list of characters along the same steps (ActingCharacters), but for an area that is
+//     everyone standing in it, refreshed on every move, and some twenty game functors act on that list (who an
+//     effect hits, who rolls, who receives an item). It is never changed here: only the mod's own record travels.
+//   - A flow switched on by a flow that has no record (a timer's, a Variable Activator's, a quest's, the
+//     location loading) gets a record that says what started the chain (Untraced), for the failure message.
+//   - Not followed: a variable written by one flow that sets off a Variable Activator, and a quest step likewise
+//     (the game passes no character there either, and the activator counts as the start of a new chain); a
+//     condition set from outside any gadget flow (a dialogue's or a quest's functor); a chain cut by a save and
+//     load (the game keeps a pending trigger in the save, the record is not saved).
 //
 // ONE-CHARACTER TELEPORT (Teleport_Node), as specified in issue #42:
 //   - It moves the character that caused the activation and never another. Only a party member or a guest
@@ -173,9 +199,10 @@ internal static class DungeonMakerCommandsContext
     // the serial of the newest request of each command variable: only that one may write the status variable
     private static readonly Dictionary<string, int> NewestSerial = [];
 
-    // Per flow of an Area Activator, a pressure plate or an interaction, who set it off (see NoteOccupationChanged
-    // and NoteInteracted): the activation whose flow has not started yet, and the one whose flow the game is
-    // running (or ran last).
+    // Per flow, who set it off: the activation whose flow has not started yet, and the one whose flow the game is
+    // running (or ran last). An Area Activator's, a pressure plate's or an interaction's flow gets its record from
+    // the character who moved or used it (NoteOccupationChanged, NoteInteracted); a condition or gadget event
+    // flow gets a copy of the record of the flow that switched it on (NoteFlowSwitchedOn).
     private static ConditionalWeakTable<GameGadgetListener, Activation> _causes = new();
     private static ConditionalWeakTable<GameGadgetListener, Activation> _runs = new();
 
@@ -198,8 +225,15 @@ internal static class DungeonMakerCommandsContext
     // the Variable Operation functor that is running right now, if any (see BeginVariableOperation)
     private static FunctorParametersDescription _operation;
 
-    // the Activate (or Enable) operation that is running right now, if any (see BeginGadgetActivation)
-    private static FunctorParametersDescription _activating;
+    // The gadget the game is updating right now, and the flow it is running in one go inside
+    // GameGadget.ExecuteFunctorSequenceSync, if any: together they say which flow's steps are running (see
+    // RunningFlow).
+    private static GameGadget _updating;
+    private static GameGadgetListener _runningSync;
+
+    // a chain's list of gadget names for the log is cut at the front beyond this length (gadgets that keep
+    // activating each other in a circle would make it grow without end)
+    private const int MaxChainLength = 300;
 
     private static IGameVariableService _subscribedTo;
     private static GameLocation _torchLocation;
@@ -300,7 +334,8 @@ internal static class DungeonMakerCommandsContext
         Torches.Clear();
         _torchLocation = null;
         _operation = null;
-        _activating = null;
+        _updating = null;
+        _runningSync = null;
         _causes = new ConditionalWeakTable<GameGadgetListener, Activation>();
         _runs = new ConditionalWeakTable<GameGadgetListener, Activation>();
         GroupMovers.Clear();
@@ -422,8 +457,9 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
-    // An Area Activator or pressure plate was just set off, and its flow has a Variable Operation on Teleport_Node:
-    // keep its place in the queue of one-character teleports now. The game runs gadget flows in the order of its
+    // A flow was just set off (an Area Activator's or pressure plate's, an interaction's, or one switched on by
+    // another flow), and it has a Variable Operation on Teleport_Node: keep its place in the queue of
+    // one-character teleports now. The game runs gadget flows in the order of its
     // gadget list, and a flow can wait before it writes, so the writes do not arrive in the order the activations
     // happened; the places kept here do. The place is filled when the write comes (Capture), and given up if the
     // flow ends without writing or never starts (StepExpected).
@@ -468,60 +504,117 @@ internal static class DungeonMakerCommandsContext
         ExpectSoloTeleport(listener, activation);
     }
 
-    // FunctorUserGadgetOperation.Execute, around each step of it: a gadget's flow is running a Dungeon Maker
-    // "Activate" (or "Enable") operation on other gadgets. The game sets each target's RemoteActivated (or
-    // RemoteEnabled) condition inside it, passing on this flow's ActingCharacters
-    // (GameGadget.SetCondition(index, state, functorParameters.ActingCharacters)). The returned token goes back to
-    // EndGadgetActivation.
-    internal static FunctorParametersDescription BeginGadgetActivation(FunctorParametersDescription parameters)
+    // GameGadget.Update, around the whole of it: the game is updating this gadget. This is where the game starts a
+    // gadget's triggered flows and runs their steps (functors), so "which flow is running" can be read from the
+    // gadget while it lasts (RunningFlow). The returned token goes back to EndGadgetUpdate. Nothing of the game
+    // is changed by either.
+    internal static GameGadget BeginGadgetUpdate(GameGadget gadget)
     {
-        var token = _activating;
+        var token = _updating;
 
-        _activating = parameters;
+        _updating = gadget;
 
         return token;
     }
 
-    internal static void EndGadgetActivation(FunctorParametersDescription token)
+    internal static void EndGadgetUpdate(GameGadget token)
     {
-        _activating = token;
+        _updating = token;
     }
 
-    // GameGadgetListenerConditionToggle.ConditionStatusChanged: a gadget's condition changed, and this flow of it
-    // may have been switched on by it. That is how a Dungeon Maker gadget is "activated" by another one: the
-    // activating flow's Activate operation sets the RemoteActivated condition, and the target's flow waiting on that
-    // condition is triggered. The game copies the activating flow's ActingCharacters to the target's flow, but for
-    // an Area Activator those are everyone standing in it, not the one who walked in, so the activation recorded for
-    // the activating flow (who walked in, or who used the gadget) is carried over instead, and the chain grows by
-    // one gadget. A chain can go on for any number of gadgets this way.
+    // GameGadget.ExecuteFunctorSequenceSync, around the whole of it: the game is running all the steps of one flow
+    // of this gadget in one go (a flow that is not asynchronous, any flow during the fast travel simulation, and
+    // the "location entered" flows the game forces after a load). The returned token goes back to EndSyncFlow.
+    internal static GameGadgetListener BeginSyncFlow(GameGadget gadget, int listenerIndex)
+    {
+        var token = _runningSync;
+        var listeners = gadget?.activeListeners;
+
+        _runningSync = listeners != null && listenerIndex >= 0 && listenerIndex < listeners.Count
+            ? listeners[listenerIndex]
+            : null;
+
+        return token;
+    }
+
+    internal static void EndSyncFlow(GameGadgetListener token)
+    {
+        _runningSync = token;
+    }
+
+    // The flow whose steps the game is running at this very moment, or null when it is running none.
     //
-    // When the activating flow has no recorded activation (it was started by a timer, a variable, a quest, or a
-    // trigger kept in a save), the target gets a record that says so (Untraced), so a command its flow writes can
-    // say what started the chain. A change made by anything else than an Activate operation (a dialogue, a torch,
-    // a condition functor) carries nothing: ResolveActor then reports it as an untraced activation.
-    internal static void NoteConditionToggled(GameGadgetListener listener, bool triggeredBefore, bool triggeredAfter)
+    // How the game runs a flow (GameGadget.Update, from its IL): a triggered flow whose conditions match is
+    // acknowledged (AcknowledgeTrigger), then either run at once to its end (ExecuteFunctorSequenceSync) or
+    // started as a coroutine kept in activeFunctorSequence, with currentListenerIndex saying which flow it is.
+    // The coroutine is only ever stepped by GameGadget.Update (activeFunctorSequence.Run()), one stretch per
+    // update, including whatever its steps wait on; a gadget runs one flow at a time. So:
+    //   - inside ExecuteFunctorSequenceSync, it is that flow;
+    //   - otherwise, inside the Update of a gadget that has a coroutine, it is the coroutine's flow. (While the
+    //     coroutine exists the game does nothing else in Update than step it: it starts no other flow of the
+    //     gadget. currentListenerIndex alone can't be used: the game sets it back to 0, not to "none".)
+    // Outside a gadget's Update no flow is running: what happens then (a character moving, a dialogue's or a
+    // quest's functor, this mod's own writes) is not a step of any flow.
+    private static GameGadgetListener RunningFlow()
+    {
+        if (_runningSync != null)
+        {
+            return _runningSync;
+        }
+
+        var gadget = _updating;
+
+        if (gadget?.activeFunctorSequence == null)
+        {
+            return null;
+        }
+
+        var listeners = gadget.activeListeners;
+        var index = gadget.currentListenerIndex;
+
+        return listeners != null && index >= 0 && index < listeners.Count ? listeners[index] : null;
+    }
+
+    // GameGadgetListenerConditionToggle.ConditionStatusChanged and GameGadgetListenerGadgetEvent.GadgetEventRaised:
+    // a gadget's condition changed, or an event was raised on it, and this flow, which waits for that, may have
+    // become triggered by it. This is how the game passes an activation from one flow to the next, inside a
+    // gadget and from one gadget to another (see "FOLLOWING A CHAIN" at the top). Both happen at once inside the
+    // step of the flow that causes them, so when "triggered" goes from false to true here while a flow is running,
+    // that flow switched this one on.
+    //
+    // The game copies the running flow's ActingCharacters to this flow, but for an Area Activator those are
+    // everyone standing in it, not the one who walked in. So the record of the running flow (who walked in, or who
+    // used the gadget) is copied to this flow instead, and the chain grows by this gadget when it is another one.
+    // A chain can go on for any number of flows and gadgets this way. The game's list is left as it is.
+    //
+    // When the running flow has no record (it was started by a timer, a variable, a quest, the location loading,
+    // or a trigger kept in a save), this flow gets a record that says so (Untraced), so a command written further
+    // down the chain can say what started it. When no flow is running (the change came from a dialogue's or a
+    // quest's functor, or from code), nothing is recorded: ResolveActor then reports the flow as switched on by
+    // something the mod can't trace.
+    internal static void NoteFlowSwitchedOn(GameGadgetListener listener, bool triggeredBefore, bool triggeredAfter)
     {
         if (triggeredBefore || !triggeredAfter || CurrentLocation == null)
         {
             return;
         }
 
-        var targetName = GadgetNameOf(listener);
-        var source = ListenerOf(_activating);
-        Activation carried;
+        var source = RunningFlow();
 
-        if (_activating == null)
+        // whatever was noted for an earlier trigger of this flow that never started is replaced
+        ForgetExpected(listener);
+        _causes.Remove(listener);
+
+        if (source == null)
         {
-            // Switched on by something that is not an Activate operation. Nothing is recorded; if this flow then
-            // writes a command, ResolveActor reports it as untraced (logging every such change here would log
-            // every torch the game lights).
-            ForgetExpected(listener);
-            _causes.Remove(listener);
-
+            // not a step of any flow (logging every such change here would log every torch the game lights)
             return;
         }
 
-        if (source != null && _runs.TryGetValue(source, out var from))
+        var targetName = GadgetNameOf(listener);
+        Activation carried;
+
+        if (_runs.TryGetValue(source, out var from))
         {
             carried = new Activation
             {
@@ -533,26 +626,53 @@ internal static class DungeonMakerCommandsContext
                 Untraced = from.Untraced,
                 Origin = from.Origin,
                 OriginTerm = from.OriginTerm,
-                Chain = $"{from.Chain} > {targetName}"
+                Chain = ExtendChain(from.Chain, targetName)
             };
         }
         else
         {
-            var sourceName = source != null ? GadgetNameOf(source) : "an unknown gadget";
+            var sourceName = GadgetNameOf(source);
 
             carried = new Activation
             {
                 Untraced = true,
-                Origin = source != null ? $"{DescribeTrigger(source)} '{sourceName}'" : sourceName,
+                Origin = $"{DescribeTrigger(source)} '{sourceName}'",
                 OriginTerm = TriggerTerm(source),
-                Chain = $"{sourceName} > {targetName}"
+                Chain = ExtendChain(sourceName, targetName)
             };
         }
 
-        ForgetExpected(listener);
-        _causes.Remove(listener);
         _causes.Add(listener, carried);
         ExpectSoloTeleport(listener, carried);
+    }
+
+    // A chain's gadget names with one more gadget at the end. Steps inside one gadget don't repeat its name
+    // ("ActivatorArea22 > VariableOperation19", not the area three times), and a very long chain loses its front.
+    private static string ExtendChain(string chain, string gadgetName)
+    {
+        if (string.IsNullOrEmpty(chain))
+        {
+            return gadgetName;
+        }
+
+        const string Separator = " > ";
+
+        if (chain == gadgetName || chain.EndsWith(Separator + gadgetName, StringComparison.Ordinal))
+        {
+            return chain;
+        }
+
+        var grown = chain + Separator + gadgetName;
+
+        if (grown.Length <= MaxChainLength)
+        {
+            return grown;
+        }
+
+        // keep the end, from a whole gadget name on
+        var cut = grown.IndexOf(Separator, grown.Length - MaxChainLength, StringComparison.Ordinal);
+
+        return "..." + (cut >= 0 ? grown.Substring(cut) : Separator + gadgetName);
     }
 
     // the unique name of the gadget a flow belongs to, for the log
@@ -572,6 +692,7 @@ internal static class DungeonMakerCommandsContext
             GameGadgetListenerPressurePlate => "the pressure plate",
             GameGadgetListenerCharacterInteraction => "the interaction with",
             GameGadgetListenerConditionToggle => "the activation of",
+            GameGadgetListenerGadgetEvent => "a gadget event of",
             GameGadgetListenerElapsedTime => "the \"after a time\" timer of",
             GameGadgetListenerHourUpdate => "the \"every N hours\" timer of",
             GameGadgetListenerVariableChanged => "the Variable Activator",
@@ -635,7 +756,8 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
-    // AcknowledgeTrigger of those listeners: the game is about to run the flow for the trigger it noted. From
+    // AcknowledgeTrigger of the listeners a record is kept for (area, pressure plate, interaction, condition and
+    // gadget event flows): the game is about to run the flow for the trigger it noted. From
     // here until the next acknowledge, the flow's functors act for the character that caused this trigger. A flow
     // started without a move behind it (a trigger kept in a save) gets no character, rather than inheriting the
     // one of an older activation.
@@ -1028,10 +1150,11 @@ internal static class DungeonMakerCommandsContext
 
                 break;
 
-            // A gadget activated by another gadget's Activate operation (an Area Activator whose flow activates a
-            // Variable Operation gadget, and so on). NoteConditionToggled carried the first gadget's activation
-            // down the chain, so the flow acts for whoever set the first one off.
-            case GameGadgetListenerConditionToggle:
+            // A flow switched on by another flow: through a condition (a gadget activated by another gadget's
+            // Activate operation, a gadget's own "Activated" or roll result condition) or through a gadget event.
+            // NoteFlowSwitchedOn carried the first flow's activation down the chain, so this flow acts for
+            // whoever set the first one off.
+            case GameGadgetListenerConditionToggle or GameGadgetListenerGadgetEvent:
                 _runs.TryGetValue(listener, out var chained);
                 request.Chain = chained?.Chain;
                 request.Origin = chained?.Origin;
@@ -1063,9 +1186,9 @@ internal static class DungeonMakerCommandsContext
                 }
                 else if (chained == null)
                 {
-                    request.ActorProblem = $"'{gadgetName}' was switched on by a condition change the mod does not " +
-                                           "trace (not another gadget's Activate operation), so no character is " +
-                                           "tied to it";
+                    request.ActorProblem = $"'{gadgetName}' was switched on by a change made outside any gadget " +
+                                           "flow (a dialogue, a quest, a trigger kept in a save), so no " +
+                                           "character is tied to it";
                     request.ProblemTerm = "Message/&DungeonMakerTriggerOther";
                 }
                 else if (chained.Untraced)
@@ -2309,8 +2432,8 @@ internal static class DungeonMakerCommandsContext
     }
 
     // One activation of an Area Activator, a pressure plate or an interaction: the character whose move or use
-    // switched its trigger on. A gadget activated by another gadget's Activate operation gets a copy, with the
-    // gadget added to Chain (see NoteConditionToggled).
+    // switched its trigger on. A flow switched on by the flow this started gets a copy, with its gadget added to
+    // Chain (see NoteFlowSwitchedOn).
     private sealed class Activation
     {
         // the place this activation keeps in the queue of one-character teleports, until its flow writes

@@ -69,11 +69,16 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 | an Area Activator or pressure plate | the character whose move made it fire, whoever else stands in it |
 | something a character interacted with | that character |
 | a gadget that one of the above activated (its "Activate" target, for example a Variable Operation), through any number of gadgets | the character that set off the first gadget |
-| a timer, a variable or condition activator, a quest, a dialogue, or a gadget activated by one of these | none: the command fails and says so |
+| a Success or Failure target of a Roll Activator, or a gadget one of them activated | the character who rolled |
+| a Timed, Variable, Quest or Entry Activator, a dialogue, a button set off by damage, or a gadget activated by one of these | none: the command fails and says so |
 
 - When several characters arrive at once (the party entering the location, a party teleport), nobody "walked in".
   The command then only works if exactly one character is in the area. The same goes for a chain of activated
   gadgets whose start the mod couldn't trace to one character.
+- A chain is followed from gadget to gadget only through activations (and enabling). A variable is not a link:
+  when a gadget a character set off writes a variable and a Variable Activator reacts to it, what the Variable
+  Activator activates has no acting character. The same goes for a quest step and a Quest Activator.
+- When two characters set off the same target before it has run, the game runs it once, for the first of them.
 - When a command fails, a message at the top of the screen says so. For `Roll_Trigger` and `Teleport_Node` it also
   says what started it when that can't tell who acts (a timer, a Variable Activator, a quest step...). The mod's log
   (also in `Player.log`) has a line for each such write: the gadget that wrote it, the gadgets it went through, what

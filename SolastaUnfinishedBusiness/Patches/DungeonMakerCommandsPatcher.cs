@@ -69,79 +69,108 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: know which gadget flow is activating other gadgets while a Dungeon Maker "Activate" (or Enable)
-    //operation runs (FunctorUserGadgetOperation sets each target's RemoteActivated or RemoteEnabled condition). The
-    //target's flow then acts for the character this flow acts for (see DungeonMakerCommandsContext,
-    //NoteConditionToggled). Bracketed step by step, as the Variable Operation above.
-    [HarmonyPatch(typeof(FunctorUserGadgetOperation), nameof(FunctorUserGadgetOperation.Execute))]
+    //PATCH: know which gadget the game is updating. GameGadget.Update is where the game starts a gadget's
+    //triggered flows and runs their steps, so while it lasts the gadget says which flow is running
+    //(DungeonMakerCommandsContext.RunningFlow). That is what lets a flow switched on by another flow act for the
+    //character who set the first one off, whatever functor did the switching. Nothing of the game is changed: the
+    //prefix and the finalizer only note the gadget and put the earlier note back, however the update ends.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.Update))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class FunctorUserGadgetOperation_Execute
+    public static class GameGadget_Update
     {
         [UsedImplicitly]
-        public static IEnumerator Postfix(IEnumerator values, FunctorParametersDescription functorParameters)
+        public static void Prefix(GameGadget __instance, out GameGadget __state)
         {
-            try
-            {
-                while (true)
-                {
-                    var token = DungeonMakerCommandsContext.BeginGadgetActivation(functorParameters);
-                    bool more;
+            __state = DungeonMakerCommandsContext.BeginGadgetUpdate(__instance);
+        }
 
-                    try
-                    {
-                        more = values.MoveNext();
-                    }
-                    finally
-                    {
-                        DungeonMakerCommandsContext.EndGadgetActivation(token);
-                    }
-
-                    if (!more)
-                    {
-                        yield break;
-                    }
-
-                    yield return values.Current;
-                }
-            }
-            finally
-            {
-                (values as IDisposable)?.Dispose();
-            }
+        [UsedImplicitly]
+        public static void Finalizer(GameGadget __state)
+        {
+            DungeonMakerCommandsContext.EndGadgetUpdate(__state);
         }
     }
 
-    //PATCH: a gadget's "activated" or "enabled" condition changed: if that switched one of its flows on while
-    //another gadget's Activate operation ran, the flow inherits who set the first gadget off
-    [HarmonyPatch(typeof(GameGadgetListenerConditionToggle),
-        nameof(GameGadgetListenerConditionToggle.ConditionStatusChanged))]
+    //PATCH: know which flow the game is running when it runs one in a single go (a flow that is not asynchronous,
+    //every flow during the fast travel simulation, the "location entered" flows forced after a load). The other
+    //way of running a flow, as a coroutine, is read from the gadget (see the patch above).
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.ExecuteFunctorSequenceSync))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class GameGadgetListenerConditionToggle_ConditionStatusChanged
+    public static class GameGadget_ExecuteFunctorSequenceSync
     {
         [UsedImplicitly]
-        public static void Prefix(GameGadgetListenerConditionToggle __instance, out bool __state)
+        public static void Prefix(GameGadget __instance, int listenerIndex, out GameGadgetListener __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginSyncFlow(__instance, listenerIndex);
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer(GameGadgetListener __state)
+        {
+            DungeonMakerCommandsContext.EndSyncFlow(__state);
+        }
+    }
+
+    //PATCH: a gadget's condition changed, or an event was raised on it: if that switched one of its flows on while
+    //another flow was running, the flow inherits who set that one off. These two are the only ways the game
+    //passes an activation from one flow to another (the only callers of GameGadget.SetCondition and
+    //RaiseGadgetEvent are seven functors, and each calls them inside its own step), so every such functor is
+    //covered here without a patch of its own. The state is "triggered" before the call.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListener_SwitchedOn
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(GameGadgetListenerConditionToggle),
+                nameof(GameGadgetListenerConditionToggle.ConditionStatusChanged));
+            yield return AccessTools.Method(typeof(GameGadgetListenerGadgetEvent),
+                nameof(GameGadgetListenerGadgetEvent.GadgetEventRaised));
+        }
+
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListener __instance, out bool __state)
         {
             __state = __instance.IsTriggered;
         }
 
         [UsedImplicitly]
-        public static void Postfix(GameGadgetListenerConditionToggle __instance, bool __state)
+        public static void Postfix(GameGadgetListener __instance, bool __state)
         {
-            DungeonMakerCommandsContext.NoteConditionToggled(__instance, __state, __instance.IsTriggered);
+            DungeonMakerCommandsContext.NoteFlowSwitchedOn(__instance, __state, __instance.IsTriggered);
         }
     }
 
-    //PATCH: the game starts the flow of an activated gadget: it acts for the character carried over to it
-    [HarmonyPatch(typeof(GameGadgetListenerConditionToggle),
-        nameof(GameGadgetListenerConditionToggle.AcknowledgeTrigger))]
+    //PATCH: the game starts the flow of a trigger it noted: from here on the flow acts for the character who
+    //caused that trigger (an area's or a pressure plate's, an interaction's), or who set off the flow that
+    //switched this one on (a condition's or a gadget event's). Each listener type overrides AcknowledgeTrigger
+    //itself, so each override is patched.
+    [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
-    public static class GameGadgetListenerConditionToggle_AcknowledgeTrigger
+    public static class GameGadgetListener_AcknowledgeTrigger
     {
         [UsedImplicitly]
-        public static void Prefix(GameGadgetListenerConditionToggle __instance)
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(GameGadgetListenerVolumetricTrigger),
+                nameof(GameGadgetListenerVolumetricTrigger.AcknowledgeTrigger));
+            yield return AccessTools.Method(typeof(GameGadgetListenerPressurePlate),
+                nameof(GameGadgetListenerPressurePlate.AcknowledgeTrigger));
+            yield return AccessTools.Method(typeof(GameGadgetListenerCharacterInteraction),
+                nameof(GameGadgetListenerCharacterInteraction.AcknowledgeTrigger));
+            yield return AccessTools.Method(typeof(GameGadgetListenerConditionToggle),
+                nameof(GameGadgetListenerConditionToggle.AcknowledgeTrigger));
+            yield return AccessTools.Method(typeof(GameGadgetListenerGadgetEvent),
+                nameof(GameGadgetListenerGadgetEvent.AcknowledgeTrigger));
+        }
+
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListener __instance)
         {
             DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
         }
@@ -217,21 +246,6 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: the game starts the flow of an interaction it accepted: that flow acts for the character who used
-    //the gadget then
-    [HarmonyPatch(typeof(GameGadgetListenerCharacterInteraction),
-        nameof(GameGadgetListenerCharacterInteraction.AcknowledgeTrigger))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class GameGadgetListenerCharacterInteraction_AcknowledgeTrigger
-    {
-        [UsedImplicitly]
-        public static void Prefix(GameGadgetListenerCharacterInteraction __instance)
-        {
-            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
-        }
-    }
-
     //PATCH: remember whose move made an Area Activator fire (the game passes the character that moved)
     [HarmonyPatch(typeof(GameGadgetListenerVolumetricTrigger),
         nameof(GameGadgetListenerVolumetricTrigger.OccupationChanged))]
@@ -254,21 +268,7 @@ public static class DungeonMakerCommandsPatcher
         }
     }
 
-    //PATCH: the game starts the flow of the trigger it noted: that flow acts for the character who caused it
-    [HarmonyPatch(typeof(GameGadgetListenerVolumetricTrigger),
-        nameof(GameGadgetListenerVolumetricTrigger.AcknowledgeTrigger))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class GameGadgetListenerVolumetricTrigger_AcknowledgeTrigger
-    {
-        [UsedImplicitly]
-        public static void Prefix(GameGadgetListenerVolumetricTrigger __instance)
-        {
-            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
-        }
-    }
-
-    //PATCH: the same two hooks for pressure plates
+    //PATCH: the same for pressure plates
     [HarmonyPatch(typeof(GameGadgetListenerPressurePlate), nameof(GameGadgetListenerPressurePlate.OccupationChanged))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -286,18 +286,6 @@ public static class DungeonMakerCommandsPatcher
         {
             DungeonMakerCommandsContext.NoteOccupationChanged(
                 __instance, character, __state, __instance.occupationTriggered);
-        }
-    }
-
-    [HarmonyPatch(typeof(GameGadgetListenerPressurePlate), nameof(GameGadgetListenerPressurePlate.AcknowledgeTrigger))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class GameGadgetListenerPressurePlate_AcknowledgeTrigger
-    {
-        [UsedImplicitly]
-        public static void Prefix(GameGadgetListenerPressurePlate __instance)
-        {
-            DungeonMakerCommandsContext.NoteTriggerAcknowledged(__instance);
         }
     }
 
