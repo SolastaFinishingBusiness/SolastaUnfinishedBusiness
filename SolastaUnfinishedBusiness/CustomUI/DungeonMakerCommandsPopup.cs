@@ -11,17 +11,9 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 
 // The list of the mod's campaign commands, shown in the Dungeon Maker where a command is written (issue #42).
 //
-// User directions, 2026-11-16: "The in-game list should belong in a popup that would appear on the first time the
-// user enters the section. The popup will have the option to Close or Hide This From Now On, with the latter
-// writing a persistent setting that will prevent the popup from automatically appearing. However, there will be a
-// button in the UI (near the close button) listed as a ? That will open the popup if clicked." and "The section
-// I mentioned is the location in the dungeon editor where users get to use the command at all".
-//
 // WHERE: the editors in which a Variable Operation can be set up: the location editor (its gadgets) and the
 // dialogue and quest editors (the actions of their lines, steps and outcomes). Not the campaign editor.
-//   - Each of them gets a "?" button beside its own CLOSE button, which opens the list at any time. The button is
-//     a copy of that CLOSE button (found by what it does: the button of the screen that calls the screen's
-//     OnCloseCb), so it looks like the screen's own.
+//   - Each of them gets a "?" button beside its own CLOSE button, which opens the list at any time.
 //   - The list opens by itself the first time one of these editors is shown in a game launch, unless the setting
 //     DungeonMakerHideCommandsPopup is on. "Hide this from now on" turns that setting on and saves the settings at
 //     once (Main.SaveSettingsNow); "Close" only closes. One setting and one "already shown" for all three.
@@ -34,10 +26,9 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //
 // HOW IT IS BUILT: the game has no window that holds a long scrolling text with two buttons of the mod's choosing
 // (its message window shows a short text and its own buttons), so this is a panel of the mod's own in the
-// tooltip look (the hint's panel pieces): a dimmed layer over the screen that takes the clicks, a window with
-// a title, a scrolling text (mouse wheel or drag) and two buttons, centred: Close copied from the screen's SAVE
-// button, Hide from its CLOSE button. It is worked with the mouse; it takes no keys, and closing it only hides it,
-// so nothing is left holding the input. While it is open the editor behind takes neither the wheel nor clicks
+// tooltip look (the hint's panel pieces): a dimmed layer over the screen, a window with a title, a scrolling text
+// and two buttons. It is worked with the mouse; it takes no keys, and closing it only hides it, so nothing is left
+// holding the input. While it is open the editor behind takes neither the wheel nor clicks
 // (DungeonMakerCommandsPatcher.Cursor_RefreshHover).
 internal static class DungeonMakerCommandsPopup
 {
@@ -109,12 +100,9 @@ internal static class DungeonMakerCommandsPopup
 
     #region The ? button
 
-    // The ? button (user, 2026-11-16: "The ? shouldn't be a red button, but a normal colour button"). It is a copy
-    // of the screen's SAVE button, the editor's ordinary dark button, made square and set just right of CLOSE.
-    // The first version copied CLOSE (red) and placed it from CLOSE's RectTransform, which is narrower than the red
-    // box CLOSE draws, so the copy landed on CLOSE's right end (seen in game on 9f49bbd6). It is now placed from
-    // the edges of what CLOSE draws (every graphic under it), in world space, so whatever CLOSE's anchors and
-    // layout, the ? starts past its visible edge.
+    // The ? button: a copy of the screen's SAVE button, made square and set just right of CLOSE. It is placed from
+    // the edges of what CLOSE draws (every graphic under it), in world space: CLOSE's RectTransform is narrower
+    // than the box it draws, so placing from it would put the ? on CLOSE's right end.
     private static void EnsureHelpButton(GuiScreen screen, Button close)
     {
         if (!close || close.transform.parent.Find(HelpButtonName))
@@ -247,19 +235,18 @@ internal static class DungeonMakerCommandsPopup
         // OnEnable (the editor shown again) and each change of input scheme it runs
         // DeactivateGamepadBindingButton, which switches its basicImage back on (SAVE's basicImage is that very
         // slot, the Image child; read from the prefab) and RefreshHorizontalLayout, which sets the layout group's
-        // padding and alignment again and, with a basicWidth, the button's width (IL, 2026-11-16; Codex's review
-        // of 27bf71cf). It only serves the gamepad prompt, which the ? has none of. DestroyImmediate, so that
-        // its OnDisable unhooks it from the input service at once.
+        // padding and alignment again and, with a basicWidth, the button's width. It only serves the gamepad prompt,
+        // which the ? has none of. DestroyImmediate, so that its OnDisable unhooks it from the input service at once.
         if (copy.TryGetComponent<GuiButtonSetup>(out var setup))
         {
             Object.DestroyImmediate(setup);
         }
 
-        // The label alone is laid out. The editors' SAVE button (read from the prefab, 2026-11-16) is a
+        // The label alone is laid out. The editors' SAVE button (read from the prefab) is a
         // HorizontalLayoutGroup, padding 10 left and right, centred, spacing 4, over its children Image (an icon
         // slot, the arrow on UNDO; on SAVE it draws nothing but is active, laid out, preferred width 16) and Label.
-        // The empty slot and the spacing (16 + 4) put the label 10 units right of the button's middle, so the ?
-        // was drawn off centre (user, on bac0aa92: "The ? Button is still not centered"). Every other laid-out
+        // The empty slot and the spacing (16 + 4) would put the label 10 units right of the button's middle, off
+        // centre. Every other laid-out
         // child of the copy is switched off; the backgrounds (LayoutElement.ignoreLayout set in the prefab) and the
         // inactive gamepad prompt stay as they are.
         var labelObject = label ? label.gameObject : copy.GetComponentInChildren<TMP_Text>(true)?.gameObject;
@@ -333,10 +320,10 @@ internal static class DungeonMakerCommandsPopup
 
     internal static bool IsOpen => _dim && _dim.activeSelf;
 
-    // The editors' HandleInput, before it runs (Codex's review of 269d166a: the list only blocked the mouse, and
-    // the editor behind it still acted on its keys: Delete, Undo, and Escape, which left the editor with the list
-    // still on screen). While the list is open it takes the editor's commands: Cancel (Escape) closes the list,
-    // every other command is swallowed. Returns false when the editor must not act on the command.
+    // The editors' HandleInput, before it runs: without this the editor behind the list would still act on its
+    // keys (Delete, Undo, and Escape, which would close the editor with the list still on screen). While the list
+    // is open it takes the editor's commands: Cancel (Escape) closes the list, every other command is swallowed.
+    // Returns false when the editor must not act on the command.
     internal static bool LetEditorHandle(InputCommands.Id command)
     {
         if (!IsOpen)
@@ -491,9 +478,8 @@ internal static class DungeonMakerCommandsPopup
         _title.transform.SetAsLastSibling();
         view.SetAsLastSibling();
 
-        // The two buttons, along the bottom (user, 2026-11-17: "the buttons at the bottom should be centered, and
-        // close should be a normal button, not a red button"): Close is a copy of the screen's SAVE button, the
-        // editor's ordinary dark one (as the ? is), Hide a copy of its red CLOSE; plain ones without them.
+        // the two buttons, along the bottom: Close a copy of the screen's SAVE button, Hide a copy of its CLOSE;
+        // plain ones without them
         var closeButton = MakeButton(plain ? plain : close, "Close",
             Gui.Localize("ModUi/&DungeonMakerCommandsPopupClose"), Close);
         var hideButton = MakeButton(close, "Hide", Gui.Localize("ModUi/&DungeonMakerCommandsPopupHide"), () =>
@@ -503,12 +489,14 @@ internal static class DungeonMakerCommandsPopup
             Close();
         });
 
-        // side by side, the pair centred on the window's middle (the first version put Close's left edge 190 and
-        // Hide's 10 right of the middle, so the pair sat 70 units right of centre)
+        // side by side, the pair centred on the window's middle
         var left = -(CloseWidth + ButtonGap + HideWidth) / 2f;
 
         PlaceButton(closeButton, CloseWidth, left);
         PlaceButton(hideButton, HideWidth, left + CloseWidth + ButtonGap);
+
+        // blocks the tooltips of the editor items under the window
+        DungeonMakerNameHints.PutOnGuiLayer(_dim);
         _dim.SetActive(false);
     }
 

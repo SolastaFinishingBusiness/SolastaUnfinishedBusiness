@@ -9,10 +9,8 @@ using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
 
-// Hints shown above a text field of the Dungeon Maker while its author types (issue #42; user direction,
-// 2026-11-16: "Give an alert for potential typos in the dungeon maker editor, similar to the information alert for
-// when the author uses a marked variable that the mod uses. Additionally, please ensure that the alert would look
-// like a tooltip above when the author is typing in the variable name").
+// Hints shown beside a text field of the Dungeon Maker while its author types (issue #42): what a name the mod uses
+// does, and a warning for a command value that names nothing (a likely typo).
 //
 // WHAT IS SAID (the texts come from DungeonMakerNamesContext, which holds the rules):
 //   - a variable's name that the mod uses: what the mod does with it and, for a name the mod writes, the name it
@@ -31,15 +29,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //      variable field: name hint; the text value field of a Variable Operation action: missing-name warning,
 //      looked up in every location of the campaign, as such an action can run in any of them.
 //
-// HOW IT LOOKS AND BEHAVES. The game's own tooltips can't be used for this: its tooltip service only ever shows
-// the tooltip of whatever is under the mouse pointer, where the pointer is (GuiManager.UpdateTooltip; a forced
-// tooltip is moved to the screen's tooltip dock). So this is a panel of the mod's own, made to look like one:
-// it takes the background picture, the font and the text colour from the game's tooltip panel prefab
-// (GuiTooltipClassDefinition.TooltipPanelPrefab), falling back to a dark box with the field's own font.
-//   - It sits above the field, centred on it, and below it only when there is no room above; it never lies over
-//     the field, and it follows the field when the list it is in scrolls. In the dialogue and quest editors it
-//     sits below the field instead (user, 2026-11-16: "Move it down beneath the textbox for the dialogue
-//     editor"): above, it covered the row above it (the variable field and its Select button).
+// HOW IT BEHAVES. The game's own tooltips can't be used for this: its tooltip service only ever shows the tooltip
+// of whatever is under the mouse pointer, where the pointer is (GuiManager.UpdateTooltip; a forced tooltip is moved
+// to the screen's tooltip dock). So this is a panel of the mod's own in the tooltip's look (StyleLikeTooltip).
+//   - It never lies over the field, and it follows the field when the list it is in scrolls (Place).
 //   - It is shown only while the field has the keyboard focus and has something to say, is worked out again at
 //     every key, and goes when the field loses the focus, is hidden, or the text is fine.
 //   - It takes no clicks (nothing in it is a raycast target), and it changes nothing of the campaign.
@@ -48,9 +41,7 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // The panel pieces (NewPanel, NewLabel, StyleLikeTooltip, Place) are shared with that list and with the commands
 // list (DungeonMakerCommandsPopup).
 //
-// COLOURED NAMES (user, 2026-11-16: "mark red the variables that would explicitly clash with variables used by
-// the mod for automation? Then, mark a special colour for variables that have a special effect (like
-// `Teleport_Node`)"). Wherever the editor shows a campaign variable's name, the name is drawn in a colour of its
+// COLOURED NAMES. Wherever the editor shows a campaign variable's name, the name is drawn in a colour of its
 // own when the mod uses it (NameColor):
 //   - red: a name the mod itself writes, so a value the campaign keeps there is overwritten (the clock read-outs
 //     and counters, every <command>_Status, the mod's own clock-skip variables);
@@ -222,8 +213,7 @@ internal static class DungeonMakerNameHints
     }
 
     // UserContentLine.Bind of a UserVariableLine: the row says what the mod does with its variable's name while
-    // the pointer is over it (user, 2026-11-16: "can you modify the variable selector to allow hovering over mod
-    // commands to show the hint as well"). The text is the one a field shows while that name is typed
+    // the pointer is over it. The text is the one a field shows while that name is typed
     // (DungeonMakerNamesContext.NameHint), so a name the mod writes also says where it is written with the
     // campaign as it is. Rows are reused as the list scrolls, so the row asks for its variable when the pointer
     // comes in, and a name the mod doesn't use shows nothing. The campaign editor's variable list uses the same
@@ -311,10 +301,9 @@ internal static class DungeonMakerNameHints
             return;
         }
 
-        // switched off in Mod UI > Dungeon Maker, each kind on its own (user, 2026-11-17: "Hide information about
-        // campaign commands" and "Hide error hints"): warning is true only for the warning that nothing goes by
-        // the name written into a command (the command-value fields), false for what a name does (typing a
-        // variable's name, pointing at a variable row). Every hint comes through here, so a switched-off kind
+        // switched off in Mod UI > Dungeon Maker, each kind on its own: warning is true only for the warning that
+        // nothing goes by the name written into a command (the command-value fields), false for what a name does
+        // (typing a variable's name, pointing at a variable row). Every hint comes through here, so a switched-off kind
         // never shows, and one still up from before the switch goes.
         if (KindHidden(warning))
         {
@@ -444,6 +433,18 @@ internal static class DungeonMakerNameHints
         return rect;
     }
 
+    // Puts a panel of the mod's and everything in it on the game's GUI layer. The game's tooltip lookup
+    // (GuiManager.UpdateTooltip) and its cursors' hover check (Cursor.RefreshHoverBase) only count pointer hits on
+    // that layer and look past any other, so a panel left on the default layer would let the tooltip of whatever
+    // lies under it show through.
+    internal static void PutOnGuiLayer(GameObject panel)
+    {
+        foreach (var child in panel.GetComponentsInChildren<Transform>(true))
+        {
+            child.gameObject.layer = LayerDefinitions.LayerIndexGui;
+        }
+    }
+
     // a text for such a panel: the field's font until StyleLikeTooltip gives it the tooltip's
     internal static TextMeshProUGUI NewLabel(RectTransform parent, TMP_Text fieldText)
     {
@@ -473,25 +474,22 @@ internal static class DungeonMakerNameHints
     // The background: the game's tooltip panel prefab (TooltipPanelSimple for the default class) draws it in
     // layers, its direct children in this order: Shadow (sprite TooltipShadow, a soft glow around it),
     // BackgroundBlur (no sprite; material BlurredBackground, shader Custom/UI/BlurredBackground: the panel's
-    // fill) and Frame (sprite Frame1Pixel, its border), each a stretched Image (read from the prefab, 2026-11-16;
-    // Codex's review of 50f0b519 for the materials). Each layer that draws something, a sprite or a material of
-    // its own, is copied under the hint's panel, in the same order and with the same anchors, sprite, material and
-    // colour. The panel's own dark box stays under them: the blur shader samples a texture the game fills for its
-    // own tooltips (_BlurredBackground), which this editor canvas may not have, so the box keeps the hint readable
-    // whatever the blur draws. (The first version took only the prefab's first Image with a sprite, the Shadow:
-    // the hint was a near-invisible glow, seen in game on 02a462d3; the second skipped the sprite-less
-    // BackgroundBlur and cleared the box, leaving only a border, found by Codex's review of 50f0b519.)
+    // fill) and Frame (sprite Frame1Pixel, its border), each a stretched Image (read from the prefab). Each layer that
+    // draws something, a sprite or a material of its own, is copied under the hint's panel, in the same order and with
+    // the same anchors, sprite, material and colour. The panel's own dark box stays under them: the blur shader samples
+    // a texture the game fills for its own tooltips (_BlurredBackground), which this editor canvas may not have, so the
+    // box keeps the hint readable whatever the blur draws. Taking only the first Image with a sprite would give the
+    // Shadow alone, a near-invisible glow; skipping the sprite-less BackgroundBlur would leave only a border.
     //
     // The text: the panel prefab holds no text of its own (its rows are added when a tooltip is shown), so the
     // font, material and colour come from the class's description row (the feature prefab with a
-    // TooltipFeatureDescription, whose label is the tooltip's body text). The first version found no text in the
-    // panel prefab and so kept the input field's font, the editor's serif capitals.
+    // TooltipFeatureDescription, whose label is the tooltip's body text).
     //
     // Whatever is missing keeps the plain look: a dark box and the field's font.
     //
     // panel: the panel to dress (the hint's, the suggestions list's, the commands list's window); label: a text to
     // give the tooltip's font, or null; shadow: whether the prefab's Shadow layer (the soft glow around it) is
-    // copied too (user, 2026-11-16, of the suggestions list: "Remove the shadow around the suggestions as well").
+    // copied too.
     // Returns the tooltip's text colour, or null when it could not be taken.
     internal static Color? StyleLikeTooltip(RectTransform panel, TMP_Text label, bool shadow = true)
     {
@@ -573,10 +571,9 @@ internal static class DungeonMakerNameHints
     }
 
     // Keeps the panel on its field or row while it is shown, and takes it away when that goes, or when its kind of
-    // hint is switched off (user, 2026-11-17: "The hint should also be cleared if the field is unfocused, in the
-    // case of the disable"). Losing the focus already hides a field's hint (DungeonMakerFieldHint.OnDeselected),
-    // but a hint shown before the switch was turned on stayed until the field next refreshed; it now goes on the
-    // next frame, focused or not.
+    // hint is switched off. Losing the focus already hides a field's hint (DungeonMakerFieldHint.OnDeselected), but
+    // a hint shown before the switch was turned off would stay until the field next refreshed; this takes it away
+    // on the next frame, focused or not.
     private sealed class DungeonMakerHintFollower : MonoBehaviour
     {
         private void LateUpdate()
@@ -737,9 +734,9 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         }
 
         // A chosen name closes the list until the author edits the text again: the name's own "value changed"
-        // would otherwise open it at once on every name that starts the same (seen in game on 9f49bbd6).
+        // would otherwise open it at once on every name that starts the same.
         // Both flags are set before the text: its setter raises "value changed" at once, which refreshes the
-        // list (Codex's review of 269d166a: with the flag set after, picking Node reopened the list on NodeEast).
+        // list (with the flags set after, picking Node would reopen the list on NodeEast).
         _picked = true;
         _closedByPick = true;
         Field.text = name;
@@ -749,8 +746,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         {
             // MoveTextEnd places the caret by the label's character count (TMP_InputField.MoveTextEnd reads
             // m_TextComponent.textInfo.characterCount), which is still the old text's until the label is redrawn:
-            // after "ro" it left the caret after the name's second letter (seen in game on 9f49bbd6). The label is
-            // redrawn first.
+            // after "ro" it would leave the caret after the name's second letter. The label is redrawn first.
             Field.ForceLabelUpdate();
             Field.MoveTextEnd(false);
         }
@@ -779,8 +775,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         // Suggestions first: while a command's target is typed, the names to pick from take the place of any
         // hint. The one name that is already typed in full is no suggestion. With nothing to offer, the
         // missing-name warning below gets its turn, so the two are never shown together. With the suggestions
-        // switched off in Mod UI > Dungeon Maker, this is skipped altogether, so the warning still shows (Codex's
-        // review of a5509289: the list's own guard hid the list, but returning here hid the warning too).
+        // switched off in Mod UI > Dungeon Maker, this is skipped altogether, so the warning still shows.
         if (active && _suggest != null && !_closedByPick && Main.Settings.ShowDungeonMakerNameSuggestions)
         {
             System.Collections.Generic.List<string> names = null;

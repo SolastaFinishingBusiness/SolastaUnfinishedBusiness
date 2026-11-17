@@ -398,16 +398,11 @@ public class Settings : UnityModManager.ModSettings
     // list either way.
     public bool DungeonMakerHideCommandsPopup { get; set; }
 
-    // The editors' help while a variable name or a command's value is typed, or the pointer is on a variable row
-    // (user, 2026-11-17: "add a toggle in the mod settings that can disable all command hints (but be off by
-    // default). Additionally, add the ability to disable the suggestions as well (but be off by default)"):
-    // off, no hint panel (CustomUI/DungeonMakerNameHints.Show) / no list of gadget names to pick from
-    // (CustomUI/DungeonMakerNameSuggestions.Show). Names keep their colours, and the "?" list stays.
-    // Then split (user, 2026-11-17: "something like 'Hide information about campaign commands' and 'Hide error
-    // hints'"): CommandHints is what a name does, ErrorHints the warning that nothing goes by a command's value.
-    // Then turned round (user, 2026-11-17: "All of the new "Hide" toggles should just be "Show" and set to true by
-    // default to be consistent"): each is on by default, and off hides its kind. Never released as Disable*, so
-    // no old value is carried over.
+    // The editors' help while a variable name or a command's value is typed, or the pointer is on a variable row,
+    // each on by default: CommandHints is what a name does, ErrorHints the warning that nothing goes by a command's
+    // value (both CustomUI/DungeonMakerNameHints.Show), NameSuggestions the list of gadget names to pick from
+    // (CustomUI/DungeonMakerNameSuggestions.Show). Off hides that kind; names keep their colours, and the "?" list
+    // stays.
     public bool ShowDungeonMakerCommandHints { get; set; } = true;
     public bool ShowDungeonMakerErrorHints { get; set; } = true;
     public bool ShowDungeonMakerNameSuggestions { get; set; } = true;
@@ -421,9 +416,8 @@ public class Settings : UnityModManager.ModSettings
     // the game's; the "Categories:" toggle on those bars (issue #42).
     public bool DungeonMakerCategoriesAlphabetical { get; set; }
 
-    // Which of those tools each screen has (Mod UI > Dungeon Maker; issue #42, user direction 2026-11-16: "For each
-    // page, there is a nested toggle for each sort/search UI element/feature. Disabling the page will disable all
-    // subtoggles automatically"). A feature is there when its page and itself are on; all on by default. See
+    // Which of those tools each screen has (Mod UI > Dungeon Maker; issue #42): a setting per page and one per
+    // feature under it. A feature is there when its page and itself are on; all on by default. See
     // DungeonMakerListTools.On. The palettes have no per-list sort, the picker and the cheats panel no category order.
     public bool DungeonMakerEditorTools { get; set; } = true;
     public bool DungeonMakerEditorSearch { get; set; } = true;

@@ -10,16 +10,15 @@ using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
-// The location editor's gadget, prop and room palettes get the Dungeon Maker list bar (issue #42; user, 2026-11-13:
-// "Can we just add the new dropdown for sorts to the palette then?"), in place of the former "Enable assets sorting
-// on Dungeon Maker editor" setting, which swapped the game's own comparison for one by category title and name and
-// only took effect at the next start of the game.
+// The location editor's gadget, prop and room palettes get the Dungeon Maker list bar (issue #42), in place of the
+// former "Enable assets sorting on Dungeon Maker editor" setting, which swapped the game's own comparison for one by
+// category title and name and only took effect at the next start of the game.
 //
 // What the game does (from its IL): each palette sorts its blueprints once, when the game starts (RuntimeLoaded,
 // Array.Sort with the palette's Compare), and every Bind groups them by category in that order: one
 // BlueprintCategoryItem per category, in the order the categories first appear, each binding row i of its
 // blueprintsTable to blueprint i and switching off (and unbinding) the rows past the end. So the categories keep the
-// game's order (user's choice: within each category, like the campaign editor's lists), and within a category the
+// game's order, and within a category the
 // bar orders and filters the rows on screen, as it does for the editor's lists:
 //
 //   Sort: Default (the game's order), Name (the blueprint's internal name) or Title (its name as shown), with the
@@ -44,18 +43,17 @@ public static class BlueprintPaletteSortPatcher
     private static readonly ConditionalWeakTable<BaseBlueprintSelectionPanel, List<BlueprintCategoryItem>> Bound =
         new();
 
-    // The palettes seen so far. The game builds the three of them together and its tabs only show and hide them
-    // (Codex's review of 72916454), so a change made on one palette's bar is applied to all of them: the sort and
-    // the category order are one choice. Each keeps its own search.
+    // The palettes seen so far. The game builds the three of them together and its tabs only show and hide them, so a
+    // change made on one palette's bar is applied to all of them: the sort and the category order are one choice. Each
+    // keeps its own search.
     private static readonly List<BaseBlueprintSelectionPanel> Palettes = [];
 
     // Each palette's fold states by category (the BaseBlueprint.Category key the game groups by), taken before the
     // game lets go of the headers. An environment change calls the palette's Unbind, which sends every header back
     // to the prefab pool (Gui.ReleaseChildrenToPool), and then Bind(resetFold: false), which takes headers from the
     // pool and leaves each its own folded flag: in the game's order a fold could already land on another category,
-    // and with the categories reordered it did (seen in game on 8534f3b2: Activators open, then Adventuring; traced by
-    // Codex in the IL). So the folds are restored by category after such a Bind; with resetFold the game's own
-    // reset stands.
+    // and with the categories reordered it does (read in the IL). So the folds are restored by category after such a
+    // Bind; with resetFold the game's own reset stands.
     private static readonly ConditionalWeakTable<BaseBlueprintSelectionPanel, Dictionary<string, bool>> Folds =
         new();
 
@@ -98,9 +96,8 @@ public static class BlueprintPaletteSortPatcher
 
     // Gives each header just bound the fold its category had (the game's own ForceFoldOrUnfold: flag, toggle, table,
     // arrow, with no callbacks). A category with no remembered fold is one this palette hasn't shown before, such as
-    // Harvestables, which Town offers and Catacombs and Necropolis don't. It starts folded (user, 2026-11-13: "Start
-    // them folded"); otherwise it would keep the folded flag of whichever pooled header it got (seen in game on
-    // 52a5e21b: Harvestables open in the place of the open Traps).
+    // Harvestables, which Town offers and Catacombs and Necropolis don't. It starts folded; otherwise it would keep the
+    // folded flag of whichever pooled header it got.
     private static void RestoreFolds(BaseBlueprintSelectionPanel panel, IEnumerable<BlueprintCategoryItem> categories)
     {
         if (!Folds.TryGetValue(panel, out var folds))
@@ -287,7 +284,7 @@ public static class BlueprintPaletteSortPatcher
             // Each category gets its own fold back, unless the game reset them all. A reset (the location editor
             // opening a location, UserLocationEditorScreen.Show -> Bind(true)) also forgets the history: the palette
             // object is reused from location to location, and a fold kept from an earlier location would otherwise
-            // come back for a category this one never showed (Codex's review of 52a5e21b). The next Unbind remembers
+            // come back for a category this one never showed. The next Unbind remembers
             // the folds afresh.
             if (resetFold)
             {

@@ -6,39 +6,34 @@ using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
 
-// The list of gadget names offered while the text of a command variable is typed in the Dungeon Maker (issue #42;
-// user direction, 2026-11-16: "Suggestions for any command that would require the name of a gadget that show as
-// the user types it in, with the ability to select the one desired").
+// The list of gadget names offered while the text of a command variable is typed in the Dungeon Maker, to pick
+// one from (issue #42).
 //
 // WHERE: the text value of a Variable Operation that writes Dialog_Trigger, Roll_Trigger, Teleport_Node or
 // Teleport_PartyNode: a gadget's parameter in the location editor (the names of that location) and an action's
-// parameter in the dialogue and quest editors (the names of every location; the list sits below the field there,
-// as the hints do). Which names, and in which order, is DungeonMakerNamesContext.Suggest's business. The fields and
-// their hints are DungeonMakerNameHints'; this file is only the list.
+// parameter in the dialogue and quest editors (the names of every location). Which names, and in which order, is
+// DungeonMakerNamesContext.Suggest's business. The fields and their hints are DungeonMakerNameHints'; this file is only
+// the list.
 //
-// THE LIST is a panel of the mod's own in the tooltip look (the hint's panel pieces), with one row per name, at
-// most MaxRows, so it has a known height and is placed like a hint: clear of the field and inside the screen. It
-// is shown instead of the field's hint, never with it (DungeonMakerFieldHint.Refresh).
+// THE LIST is a panel of the mod's own (the hint's panel pieces), with one row per name, at most MaxRows, placed
+// like a hint. It is shown instead of the field's hint, never with it (DungeonMakerFieldHint.Refresh).
 //
-// CHOOSING WITH THE MOUSE, and the focus (user: "Can you not treat focus on the list as focus on the text itself
-// then? Or have them share focus"). A click outside a text field takes the focus from it: the game's input module
-// (InputPointerModule, a StandaloneInputModule) deselects the selected object when the pointer goes down on
-// something else, BEFORE it sends that something the pointer-down (ProcessMousePress calls
-// PointerInputModule.DeselectIfSelectionChanged first; read in UnityEngine.UI's IL). Losing the focus ends the
-// field's editing, and the game's fields save their text on that (the prefab wires TMP_InputField.onEndEdit to
-// UserParameterItem.OnStringValueChangedCb); saving makes the editor rebuild the action's parameter rows
-// (UserFunctorDescriptionItem.FunctorParameterModified -> Refresh -> ClearParameters, which deactivates every
-// row), which took the list down with its field before the row could get the click: the first version lost
-// every click that way (seen in game on 9f49bbd6). So for a press on this list the deselect is skipped
-// altogether (KeepsFocus, a prefix on DeselectIfSelectionChanged): the field keeps the focus and its editing,
-// the row gets the pointer-down and puts its name in, exactly as typing would.
+// CHOOSING WITH THE MOUSE, and the focus: the list and its field share the focus. A click outside a text field takes
+// the focus from it: the game's input module (InputPointerModule, a StandaloneInputModule) deselects the selected
+// object when the pointer goes down on something else, BEFORE it sends that something the pointer-down
+// (ProcessMousePress calls PointerInputModule.DeselectIfSelectionChanged first; read in UnityEngine.UI's IL). Losing
+// the focus ends the field's editing, and the game's fields save their text on that (the prefab wires
+// TMP_InputField.onEndEdit to UserParameterItem.OnStringValueChangedCb); saving makes the editor rebuild the action's
+// parameter rows (UserFunctorDescriptionItem.FunctorParameterModified -> Refresh -> ClearParameters, which deactivates
+// every row), which would take the list down with its field before the row could get the click. So for a press on this
+// list the deselect is skipped altogether (KeepsFocus, a prefix on DeselectIfSelectionChanged): the field keeps the
+// focus and its editing, the row gets the pointer-down and puts its name in, exactly as typing would.
 //
-// CHOOSING WITH THE KEYS (user: "arrow keys and enter should only be used for suggestions while the actual
-// suggestion panel is open"). TMP_InputField handles its keys in KeyPressed, one call per key-down event. A prefix
-// there (DungeonMakerCommandsPatcher) hands the event to HandleKey first, and only for the one field whose list
-// is open: Up and Down move the highlight, Enter and Tab put the highlighted name in, Escape closes the list. A
-// key used here is turned into a harmless one before the field sees it (a tab character, which a single-line
-// field ignores), so Enter doesn't also end the editing and the arrows don't move the caret. With nothing
+// CHOOSING WITH THE KEYS, only while the list is open. TMP_InputField handles its keys in KeyPressed, one call per
+// key-down event. A prefix there (DungeonMakerCommandsPatcher) hands the event to HandleKey first, and only for the one
+// field whose list is open: Up and Down move the highlight, Enter and Tab put the highlighted name in, Escape closes
+// the list. A key used here is turned into a harmless one before the field sees it (a tab character, which a
+// single-line field ignores), so Enter doesn't also end the editing and the arrows don't move the caret. With nothing
 // highlighted, Enter and Tab are the field's own, and with the list closed every key is.
 internal static class DungeonMakerNameSuggestions
 {
@@ -64,7 +59,7 @@ internal static class DungeonMakerNameSuggestions
     // the highlighted row, by the mouse or the keys; -1 for none
     private static int _selected = -1;
 
-    // Open, and not switched off. The setting is read here too, not only in Show (Codex's re-review of bcc54037):
+    // Open, and not switched off. The setting is read here too, not only in Show:
     // switched off in the mod menu while a list is up, the list would otherwise keep taking the arrow keys, Enter,
     // Tab and Escape until the field refreshes. So the keys, the focus rule and the hover rule drop it at once, and
     // the Follower takes it off the screen on the next frame.
@@ -283,7 +278,7 @@ internal static class DungeonMakerNameSuggestions
             row.Label.enableWordWrapping = false;
 
             // a gadget's name is shown as typed, never read as rich text (a name holding "<size=200>" would
-            // otherwise change or hide its row; Codex's review of 269d166a)
+            // otherwise change or hide its row)
             row.Label.richText = false;
             row.Label.overflowMode = TextOverflowModes.Ellipsis;
             row.Label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -294,7 +289,7 @@ internal static class DungeonMakerNameSuggestions
         }
 
         // the tooltip's background layers go under the rows; every row's text gets the tooltip's font
-        // no glow around the list (user: "Remove the shadow around the suggestions as well")
+        // no glow around the list
         _textColor = DungeonMakerNameHints.StyleLikeTooltip(_rect, Rows[0].Label, false) ?? _textColor;
 
         foreach (var row in Rows)
@@ -308,6 +303,9 @@ internal static class DungeonMakerNameSuggestions
         }
 
         _rect.gameObject.AddComponent<Follower>();
+
+        // blocks the tooltips of the editor items under the list
+        DungeonMakerNameHints.PutOnGuiLayer(_rect.gameObject);
         _rect.gameObject.SetActive(false);
     }
 

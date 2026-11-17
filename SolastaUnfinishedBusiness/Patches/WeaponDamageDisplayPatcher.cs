@@ -28,14 +28,13 @@ namespace SolastaUnfinishedBusiness.Patches;
 // reads the same DamageRollModifier value, so that value is not touched.
 //
 // The breakdown (2) is shortened only while "Hide weapon damage bonuses that cancel each other out" is on (Gameplay >
-// Campaigns, Combat section, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of its item
-// (user, 2026-11-16: "applying to all and not just the Dungeon Maker ones (though, generally only Dungeon Maker ones
-// would have these I guess)"). The full list is then still there while Alt is held, the way the game shows a
-// detailed tooltip (see ShowTooltip below).
+// Campaigns, Combat section, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of
+// its item, although in practice only Dungeon Maker weapons have such a pair. The full list is then still there while
+// Alt is held, the way the game shows a detailed tooltip (see ShowTooltip below).
 //
 // Entries with no name: Gui.FormatTrendInfo prints an entry's source name, or the title it finds for it, and some
-// entries carry an empty name, which showed as "+1:" with nothing after it (the Main Attack tooltip of a custom
-// weapon, in the original author's report). Wherever a breakdown entry would print nothing, its source is traced
+// entries carry an empty name, which shows as "+1:" with nothing after it (such as the Main Attack tooltip of a
+// custom weapon). Wherever a breakdown entry would print nothing, its source is traced
 // (NameOfUnnamed): the object the entry was made from, the weapon of the attack being shown, or else the kind of
 // source ("Item", "Spell"...).
 internal static class WeaponDamageDisplay
@@ -402,8 +401,8 @@ public static class WeaponDamageDisplayPatcher
 
     //PATCH: the effect line has put a damage breakdown in its tooltip: a shortened one keeps the full text too.
     //Bind has two overloads (this one, and Bind(string specialFormsDescription)), so the arguments are named:
-    //without them Harmony can't tell which is meant, and the mod's loader skips a patch it can't resolve (Codex's
-    //review of 7bc7b18f), which left the pair hidden with no way to see it.
+    //without them Harmony can't tell which is meant, and the mod's loader skips a patch it can't resolve, which
+    //would leave the pair hidden with no way to see it.
     [HarmonyPatch(typeof(FeatureElementEffectLine), nameof(FeatureElementEffectLine.Bind),
         [
             typeof(EffectForm), typeof(bool), typeof(int), typeof(bool), typeof(bool), typeof(Gui.VersatilityDisplay),

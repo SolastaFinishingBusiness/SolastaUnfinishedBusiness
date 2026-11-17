@@ -19,7 +19,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //                        find the same gadget, whatever language it runs in.
 //   Roll_Trigger         the name of a Roll Activator gadget; the acting character rolls its check.
 //   Teleport_Node        the name of a gadget (a Node, usually): the acting character is teleported near it.
-//   Teleport_PartyNode   the name of a gadget (a Node, usually): the whole party, with the guests travelling with it, is
+//   Teleport_PartyNode   the name of a gadget (a Node, usually): the whole party, with the guests travelling with it,
+//   is
 //                        teleported there in formation. It is done when the game has placed every one of them.
 //   Writing a new value while the earlier one is still waiting replaces it; writing "" cancels it.
 //   Teleport_Node is the exception: every activation that writes it is a request of its own, and they are
@@ -53,9 +54,8 @@ namespace SolastaUnfinishedBusiness.Models;
 //   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member.
 //   Teleport_PartyNode needs nobody.
 //
-// FOLLOWING A CHAIN (user direction, 2026-11-16: "make Teleport_Node and Roll_Trigger be as generically usable as
-// possible, with as many flows as possible, as long as it does not break any existing expected behaviour of
-// Solasta's tools"). The game's own gadgets pass an activation on in several steps, each a flow that switches on
+// FOLLOWING A CHAIN, so the commands work through as many kinds of flow as possible without changing what the
+// game's own tools do. The game's own gadgets pass an activation on in several steps, each a flow that switches on
 // the next one. An Area Activator takes three to reach its targets (read from its prefab):
 //     the area's flow sets the gadget's own "Activated" condition         (SetGadgetCondition)
 //       > the flow waiting on that condition raises the event TriggeredOn (RaiseGadgetEvent)
@@ -88,24 +88,23 @@ namespace SolastaUnfinishedBusiness.Models;
 //     the game: only the mod's own record travels, and every hook only looks.
 //   - A flow switched on by a flow that has no record gets a record that says what started the chain
 //     (Untraced), for the failure message.
-//   - The mod's own writes are no link (user direction, 2026-11-16: "let us explicitly exclude `_Status`
-//     variables used by the mod"): the <command>_Status variables, the Clock_ read-outs and counters, and the
+//   - The mod's own writes are no link: the <command>_Status variables, the Clock_ read-outs and counters, and the
 //     emptying of a command variable carry no character, and don't replace a record a flow already has. A
 //     campaign's own flow writing to such a variable is an ordinary write.
 //   - Not followed: a change made from outside any gadget flow and any dialogue (a quest's own actions when the
 //     game advances it, the cheats panel); a flow that was running when the game was saved (the game does not
 //     resume it after a load).
 //
-// SAVES (user direction, 2026-11-16: "Let's store the pending records then"). The game keeps in a save which
+// SAVES. The game keeps in a save which
 // flows are triggered and have not started (GameGadget.flowsSaveData, "pending trigger"), how far each timer has
 // counted, and the command variables themselves; it starts those flows and the mod takes those commands again
 // after a load. Who is behind them is the mod's own knowledge, so it goes into the save too:
 //   - right before the game writes the campaign's variables (BeforeVariablesSaved), the mod puts one String
 //     variable among them, Commands_SavedState (or Commands_SavedState_2, ... when the campaign has a variable of
-//     that name; it is known after a load by the signature its text starts with, not by its name): the records of the triggered flows, the timers set going by a
-//     character, the waiting commands' acting characters and the whole one-character teleport queue (SaveState).
-//     It is taken out again as soon as they are written, so it exists in the save only and the running game is
-//     not changed by saving;
+//     that name; it is known after a load by the signature its text starts with, not by its name): the records of the
+//     triggered flows, the timers set going by a character, the waiting commands' acting characters and the whole
+//     one-character teleport queue (SaveState). It is taken out again as soon as they are written, so it exists in the
+//     save only and the running game is not changed by saving;
 //   - after a load (OnLocationReady), it is read, taken out of the variables, and what still fits is put back
 //     before the waiting commands are taken (RestoreState);
 //   - nothing is written when nothing is waiting, so a campaign that doesn't use the commands has no such
@@ -141,7 +140,7 @@ namespace SolastaUnfinishedBusiness.Models;
 // whose type is wrong, or whose text names nothing in the location or anywhere in the campaign, is the
 // campaign's own for the rest of the game, and is left alone without a message (NamesNothing, MarkOwnRequest).
 //
-// HOW IT RUNS, and why (the first version polled these variables from the game clock's per-frame update):
+// HOW IT RUNS, and why (rather than polling these variables from the game clock's per-frame update):
 //   - A request is taken when the variable is written, through the game's own "variable value changed" event,
 //     the one a Variable Activator gadget listens to. The gadget flow that wrote it is known at that moment
 //     (see BeginVariableOperation), which is what gives the acting character.
@@ -257,9 +256,10 @@ internal static class DungeonMakerCommandsContext
 
     // Per flow, who set it off: the activation whose flow has not started yet, and the one whose flow the game is
     // running (or ran last). The first is a plain dictionary, emptied when the location is left, because it is
-    // written into saves (SaveState) and so has to be listed. An Area Activator's, a pressure plate's or an interaction's flow gets its record from
-    // the character who moved or used it (NoteOccupationChanged, NoteInteracted); a condition or gadget event
-    // flow gets a copy of the record of the flow that switched it on (NoteListenerStatusChanged).
+    // written into saves (SaveState) and so has to be listed. An Area Activator's, a pressure plate's or an
+    // interaction's flow gets its record from the character who moved or used it (NoteOccupationChanged,
+    // NoteInteracted); a condition or gadget event flow gets a copy of the record of the flow that switched it on
+    // (NoteListenerStatusChanged).
     private static Dictionary<GameGadgetListener, Activation> _causes = [];
     private static ConditionalWeakTable<GameGadgetListener, Activation> _runs = new();
 
@@ -790,7 +790,7 @@ internal static class DungeonMakerCommandsContext
     // Not handled here: an Area Activator's, a pressure plate's and an interaction's flows, whose own hooks know
     // the character (NoteOccupationChanged, NoteInteracted).
     //
-    // The mod's own variable writes carry nothing (user direction, 2026-11-16): a flow set off by one of them (a
+    // The mod's own variable writes carry nothing: a flow set off by one of them (a
     // Variable Activator on Roll_Trigger_Status or on a Clock_ variable, say) starts without a record, also when
     // the write happens to be made while some character's flow runs. A campaign's own flows writing those
     // variables are ordinary writes.
@@ -1371,8 +1371,8 @@ internal static class DungeonMakerCommandsContext
                 return false;
             }
 
-            // The first of Commands_SavedState, Commands_SavedState_2, ... that is not a variable of the campaign
-            // (user direction, 2026-11-16: the mod's variable must never overwrite a campaign's). It is made here
+            // The first of Commands_SavedState, Commands_SavedState_2, ... that is not a variable of the campaign, so
+            // the mod's variable never overwrites a campaign's. It is made here
             // and taken out again by AfterVariablesSaved, so it is always the mod's own.
             var name = SavedStateName(0);
 
@@ -1486,9 +1486,9 @@ internal static class DungeonMakerCommandsContext
 
     // What is waiting, as one line of text, or "" when nothing is. Entries are separated by ';' and their fields
     // by ','; every field is escaped (Uri.EscapeDataString), so names can hold anything. It starts with the mod's
-    // signature and the format's version. A flow is named by its gadget's unique name and its flow id, which is how the game itself
-    // names them in a save (GameSector.SerializeElements, GameGadget.flowsSaveData); a character by its id, which
-    // the game saves with it (RulesetEntity's "Guid" attribute).
+    // signature and the format's version. A flow is named by its gadget's unique name and its flow id, which is how the
+    // game itself names them in a save (GameSector.SerializeElements, GameGadget.flowsSaveData); a character by its id,
+    // which the game saves with it (RulesetEntity's "Guid" attribute).
     //   C gadget flow record   a flow that is triggered and has not started, with who is behind it
     //   A gadget flow record   a timer a character's flow set going
     //   W variable target actor   a waiting Dialog_Trigger, Roll_Trigger or Teleport_PartyNode
@@ -1497,8 +1497,7 @@ internal static class DungeonMakerCommandsContext
     //   O variable             a command or request name the mod has found to be the campaign's own variable
     //                          (DungeonMakerNamesContext.MarkOwnRequest). It decides whether a later write is a
     //                          command, so a computer that loads or joins the game must know it as well as one that
-    //                          saw it happen, or the two would act differently on the same write (Codex's review
-    //                          of 02a462d3).
+    //                          saw it happen, or the two would act differently on the same write.
     // Not kept: flows that were running (the game doesn't resume them after a load, so their record and the
     // places they kept have nothing to go with), and commands already handed to the game (cancelled on load).
     private static string SaveState()
@@ -1670,7 +1669,7 @@ internal static class DungeonMakerCommandsContext
 
     // Is this flow waiting to be started by the game? Either its trigger is set, or it was set when the game was
     // saved: GameGadget.PostLoad puts that back as PendingSavedTrigger, without setting the listener's own trigger,
-    // and the game's own save keeps a flow when either is set (Codex's review of 02a462d3, read in the IL). Saving,
+    // and the game's own save keeps a flow when either is set (read in the IL). Saving,
     // restoring and the teleport queue's kept places all ask this, so a chain loaded from a save, then saved again
     // before it has run, keeps who is behind it.
     private static bool IsPending(GameGadgetListener listener)
@@ -1778,7 +1777,7 @@ internal static class DungeonMakerCommandsContext
 
         // A text that names nothing, here or anywhere in the campaign, was never meant as a command: the campaign
         // uses this name for something of its own. Nothing is done with it, and nothing of an earlier command
-        // either (user direction, 2026-11-16).
+        // either.
         if (!string.IsNullOrEmpty(value) && NamesNothing(kind, variableName, value))
         {
             DungeonMakerNamesContext.MarkOwnRequest(variableName,
@@ -2810,9 +2809,7 @@ internal static class DungeonMakerCommandsContext
     // The game's alert, in the failure colour; nothing when no screen can show it (loading). Every error the
     // commands, the torches and the clock show in game comes through here.
     //
-    // PLAYTEST (user, 2026-11-16: "when the map is being played in Playtest mode, can any errors detected in
-    // commands be shown as both a notification in-game with a "Playtest: " prefix? It should also appear as a
-    // line in the in-game log as "Playtest: " as well"): while the location or campaign map being played is a
+    // PLAYTEST: while the location or campaign map being played is a
     // Dungeon Maker playtest (the session service's PlaytestingUserLocation / PlaytestingUserCampaignMap, set by
     // the editors' Playtest buttons), the alert starts with the game's own word for Playtest (its term
     // MainMenu/&UserLocationsPlaytestTitle, so it reads right in every language), and the same text is added to
@@ -2872,8 +2869,8 @@ internal static class DungeonMakerCommandsContext
 
     // The game's log reads "{x}" as a parameter's place also inside a parameter's own text: after putting the
     // parameters in, GameRecordEntry.BreakdownFragments asks TextBreaker.HasUnassignedParameters again, which
-    // takes any word whose first '}' comes two characters after its first '{' as parameter number x (IL,
-    // 2026-11-16; Codex's review of 27bf71cf). An error naming a gadget "{0}" would then show the prefix in its
+    // takes any word whose first '}' comes two characters after its first '{' as parameter number x (read in the
+    // IL). An error naming a gadget "{0}" would then show the prefix in its
     // place, "{1}" would put the error into itself again and again, and "{9}" would ask for a parameter that isn't
     // there. A zero-width space after every '{' and before every '}' keeps the text as it reads, and no '}' can
     // then be two characters after a '{' (not even in "{}", which becomes four characters).
@@ -2911,9 +2908,9 @@ internal static class DungeonMakerCommandsContext
 
             // The error is the line itself, in the failure colour, and the prefix with its colon is its one
             // parameter. The log breaks only its base line into words (at spaces and line breaks), and puts a
-            // parameter's text in as one piece that is never broken: with the error as a parameter (seen in game
-            // on 19c68ecb) a long error ran past the log panel's edge instead of wrapping, and in "{0}: {1}" the
-            // colon was a word of its own, shown as "Playtest :". The log runs its base line through
+            // parameter's text in as one piece that is never broken: with the error as a parameter a long error
+            // would run past the log panel's edge instead of wrapping, and in "{0}: {1}" the colon would be a word of
+            // its own, shown as "Playtest :". The log runs its base line through
             // Gui.Localize, which gives back a text that is no term unchanged unless the text holds a '&'
             // (Gui.LocalizeImpl, IL_0043-005a: it then looks for a term and logs a missing one), so a '&' in the
             // error is shown as a full-width one. Its braces are kept from being read as parameters as above.

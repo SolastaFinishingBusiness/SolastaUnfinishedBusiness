@@ -12,51 +12,31 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // Sorting and searching the Dungeon Maker's lists (issue #42; the alphabetical order comes from BlackguardRogue's
 // Dungeon Maker tools): the twelve content lists of the campaign editor, the variable picker, the
 // Cheats > Campaign Variables panel, and the location editor's gadget, prop and room palettes (which replace the
-// former "Enable assets sorting on Dungeon Maker editor" setting; the palettes' bar has two rows, as a palette is
-// only 432 units wide: the sort, then the search, see BlueprintPaletteSortPatcher).
+// former "Enable assets sorting on Dungeon Maker editor" setting; see BlueprintPaletteSortPatcher).
 //
-// The campaign editor's and the palettes' bars also have a CATEGORY ORDER toggle (on the editor's sort row after a
-// gap; in a palette on the sort row too, flush right, showing only "Default" or "A-Z" with "Categories: ..." as its
-// tooltip, user direction 2026-11-13) (user, 2026-11-13: "a toggle
-// for sorting the categories themselves ... between default and alphabetical", for both): "Categories: Default"
-// keeps the sections (the editor's twelve lists, a palette's categories) in the game's order, "Categories: A-Z"
-// orders them by the title on their header. One saved choice for all of them
-// (Settings.DungeonMakerCategoriesAlphabetical); no direction, as a short list of headers gains little from Z-A. Each of the three screens gets a bar on a row of its own, above its list and
-// as wide as it, with, from left to right (user directions, 2026-11-13: the bar "should be at the very top"; later
-// "Search should be on the right, and sort on the left"),
+// Each screen gets a bar with:
 //
-//   "Sort:" and a      what the list is ordered by: the campaign's own order, the name, or a second key
-//   dropdown           (the title for content, the type for variables)
-//   a direction arrow  up for ascending, down for descending (a copy of the editor's move-up button)
-//   a search field     set apart from the sort by a gap; only rows whose name or title contains the text are shown
-//   a clear button     empties the search field
+//   - a MAIN SORT: what the list is ordered by (the campaign's own order, the name, or a second key: the title for
+//     content, the type for variables) and a direction, ascending or descending;
+//   - a SEARCH: only rows whose name or title contains the text are shown;
+//   - in the campaign editor and the palettes, a CATEGORY ORDER: the sections (the editor's twelve lists, a
+//     palette's categories) in the game's order or ordered by the title on their header. One saved choice for all
+//     of them (Settings.DungeonMakerCategoriesAlphabetical), with no direction.
 //
-// and a CATEGORY SORT for each list (user direction through Codex, 2026-11-13: "The category specific sort will be
-// priority, with the main sort as the secondary"; the user's choices: a sort per list, with its own arrow):
-//
-//   "Sort:"            in the campaign editor, a row inside each list's foldable group, directly under its header
-//   a dropdown         and above its items (user, 2026-11-13: "[Quests category expanded] / Sort: [Default] [arrow]
-//   a direction arrow  / {... Actual quest items...} / [New quest button]"); shown while the group is open. The
-//                      variable picker and the cheat panel, which have one list and no headers, have it as a second
-//                      row of the bar, under the main sort, as "Variables:".
-//
-// The dropdown holds Default, which every list starts on and which orders it by the main sort alone (user, same day:
-// "an option for Default (and start with default), where the category just follows the main"), then the list's
-// own keys (hit points, challenge rating, cost, ...). A list is ordered by its category key first, in that
-// direction, and rows with equal keys by the main sort, in its direction, then by the campaign's order. Numbers
-// compare as numbers; an entry without a value for the key comes last in both directions.
-//
-// While a list has a category sort whose field its rows don't show (all but a location's author, start levels,
-// environment and campaign start), each row carries a small overlay at its right end with that row's value (user,
-// 2026-11-13: "a temporary overlay for each entry that shows the value of the field while that particular sort is
-// active"). It goes when the list is back on Default.
+// Each list also has a CATEGORY SORT of its own (in the campaign editor inside each list's foldable group; in the
+// variable picker and the cheat panel, which have one list, as a second row of the bar). It starts on Default,
+// which orders the list by the main sort alone, and otherwise holds the list's own keys (hit points, challenge
+// rating, cost, ...). A list is ordered by its category key first, in its direction, and rows with equal keys by
+// the main sort, in its direction, then by the campaign's order. Numbers compare as numbers; an entry without a
+// value for the key comes last in both directions. While a category sort uses a field the rows don't show, each
+// row shows that row's value in a small overlay.
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
 //
-// IT ONLY CHANGES WHAT IS SHOWN. The first version of the alphabetical order sorted the campaign's own lists, so the
-// order was saved with the campaign, and auto-start quests, which the game starts in list order, entered the
-// journal in another order. Here the lists are never touched:
+// IT ONLY CHANGES WHAT IS SHOWN. Sorting the campaign's own lists would save the order with the campaign, and
+// auto-start quests, which the game starts in list order, would enter the journal in another order. So the lists
+// are never touched:
 //
 //   - All three screens fill their table the same way: row object i is bound to item i of the list.
 //   - Right after that (Bound), the row objects are remembered in that order, which is the list's own order.
@@ -85,10 +65,8 @@ internal static class DungeonMakerListTools
         Second
     }
 
-    // The screens with these tools, and the tools each can have, each a setting of its own under its page's setting
-    // (user direction, 2026-11-16: "For each page, there is a nested toggle for each sort/search UI element/feature.
-    // Disabling the page will disable all subtoggles automatically, but the user can enable the page and choose which
-    // features wanted on the page"). A tool switched off is not shown and changes nothing: its sort, search or
+    // The screens with these tools, and the tools each can have, each a setting of its own under its page's
+    // setting. A tool switched off is not shown and changes nothing: its sort, search or
     // order is left out of the view, so a page with all its tools off looks and behaves as without the mod.
     internal enum Page
     {
@@ -195,8 +173,8 @@ internal static class DungeonMakerListTools
         return PageSettings[page].Get();
     }
 
-    // Switching a page sets all its features with it (the user's rule: off switches them all off; on brings them
-    // all back, so a page switched on is never an empty bar), after which each can be switched on its own.
+    // Switching a page sets all its features with it (off switches them all off; on brings them all back, so a page
+    // switched on is never an empty bar), after which each can be switched on its own.
     internal static void SetPage(Page page, bool on)
     {
         PageSettings[page].Set(on);
@@ -216,9 +194,8 @@ internal static class DungeonMakerListTools
     }
 
     // A choice made on a bar is saved at once. The mod's settings are otherwise written when the mod manager window
-    // closes or the game quits, so a crash before that lost the sorts chosen in that session (the user's question,
-    // 2026-11-16, whether the sorts are kept). The mod's own save handler is used, which in multiplayer saves this
-    // computer's settings, not the host's.
+    // closes or the game quits, so a crash before that would lose the sorts chosen in that session. The mod's own save
+    // handler is used, which in multiplayer saves this computer's settings, not the host's.
     private static void SaveChoice()
     {
         try
@@ -266,8 +243,7 @@ internal static class DungeonMakerListTools
     // in a palette, where the sort row also holds the category toggle (Default, Name, Title are short)
     private const float PaletteSortWidth = 150f;
 
-    // the space that sets the sort controls apart from the search and Clear (user direction, 2026-11-13: "Add a
-    // distinct padding between the search clear and the sort"), on top of the usual spacing either side
+    // the space that sets the sort controls apart from the search and Clear, on top of the usual spacing either side
     private const float GroupGap = 28f;
     private const float SearchMinWidth = 160f;
     private const float ClearWidth = 90f;
@@ -277,8 +253,7 @@ internal static class DungeonMakerListTools
     // between the list and the bar
     private const float Gap = 6f;
 
-    // between a palette's bar and its blueprints (user, 2026-11-13: "In the palette screen, add a padding between the
-    // search row and the items"): the palettes' category headers start right at the top of their list
+    // between a palette's bar and its blueprints: the palettes' category headers start right at the top of their list
     private const float PaletteGap = 18f;
 
     // the rows of each table in the order the game bound them, i.e. the order of the list
@@ -383,11 +358,11 @@ internal static class DungeonMakerListTools
     }
 
     // A text as the sort and the search compare it: as the player reads it, without TextMeshPro's rich-text tags.
-    // Some titles carry them, such as the mod's own coloured "Flat Rooms" category and its rooms (Codex's review of
-    // 72916454); the screen keeps them. Only TextMeshPro's tags are removed (its documented tag names, and "<#rrggbb>"
+    // Some titles carry them, such as the mod's own coloured "Flat Rooms" category and its rooms; the screen keeps
+    // them. Only TextMeshPro's tags are removed (its documented tag names, and "<#rrggbb>"
     // colours; the game's TextMeshPro matches tags by a hash of the name, so the list isn't read from it): it shows
     // any other text in angle brackets as written, such as an author's "<Unnamed>", so that text
-    // stays searchable and sorts where it reads (Codex's review of 52a5e21b; the earlier "<anything>" pattern dropped it).
+    // stays searchable and sorts where it reads (a pattern for any "<...>" would drop it).
     private static readonly System.Text.RegularExpressions.Regex RichTextTag = new(
         @"</?(?:#[0-9a-f]{3,8}|(?:align|allcaps|alpha|b|color|cspace|font|font-weight|gradient|i|indent|line-height|" +
         @"line-indent|link|lowercase|margin|margin-left|margin-right|mark|mspace|nobr|noparse|page|pos|rotate|s|size|" +
@@ -396,8 +371,8 @@ internal static class DungeonMakerListTools
         System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     // A "<noparse>" region, up to its "</noparse>" or the end of the text: TextMeshPro shows what is inside as written,
-    // tags included, and drops only the two noparse tags (Codex's review of 30c2fc55: "Guide <noparse><b></noparse>"
-    // reads "Guide <b>", so its key must too).
+    // tags included, and drops only the two noparse tags ("Guide <noparse><b></noparse>" reads "Guide <b>", so its
+    // key must too).
     private static readonly System.Text.RegularExpressions.Regex NoParseRegion = new(
         @"<noparse>(.*?)(?:</noparse>|$)",
         System.Text.RegularExpressions.RegexOptions.IgnoreCase |
@@ -647,7 +622,7 @@ internal static class DungeonMakerListTools
     //   sourceRoot  where sourcePath starts, when the button to copy belongs to another screen
     //   sections    the screen has sections to order (the editor, the palettes): the category order toggle
     //   searched    the search changed, when that needs less than "changed" (a palette's search is its own, while
-    //               its sort is shared by all three palettes; Codex's review of 52a5e21b); null: "changed"
+    //               its sort is shared by all three palettes); null: "changed"
     internal static void Ensure(
         Transform root, string screen, string listPath, string sourcePath, string secondTerm, Action changed,
         Func<CategoryView> category, bool stacked = false, bool keepSearch = false, Transform sourceRoot = null,
@@ -691,16 +666,14 @@ internal static class DungeonMakerListTools
         // the list the category row shows now; its dropdown's choices are Default, then that list's options
         CategoryView shown = null;
 
-        // "Sort:" stands in front of the dropdown, which holds only the choices (user direction, 2026-11-13:
-        // "split them so that the "Sort:" is outside the dropdown"). Set through the game label, which otherwise
-        // writes its own text when it wakes up.
+        // "Sort:" stands in front of the dropdown, which holds only the choices. Set through the game label, which
+        // otherwise writes its own text when it wakes up.
         if (sortLabel)
         {
             sortLabel.Text = Gui.Localize("ModUi/&DungeonMakerSortLabel");
         }
 
-        // The sort is a dropdown (user direction, 2026-11-13: "Can the sort be a dropdown instead of a cycle
-        // toggle?"): its three choices, in the order of the Sort values, with this screen's second key.
+        // The sort is a dropdown: its three choices, in the order of the Sort values, with this screen's second key.
         if (sort)
         {
             sort.onValueChanged = new TMP_Dropdown.DropdownEvent();
@@ -720,16 +693,13 @@ internal static class DungeonMakerListTools
                 sort.SetValueWithoutNotify((int)Kind);
             }
 
-            // the direction is an arrow (user direction, 2026-11-13: "Ascending and Descending should also just
-            // be an arrow"); its tooltip says which
+            // the direction is an arrow; its tooltip says which
             SetArrow(direction, Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
 
-            // The toggle's text is built from pieces, each translated once (user, 2026-11-13: "Use modular translations
-            // instead of having multiple lines translating the same text"): the order ("Default", the main sort's own
+            // The toggle's text is built from pieces, each translated once: the order ("Default", the main sort's own
             // word, or "A-Z"), and in the editor "Categories" in front of it through the language's "{0}: {1}"
-            // template. In a palette the button shows the order alone. The tooltip is only "Categories" in both (user,
-            // same day: "hover shows only "Categories", without the colon").
+            // template. In a palette the button shows the order alone. The tooltip is only "Categories" in both.
             var categories = Gui.Localize("ModUi/&DungeonMakerCategories");
             var order = Gui.Localize(CategoriesAlphabetical
                 ? "ModUi/&DungeonMakerCategoryOrderAlphabetical"
@@ -1036,7 +1006,7 @@ internal static class DungeonMakerListTools
         // As wide as the group's header. The group's other parts each carry the list's width themselves (986 units
         // in the prefab, HeaderGroup, the item table, ButtonsBar), so the group's layout doesn't give its children
         // a width, and a new row kept the 100 units a new object starts with: the dropdown and the arrow, which
-        // have fixed widths, then left "Sort:" no room at all (seen in game on cd9aa39a, 2026-11-13).
+        // have fixed widths, then left "Sort:" no room at all.
         var header = group.Find("HeaderGroup") as RectTransform;
         var rowRect = (RectTransform)row;
         var width = header && header.rect.width > 0 ? header.rect.width : 986f;
@@ -1231,8 +1201,8 @@ internal static class DungeonMakerListTools
         // The text component first, its rectangle after. A TextMeshProUGUI added at runtime with no text yet runs
         // TMP_Text.LoadDefaultSettings, which sets the RectTransform's sizeDelta to TextMeshPro's default text box
         // size (TMP_Settings.defaultTextMeshProUITextContainerSize, read in the IL). Set before, the margins were
-        // replaced, the text box grew by that size on both sides of the backing, and the right-aligned value
-        // ended past the row's edge, cut off by the list (seen in game on 629633f8, 2026-11-13).
+        // replaced, the text box would grow by that size on both sides of the backing, and the right-aligned value
+        // would end past the row's edge, cut off by the list.
         var label = textObject.AddComponent<TextMeshProUGUI>();
 
         textRect.anchorMin = Vector2.zero;
@@ -1336,26 +1306,23 @@ internal static class DungeonMakerListTools
         layout.childForceExpandHeight = false;
 
         // Each row places its controls in the order they are added. The first: the main sort on the left, a gap,
-        // then the search field (taking the room that is left) and Clear on the right (user direction, 2026-11-13:
-        // "Search should be on the right, and sort on the left"). The second, aligned to the left so its controls
-        // stand under the main sort's: the category sort.
+        // then the search field (taking the room that is left) and Clear on the right. The second, aligned to the left
+        // so its controls stand under the main sort's: the category sort.
         var main = AddRow(bar.transform, MainRowName, TextAnchor.MiddleLeft);
 
         AddSortLabel(main, sourceButton, SortLabelName);
         AddSortDropdown(main, SortName, stacked ? PaletteSortWidth : SortWidth);
         AddArrow(main, DirectionName);
 
-        // The category order toggle, as wide as its text (FitButtonToText), with the other ordering controls
-        // (user direction, 2026-11-13: "Move it to the sort row for the editor, but make it a new row by itself for
-        // the palettes"): in the editor after the arrow, on the sort row; in a palette, too narrow for both, on a
+        // The category order toggle, as wide as its text (FitButtonToText), with the other ordering controls: in the
+        // editor after the arrow, on the sort row; in a palette, too narrow for both, on a
         // row of its own under the sort.
         var rows = 1;
 
         if (sections)
         {
-            // On the sort row in both. In the editor set apart from the arrow by a gap (user, 2026-11-13: "put a
-            // space between the sort and the categories button"); in a palette pushed to the row's right end by a
-            // stretching space (user, same day: "put the categories behind the sort ... Make it flush to the right").
+            // On the sort row in both. In the editor set apart from the arrow by a gap; in a palette pushed to the
+            // row's right end by a stretching space.
             if (stacked)
             {
                 AddStretch(main);
@@ -1518,8 +1485,8 @@ internal static class DungeonMakerListTools
 
         // Vertically centred. The original is a multi-line box: its text area and its placeholder label fill the
         // field with an even inset (6 and 8 units, from the prefab), but the labels keep the box's own alignment,
-        // which in a one-line field 34 units tall put "Search..." off the middle (seen in game, 2026-11-13).
-        // Setting the alignment here is not enough (tried in 9a8cd276, still off): the placeholder is a game label
+        // which in a one-line field 34 units tall puts "Search..." off the middle.
+        // Setting the alignment here is not enough: the placeholder is a game label
         // (GuiLabel), and when a label first wakes up, GuiLabel.Awake runs GuiStyleEnforcer.ApplyStyles, whose
         // label style (GuiLabelStyleDefinition.Apply) sets the alignment again. The copy is made inactive, so it
         // wakes up only when the bar is put on screen, after this. MiddleAlignment sets the middle again once the

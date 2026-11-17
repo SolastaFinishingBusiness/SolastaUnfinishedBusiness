@@ -59,8 +59,8 @@ public static class UserListSortPatcher
     // a content row's two sort keys; the search looks in both
     #region Category sort options
 
-    // The keys each list can be sorted by in the category row (Codex's list of what the game's data holds,
-    // 2026-11-13, each read here from the game's own classes). Ids are saved in the settings: don't rename them.
+    // The keys each list can be sorted by in the category row (what the game's data holds, each read here from the
+    // game's own classes). Ids are saved in the settings: don't rename them.
     // Counts are of entries (rows), not of the quantities in them.
 
     // the picker lists the campaign's variables like the editor's Variables list, and shares its category sort
@@ -209,8 +209,7 @@ public static class UserListSortPatcher
             r => As<UserLocation>(r) is { } location ? $"{location.WidthCells} x {location.HeightCells}" : "-"),
         Shown("Environment", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.Environment))),
         Option("VisualMood", r => SortKey.Of(TitleOf(As<UserLocation>(r)?.VisualMood))),
-        // the campaign's starting location first when ascending (user, 2026-11-13: "those with Campaign start at the
-        // very top for Ascending"); the rows show it with an icon
+        // the campaign's starting location first when ascending; the rows show it with an icon
         Shown("CampaignStart", r => As<UserLocation>(r) is { } location
             ? SortKey.Of(location.CampaignStart ? 0 : 1)
             : SortKey.Missing),
@@ -472,7 +471,7 @@ public static class UserListSortPatcher
             var moveUp = list.MoveUp(screen);
             var moveDown = list.MoveDown(screen);
 
-            // Only a list that is open keeps a selection (user direction, 2026-11-13). The editor's shortcut
+            // Only a list that is open keeps a selection. The editor's shortcut
             // icons work as tabs: one opens its list and folds the eleven others, and a list can also be folded
             // by its header. A list that is folded away loses its selection; in an open list the selection is
             // dropped when the search leaves the selected row out. Either way Edit and Delete never act on an
@@ -591,7 +590,7 @@ public static class UserListSortPatcher
     }
 
     //PATCH: a shortcut icon of the campaign editor was clicked: it opens its list and folds the others, which is
-    //how the user goes from one "tab" to another. The same as above, for the eleven lists it folded.
+    //how the author goes from one "tab" to another. The same as above, for the eleven lists it folded.
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnCategoryHeaderFocused))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

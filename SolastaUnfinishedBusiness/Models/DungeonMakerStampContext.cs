@@ -6,8 +6,7 @@ using HarmonyLib;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// The mod's version in the campaigns and locations the Dungeon Maker saves (user direction, 2026-11-16: "Can we
-// add the current mod version to campaigns saved? Be conscious that campaigns can save dev builds").
+// The mod's version in the campaigns and locations the Dungeon Maker saves, development builds included.
 //
 // WHERE IT GOES, and why there. A campaign file (and a location file) is the text Unity's JsonUtility.ToJson makes
 // of the UserCampaign object, written by UserCampaignPoolManager.SaveUserCampaign (UserLocationPoolManager.
@@ -29,9 +28,9 @@ namespace SolastaUnfinishedBusiness.Models;
 // release, "<version>-dev.<first 8 characters of the commit>" for a development build.
 //
 // HOW TWO VERSIONS ARE ORDERED is the updater's business, not decided here: UpdateContext.CompareVersions is
-// used as it is. That is Semantic Versioning's pre-release order (PR #72, on develop since 1.18.0): develop carries
-// the NEXT version, so a development build is older than the release with the same numbers (1.17.0 < 1.17.1 <
-// 1.18.0-dev.<commit> < 1.18.0). Builds stamped "1.17.0-dev.*", made before that change, read as older than 1.17.0.
+// used as it is. That is Semantic Versioning's pre-release order: a development build carries the
+// NEXT version and is older than the release with the same numbers (1.17.0 < 1.17.1 < 1.18.0-dev.<commit> <
+// 1.18.0).
 // "Equal" only means "the same numbers": two development builds of one version differ by their commit alone,
 // which says which code it was, not which is newer, so the log then says that the commits differ.
 //

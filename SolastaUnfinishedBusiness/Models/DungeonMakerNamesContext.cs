@@ -22,8 +22,7 @@ namespace SolastaUnfinishedBusiness.Models;
 //     Clock_SkipRemainingSeconds and Clock_SkipTargetMinute. (Commands_SavedState, which exists inside saves only,
 //     is looked after where it is written, DungeonMakerCommandsContext "SAVES".)
 //
-// A NAME ONLY THE MOD WRITES THAT THE CAMPAIGN OWNS (user direction, 2026-11-16: "Let's just skip past the first
-// secondary name of FB_ and just go straight to increments"). The mod then writes to <name>_2 instead, or
+// A NAME ONLY THE MOD WRITES THAT THE CAMPAIGN OWNS. The mod then writes to <name>_2 instead, or
 // <name>_3, ...: the first one the campaign doesn't own. A name is the campaign's own when the campaign itself
 // writes it: a Variable Operation gadget in any of its locations, or a Variable Operation among the actions of a
 // dialogue line, a quest step or a quest outcome (the places a campaign can write a variable from). Reading one,
@@ -37,14 +36,13 @@ namespace SolastaUnfinishedBusiness.Models;
 // The choice is worked out from the campaign's contents each time a location is loaded (Refresh), so it is the
 // same on every computer and nothing about it is saved; one log line says so for each name moved.
 //
-// A COMMAND OR REQUEST NAME THE CAMPAIGN USES FOR SOMETHING ELSE (user direction, 2026-11-16: "If it fails, just
-// treat it the author's own and ignore it. Log it in the Player.log once"). There is nothing to move these to:
+// A COMMAND OR REQUEST NAME THE CAMPAIGN USES FOR SOMETHING ELSE. There is nothing to move these to:
 // the campaign writes them. So when a write can never be a command (the variable has the wrong type, or the text
 // names nothing in the location and nothing anywhere in the campaign's data), the variable is the campaign's
-// own for the rest of that game (saves of it keep it too, see DungeonMakerCommandsContext "SAVES"): nothing is done, no alert is shown, the variable is not emptied, and the log
-// says so once (MarkOwnRequest). A command that names something real and fails for another reason fails as
-// before, with its alert. Typing mistakes are pointed out where they are made, in the editor (NameHint,
-// ValueHint, shown by CustomUI/DungeonMakerNameHints).
+// own for the rest of that game (saves of it keep it too, see DungeonMakerCommandsContext "SAVES"): nothing is done, no
+// alert is shown, the variable is not emptied, and the log says so once (MarkOwnRequest). A command that names
+// something real and fails for another reason fails as before, with its alert. Typing mistakes are pointed out where
+// they are made, in the editor (NameHint, ValueHint, shown by CustomUI/DungeonMakerNameHints).
 internal static class DungeonMakerNamesContext
 {
     internal enum Role
@@ -311,8 +309,7 @@ internal static class DungeonMakerNamesContext
         private bool Owns(string name, bool asStatus)
         {
             // A status name is the campaign's own when it writes a real value into it, or when it writes into it from
-            // more than one place (user, 2026-11-16: the reset is fine "as long as the campaign never reassigns an
-            // actual value to it and does not keep writing to it across the span of the campaign"). One Variable
+            // more than one place. One Variable
             // Operation that sets it back to an empty text is a tidy-up, and the mod keeps writing there.
             if (_writes.TryGetValue(name, out var written) &&
                 (!asStatus || written.Count > 1 || written.Any(x => !string.IsNullOrEmpty(x))))
@@ -539,9 +536,8 @@ internal static class DungeonMakerNamesContext
 
         value ??= string.Empty;
 
-        // Only the names that start with what is typed, whatever the case of the letters (user, 2026-11-16:
-        // "the suggestions used should only compare the typed message with the start. So for example, typing "ac"
-        // would suggest ActivatorRoll, but typing "roll" will not"); with nothing typed, every name. The likely
+        // Only the names that start with what is typed, whatever the case of the letters ("ac" offers
+        // ActivatorRoll, "roll" doesn't); with nothing typed, every name. The likely
         // kind for the command first, then by name. A text that names nothing gets the missing-name warning
         // instead, with its closest names (Closest).
         return names.Likely.Select(x => (Name: x, Kind: 0))
@@ -764,8 +760,7 @@ internal static class DungeonMakerNamesContext
             case Role.Request:
                 text = Gui.Localize("ModUi/&DungeonMakerHintTorchOne");
                 break;
-            // (user, 2026-11-17: the switch's hint "should outright mention Clock_MinutesElapsed", with one text
-            // for every unit) a switch and its counter name each other, and the unit is a word filled in
+            // a switch and its counter name each other, and the unit is a word filled in
             case Role.Switch:
             {
                 var i = Array.IndexOf(DungeonMakerClockContext.SwitchVariables, name);

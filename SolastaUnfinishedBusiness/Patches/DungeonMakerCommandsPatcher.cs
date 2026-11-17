@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
 
@@ -672,14 +674,14 @@ public static class DungeonMakerCommandsPatcher
     }
 
     //PATCH: Dungeon Maker editors: the mouse wheel and clicks over the commands list, or over the open gadget-name
-    //suggestions, are the list's alone (user, 2026-11-17: "ensure that scrolling on the popup only scrolls the
-    //popup and doesn't bleed into scrolling the background"). Cause, from the game's code: the editors' map and
-    //graph (View.HandleInputs) read the wheel straight from Input and zoom, and take mouse presses, unless the
-    //cursor says the pointer is on the interface (Cursor.HoveredGUI). The cursors decide that in RefreshHover: the
-    //base one only for an object on the game's GUI layer (Cursor.RefreshHoverBase), which the mod's panels aren't
-    //on, and the location editor's from a fixed list of its own panels and modals (CursorLocationEditor
-    //.RefreshHover). So, after every cursor's RefreshHover (each override; the outermost ends last), the pointer is
-    //said to be on the interface while one of these panels is under it. Nothing changes when none is open.
+    //suggestions, are the list's alone. Cause, from the game's code: the editors' map and graph (View.HandleInputs)
+    //read the wheel straight from Input and zoom, and take mouse presses, unless the cursor says the pointer is on
+    //the interface (Cursor.HoveredGUI). The cursors decide that in RefreshHover: the base one for an object on the
+    //game's GUI layer (Cursor.RefreshHoverBase), where the mod's panels are put (DungeonMakerNameHints
+    //.PutOnGuiLayer), but overrides that don't use the base check decide from their own lists of panels and
+    //modals, which don't hold the mod's. So, after every cursor's RefreshHover (each override; the outermost ends
+    //last), the pointer is said to be on the interface while one of these panels is under it. Nothing changes when
+    //none is open. The location editor's own check is patched as well (CursorLocationEditor_RefreshHover below).
     [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -707,10 +709,45 @@ public static class DungeonMakerCommandsPatcher
         [UsedImplicitly]
         public static void Postfix(Cursor __instance)
         {
-            if (DungeonMakerCommandsPopup.IsOpen || DungeonMakerNameSuggestions.PointerOverOpenList())
+            if (PointerOnModPanel())
             {
                 __instance.HoveredGUI = true;
             }
+        }
+
+        // the commands list is open (its dimmed layer covers the whole screen), or the pointer is on the open
+        // gadget-name suggestions
+        internal static bool PointerOnModPanel()
+        {
+            return DungeonMakerCommandsPopup.IsOpen || DungeonMakerNameSuggestions.PointerOverOpenList();
+        }
+    }
+
+    //PATCH: the location editor counts the pointer over the commands list or the open suggestions as on the
+    //interface in its own hover check. That check then stops before it looks for a room, prop or gadget under the
+    //pointer, as it does for the game's own windows, so nothing on the map behind is shown as hovered. The postfix
+    //above is too late for this cursor: by the time it runs, the check has already marked the gadget under the
+    //pointer as hovered.
+    [HarmonyPatch(typeof(CursorLocationEditor), nameof(CursorLocationEditor.RefreshHover))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CursorLocationEditor_RefreshHover
+    {
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var setter = AccessTools.PropertySetter(typeof(Cursor), nameof(Cursor.HoveredGUI));
+            var custom = new Action<Cursor, bool>(SetHoveredGui).Method;
+
+            // the method's one write of HoveredGUI, right before it returns when the pointer is on the interface
+            return instructions.ReplaceCall(setter, 1, "CursorLocationEditor.RefreshHover",
+                new CodeInstruction(OpCodes.Call, custom));
+        }
+
+        // the editor's own answer, or true while one of the mod's panels is under the pointer
+        private static void SetHoveredGui(Cursor cursor, bool hovered)
+        {
+            cursor.HoveredGUI = hovered || Cursor_RefreshHover.PointerOnModPanel();
         }
     }
 
@@ -739,7 +776,7 @@ public static class DungeonMakerCommandsPatcher
     //with the game waits to go on, and check once when it ends (DungeonMakerClockContext.HoldTimers, CheckTimers).
     //The checks themselves are held, not the clock's ticks, because the game also checks from other places: its
     //ordinary per-frame clock updates between the skip's batches, and each listener's PostLoad when a save is
-    //loaded (Codex's review of cd9aa39a, from the game's IL). The ticks still run, so the elapsed-time listener
+    //loaded (read in the game's IL). The ticks still run, so the elapsed-time listener
     //keeps adding up the seconds (only while its conditions match, as the game does), and the hour listener's
     //check compares the total hours with its last activation: the one check at the end gives a due timer one
     //activation and restarts an hour timer's interval from the arrival hour.

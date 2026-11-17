@@ -44,15 +44,14 @@ namespace SolastaUnfinishedBusiness.Models;
 //    it, but should not write it. Clock_SkipTargetMinute, the mod's too, holds the clock minute a skip to a given
 //    hour or day ends on (0 for a skip by a number of hours or days), so time that passes between two locations,
 //    such as travel, is not added on top of it when it finishes there.
-//    NEVER IN BATTLE (user direction, 2026-11-13: "Skips should be like long rest waits or learning spells or
-//    something like that. They should never occur in battle"): a request written while a battle is in progress
+//    NEVER IN BATTLE, like a long rest wait: a request written while a battle is in progress
 //    fails, and a battle that starts while a skip runs ends it, the way an encounter ends a rest, with the status
 //    Cancelled. The clock only moves by rounds in a battle; days passing in one would end every effect and
 //    condition there at once.
 //
 // How the skip runs: the game's own "skip time" gadget function never moves the clock more than 23 hours at once,
 // and one clock update signals at most one dawn and one new day however long it is. A skip of several days in one
-// update (what the first version did) therefore gave one dawn and one journal entry in all. So a skip here
+// update would therefore give one dawn and one journal entry in all. So a skip here
 // advances in steps of four hours, each an ordinary clock update, six steps per gadget update: every dawn, new day
 // and journal entry passes as it would have, the counters count every minute, hour and day, and a long skip
 // can't freeze the game.
@@ -138,8 +137,8 @@ internal static class DungeonMakerClockContext
     // skip runs, or while one kept in Clock_SkipRemainingSeconds waits to go on: between a save's load (when each
     // timer's PostLoad checks it) and the location being ready, between two locations, or with the clock paused.
     // Checkpoint keeps that variable above 0 for as long as a skip lasts, and EndJob sets it to 0, then CheckTimers
-    // makes the one check. (The commands have no off switch, user direction 2026-11-13, so a skip that has begun
-    // is always taken to its end; an earlier setting could leave the timers held with the skip stopped.)
+    // makes the one check. (The commands have no off switch, so a skip that has begun is always taken to its end
+    // and the timers are never left held with the skip stopped.)
     internal static bool HoldTimers =>
         _job != null ||
         (ServiceRepository.GetService<IGameVariableService>() is { } variables &&
