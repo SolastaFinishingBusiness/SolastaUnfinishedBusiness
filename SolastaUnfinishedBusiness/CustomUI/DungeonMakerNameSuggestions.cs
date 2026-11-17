@@ -74,6 +74,9 @@ internal static class DungeonMakerNameSuggestions
     private static int _pickedFrame = -1;
     private static TMP_InputField _pickedField;
 
+    // the character that follows the picking key: '\t' for Tab, '\n' for Enter (sent as '\n' or '\r')
+    private static char _pickedCharacter;
+
     // The game also turns Escape into its Cancel command, which reaches the editor on another path than the text
     // field's key event: the location editor answers it by deselecting the selected gadget, whether a text field has
     // the focus or not. Escape belongs to the list while it is open, so the editors leave Cancel alone then, and in
@@ -208,11 +211,23 @@ internal static class DungeonMakerNameSuggestions
         // Unity sends a pressed Enter or Tab as two key-down events in the same frame: the key itself, then one with
         // no key code that carries its character ('\n' or '\t'). The first picks the name and closes the list, so
         // the second would reach the field with the list closed and put a new line or a tab after the name in a
-        // multi-line field (a single-line one drops both). It is taken here too.
-        if (key is { keyCode: KeyCode.None, character: '\n' or '\r' or '\t' } &&
-            _pickedFrame == Time.frameCount && ReferenceEquals(_pickedField, field))
+        // multi-line field (a single-line one drops both). That one character event is taken here too: only the
+        // character of the key that picked, only once, and only in that frame and field, so a further Enter or Tab
+        // pressed in the same frame still reaches the field.
+        if (_pickedFrame == Time.frameCount && ReferenceEquals(_pickedField, field) && key != null)
         {
-            return true;
+            var follows = key.keyCode == KeyCode.None && (_pickedCharacter == '\t'
+                ? key.character == '\t'
+                : key.character is '\n' or '\r');
+
+            // whatever comes next, the follow-up is no longer expected
+            _pickedFrame = -1;
+            _pickedField = null;
+
+            if (follows)
+            {
+                return true;
+            }
         }
 
         if (!IsOpen || key == null || !ReferenceEquals(_owner.Field, field) || Names.Count == 0)
@@ -235,6 +250,7 @@ internal static class DungeonMakerNameSuggestions
             case KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Tab when _selected >= 0:
                 _pickedFrame = Time.frameCount;
                 _pickedField = field;
+                _pickedCharacter = key.keyCode == KeyCode.Tab ? '\t' : '\n';
                 Apply(_selected);
 
                 return true;

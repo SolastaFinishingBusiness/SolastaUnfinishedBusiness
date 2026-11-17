@@ -164,17 +164,44 @@ internal static class DungeonMakerStampContext
         CampaignStamps[campaign.Title] = stamp;
     }
 
-    // UserCampaignPoolManager.SaveUserCampaign, after it ran: the file now carries the running version.
-    internal static void NoteCampaignSaved(UserCampaign campaign)
+    // UserCampaignPoolManager.SaveUserCampaign, after it ran, with the file it writes. The game catches any error
+    // while saving and only logs it, so returning says nothing about the file: it counts as saved with the running
+    // version only when its text now starts with that version's stamp.
+    internal static void NoteCampaignSaved(UserCampaign campaign, string path)
     {
         var version = UpdateContext.LoadedBuildVersion ?? Main.ModVersion;
 
-        if (campaign?.Title != null && !string.IsNullOrEmpty(version))
+        if (campaign?.Title == null || string.IsNullOrEmpty(version) || !StartsWithStamp(path, version))
         {
-            CampaignStamps[campaign.Title] = version;
+            return;
         }
 
+        CampaignStamps[campaign.Title] = version;
         _savedSinceRead = campaign;
+    }
+
+    // whether the file at path starts with the mod's field holding this version (only its first characters are read)
+    private static bool StartsWithStamp(string path, string version)
+    {
+        var expected = FieldStart + version + "\"";
+
+        try
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return false;
+            }
+
+            using var reader = new StreamReader(path);
+            var buffer = new char[expected.Length];
+            var read = reader.ReadBlock(buffer, 0, buffer.Length);
+
+            return read == expected.Length && new string(buffer) == expected;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     // DungeonMakerCommandsContext.OnLocationReady: a location of this campaign has loaded. Says once per campaign

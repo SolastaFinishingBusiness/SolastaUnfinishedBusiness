@@ -43,9 +43,12 @@ public static class UserCampaignPoolManagerPatcher
         }
 
         [UsedImplicitly]
-        public static void Postfix(UserCampaign userCampaign)
+        public static void Postfix(UserCampaignPoolManager __instance, UserCampaign userCampaign)
         {
-            DungeonMakerStampContext.NoteCampaignSaved(userCampaign);
+            // the file the game wrote (or tried to): the method's own file name for this title
+            var path = userCampaign?.Title == null ? null : __instance.BuildUserCampaignFilename(userCampaign.Title);
+
+            DungeonMakerStampContext.NoteCampaignSaved(userCampaign, path);
         }
     }
 

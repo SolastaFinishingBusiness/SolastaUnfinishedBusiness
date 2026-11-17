@@ -428,7 +428,11 @@ internal static class DungeonMakerCommandsContext
         {
             DungeonMakerNamesContext.ResetSession();
             TorchStates.Clear();
-            _autoLitPeriod = null;
+
+            // The day or night the automatic torches are in now, from the game's clock (already loaded with the
+            // save when its location loads): the first day/night switch after a load is then seen as one, as it is
+            // in a game played on without loading, and every computer starts from the same clock.
+            _autoLitPeriod = AutoLitPeriod();
 
             if (_subscribedTo != null)
             {
