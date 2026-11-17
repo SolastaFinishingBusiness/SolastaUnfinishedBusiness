@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=Die vollständige Anleitung: Mod UI > Dung
 ModUi/&DungeonMakerCommandsPopupClose=Schließen
 ModUi/&DungeonMakerCommandsPopupHide=Ab jetzt ausblenden
 ModUi/&DungeonMakerCommandsMenuButton=Kampagnenbefehle
-ModUi/&DungeonMakerCommandsMenuShowPopup=Liste der Kampagnenbefehle anzeigen, wenn ein Orts-, Dialog- oder Quest-Editor geöffnet wird
-ModUi/&DisableDungeonMakerCommandHints=Hinweise zu Kampagnenbefehlen ausblenden
-ModUi/&DisableDungeonMakerErrorHints=Fehlerhinweise zu Kampagnenbefehlen ausblenden
-ModUi/&DisableDungeonMakerNameSuggestions=Liste der vorgeschlagenen Gadget-Namen beim Eintippen des Werts eines Befehls ausblenden
+ModUi/&DungeonMakerCommandsMenuShowPopup=Liste der Kampagnenbefehle anzeigen, wenn ein Orts-, Dialog- oder Quest-Editor zum ersten Mal geöffnet wird <i><color=#F0DAA0>[einmal pro Spielstart; die Schaltfläche ? der Editoren öffnet sie jederzeit]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Hinweise zu Kampagnenbefehlen anzeigen <i><color=#F0DAA0>[was eine Befehlsvariable bewirkt, beim Eintippen eines Variablennamens oder beim Zeigen auf eine Variable in einer Liste]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Fehlerhinweise zu Kampagnenbefehlen anzeigen <i><color=#F0DAA0>[eine Warnung, wenn der Wert eines Befehls nichts in der Kampagne benennt und der Befehl daher nichts tun würde]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Liste der vorgeschlagenen Gadget-Namen beim Eintippen des Werts eines Befehls anzeigen
 ModUi/&DungeonMakerHintDialogTrigger=Befehl von %ModName%. String: Schreibe den Namen eines NSC oder Objekts hinein, um dessen Dialog zu starten, als hätte ein Gruppenmitglied es angeklickt. Die Mod leert die Variable danach.
 ModUi/&DungeonMakerHintRollTrigger=Befehl von %ModName%. String: Schreibe den Namen eines Wurf-Aktivators hinein, und der Charakter, der diesen Ablauf ausgelöst hat, legt dessen Probe ab, als hätte er ihn benutzt. Die Mod leert die Variable danach.
 ModUi/&DungeonMakerHintTeleportNode=Befehl von %ModName%. String: Schreibe den Namen eines Gadgets (meist ein Node) hinein, um den Charakter, der diesen Ablauf ausgelöst hat, dorthin zu teleportieren. Die Mod leert die Variable danach.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Paletten des Ortseditors (Gadgets, Requisit
 ModUi/&DungeonMakerListToolsSearch=Suche
 ModUi/&DungeonMakerListToolsPageSort=Seitensortierung (Sortieren: und Richtungspfeil)
 ModUi/&DungeonMakerListToolsCategoryOrder=Kategoriesortierung (Reihenfolge der Kategorien: Standard oder A-Z)
-ModUi/&DungeonMakerListToolsListSort=Kategoriespezifische Sortierung (eigenes Sortieren: jeder Liste, mit den Werten in den Zeilen)
+ModUi/&DungeonMakerListToolsListSort=Kategoriespezifische Sortierung (jede Liste hat ihre eigene Sortierung; ihre Werte erscheinen als Einblendung, wenn die Zeile sie nicht schon zeigt)

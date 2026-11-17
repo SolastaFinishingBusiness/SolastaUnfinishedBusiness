@@ -69,7 +69,7 @@ internal static class DungeonMakerNameSuggestions
     // Tab and Escape until the field refreshes. So the keys, the focus rule and the hover rule drop it at once, and
     // the Follower takes it off the screen on the next frame.
     private static bool IsOpen => _rect && _rect.gameObject.activeSelf && _owner &&
-                                  !Main.Settings.DisableDungeonMakerNameSuggestions;
+                                  Main.Settings.ShowDungeonMakerNameSuggestions;
 
     // Shows these names for this field, replacing whatever the list showed.
     internal static void Show(DungeonMakerFieldHint owner, List<string> names)
@@ -80,7 +80,7 @@ internal static class DungeonMakerNameSuggestions
         var canvas = nearest ? nearest.rootCanvas : null;
 
         // switched off in Mod UI > Dungeon Maker: the list never opens, so the keys stay the field's own
-        if (Main.Settings.DisableDungeonMakerNameSuggestions || !canvas || names == null || names.Count == 0)
+        if (!Main.Settings.ShowDungeonMakerNameSuggestions || !canvas || names == null || names.Count == 0)
         {
             Hide(owner);
 
@@ -342,7 +342,7 @@ internal static class DungeonMakerNameSuggestions
             var owner = _owner;
 
             if (!owner || !owner.isActiveAndEnabled || !owner.Field ||
-                Main.Settings.DisableDungeonMakerNameSuggestions ||
+                !Main.Settings.ShowDungeonMakerNameSuggestions ||
                 (!owner.HasFocus && !PointerOver(owner)))
             {
                 _owner = null;

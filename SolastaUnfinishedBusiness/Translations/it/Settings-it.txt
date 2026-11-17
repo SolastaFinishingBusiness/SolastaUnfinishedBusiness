@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=La guida completa: Mod UI > Dungeon Maker 
 ModUi/&DungeonMakerCommandsPopupClose=Chiudi
 ModUi/&DungeonMakerCommandsPopupHide=Nascondi d'ora in poi
 ModUi/&DungeonMakerCommandsMenuButton=Comandi di campagna
-ModUi/&DungeonMakerCommandsMenuShowPopup=Mostra l'elenco dei comandi di campagna quando si apre un editor di luogo, dialogo o missione
-ModUi/&DisableDungeonMakerCommandHints=Nascondi i suggerimenti sui comandi di campagna
-ModUi/&DisableDungeonMakerErrorHints=Nascondi i suggerimenti di errore dei comandi di campagna
-ModUi/&DisableDungeonMakerNameSuggestions=Nascondi l'elenco dei nomi di gadget proposti mentre si scrive il valore di un comando
+ModUi/&DungeonMakerCommandsMenuShowPopup=Mostra l'elenco dei comandi di campagna quando si apre per la prima volta un editor di luogo, dialogo o missione <i><color=#F0DAA0>[una volta a ogni avvio del gioco; il pulsante ? degli editor lo apre in qualsiasi momento]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Mostra i suggerimenti sui comandi di campagna <i><color=#F0DAA0>[cosa fa una variabile di comando, mentre si scrive il nome di una variabile o si punta una variabile in un elenco]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Mostra i suggerimenti di errore dei comandi di campagna <i><color=#F0DAA0>[un avviso quando il valore di un comando non indica nulla nella campagna, per cui il comando non farebbe nulla]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Mostra l'elenco dei nomi di gadget proposti mentre si scrive il valore di un comando
 ModUi/&DungeonMakerHintDialogTrigger=Comando di %ModName%. String: scrivi qui il nome di un PNG o di un oggetto per avviarne il dialogo, come se un membro del gruppo ci avesse cliccato. Poi la mod la svuota.
 ModUi/&DungeonMakerHintRollTrigger=Comando di %ModName%. String: scrivi qui il nome di un Attivatore di tiro, e il personaggio che ha avviato questo flusso effettua la sua prova, come se l'avesse usato. Poi la mod la svuota.
 ModUi/&DungeonMakerHintTeleportNode=Comando di %ModName%. String: scrivi qui il nome di un gadget (di solito un Node) per teletrasportare accanto il personaggio che ha avviato questo flusso. Poi la mod la svuota.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Tavolozze dell'editor dei luoghi (gadget, o
 ModUi/&DungeonMakerListToolsSearch=Ricerca
 ModUi/&DungeonMakerListToolsPageSort=Ordinamento della pagina (Ordina: e la freccia di direzione)
 ModUi/&DungeonMakerListToolsCategoryOrder=Ordinamento delle categorie (il loro ordine: Predefinito o A-Z)
-ModUi/&DungeonMakerListToolsListSort=Ordinamento specifico per categoria (l'Ordina: di ogni elenco, con i valori sulle righe)
+ModUi/&DungeonMakerListToolsListSort=Ordinamento specifico per categoria (ogni elenco ha il proprio ordinamento, con i valori in un riquadro se la riga non li mostra già)

@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=전체 안내서: Mod UI > Dungeon Maker >
 ModUi/&DungeonMakerCommandsPopupClose=닫기
 ModUi/&DungeonMakerCommandsPopupHide=앞으로 숨기기
 ModUi/&DungeonMakerCommandsMenuButton=캠페인 명령
-ModUi/&DungeonMakerCommandsMenuShowPopup=장소, 대화 또는 퀘스트 편집기를 열 때 캠페인 명령 목록 표시
-ModUi/&DisableDungeonMakerCommandHints=캠페인 명령 힌트 숨기기
-ModUi/&DisableDungeonMakerErrorHints=캠페인 명령 오류 힌트 숨기기
-ModUi/&DisableDungeonMakerNameSuggestions=명령 값을 입력할 때 제안되는 가젯 이름 목록 숨기기
+ModUi/&DungeonMakerCommandsMenuShowPopup=장소, 대화 또는 퀘스트 편집기를 처음 열 때 캠페인 명령 목록 표시 <i><color=#F0DAA0>[게임을 시작할 때마다 한 번; 편집기의 ? 버튼으로 언제든지 열 수 있음]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=캠페인 명령 힌트 표시 <i><color=#F0DAA0>[명령 변수가 하는 일. 변수 이름을 입력하거나 목록에서 변수를 가리킬 때 표시]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=캠페인 명령 오류 힌트 표시 <i><color=#F0DAA0>[명령의 값이 캠페인의 어떤 것도 가리키지 않아 명령이 아무것도 하지 않을 때의 경고]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=명령 값을 입력할 때 제안되는 가젯 이름 목록 표시
 ModUi/&DungeonMakerHintDialogTrigger=%ModName%의 명령. String: NPC나 오브젝트의 이름을 쓰면 파티원이 클릭한 것처럼 그 대화가 시작됩니다. 그 후 모드가 비웁니다.
 ModUi/&DungeonMakerHintRollTrigger=%ModName%의 명령. String: 굴림 활성기의 이름을 쓰면 이 흐름을 일으킨 캐릭터가 그것을 사용한 것처럼 판정을 굴립니다. 그 후 모드가 비웁니다.
 ModUi/&DungeonMakerHintTeleportNode=%ModName%의 명령. String: 가젯(보통 Node)의 이름을 쓰면 이 흐름을 일으킨 캐릭터가 그 옆으로 순간이동합니다. 그 후 모드가 비웁니다.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=장소 편집기 팔레트 (장치, 소품,
 ModUi/&DungeonMakerListToolsSearch=검색
 ModUi/&DungeonMakerListToolsPageSort=페이지 정렬 (정렬: 및 방향 화살표)
 ModUi/&DungeonMakerListToolsCategoryOrder=카테고리 정렬 (카테고리 순서: 기본 또는 A-Z)
-ModUi/&DungeonMakerListToolsListSort=카테고리별 정렬 (각 목록의 정렬:, 행에 값 표시)
+ModUi/&DungeonMakerListToolsListSort=카테고리별 정렬 (각 목록마다 자체 정렬이 있으며, 행에 원래 없는 값은 팝업으로 표시)

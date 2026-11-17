@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=完全なガイド：Mod UI > Dungeon Make
 ModUi/&DungeonMakerCommandsPopupClose=閉じる
 ModUi/&DungeonMakerCommandsPopupHide=今後は表示しない
 ModUi/&DungeonMakerCommandsMenuButton=キャンペーンコマンド
-ModUi/&DungeonMakerCommandsMenuShowPopup=ロケーション・会話・クエストのエディターを開いたときにキャンペーンコマンドの一覧を表示する
-ModUi/&DisableDungeonMakerCommandHints=キャンペーンコマンドのヒントを隠す
-ModUi/&DisableDungeonMakerErrorHints=キャンペーンコマンドのエラーヒントを隠す
-ModUi/&DisableDungeonMakerNameSuggestions=コマンドの値を入力するときに候補のガジェット名一覧を隠す
+ModUi/&DungeonMakerCommandsMenuShowPopup=ロケーション・会話・クエストのエディターを初めて開いたときにキャンペーンコマンドの一覧を表示する <i><color=#F0DAA0>[ゲームを起動するたびに一度。エディターの ? ボタンでいつでも開けます]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=キャンペーンコマンドのヒントを表示する <i><color=#F0DAA0>[コマンド変数の働き。変数名の入力中や、一覧で変数にポインターを合わせたときに表示]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=キャンペーンコマンドのエラーヒントを表示する <i><color=#F0DAA0>[コマンドの値がキャンペーン内の何も指しておらず、コマンドが何もしないときの警告]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=コマンドの値を入力するときに候補のガジェット名一覧を表示する
 ModUi/&DungeonMakerHintDialogTrigger=%ModName% のコマンド。String：NPC またはオブジェクトの名前を書き込むと、パーティーメンバーがクリックしたときと同じようにその会話が始まります。その後 MOD が空にします。
 ModUi/&DungeonMakerHintRollTrigger=%ModName% のコマンド。String：ロールアクティベーターの名前を書き込むと、このフローを起動したキャラクターが、それを使ったときと同じようにその判定を行います。その後 MOD が空にします。
 ModUi/&DungeonMakerHintTeleportNode=%ModName% のコマンド。String：ガジェット（通常は Node）の名前を書き込むと、このフローを起動したキャラクターがその隣にテレポートします。その後 MOD が空にします。
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=ロケーションエディターのパレ�
 ModUi/&DungeonMakerListToolsSearch=検索
 ModUi/&DungeonMakerListToolsPageSort=ページの並べ替え（並べ替え：と方向の矢印）
 ModUi/&DungeonMakerListToolsCategoryOrder=カテゴリの並べ替え（カテゴリの順序：デフォルトまたは A-Z）
-ModUi/&DungeonMakerListToolsListSort=カテゴリ別の並べ替え（各リスト独自の並べ替え：、行に値を表示）
+ModUi/&DungeonMakerListToolsListSort=カテゴリ別の並べ替え（各リストに独自の並べ替えがあり、行に元々表示されていない値はポップアップで表示）

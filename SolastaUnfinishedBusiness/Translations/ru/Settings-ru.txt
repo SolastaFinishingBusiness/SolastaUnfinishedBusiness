@@ -57,10 +57,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=Полное руководство: Mod U
 ModUi/&DungeonMakerCommandsPopupClose=Закрыть
 ModUi/&DungeonMakerCommandsPopupHide=Больше не показывать
 ModUi/&DungeonMakerCommandsMenuButton=Команды кампании
-ModUi/&DungeonMakerCommandsMenuShowPopup=Показывать список команд кампании при открытии редактора локации, диалога или задания
-ModUi/&DisableDungeonMakerCommandHints=Скрыть подсказки о командах кампании
-ModUi/&DisableDungeonMakerErrorHints=Скрыть подсказки об ошибках в командах кампании
-ModUi/&DisableDungeonMakerNameSuggestions=Скрыть список предлагаемых имён гаджетов при вводе значения команды
+ModUi/&DungeonMakerCommandsMenuShowPopup=Показывать список команд кампании при первом открытии редактора локации, диалога или задания <i><color=#F0DAA0>[один раз за каждый запуск игры; кнопка ? в редакторах открывает его в любой момент]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Показывать подсказки о командах кампании <i><color=#F0DAA0>[что делает переменная-команда; при вводе имени переменной или наведении на переменную в списке]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Показывать подсказки об ошибках в командах кампании <i><color=#F0DAA0>[предупреждение, если значение команды не называет ничего в кампании и команда ничего не сделает]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Показывать список предлагаемых имён гаджетов при вводе значения команды
 ModUi/&DungeonMakerHintDialogTrigger=Команда %ModName%. String: запишите сюда имя NPC или объекта, чтобы начать его диалог, как если бы по нему щёлкнул член отряда. Затем мод очищает переменную.
 ModUi/&DungeonMakerHintRollTrigger=Команда %ModName%. String: запишите сюда имя активатора броска, и персонаж, запустивший этот поток, совершит его проверку, как если бы использовал его. Затем мод очищает переменную.
 ModUi/&DungeonMakerHintTeleportNode=Команда %ModName%. String: запишите сюда имя гаджета (обычно Node), чтобы телепортировать к нему персонажа, запустившего этот поток. Затем мод очищает переменную.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Палитры редактора лока�
 ModUi/&DungeonMakerListToolsSearch=Поиск
 ModUi/&DungeonMakerListToolsPageSort=Сортировка страницы (Сортировка: и стрелка направления)
 ModUi/&DungeonMakerListToolsCategoryOrder=Сортировка категорий (порядок категорий: по умолчанию или А-Я)
-ModUi/&DungeonMakerListToolsListSort=Сортировка внутри категории (своя «Сортировка:» каждого списка, со значениями в строках)
+ModUi/&DungeonMakerListToolsListSort=Сортировка внутри категории (у каждого списка своя сортировка; её значения показываются во всплывающей подписи, если строка их не показывает)

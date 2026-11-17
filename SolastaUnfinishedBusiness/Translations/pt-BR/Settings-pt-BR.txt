@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=O guia completo: Mod UI > Dungeon Maker > 
 ModUi/&DungeonMakerCommandsPopupClose=Fechar
 ModUi/&DungeonMakerCommandsPopupHide=Ocultar de agora em diante
 ModUi/&DungeonMakerCommandsMenuButton=Comandos de campanha
-ModUi/&DungeonMakerCommandsMenuShowPopup=Mostrar a lista de comandos de campanha ao abrir um editor de local, diálogo ou missão
-ModUi/&DisableDungeonMakerCommandHints=Ocultar as dicas sobre os comandos de campanha
-ModUi/&DisableDungeonMakerErrorHints=Ocultar as dicas de erro dos comandos de campanha
-ModUi/&DisableDungeonMakerNameSuggestions=Ocultar a lista de nomes de gadgets sugeridos ao digitar o valor de um comando
+ModUi/&DungeonMakerCommandsMenuShowPopup=Mostrar a lista de comandos de campanha ao abrir pela primeira vez um editor de local, diálogo ou missão <i><color=#F0DAA0>[uma vez a cada início do jogo; o botão ? dos editores a abre a qualquer momento]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Mostrar dicas sobre os comandos de campanha <i><color=#F0DAA0>[o que uma variável de comando faz, ao digitar o nome de uma variável ou apontar para uma numa lista]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Mostrar dicas de erro dos comandos de campanha <i><color=#F0DAA0>[um aviso quando o valor de um comando não nomeia nada na campanha, de modo que o comando não faria nada]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Mostrar a lista de nomes de gadgets sugeridos ao digitar o valor de um comando
 ModUi/&DungeonMakerHintDialogTrigger=Comando de %ModName%. String: escreva aqui o nome de um NPC ou objeto para iniciar o diálogo dele, como se um membro do grupo tivesse clicado nele. Depois o mod a esvazia.
 ModUi/&DungeonMakerHintRollTrigger=Comando de %ModName%. String: escreva aqui o nome de um Ativador de rolagem, e o personagem que disparou este fluxo faz o teste dele, como se o tivesse usado. Depois o mod a esvazia.
 ModUi/&DungeonMakerHintTeleportNode=Comando de %ModName%. String: escreva aqui o nome de um gadget (normalmente um Node) para teleportar para junto dele o personagem que disparou este fluxo. Depois o mod a esvazia.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Paletas do editor de locais (dispositivos, 
 ModUi/&DungeonMakerListToolsSearch=Busca
 ModUi/&DungeonMakerListToolsPageSort=Ordenação da página (Ordenar: e a seta de direção)
 ModUi/&DungeonMakerListToolsCategoryOrder=Ordenação de categorias (a ordem das categorias: Padrão ou A-Z)
-ModUi/&DungeonMakerListToolsListSort=Ordenação específica de cada categoria (o Ordenar: de cada lista, com os valores nas linhas)
+ModUi/&DungeonMakerListToolsListSort=Ordenação específica de cada categoria (cada lista tem sua própria ordenação, com os valores num pop-up se a linha não os mostrar)

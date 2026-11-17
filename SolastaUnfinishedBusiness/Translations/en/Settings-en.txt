@@ -66,10 +66,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=The full guide: Mod UI > Dungeon Maker > C
 ModUi/&DungeonMakerCommandsPopupClose=Close
 ModUi/&DungeonMakerCommandsPopupHide=Hide this from now on
 ModUi/&DungeonMakerCommandsMenuButton=Campaign commands
-ModUi/&DungeonMakerCommandsMenuShowPopup=Show the list of campaign commands when a location, dialogue or quest editor opens
-ModUi/&DisableDungeonMakerCommandHints=Hide hints about campaign commands
-ModUi/&DisableDungeonMakerErrorHints=Hide error hints for campaign commands
-ModUi/&DisableDungeonMakerNameSuggestions=Hide the list of gadget names suggested while typing a command's value
+ModUi/&DungeonMakerCommandsMenuShowPopup=Show the list of campaign commands when a location, dialogue or quest editor is opened for the first time <i><color=#F0DAA0>[once each time the game starts; the editors' ? button opens it at any time]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Show hints about campaign commands <i><color=#F0DAA0>[what a command variable does, shown while typing a variable's name or pointing at one in a list]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Show error hints for campaign commands <i><color=#F0DAA0>[a warning when a command's value names nothing in the campaign, so the command would do nothing]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Show the list of gadget names suggested while typing a command's value
 ModUi/&DungeonMakerHintDialogTrigger=Command of %ModName%. String: write the name of an NPC or object here to start its dialogue, as if a party member had clicked it. The mod then empties it.
 ModUi/&DungeonMakerHintRollTrigger=Command of %ModName%. String: write the name of a Roll Activator here, and the character who set off this flow rolls its check, as if they had used it. The mod then empties it.
 ModUi/&DungeonMakerHintTeleportNode=Command of %ModName%. String: write the name of a gadget (usually a Node) here to teleport the character who set off this flow next to it. The mod then empties it.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Location editor palettes (gadgets, props, r
 ModUi/&DungeonMakerListToolsSearch=Search
 ModUi/&DungeonMakerListToolsPageSort=Page sort (Sort: and its direction arrow)
 ModUi/&DungeonMakerListToolsCategoryOrder=Category sort (the order of the categories: Default or A-Z)
-ModUi/&DungeonMakerListToolsListSort=Category-specific sort (each list's own Sort:, with its values shown on the rows)
+ModUi/&DungeonMakerListToolsListSort=Category-specific sort (each list has its own sort, with its values shown as a popup if originally unavailable)

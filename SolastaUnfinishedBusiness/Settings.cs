@@ -401,13 +401,16 @@ public class Settings : UnityModManager.ModSettings
     // The editors' help while a variable name or a command's value is typed, or the pointer is on a variable row
     // (user, 2026-11-17: "add a toggle in the mod settings that can disable all command hints (but be off by
     // default). Additionally, add the ability to disable the suggestions as well (but be off by default)"):
-    // on, no hint panel (CustomUI/DungeonMakerNameHints.Show) / no list of gadget names to pick from
+    // off, no hint panel (CustomUI/DungeonMakerNameHints.Show) / no list of gadget names to pick from
     // (CustomUI/DungeonMakerNameSuggestions.Show). Names keep their colours, and the "?" list stays.
     // Then split (user, 2026-11-17: "something like 'Hide information about campaign commands' and 'Hide error
     // hints'"): CommandHints is what a name does, ErrorHints the warning that nothing goes by a command's value.
-    public bool DisableDungeonMakerCommandHints { get; set; }
-    public bool DisableDungeonMakerErrorHints { get; set; }
-    public bool DisableDungeonMakerNameSuggestions { get; set; }
+    // Then turned round (user, 2026-11-17: "All of the new "Hide" toggles should just be "Show" and set to true by
+    // default to be consistent"): each is on by default, and off hides its kind. Never released as Disable*, so
+    // no old value is carried over.
+    public bool ShowDungeonMakerCommandHints { get; set; } = true;
+    public bool ShowDungeonMakerErrorHints { get; set; } = true;
+    public bool ShowDungeonMakerNameSuggestions { get; set; } = true;
 
     // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"
     // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by

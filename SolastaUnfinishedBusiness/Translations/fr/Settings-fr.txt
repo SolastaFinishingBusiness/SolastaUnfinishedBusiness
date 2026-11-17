@@ -56,10 +56,10 @@ ModUi/&DungeonMakerCommandsPopupGuide=Le guide complet : Mod UI > Dungeon Maker 
 ModUi/&DungeonMakerCommandsPopupClose=Fermer
 ModUi/&DungeonMakerCommandsPopupHide=Ne plus afficher
 ModUi/&DungeonMakerCommandsMenuButton=Commandes de campagne
-ModUi/&DungeonMakerCommandsMenuShowPopup=Afficher la liste des commandes de campagne à l'ouverture d'un éditeur de lieu, de dialogue ou de quête
-ModUi/&DisableDungeonMakerCommandHints=Masquer les indications sur les commandes de campagne
-ModUi/&DisableDungeonMakerErrorHints=Masquer les indications d'erreur des commandes de campagne
-ModUi/&DisableDungeonMakerNameSuggestions=Masquer la liste des noms de gadgets proposés en tapant la valeur d'une commande
+ModUi/&DungeonMakerCommandsMenuShowPopup=Afficher la liste des commandes de campagne à la première ouverture d'un éditeur de lieu, de dialogue ou de quête <i><color=#F0DAA0>[une fois à chaque lancement du jeu ; le bouton ? des éditeurs l'ouvre à tout moment]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Afficher les indications sur les commandes de campagne <i><color=#F0DAA0>[ce que fait une variable de commande, en tapant le nom d'une variable ou en pointant une variable dans une liste]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Afficher les indications d'erreur des commandes de campagne <i><color=#F0DAA0>[un avertissement quand la valeur d'une commande ne désigne rien dans la campagne, si bien que la commande ne ferait rien]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Afficher la liste des noms de gadgets proposés en tapant la valeur d'une commande
 ModUi/&DungeonMakerHintDialogTrigger=Commande de %ModName%. String : écrivez-y le nom d'un PNJ ou d'un objet pour lancer son dialogue, comme si un membre du groupe avait cliqué dessus. Le mod la vide ensuite.
 ModUi/&DungeonMakerHintRollTrigger=Commande de %ModName%. String : écrivez-y le nom d'un Activateur de jet, et le personnage qui a déclenché ce flux fait son test, comme s'il l'avait utilisé. Le mod la vide ensuite.
 ModUi/&DungeonMakerHintTeleportNode=Commande de %ModName%. String : écrivez-y le nom d'un gadget (en général un Node) pour téléporter à côté le personnage qui a déclenché ce flux. Le mod la vide ensuite.
@@ -709,4 +709,4 @@ ModUi/&DungeonMakerListToolsPalettes=Palettes de l'éditeur de lieu (gadgets, ac
 ModUi/&DungeonMakerListToolsSearch=Recherche
 ModUi/&DungeonMakerListToolsPageSort=Tri de la page (Trier : et sa flèche de sens)
 ModUi/&DungeonMakerListToolsCategoryOrder=Tri des catégories (leur ordre : Par défaut ou A-Z)
-ModUi/&DungeonMakerListToolsListSort=Tri propre à chaque catégorie (le Trier : de chaque liste, avec ses valeurs sur les lignes)
+ModUi/&DungeonMakerListToolsListSort=Tri propre à chaque catégorie (chaque liste a son propre tri, ses valeurs s'affichant dans une bulle si la ligne ne les montre pas déjà)

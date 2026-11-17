@@ -99,10 +99,10 @@ internal static class DungeonMakerNameHints
     // setting that governs it (DungeonMakerHintFollower)
     private static bool _warningShown;
 
-    // the setting that hides this kind of hint is on (Mod UI > Dungeon Maker)
+    // the setting that shows this kind of hint is off (Mod UI > Dungeon Maker)
     private static bool KindHidden(bool warning)
     {
-        return warning ? Main.Settings.DisableDungeonMakerErrorHints : Main.Settings.DisableDungeonMakerCommandHints;
+        return warning ? !Main.Settings.ShowDungeonMakerErrorHints : !Main.Settings.ShowDungeonMakerCommandHints;
     }
     private static readonly Vector3[] Corners = new Vector3[4];
 
@@ -781,7 +781,7 @@ internal sealed class DungeonMakerFieldHint : MonoBehaviour
         // missing-name warning below gets its turn, so the two are never shown together. With the suggestions
         // switched off in Mod UI > Dungeon Maker, this is skipped altogether, so the warning still shows (Codex's
         // review of a5509289: the list's own guard hid the list, but returning here hid the warning too).
-        if (active && _suggest != null && !_closedByPick && !Main.Settings.DisableDungeonMakerNameSuggestions)
+        if (active && _suggest != null && !_closedByPick && Main.Settings.ShowDungeonMakerNameSuggestions)
         {
             System.Collections.Generic.List<string> names = null;
             var typed = (Field.text ?? string.Empty).Trim();
