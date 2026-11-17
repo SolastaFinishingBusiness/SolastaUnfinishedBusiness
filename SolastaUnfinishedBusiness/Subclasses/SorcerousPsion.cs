@@ -326,9 +326,9 @@ public sealed class SorcerousPsion : AbstractSubclass
                 yield break;
             }
 
-            // Clear the flag so the point is spent once per converted effect. This used to be TryAdd, which never
-            // overwrites, so after one converted spell every later effect that reached here (a heal, a buff, any
-            // effect without an enemy hit to set the flag again) spent another sorcery point.
+            // Clear the flag so the point is spent once per converted effect. Set, not TryAdd, which never overwrites:
+            // after one converted spell every later effect that reached here (a heal, a buff, any effect without an
+            // enemy hit to set the flag again) would spend another sorcery point.
             attacker.SetSpecialFeatureUses(MindSculptTag, 0);
 
             var rulesetAttacker = attacker.RulesetCharacter;
@@ -397,10 +397,10 @@ public sealed class SorcerousPsion : AbstractSubclass
         {
             var hasTag = attacker.UsedSpecialFeatures.TryGetValue(powerSupremeWill.Name, out var value);
 
-            // Clear the flag RequiresConcentration set, so the cost is paid for this spell only. This used to be
-            // TryAdd, which never overwrites: after one use the flag stayed 1, and every later spell (including
-            // spells without concentration, for which RequiresConcentration returns before writing) spent a use
-            // and sorcery points.
+            // Clear the flag RequiresConcentration set, so the cost is paid for this spell only. Set, not TryAdd,
+            // which never overwrites: after one use the flag would stay 1, and every later spell (including spells
+            // without concentration, for which RequiresConcentration returns before writing) would spend a use and
+            // sorcery points.
             attacker.SetSpecialFeatureUses(powerSupremeWill.Name, 0);
 
             if (action is not CharacterActionCastSpell actionCastSpell ||

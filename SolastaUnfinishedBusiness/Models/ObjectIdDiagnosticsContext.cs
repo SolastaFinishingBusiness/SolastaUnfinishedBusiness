@@ -9,11 +9,11 @@ using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// TEMPORARY diagnostics (user, 2026-11-03: "build the diagnostic build"; open issue 9, the object-ID desyncs of the
-// 2026-11-01 session, evidence/desync-issue-01/FINDINGS.md and evidence/object-id-code-investigation/). Every new
+// TEMPORARY diagnostics (open issue 9, the object-ID desyncs in evidence/desync-issue-01/FINDINGS.md and
+// evidence/object-id-code-investigation/). Every new
 // ruleset object takes its ID from one counter (RulesetEntity.Register(true) -> RulesetEntityManager.GenerateGuid,
 // which returns the counter and adds 1; unregistering never gives a number back), so an object made on one computer
-// only shifts every later ID there. In 2026-11-01's session the host ended up 3 or 8 ahead of all the clients, once
+// only shifts every later ID there. In the recorded session the host ended up 3 or 8 ahead of all the clients, once
 // during a map change with no fight, and the gap came back within 500 ticks of a reload. Which objects the host made
 // alone isn't known: this records every allocation so two computers' records can be compared line by line.
 // What it records (in memory, a ring of RingSize entries; nothing is written per object):
@@ -21,14 +21,14 @@ namespace SolastaUnfinishedBusiness.Models;
 // - GenerateGuid calls made outside Register (none known; counted in case);
 // - UnregisterEntity, the counter being saved, loaded or reset, map unloads and loads, game loads, and character
 //   reveals (the mod's fire-monster light replaces its light with a new ID on every reveal, even one the game skips:
-//   Codex's first candidate);
+//   a candidate cause);
 // - a short call stack for every allocation made in a "window": from a map unload or load until WindowSeconds after the
 //   last such event (real time, so it covers the loading screen and the first minute or so of play, where the gaps
 //   formed; network ticks don't advance in single player). Outside windows only the cheap fields are kept.
 // When it writes: at the end of each window (one file per window), and at a desync the mod detects (the whole ring),
 // as text files in <UserData>\FinishingBusinessDiagnostics, at most MaxFilesPerLaunch per launch. Each computer
 // writes its own; comparing the host's and one client's files for the same window shows the first object that differs.
-// It never changes an ID, the counter or anything else in the game, and it doesn't force counters equal (Codex: live
+// It never changes an ID, the counter or anything else in the game, and it doesn't force counters equal (live
 // references may already point at differently numbered objects). It runs only in a multiplayer room, plus single
 // player in development builds so it can be checked there. Remove once the cause is found.
 internal static class ObjectIdDiagnosticsContext

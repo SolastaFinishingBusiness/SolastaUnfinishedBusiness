@@ -11,8 +11,8 @@ namespace SolastaUnfinishedBusiness.Models;
 
 // The game's multiplayer vote as every computer sees it. The game has one vote, the fast travel vote
 // (MultiplayerFastTravelVoteModal, NetworkingManager's RequestVote / AnswerVote / CancelVote / NotifyVote* messages);
-// the mod also runs the approval of time-passing actions on it (MultiplayerApprovalContext), with its own texts.
-// User request, 2026-11-01: use the game's vote screens, and show the vote screen to every player.
+// the mod also runs the approval of time-passing actions on it (MultiplayerApprovalContext), with its own texts, and
+// shows the game's vote screen to every player.
 //
 // What the game does by itself: the asking player gets the vote screen (the other players with their votes, and
 // Cancel); everyone else gets the request window (MultiplayerAnswerModal: Accept, Refuse, a 20 second timer that
@@ -59,7 +59,7 @@ internal static class MultiplayerVoteContext
     // longer than the request window's own 20 second timer, so only a request that was never shown runs into it
     private const float VoteDeadlineSeconds = 30f;
     // a computer that was asked forgets a vote after this long, whatever happened: the asking computer has cancelled
-    // it by then (Codex review, 2026-11-02: a cancel overtaking its request left the request's vote here for good)
+    // it by then (a cancel that overtakes its request would otherwise leave the request's vote here for good)
     private const float OtherDeadlineSeconds = 45f;
     // ... or this long after refusing it, when no outcome came
     private const float RefusedForgetSeconds = 5f;
@@ -775,10 +775,10 @@ internal static class MultiplayerVoteContext
 #if FB_DEVELOPMENT
     #region Preview
 
-    // A single-player preview of the vote screens with made-up players (user request, 2026-11-01), started from the
-    // mod menu (Multiplayer). A development tool: compiled only into development builds (FB_DEVELOPMENT, see the
-    // project file), never into a release (user direction, 2026-11-02). It goes through the same screen code as a real vote (texts, rows, extra rows, marking
-    // votes, the request window giving way to the vote screen, Cancel), but nothing is sent: the made-up players
+    // A single-player preview of the vote screens with made-up players, started from the mod menu (Multiplayer). A
+    // development tool: compiled only into development builds (FB_DEVELOPMENT, see the project file), never into a
+    // release. It goes through the same screen code as a real vote (texts, rows, extra rows, marking votes, the
+    // request window giving way to the vote screen, Cancel), but nothing is sent: the made-up players
     // answer one after another on a timer, and the outcome is shown with the game's own alerts. The game fills the
     // rows from the room's players and the session's player slots, which single player doesn't have for made-up
     // players, so while the preview runs OnCollectPlayerInfo, OnBindRow and OnRefreshAvatar stand in for those

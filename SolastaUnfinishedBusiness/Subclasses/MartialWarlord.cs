@@ -450,9 +450,7 @@ public sealed class MartialWarlord : AbstractSubclass
             var boxInt = new BoxInt(targetCharacter.LocationPosition, int3.zero, int3.zero);
 
             // every height within reach, as the game's own position cursor searches
-            // (CursorLocationSelectPosition.ComputeValidPositions). The mod's setting that kept the search at the
-            // creature's own height unless it was on was removed (user, 2026-11-15: "Completely remove the current
-            // feature and leave it to Solasta's default implementation"; #66).
+            // (CursorLocationSelectPosition.ComputeValidPositions), with no limit to the creature's own height (#66).
             boxInt.Inflate(halfMaxTacticalMoves);
 
             foreach (var position in boxInt.EnumerateAllPositionsWithin())

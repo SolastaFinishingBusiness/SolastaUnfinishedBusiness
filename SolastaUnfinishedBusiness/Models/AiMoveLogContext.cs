@@ -5,7 +5,7 @@ using TA.AI.Activities;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// "[AiMove]" lines (user, 2026-11-09): what each AI-controlled character did with cells in a multiplayer battle, so two
+// "[AiMove]" lines: what each AI-controlled character did with cells in a multiplayer battle, so two
 // players' logs can be compared line by line to find where their games split. The host's AI sends its decision to
 // everyone, but some details are worked out on each computer, such as where MovePathTowardsTarget stops (it reads that
 // computer's own visibility service and the light); a Brood of Blood ended in different cells on two computers in desync
@@ -14,7 +14,7 @@ namespace SolastaUnfinishedBusiness.Models;
 //   ActivityBase.ExecuteAndWait: round, actor, activity, action, from where, to which cells;
 // - every stopping cell MovePathTowardsTarget works out, with whether it avoided light and the actor's lighting now.
 // Logging only: nothing here changes the game. Multiplayer only, behind Logging > "AI moves" (on by default, like the
-// perception lines), and at most MaxLinesPerBattle lines per battle (user, 2026-11-09: the cap is per battle).
+// perception lines), and at most MaxLinesPerBattle lines per battle.
 internal static class AiMoveLogContext
 {
     private const int MaxLinesPerBattle = 200;

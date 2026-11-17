@@ -95,7 +95,7 @@ internal static class UpdateContext
     // Unity Mod Manager's version, and everything shown from it, comes from Info.json, which can be newer than the DLL
     // that was loaded (see CheckLoadedVersion). Null or empty means the mark is missing. This code is only ever built
     // with the target, so that isn't a normal case: a build made some other way, or a damaged file. It is treated as
-    // an error, not as a match (user direction, 2026-11-10).
+    // an error, not as a match.
     [CanBeNull]
     internal static string LoadedBuildVersion { get; } = ReadLoadedBuildVersion();
 
@@ -471,8 +471,8 @@ internal static class UpdateContext
         {
             State = UpdateState.Queued;
             StateDetail = version;
-            // "Would you like to restart Solasta to install the mod?" with Restart and Later (user direction,
-            // 2026-11-02): quitting is the restart, since the helper installs the update and starts the game again
+            // "Would you like to restart Solasta to install the mod?" with Restart and Later: quitting is the restart,
+            // since the helper installs the update and starts the game again
             ShowMessage(Gui.Format("Message/&UpdateQueued", version), "Message/&UpdateRestartTitle", Application.Quit,
                 "Message/&MessageLaterTitle");
 
@@ -504,9 +504,9 @@ internal static class UpdateContext
     // Unity Mod Manager reads Info.json, then loads the DLL through its own cached copy, named only by the DLL file's
     // time (SolastaUnfinishedBusiness.dll.<id>.cache, read from UMM 0.27.10). Whatever the cause, when the code
     // that runs isn't the version Info.json names, everything that shows the version (the mod manager, the lobby, the
-    // update result) is wrong, and multiplayer goes out of sync with players who run the real build. A player once saw
-    // 1.14.0 and desynced until a full restart (2026-11-08). This says so at the main menu and in the log; the version
-    // published to other players is the loaded one (MultiplayerSessionContext.BuildVersion), so they see it too.
+    // update result) is wrong, and multiplayer goes out of sync with players who run the real build. This says so at the
+    // main menu and in the log; the version published to other players is the loaded one
+    // (MultiplayerSessionContext.BuildVersion), so they see it too.
     private static void CheckLoadedVersion()
     {
         if (LoadedBuildVersion == null)
@@ -589,8 +589,8 @@ internal static class UpdateContext
 
             // the helper's window texts, in the game's language (the helper can't read the mod's translations). Best
             // effort: if the file can't be written, the helper still starts and shows its English texts. Letting the
-            // exception through made StartInstaller fail, and the caller then installed (or rolled back) in place while
-            // the game was running (Codex's review of PR #30).
+            // exception through would make StartInstaller fail, and the caller would then install (or roll back) in
+            // place while the game was running.
             var texts = Path.Combine(folder, "texts.txt");
 
             try
@@ -603,10 +603,10 @@ internal static class UpdateContext
                 Main.Error($"Couldn't write the update helper's texts, so it shows them in English: {e.Message}");
             }
 
-            // not hidden: from this version the helper shows a small window once the game has closed its window (not
+            // not hidden: the helper shows a small window once the game has closed its window (not
             // before: this runs before the player picks Restart or Later), so the player can see the update being
             // installed and that Solasta starts again by itself (Steam shows the game as running, STOP, the whole
-            // time, as a test on 2026-11-09 showed). CreateNoWindow only concerns consoles.
+            // time). CreateNoWindow only concerns consoles.
             Process.Start(new ProcessStartInfo(copy,
                 string.Join(" ", arguments.Select(x => "\"" + x.TrimEnd('\\') + "\"")))
             {
@@ -683,9 +683,9 @@ internal static class UpdateContext
 
         // The version the helper installed or rolled back to (--version). An install or a rollback is only confirmed
         // when this game runs exactly that version AND Info.json names it: the requested, installed and loaded
-        // versions all agree. Before, an install only compared the requested and loaded versions, so a different
-        // Info.json showed the mismatch warning next to a success message, and every rollback counted as a success
-        // (Codex's review of PR #30). A DLL without its build mark can't be confirmed at all.
+        // versions all agree. Comparing only the requested and loaded versions would let a different Info.json show
+        // the mismatch warning next to a success message, and count every rollback as a success. A DLL without its build
+        // mark can't be confirmed at all.
         var version = Value("version");
         var status = Value("status");
         var confirmed = LoadedBuildVersion != null && version == LoadedBuildVersion && version == InstalledVersion;
@@ -932,11 +932,10 @@ internal static class UpdateContext
             "Message/&MessageUpdateTitle", UpdateMod, "Message/&MessageLaterTitle");
     }
 
-    // The download's progress, in a message that stays open while the update downloads and is checked (user direction,
-    // 2026-11-02: show it in the game's own UI, not only in the mod menu, as a filling bar with the percentage in its
-    // centre). The message says what is happening, with the bar under it (CustomUI.UpdateProgressBar: the game's own
+    // The download's progress, in a message of the game's own UI that stays open while the update downloads and is
+    // checked. The message says what is happening, with the bar under it (CustomUI.UpdateProgressBar: the game's own
     // timer bar, full while the download is checked). Its one button, Hide, only closes it: the download goes on, and
-    // what comes next (the message offering to restart Solasta, or the failure) opens by itself as before, replacing
+    // what comes next (the message offering to restart Solasta, or the failure) opens by itself, replacing
     // this message if it is still open (MessageModal.Show re-shows the modal with the new
     // content). The text and the bar are updated in place (RefreshProgressMessage) while this message is the one
     // showing. Without the game's bar (its window not loaded) the text shows the percentage instead.

@@ -62,11 +62,10 @@ public static class GameLocationVisibilityManagerPatcher
     // after it has set or cleared CellFlags.Runtime.DynamicSightImpaired) only marks the light sources near the impacted
     // sectors dirty, plus line of sight. A creature's lighting is recomputed (ComputeIllumination, through UpdateLights)
     // only when it moves, is placed, changes prone state, the hour changes the outdoor light, or a dirty light source is in
-    // range of it. So a creature standing still with no light source nearby (outdoors by day, no torch) kept its old
-    // lighting state when a cloud covered or uncovered it: its light affinities didn't change, and the daylight rule for
-    // Dark Kobolds, Dark Elves and Gray Dwarves (Races/RacialSunlightSensitivity) kept or withheld Sunlight Sensitivity
-    // until it moved (found by reading the game code, after Codex's review of PR #23; in game the tested hero had lamps
-    // nearby, which hid it).
+    // range of it. So a creature standing still with no light source nearby (outdoors by day, no torch) keeps its old
+    // lighting state when a cloud covers or uncovers it: its light affinities don't change, and the daylight rule for
+    // Dark Kobolds, Dark Elves and Gray Dwarves (Races/RacialSunlightSensitivity) keeps or withholds Sunlight
+    // Sensitivity until it moves (found by reading the game code; a light source nearby hides it).
     // This queues every valid creature standing in an impacted sector for the game's normal light update, so the same
     // update the game runs after a move runs now too. It covers all creatures, monsters with their own light affinities
     // included, which is the game's own rule applied consistently. Over-queueing is harmless: the update recomputes the
@@ -99,7 +98,7 @@ public static class GameLocationVisibilityManagerPatcher
             {
                 // the game's light check samples every cell of the creature's perception box (GetAllPositionsToCheck),
                 // so a large creature whose origin is in one sector can stand partly in another; test the whole box
-                // (Codex's review of 1f44353a). Boxes are inclusive, built the same way as the game's own handler.
+                // Boxes are inclusive, built the same way as the game's own handler.
                 var characterBox = character.LocationPerceptionBoundingBox;
 
                 foreach (var sector in impactedSectors)

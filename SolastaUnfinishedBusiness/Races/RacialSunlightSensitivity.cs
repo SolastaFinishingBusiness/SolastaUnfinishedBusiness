@@ -86,7 +86,7 @@ internal static class RacialSunlightSensitivity
     }
 
     /// <summary>
-    ///     The daylight rule's condition, Sunlight Sensitivity (user direction, 2026-11-08: a condition of its own for
+    ///     The daylight rule's condition, Sunlight Sensitivity (a condition of its own for
     ///     these races, whose tooltip says when it applies). It copies Light Sensitivity, so its effects are the same
     ///     (-1d4 on attack rolls, disadvantage on Wisdom (Perception)), shown as detrimental and silent when added or
     ///     removed; only its name and description differ. The original rule (setting off) keeps Light Sensitivity.
@@ -185,10 +185,10 @@ internal static class RacialSunlightSensitivity
     }
 
     /// <summary>
-    ///     True when magical darkness or an area that fully obscures the hero keeps the sun off them (user direction,
-    ///     2026-11-08): the Darkness spell and other magical darkness, Fog Cloud, smoke and the other heavily
-    ///     obscuring clouds. These are the same two signs the game's own light check
-    ///     (<c>GameLocationVisibilityManager.ComputeIllumination</c>) tests first:
+    ///     True when magical darkness or an area that fully obscures the hero keeps the sun off them: the Darkness
+    ///     spell and other magical darkness, Fog Cloud, smoke and the other heavily obscuring clouds. These are the
+    ///     same two signs the game's own light check (<c>GameLocationVisibilityManager.ComputeIllumination</c>) tests
+    ///     first:
     ///     <list type="bullet">
     ///         <item>
     ///             A darkness condition on the hero: the game's <c>ConditionDarkness</c>, which Darkness, Way of

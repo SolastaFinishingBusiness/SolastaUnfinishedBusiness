@@ -9,16 +9,14 @@ namespace SolastaUnfinishedBusiness.Models;
 // only its inputs, which come from the scene, so every computer gets the same answer.
 internal static class CutsceneFormation
 {
-    // How far the back row stands behind the rearmost seat (user direction, 2026-11-07: "You can reduce the distance from the
-    // front row"; it was 1.2 m). At 0.6 m a rear hero's body clears a front hero's back, about 0.3 m deep, and stays well
-    // above the 0.3 m the user set as the closest. Measured from the rearmost seat, so the back row is straight even where
-    // the game's markers are staggered.
+    // How far the back row stands behind the rearmost seat. At 0.6 m a rear hero's body clears a front hero's back, about
+    // 0.3 m deep, and stays well above 0.3 m, the closest allowed. Measured from the rearmost seat, so the back row is straight
+    // even where the game's markers are staggered.
     internal const float BackRowDistance = 0.6f;
 
     // How far past the end of the seated row a hero stands, and the step between heroes beyond it. There is no smallest
-    // distance between back-row heroes (user direction, 2026-11-07, "remove the minimum spacing between rear heroes"): the
-    // 0.8 m floor it replaced pushed the second rear hero past the 0.5 m gaps to directly behind a tall flank hero, hidden in
-    // party shots (evidence/cutscene-staging-79619edc).
+    // distance between back-row heroes: a floor such as 0.8 m pushes the second rear hero past the 0.5 m gaps to directly
+    // behind a tall flank hero, hidden in party shots (evidence/cutscene-staging-79619edc).
     internal const float SideMargin = 0.4f;
     internal const float PastEndStep = 0.8f;
 
@@ -49,16 +47,14 @@ internal static class CutsceneFormation
     // from the seats given, so the row turns with the party at each whole-party teleport.
     //
     // Each rear hero stands exactly halfway between two neighbouring front heroes, measured along the row, and BackRowDistance
-    // behind it, whatever any camera sees (user direction, 2026-11-07: "Ignore the camera completely. Just have them be
-    // objectively between the gaps"). Which gaps follows the user's sketch of the same day
-    // (evidence/cutscene-staging-e8e1a944/user-sketch-outer-gaps.jpg): with 2 rear heroes and 4 seats, one behind each outer
+    // behind it, whatever any camera sees. Which gaps: with 2 rear heroes and 4 seats, one behind each outer
     // gap (seats 1-2 and 3-4 counted along the row), the middle gap left empty. One rear hero stands behind the middle gap; 3
     // take all three gaps; more go past the ends of the row. With 2 seats, so a single gap, the second goes past the end on the
     // side away from Right.
     //
-    // e8e1a944 and 475912d2 instead put each rear hero on the line from the answer prompt's camera through the gap. Where that
-    // camera stands close to the row (1.66 m in Nikannen's second stage) the line spreads outward, and the rear heroes ended
-    // up past the end heroes, not behind the gaps (evidence/cutscene-staging-475912d2).
+    // Placing each rear hero on the line from the answer prompt's camera through the gap doesn't work: where that camera
+    // stands close to the row (1.66 m in Nikannen's second stage) the line spreads outward, and the rear heroes end up past
+    // the end heroes, not behind the gaps (evidence/cutscene-staging-475912d2).
     internal static Result Compute(IReadOnlyList<Point> seats, IReadOnlyList<Point> seatForwards, int spotCount)
     {
         if (seats.Count == 0)
@@ -73,7 +69,7 @@ internal static class CutsceneFormation
         var height = seats.Average(seat => seat.Y);
         var spotDepth = rearmost - BackRowDistance;
         // left to right as seen from the front (larger lateral first), so the shorter back-row hero, who AssignByHeight lists
-        // first, stands on the left, as in the user's "   5 6 / 3124"
+        // first, stands on the left: "   5 6 / 3124" (back row over front row)
         var spots = PreferredLaterals(laterals, spotCount)
             .OrderByDescending(lateral => lateral)
             .Select(lateral => new Point(
@@ -85,16 +81,14 @@ internal static class CutsceneFormation
         return new Result(forward, right, spots);
     }
 
-    // Who stands where, by height (user direction, 2026-11-07: "all the shortest characters are in the front row, and the
-    // taller characters are behind"): the shortest heroes take the seats and the tallest the back row, where they show over
-    // the front row's heads. Within the front row the shorter half stands at the centre and the taller half on the flanks, as
-    // in the user's first sketch, each pair shorter on the left (SeatsFromCentre). The back row goes shorter first, and
-    // Compute lists its spots left first, so the shorter rear hero stands on the left. Before,
-    // the tallest stood on the flanks and middle heights behind, and a tall flank hero could hide a rear one
-    // (evidence/cutscene-staging-85858711). heights has one entry per hero, in the party's order, which also settles ties.
-    // seatsFromCentre lists the seats from the row's centre outward (SeatsFromCentre). Returns the hero index for each seat,
-    // and for each back-row spot from the first. It changes no list in the game: actor order decides roles and shots, so
-    // those stay as they were.
+    // Who stands where, by height: the shortest heroes take the seats and the tallest the back row, where they show over
+    // the front row's heads. Within the front row the shorter half stands at the centre and the taller half on the flanks,
+    // each pair shorter on the left (SeatsFromCentre). The back row goes shorter first, and Compute lists its spots left
+    // first, so the shorter rear hero stands on the left. With the tallest on the flanks and middle heights behind, a tall
+    // flank hero could hide a rear one (evidence/cutscene-staging-85858711). heights has one entry per hero, in the party's
+    // order, which also settles ties. seatsFromCentre lists the seats from the row's centre outward (SeatsFromCentre). Returns
+    // the hero index for each seat, and for each back-row spot from the first. It changes no list in the game: actor order
+    // decides roles and shots, so those stay as they were.
     internal static (int[] Seats, int[] Spots) AssignByHeight(IReadOnlyList<int> heights, IReadOnlyList<int> seatsFromCentre)
     {
         var sorted = Enumerable.Range(0, heights.Count).OrderBy(i => heights[i]).ToList();
@@ -112,13 +106,13 @@ internal static class CutsceneFormation
     // The seats' indexes from the row's centre outward, in pairs, and within each pair the one on the left as seen from the
     // front first. Seen from the front means facing the party, as an answer prompt's camera does, so the left is the
     // party's own right, the larger lateral (in Nikannen's second stage Thgil, at x 10.3, stood at the left of the prompt
-    // shot). AssignByHeight gives these places out from the shortest, so the front row reads 3 1 2 4 from left to right
-    // (user direction, 2026-11-07: each pair shorter to taller from left to right, "   5 6 / 3124"). Pairs are taken by
+    // shot). AssignByHeight gives these places out from the shortest, so the front row reads 3 1 2 4 from left to right,
+    // each pair shorter to taller from left to right ("   5 6 / 3124" with the back row). Pairs are taken by
     // rank rather than by equal distance, because staggered markers are never exactly equally far from the centre.
     //
     // Equally far seats (distances rounded to the centimetre) are ranked right side first (smaller lateral). That only
     // matters for an odd number of seats: with 3 the centre seat pairs with the one on the right, so the row reads 3 1 2 as
-    // promised. Without it the order of the list decided, and 3 heroes at Nikannen's first stage stood 1 2 3
+    // intended. Without it the order of the list decides, and 3 heroes at Nikannen's first stage stand 1 2 3
     // (evidence/cutscene-staging-a2511002).
     internal static int[] SeatsFromCentre(IReadOnlyList<Point> seats, IReadOnlyList<Point> seatForwards)
     {
@@ -158,11 +152,11 @@ internal static class CutsceneFormation
     // After a teleport of some heroes off the grid: where each other hero standing on a mover's new place should go, or null
     // to stay. moverBefore and moverAfter are the movers' places before and after; others are the other heroes' places. A
     // displaced hero takes a place a mover left, its own mover's first, and only one that nobody now stands on (within
-    // Clearance). Taking its own mover's old place unchecked put it on top of another mover when two movers traded places or
-    // one moved onto where another had been (Codex's review of f00afc52). With no free place it stays where it is.
+    // Clearance). Taking its own mover's old place unchecked would put it on top of another mover when two movers trade
+    // places or one moves onto where another had been. With no free place it stays where it is.
     //
     // Two places are the same only if they are also within VerticalClearance in height: a hero on a balcony or a stair above
-    // a mover isn't in its way (Codex's review of 3f3142b9). The old swap ignored height too.
+    // a mover isn't in its way.
     internal const float Clearance = 0.3f;
     internal const float VerticalClearance = 1f;
 
@@ -199,8 +193,8 @@ internal static class CutsceneFormation
                     }
                 }
 
-                // no break here: every hero on this mover's place is handled, not only the first (Codex's review of
-                // 49e616ba: two heroes 0.25 m either side of a mover's new place left the second where it was)
+                // no break here: every hero on this mover's place is handled, not only the first (e.g. two heroes 0.25 m
+                // either side of a mover's new place)
             }
         }
 
@@ -266,7 +260,7 @@ internal static class CutsceneFormation
         var middle = middleIndex < 0 ? centre : gaps[middleIndex];
         var pastEnd = Math.Max(((laterals[laterals.Count - 1] - laterals[0]) * 0.5f) + SideMargin, PastEndStep);
 
-        // the user's sketch: two rear heroes behind the two outer gaps, the middle one left empty
+        // two rear heroes behind the two outer gaps, the middle one left empty
         if (spotCount == 2 && gaps.Count >= 2)
         {
             result.Add(gaps[0]);

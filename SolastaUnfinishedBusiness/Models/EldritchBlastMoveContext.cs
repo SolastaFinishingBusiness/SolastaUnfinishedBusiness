@@ -291,7 +291,7 @@ internal static class EldritchBlastMoveContext
         var hero = caster.RulesetCharacter;
 
         // With "Push or pull a creature once for each hit" off, only the first beam of a cast that hits a creature
-        // moves it. That goes for every caster, asked or not: before, a caster with both invocations simply On could
+        // moves it. That goes for every caster, asked or not: otherwise a caster with both invocations simply On could
         // still move the creature again with a later beam, because the game replays each queued move's stored
         // destination. (In multiplayer the setting is the host's: clients play with the host's settings.)
         if (!Main.Settings.PushOrPullOncePerHit)
@@ -374,7 +374,7 @@ internal static class EldritchBlastMoveContext
     ///     has been taken out of play meanwhile, for instance killed by an area an earlier move took it through
     ///     and removed. The action must then leave that target alone: the rest of it reads the creature's rules
     ///     side (hit points, conditions, where to show the impact), which no longer exists and would throw, cutting
-    ///     the whole action short (Codex's review of a8c25e62).
+    ///     the whole action short.
     ///     <para>
     ///         The move is also marked as no longer to come, so no other creature the cast has moved goes on
     ///         waiting for it before it may fall (<see cref="ForcedMovementFallContext" />).
@@ -406,8 +406,8 @@ internal static class EldritchBlastMoveContext
     ///     The targets the spend-power action reports as finished, once it has gone through all of them. For one of
     ///     an Eldritch Blast cast's queued moves, entries that are missing or have been taken out of play (the ones
     ///     <see cref="SkipGoneTarget" /> made the action skip, or removed since) are left out, so the mod's "effect
-    ///     finished" handlers, which read each target's rules side, are never handed one that has none (Codex's
-    ///     re-review of 3ad388c7). For any other power, and when nothing is missing, the list is returned as it is.
+    ///     finished" handlers, which read each target's rules side, are never handed one that has none. For any other
+    ///     power, and when nothing is missing, the list is returned as it is.
     /// </summary>
     internal static List<GameLocationCharacter> FinishedTargets(
         CharacterActionSpendPower action, List<GameLocationCharacter> targets)
@@ -434,7 +434,7 @@ internal static class EldritchBlastMoveContext
         //
         // The game's own "is acting" isn't used: it looks the creature up in a table and throws when the creature
         // is no longer in it, and the game takes a creature out of that table once it is removed from play, which
-        // can happen during this wait (Codex's review of 93555539). An error here would cut the move's action
+        // can happen during this wait. An error here would cut the move's action
         // short. The mod's own test reads the same table safely, and a creature that is gone ends the wait.
         for (var frame = 0;; frame++)
         {
@@ -516,9 +516,9 @@ internal static class EldritchBlastMoveContext
     // Makes this action's list of forms carry exactly one move: a push or a pull of the given distance, or none.
     //
     // The list is the action's own, but the forms in it are still the power definition's: the copy the spend-power
-    // action makes is a new list holding the same form objects. Changing a form in place therefore changed the
-    // invocation itself for the rest of the game session (seen in game: after one answer that swapped the order,
-    // Grasp of Hadar pushed). So the motion form is replaced in the list by a real copy, made with the game's own
+    // action makes is a new list holding the same form objects. Changing a form in place would therefore change the
+    // invocation itself for the rest of the game session (after one answer that swapped the order, Grasp of Hadar
+    // would push). So the motion form is replaced in the list by a real copy, made with the game's own
     // EffectForm.Copy, and only that copy is changed.
     private static void ApplyMove(List<EffectForm> effectForms, bool push, int cells)
     {

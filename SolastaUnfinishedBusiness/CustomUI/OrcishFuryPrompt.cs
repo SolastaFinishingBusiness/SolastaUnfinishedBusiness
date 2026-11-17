@@ -5,14 +5,11 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 
 /// <summary>
 ///     The controls of Orcish Fury's reaction (#62), built into the game's reaction item when it shows a
-///     <see cref="ReactionRequestOrcishFury" /> (user, 2026-11-15: "Let the player hit any creature of their choice in
-///     range. Make it a list selection (one button per enemy) or to pass to not do the attack"):
+///     <see cref="ReactionRequestOrcishFury" />, so the player can attack any creature in reach or pass:
 ///     <list type="bullet">
 ///         <item>
-///             one button per creature a weapon can reach, each on its own row, with its name and hit points as the
-///             game shows them on its portrait, or ?? / ?? when the game hides them (user, 2026-11-15: "make each entry
-///             fill one row by itself, and show "Monster name (HP/HP)"", "If the HP is unknown, use ??/??", "Make sure
-///             to keep the space. So, for example "14 / 30" and "?? / ??"");
+///             one button per creature a weapon can reach, with its name and hit points as the game shows them on its
+///             portrait, or ?? / ?? when the game hides them;
 ///         </item>
 ///         <item>the game's own Pass button, kept as it is, which declines (and is what the timer presses).</item>
 ///     </list>

@@ -10,18 +10,17 @@ namespace SolastaUnfinishedBusiness.Models;
 ///     <see cref="Settings.DeferFallDuringEldritchBlastMoves" /> (the name is kept from when the setting only covered
 ///     Eldritch Blast, so players' saved choice carries over).
 ///     <para>
-///         History. Issue #37 built this for Eldritch Blast with Repelling Blast and Grasp of Hadar (user,
-///         2026-11-11: "make this fall handling a toggleable option as well (that is set to on). If it is off, the
-///         default behaviour should occur"). Issue #39 widens it to every action (user, 2026-11-14: "Start the build
-///         now", after the recommendations in the issue: one cast, power use or attack with its riders counts as
-///         one action; pushes and pulls only, not teleports, swaps or grapple drags; a reaction is its own action).
+///         Scope. Issue #37 built this for Eldritch Blast with Repelling Blast and Grasp of Hadar, as a setting that
+///         is on by default; with it off the game's own behaviour runs. Issue #39 widens it to every action: one
+///         cast, power use or attack with its riders counts as one action; pushes and pulls only, not teleports,
+///         swaps or grapple drags; a reaction is its own action.
 ///     </para>
 ///     <para>
 ///         What the game does. Every move that ends (GameLocationPositioningManager.FinalizeNewPosition) calls
 ///         GameLocationCharacter.CheckCharacterFooting, which starts a fall at once if the creature can't stay on
 ///         its cell. Starting a fall also stops the creature's actions and drops the ones queued for it. So a
-///         creature pushed over a ledge by a first push fell there and then: a second push of the same action never
-///         ran, or ran from the bottom of the drop, and a pull that would have brought it back came too late.
+///         creature pushed over a ledge by a first push falls there and then: a second push of the same action never
+///         runs, or runs from the bottom of the drop, and a pull that would have brought it back comes too late.
 ///     </para>
 ///     <para>
 ///         What this changes, and nothing else: while more of an action's moves can still come, for that creature or
@@ -67,15 +66,14 @@ namespace SolastaUnfinishedBusiness.Models;
 ///         the air because a move or an action was dropped.
 ///     </para>
 ///     <para>
-///         The pose (user, 2026-11-11: "the creature should visibly move through each push and pull without
-///         entering the falling pose or waiting for it to end. Only play the fall at the end of the Eldritch
-///         Blast"). The game puts a pushed creature in its falling pose for the move and, on ground it can
-///         stand on, has it get up again after every single push or pull, waiting for that to finish. With the
-///         setting on, a push of the action holding the creature doesn't enter that pose
-///         (<see cref="SetFallingPose" />) and so has no getting up to wait for (<see cref="IsFallingOrLeftInAir" />):
-///         the creature travels as it stands. A push from anything else plays the game's pose as before. A real fall
-///         at the end starts its own falling pose, as every fall does. With the setting off no creature is held, so
-///         each push and pull plays the game's pose and recovery as before.
+///         The pose. The creature visibly moves through each push and pull without entering the falling pose or
+///         waiting for it to end, and only the real fall plays at the end. The game puts a pushed creature in its
+///         falling pose for the move and, on ground it can stand on, has it get up again after every single push or
+///         pull, waiting for that to finish. With the setting on, a push of the action holding the creature doesn't
+///         enter that pose (<see cref="SetFallingPose" />) and so has no getting up to wait for (<see
+///         cref="IsFallingOrLeftInAir" />): the creature travels as it stands. A push from anything else plays the
+///         game's pose. A real fall at the end starts its own falling pose, as every fall does. With the setting off no
+///         creature is held, so each push and pull plays the game's pose and recovery.
 ///     </para>
 ///     <para>
 ///         Multiplayer. Everything is decided from the game's own state and events (actions starting, ending and
@@ -257,7 +255,7 @@ internal static class ForcedMovementFallContext
 
         foreach (var resultingAction in resultingActions)
         {
-            // a reaction is its own action, however it was queued (Codex's review of c98ac8bd)
+            // a reaction is its own action, however it was queued
             if (!IsEffectAction(resultingAction) ||
                 IsReaction(resultingAction) ||
                 resultingAction.ActionParams is not { } childParams ||
@@ -300,7 +298,7 @@ internal static class ForcedMovementFallContext
     ///     Right after the game stopped a character's actions. The game takes the stopped actions out of the chain
     ///     and resets their coroutine (TA.Coroutine.Reset) after aborting them, or kills one that refused to be
     ///     aborted. A reset coroutine is never finished or disposed, so the end of Execute, where
-    ///     <see cref="ActionEnded" /> is called, never comes for them (Codex's review of c98ac8bd). Every action that
+    ///     <see cref="ActionEnded" /> is called, never comes for them. Every action that
     ///     was in the chain before and isn't any more has ended here.
     /// </summary>
     internal static void ActionsStopped(GameLocationActionManager.ActionChainSlot slot, List<CharacterAction> before)
@@ -323,8 +321,8 @@ internal static class ForcedMovementFallContext
     ///     Called when an action is handed to the action service (GameLocationActionManager.ExecuteAction), before
     ///     anything else of it. The game's direct path for an on-hit power queues it behind the action that hit
     ///     (GameLocationBattleManager.PrepareAndExecuteSpendPowerAction calls ExecuteAction with enqueue on), so it
-    ///     often starts only once that action has ended. It is tied to that action here, when it is queued (Codex's
-    ///     review of c98ac8bd). The mod's own on-hit powers start at once and are tied when they start
+    ///     often starts only once that action has ended. It is tied to that action here, when it is queued. The mod's
+    ///     own on-hit powers start at once and are tied when they start
     ///     (<see cref="ActionStarting" />).
     /// </summary>
     private static void PowerQueued(CharacterActionParams actionParams)
@@ -529,8 +527,7 @@ internal static class ForcedMovementFallContext
         {
             // A push from something else. A push of the action that was running for this creature is over by now
             // (the game stops a creature's actions before it queues a push), even if its end was never reported, so
-            // this push must not be taken for it: it plays the game's pose and waits as usual (Codex's review of
-            // c98ac8bd).
+            // this push must not be taken for it: it plays the game's pose and waits as usual.
             hold.Running = null;
 
             return;
@@ -778,8 +775,8 @@ internal static class ForcedMovementFallContext
                 }
 
                 // An aborted action applies no more effects, and one the game stopped by resetting its coroutine
-                // never reports its end, even for a character that stays (Codex's review of c98ac8bd). Its end is
-                // noted here, which also ends it in its group.
+                // never reports its end, even for a character that stays. Its end is noted here, which also ends it in
+                // its group.
                 foreach (var action in entry.Value.Where(action => action.Aborted).ToArray())
                 {
                     ActionEnded(action);
@@ -791,11 +788,11 @@ internal static class ForcedMovementFallContext
     // Is another move of the action still to come? "running" is this creature's push action that is running now, if
     // the question is asked from inside it: it doesn't count as "to come".
     //
-    // The whole action counts, not only the moves aimed at this creature (user, 2026-11-11: a creature's fall waits
-    // "until Eldritch Blast has finished", including the moves the remaining beams make on other creatures). So a
-    // creature left over a drop by a first push stays there while a later one moves someone else, and its footing
-    // is judged after that. This holds whatever took its footing away meanwhile (the user's example: damage from an
-    // area breaks its concentration on Fly): the damage and the lost flight happen at once, the fall waits.
+    // The whole action counts, not only the moves aimed at this creature: a creature's fall waits until the whole
+    // cast has finished, including the moves the remaining beams make on other creatures. So a creature left over a
+    // drop by a first push stays there while a later one moves someone else, and its footing is judged after that.
+    // This holds whatever took its footing away meanwhile (e.g. damage from an area breaks its concentration on Fly):
+    // the damage and the lost flight happen at once, the fall waits.
     private static bool MoreToCome(Hold hold, CharacterActionParams running)
     {
         if (hold.Pushes.Any(push => push != running))
@@ -1015,7 +1012,7 @@ internal static class ForcedMovementFallContext
         // Can this action still do anything? A started one until it ends, unless it was aborted (an aborted action
         // applies no more effects, whether or not its end is ever reported). One that hasn't started yet while it is
         // still waiting in its character's chains: once it isn't, it was dropped or refused and will never run.
-        // (Its character merely doing something else doesn't keep it alive: Codex's review of c98ac8bd.)
+        // (Its character merely doing something else doesn't keep it alive.)
         internal bool IsLive(GameLocationActionManager manager)
         {
             if (HasEnded)
@@ -1055,8 +1052,7 @@ internal static class ForcedMovementFallContext
 
             // The running chain's list keeps every entry it started with. The game moves the chain's index on and
             // then starts the entry at the new index (StartNextActionFromCurrentChain), so only the entries after the
-            // index are still to come; the one at it has been started, and is in actionQueue above if it still runs
-            // (Codex's re-review of 888a9a08).
+            // index are still to come; the one at it has been started, and is in actionQueue above if it still runs.
             if (slot.actionChainParams?.actionsParams != null &&
                 slot.actionChainParams.actionsParams.IndexOf(actionParams) > slot.indexActionChainParams)
             {

@@ -9,12 +9,11 @@ namespace SolastaUnfinishedBusiness.Models;
 // After-rest buttons (Memorize Spell, Spell Mastery, Signature Spells and the mod's custom rest powers) run as functors
 // on the computer of the player who clicks them only: the game's AfterRestActionItem calls IFunctorService locally,
 // and only the functor itself can tell the other computers. The game's own functors do that (FunctorUsePower sends
-// its power through ICommandService, the spell preparation screen sends PrepareSpells), the mod's didn't: they added
-// and removed conditions and changed prepared spells directly, so only the clicker's game had them. A condition added
-// that way also takes an object ID on one computer only, which is how desync issue 04 was found (a
-// ConditionMemorizeSpell on one client, 2026-11-08).
+// its power through ICommandService, the spell preparation screen sends PrepareSpells). A functor that adds and removes
+// conditions or changes prepared spells directly changes only the clicker's game, and a condition added that way also
+// takes an object ID on one computer only (desync issue 04: a ConditionMemorizeSpell on one client).
 //
-// The changes those functors make to the hero now go through this command: it rides on the game's own
+// The changes the mod's functors make to the hero therefore go through this command: it rides on the game's own
 // AssignClassLevelRPC in place of a class name (like the level down and the end-infusion commands), so every computer
 // runs it at the same tick. The functor on the clicker sends it, waits until its own copy has run, and only then
 // carries on (opening the preparation screen, for example). Single player runs the change at once.
@@ -27,7 +26,7 @@ internal static class RestCommandContext
 
     // the commands this computer sent and is waiting for, registered before sending: null until its own copy has run,
     // then whether it did. Only the sender's waits are kept (other computers' commands aren't recorded), each removed
-    // when its wait ends, and all of them on joining a room (Codex's suggestion on PR #28)
+    // when its wait ends, and all of them on joining a room
     private static readonly Dictionary<string, bool?> Waiting = new();
 
     private static readonly Dictionary<string, Func<RulesetCharacterHero, string, bool>> Handlers = new();

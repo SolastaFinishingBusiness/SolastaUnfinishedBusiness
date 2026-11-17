@@ -617,10 +617,10 @@ public sealed class MartialForceKnight : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
-            // Every attack starts without a Psionic Adept offer; only a Force-Powered Strike below sets it. This
-            // used to be TryAdd, which never overwrites: when a strike's target dropped (or the attack missed, or the
-            // fighter was below level 7) the flag stayed 1, and a later hit that turn got the push/prone choice
-            // without a strike.
+            // Every attack starts without a Psionic Adept offer; only a Force-Powered Strike below sets it. Set, not
+            // TryAdd, which never overwrites: when a strike's target dropped (or the attack missed, or the fighter was
+            // below level 7) the flag would stay 1, and a later hit that turn would get the push/prone choice without
+            // a strike.
             attacker.SetSpecialFeatureUses(powerPsionicAdept.Name, 0);
 
             var rulesetAttacker = attacker.RulesetCharacter;

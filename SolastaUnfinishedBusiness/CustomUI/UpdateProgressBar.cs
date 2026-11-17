@@ -6,8 +6,8 @@ using Object = UnityEngine.Object;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
 
-// The update message's progress bar (UpdateContext's progress message; user direction, 2026-11-02: a visually filling
-// bar with the percentage in its centre, made only from the game's own UI elements). It is a copy of the game's timer
+// The update message's progress bar (UpdateContext's progress message), made only from the game's own UI elements. It
+// is a copy of the game's timer
 // bar from the multiplayer request window (MultiplayerAnswerModal: its TimeoutGroup frame and the TimeoutGauge Image in
 // it, which the game fills through Image.fillAmount), with the percentage centred on it in a copy of the message's own
 // text label, so it has the game's art and font.
@@ -117,8 +117,8 @@ internal static class UpdateProgressBar
         _bar = bar;
 
         // only now, once active: GuiLabel.Awake runs GuiStyleEnforcer.ApplyStyles, which writes the message style's
-        // text settings (its top-left alignment among them) over the copy, so settings made before activation were
-        // lost and the percentage sat at the bar's left end (seen in game, f27a2d17)
+        // text settings (its top-left alignment among them) over the copy, so settings made before activation would be
+        // lost and the percentage would sit at the bar's left end
         CentreLabel(label);
 
         Main.Info($"Update progress bar: label {((RectTransform)source.transform).rect.size}, " +

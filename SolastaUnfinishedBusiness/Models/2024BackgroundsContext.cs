@@ -328,9 +328,9 @@ public static partial class Tabletop2024Context
             .ToList();
 
         // With the option, the background gives the ASI, so the Human's own goes. Without it, the Human gets back the
-        // one that matches the Alternate Human setting if none is there (#55). This used to loop over the features
-        // found above only, so "it isn't there" could never be true and an ASI removed by the option never came back
-        // when it was turned off.
+        // one that matches the Alternate Human setting if none is there (#55). Looking only through the features found
+        // above, "it isn't there" could never be true, and an ASI removed by the option would never come back when it
+        // is turned off.
         if (Main.Settings.EnableBackgroundASI)
         {
             foreach (var featureUnlock in humanASIUnlocks)

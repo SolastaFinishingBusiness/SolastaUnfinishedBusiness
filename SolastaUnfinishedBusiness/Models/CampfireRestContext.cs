@@ -4,23 +4,21 @@ using static RuleDefinitions;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// Long rests at campfires (FunctorStartLongRest, the campfire gadget's functor). User directions, 2026-11-01 and
-// 2026-11-02:
+// Long rests at campfires (FunctorStartLongRest, the campfire gadget's functor):
 // 1. In multiplayer any player can start the long rest at a campfire, not only the host. The game refuses clients
 //    (GameRestingManager.CanExecuteLocationRest with player privileges, "only the host can rest"); this follows the
 //    setting that already lets every player start rests from the rest screen (MultiplayerAllowPlayersToStartRests).
 // 2. When the party is out of the long rest range, an ordinary campfire's long rest gathers it at the campfire first
 //    (setting GatherPartyForCampfireRest): the whole party, dead, dying and unconscious characters and guests
-//    included, fast travels to the campfire's point (CampfireFastTravelContext; "do not exclude the
-//    dead/dying/downed/unconscious characters", "ensure that the fast travel only occurs if there is someone outside
-//    of the long rest radius"). Out of range means the game's rule fails (two living members more than 10 cells
+//    included, fast travels to the campfire's point (CampfireFastTravelContext), and only when somebody is out of
+//    the long rest range. Out of range means the game's rule fails (two living members more than 10 cells
 //    apart) or anybody, downed included, is more than 10 cells from the campfire's user
 //    (CampfireFastTravelContext.NeedsTravel); otherwise the rest runs as without the mod. There is no walk: if the
 //    game can't fast travel, the travel fails or enemies interrupt it, nobody rests and the player is told. A party
 //    too spread out for the game's rule can still use the campfire, since the gather brings it together; the approval
 //    says the party gathers.
 // 3. A campfire set to rest at once starts its rest without the multiplayer approval or a gather, as in the game (it
-//    asked for an approval in 9b341d45).
+//    doesn't ask for one).
 //
 // How the game runs a campfire: the functor runs on every computer (gadget functors are part of the lockstep), but
 // only the computer whose player controls the character that used the campfire opens the rest screen
@@ -30,17 +28,17 @@ namespace SolastaUnfinishedBusiness.Models;
 // and presses Start itself. Rests on the world map are the travel's own (GameTravelScheduler), not this functor.
 //
 // The gather, on the computer that pressed Start (after the approval, in multiplayer): the rest screen closes, as it
-// pauses game time while open (RestModal.OnBeginShow calls GameTime.Pause, OnEndHide resumes it; in-game test,
-// 2026-11-02); the party fast travels; once the game confirms the party arrived and the rest checks pass again, the
-// rest screen opens again with the game's Start pressed, as the game does for a campfire that rests at once. A fight,
-// a cutscene or another rest screen opening ends the gather without a rest.
+// pauses game time while open (RestModal.OnBeginShow calls GameTime.Pause, OnEndHide resumes it); the party fast
+// travels; once the game confirms the party arrived and the rest checks pass again, the rest screen opens again with
+// the game's Start pressed, as the game does for a campfire that rests at once. A fight, a cutscene or another rest
+// screen opening ends the gather without a rest.
 //
-// A long rest that has to wait first (the party already rested that day) gathers before the wait (user direction,
-// 2026-11-02: "the party is auto gathered before the time skip"). The game checks the once-a-day rule before the
-// distance (GameRestingManager.CanExecuteLocationRest), so a campfire offers its wait ("Waiting to Perform a Long
-// Rest", FunctorStartLongRest.DoWaitLongRest) even for a spread-out party, and the long rest after the wait
-// (StartDeferredLongRestAsync) then refused it as spread out, 16 hours later. Both waits, that one and the rest
-// screen's combined wait and long rest (LongRestWaitContext), now gather the party at the campfire first, then wait;
+// A long rest that has to wait first (the party already rested that day) gathers before the wait. The game checks the
+// once-a-day rule before the distance (GameRestingManager.CanExecuteLocationRest), so a campfire offers its wait
+// ("Waiting to Perform a Long Rest", FunctorStartLongRest.DoWaitLongRest) even for a spread-out party, and the long
+// rest after the wait (StartDeferredLongRestAsync) would then refuse it as spread out, 16 hours later. Both waits, that
+// one and the rest screen's combined wait and long rest (LongRestWaitContext), therefore gather the party at the
+// campfire first, then wait;
 // in multiplayer the gather, the wait and the rest are approved together.
 internal static class CampfireRestContext
 {
@@ -332,9 +330,8 @@ internal static class CampfireRestContext
     }
 
     // the gather: the whole party fast travels to the campfire's point (CampfireFastTravelContext), then arrived runs
-    // once the rest rules pass (before a wait, all but the once-a-day rule). There is no walk (user direction,
-    // 2026-11-02): when the game can't fast travel now, the gather fails with its message and nobody rests. False when
-    // it couldn't start.
+    // once the rest rules pass (before a wait, all but the once-a-day rule). There is no walk: when the game can't fast
+    // travel now, the gather fails with its message and nobody rests. False when it couldn't start.
     private static bool StartGather(Campfire campfire, bool beforeWait, System.Action arrived)
     {
         if (!Gathers(campfire))
@@ -367,7 +364,7 @@ internal static class CampfireRestContext
     }
 
     // the campfire fast travel is over. travelled is false when it never began in time (the command may only be late,
-    // so nothing more is sent: Codex review of c44f860d, 2026-11-02), when the game couldn't travel (no path, its
+    // so nothing more is sent), when the game couldn't travel (no path, its
     // waypoint lookup failed) or when enemies interrupted it short of the campfire; the gather then fails and nobody
     // rests.
     private static void AfterFastTravel(Gather gather, bool travelled)
@@ -401,8 +398,8 @@ internal static class CampfireRestContext
         {
             if (failure == PartyTooSpreadOut)
             {
-                // the game's own range rule failed: named like the gather's check below (Codex's review of
-                // 429d2db3, 2026-11-02), with the general message only if that check finds nobody
+                // the game's own range rule failed: named like the gather's check below, with the general message
+                // only if that check finds nobody
                 ShowOutOfRange(gather.User);
             }
             else
@@ -419,9 +416,8 @@ internal static class CampfireRestContext
         // the game's rule above leaves out dead, dying and unconscious characters, and the game's arrival places only
         // as many characters as it finds free cells for (GameLocationMapManager.SetupPartyOnDestination teleports
         // foundPositions.Count of them; ComputeFormationPlacementPositions can come back short on a cramped point), so
-        // a downed character could still be left behind: the gather's own range check, with them, decides (Codex's
-        // review of fc363341, 2026-11-02; read in the game's code, not seen in a game). The message names who is out of
-        // range (user direction, 2026-11-02).
+        // a downed character could still be left behind: the gather's own range check, with them, decides (read in
+        // the game's code, not seen in a game). The message names who is out of range.
         if (CampfireFastTravelContext.NeedsTravel(gather.User))
         {
             ShowOutOfRange(gather.User);
@@ -450,8 +446,8 @@ internal static class CampfireRestContext
         Gui.GuiService.ShowAlert(Gui.Localize("Message/&CampfireGatherFailed"), Gui.ColorFailure, 5f);
     }
 
-    // after the travel the party is still out of the long rest range: "<name> is out of range for a long rest." (user
-    // direction, 2026-11-02), or the general failure when no single character can be named
+    // after the travel the party is still out of the long rest range: "<name> is out of range for a long rest.", or
+    // the general failure when no single character can be named
     private static void ShowOutOfRange(GameLocationCharacter user)
     {
         if (CampfireFastTravelContext.DescribeOutOfRange(user) is { } outOfRange)
@@ -466,7 +462,7 @@ internal static class CampfireRestContext
 
     // the party's leader (the first party member, from whom the game routes a fast travel) can lead it; when they are
     // dead, dying or unconscious the player is told who and in which state, e.g. "Kushiel is dead. Unable to fast
-    // travel." (user direction, 2026-11-02), and nobody travels or rests
+    // travel.", and nobody travels or rests
     internal static bool LeaderCanTravel()
     {
         var message = CampfireFastTravelContext.DescribeDownedLeader();

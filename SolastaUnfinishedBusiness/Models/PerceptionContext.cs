@@ -17,14 +17,14 @@ namespace SolastaUnfinishedBusiness.Models;
 // through the class level command. In multiplayer both run only in fixed steps (NetworkingDefinitions.CanUpdate is
 // Time.inFixedTimeStep; NetworkingManager.FixedUpdate runs the delayed commands), so they interleave the same way on
 // every computer. Previews, the UI and AI planning only read results; a missing one is requested and reads as not
-// perceived until its command runs. Single player rolls as before.
+// perceived until its command runs. Single player rolls as the game does.
 internal static class PerceptionContext
 {
     private const string CommandMarker = "FBPerception:";
     private const int PairsPerCommand = 64;
     private const int DiagnosticLimit = 128;
     private const int AiMaxDecisions = 3; // decisions that may ask for new checks, before a last one that uses them
-    private const float AiMaxWaitSeconds = 3f; // user direction: then the host rolls what is still missing itself
+    private const float AiMaxWaitSeconds = 3f; // then the host rolls what is still missing itself
     private const ulong AiBatchTicks = 2; // network ticks of 50 ms: the AI's requests go out in windows of about 100 ms
     private const float PruneSeconds = 1f;
 
@@ -124,8 +124,8 @@ internal static class PerceptionContext
         }
 
         // AI planning runs on the host alone, so it never rolls a shared check, even nested in an action step. With
-        // sync off, and in the last pass after the wait's time limit (user direction), it rolls missing checks locally
-        // as before: those rolls happen on the host alone, so they can desync.
+        // sync off, and in the last pass after the wait's time limit, it rolls missing checks locally: those rolls happen
+        // on the host alone, so they can desync.
         if (_ai != null)
         {
             if (!_ai.Synchronized || _ai.LocalRolls)
@@ -444,7 +444,7 @@ internal static class PerceptionContext
     // its command, and decide again with the results. After three decisions that each found new missing checks, one
     // last decision uses the results that arrived without asking for more (a check still missing counts as failed).
     // After 3 s of waiting (a lost command can't stall the enemy turn), the last decision instead rolls any check still
-    // missing on the host alone, as with sync off (user direction): those rolls can desync. The 3 s count only the time
+    // missing on the host alone, as with sync off: those rolls can desync. The 3 s count only the time
     // spent waiting, added up over the decision's passes, not the time spent deciding. The mode is fixed for the whole
     // decision. keepState, if given, is called before the first decision and returns what puts the AI's state back
     // before each new decision (see the legendary actions in PerceptionPatcher).
@@ -550,7 +550,7 @@ internal static class PerceptionContext
 
     #region Phases, resets and recovery
 
-    // user direction, 2026-10-30: a creature that becomes blinded (any condition of the Blinded type, the same test the
+    // a creature that becomes blinded (any condition of the Blinded type, the same test the
     // 10-cell rule uses) rolls its Perception checks again instead of keeping what it saw earlier this round. Conditions
     // are added and removed in synchronized steps, at the same point on every computer.
     internal static void OnConditionAdded(RulesetActor actor, ConditionDefinition condition)

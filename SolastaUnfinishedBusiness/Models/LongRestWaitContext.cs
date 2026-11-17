@@ -74,7 +74,7 @@ internal static class LongRestWaitContext
             "Message/&MessageYesTitle", "Message/&MessageNoTitle",
             () =>
             {
-                // at a campfire the whole party fast travels to it before the wait (user directions, 2026-11-02);
+                // at a campfire the whole party fast travels to it before the wait;
                 // checked while the campfire's rest screen is still open, as that is how the campfire is known
                 var gathering = CampfireRestContext.TryGatherBeforeWait();
 

@@ -120,7 +120,7 @@ public static class SpellRepertoirePanelPatcher
     public static class OnClearPreparationCb_Patch
     {
         // Clear never runs in Memorize Spell mode either: it empties the list without the one-swap check, and the
-        // controller's Clear button is shown there (Codex's review of 2d285453)
+        // controller's Clear button is shown there
         [UsedImplicitly]
         public static bool Prefix(SpellRepertoirePanel __instance)
         {
@@ -137,7 +137,7 @@ public static class SpellRepertoirePanelPatcher
     {
         // Auto never runs in Memorize Spell, Spell Mastery or Signature Spells mode: it prepares the repertoire's usual
         // spells, bypassing the mode's limits. The mouse button is moved off screen there (RepaintPanel), but the game
-        // shows a separate controller button, which reached it (Codex's review of 06f6adbe)
+        // shows a separate controller button, which would reach it
         [UsedImplicitly]
         public static bool Prefix(SpellRepertoirePanel __instance)
         {

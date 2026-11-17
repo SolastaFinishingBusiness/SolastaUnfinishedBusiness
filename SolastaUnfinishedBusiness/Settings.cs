@@ -138,8 +138,7 @@ public class Settings : UnityModManager.ModSettings
 
     // Re-light the creatures in an area when Darkness, Fog Cloud, smoke or another heavily obscuring cloud appears,
     // moves or ends (GameLocationVisibilityManagerPatcher.TolopologyChanged_Patch). On by default: it fixes a gap in the
-    // game, where a creature standing still with no light nearby kept its old lighting state (user direction,
-    // 2026-11-08: "Add a toggle for this light update fix").
+    // game, where a creature standing still with no light nearby keeps its old lighting state.
     public bool RefreshLightingWhenObscurementChanges { get; set; } = true;
     [Tag(Type = TagType.T2014)] public bool OfficialObscurementRulesInvisibleCreaturesCanBeTarget { get; set; }
     [Tag(Type = TagType.T2014)] public bool OfficialObscurementRulesCancelAdvDisPairs { get; set; }
@@ -163,14 +162,13 @@ public class Settings : UnityModManager.ModSettings
 
     // Issue #33: a creature pushed or pulled more than once in a cast is moved each time (Repelling Blast once per
     // Eldritch Blast beam). Off: as the game does it, where only the first push of a cast moves the creature. On by
-    // default (user, 2026-11-10: "a toggleable option in the mod settings, with the default set to true").
+    // default.
     public bool PushOrPullOncePerHit { get; set; } = true;
 
     // Issues #37 and #39: a creature that the pushes and pulls of one action (a spell, a power, an attack with its
     // riders, a shove) move over a drop falls only after that action's last move, from where it then is. Off: it
-    // falls as soon as a move leaves it without footing, as the game does it. On by default (user, 2026-11-11: "make
-    // this fall handling a toggleable option as well (that is set to on). If it is off, the default behaviour should
-    // occur"). Issue #37 built it for Eldritch Blast only; the name is kept so players' saved choice carries over.
+    // falls as soon as a move leaves it without footing, as the game does it. On by default. Issue #37 built it for
+    // Eldritch Blast only; the name is kept so players' saved choice carries over.
     public bool DeferFallDuringEldritchBlastMoves { get; set; } = true;
     [Tag(Type = TagType.T2014)] public bool FullyControlConjurations { get; set; }
     public bool EnableHigherGroundRules { get; set; }

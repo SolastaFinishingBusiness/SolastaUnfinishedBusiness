@@ -667,7 +667,7 @@ internal static class MultiplayerDesyncContext
 
     #region Turn-end check
 
-    // At the end of every combatant's turn in a multiplayer battle (user, 2026-11-09), each player's game sends the host
+    // At the end of every combatant's turn in a multiplayer battle, each player's game sends the host
     // that character's values (the same as the regular check: hit points, cell, conditions, spell slots, power uses),
     // its facing and the dice position. The host compares them with its own at the same turn end and, if they differ,
     // gives the usual desync report and Resync offer, naming the character and round. The regular check only compares
@@ -685,7 +685,7 @@ internal static class MultiplayerDesyncContext
 
     // A turn is named by the battle, the round, the character, whether it's a legendary turn, and which of that
     // character's turns this is in the round: Thief Reflexes and Time Stop give one character two turns in a round, and
-    // successive battles reuse rounds and characters (Codex's review of 984cd021). Battles are counted on each computer
+    // successive battles reuse rounds and characters. Battles are counted on each computer
     // as they start; only one battle runs at a time, so every computer counts the same.
     private static Game _turnGame;
     private static GameLocationBattle _turnBattle;
@@ -696,7 +696,7 @@ internal static class MultiplayerDesyncContext
     private static bool _turnDesyncReported;
 
     // host: the players a turn-end difference was reported with, by actor, with their names, so the host can be told
-    // when one of them leaves (Codex's recommendation, user: "Add the warnings")
+    // when one of them leaves
     private static readonly Dictionary<int, string> TurnMismatchPlayers = new();
 
     // a controller host was told once that Resync must wait for a save (see StartResync); a new report tells it again
@@ -1043,8 +1043,8 @@ internal static class MultiplayerDesyncContext
             Main.Info("Multiplayer resync not started: the game can't save or load right now");
 
             // A controller host can't use the log's Resync button, and only the regular check offers Resync again by
-            // itself; with only a turn-end or numbering report, nothing would. So it's told once what to do instead
-            // (Codex's recommendation, user: "Add the warnings"). Nothing about Resync, saving or loading changes.
+            // itself; with only a turn-end or numbering report, nothing would. So it's told once what to do instead.
+            // Nothing about Resync, saving or loading changes.
             if (Gui.GamepadActive && ReportedByActor.Count == 0 && !_resyncLaterTold)
             {
                 _resyncLaterTold = true;
@@ -1107,9 +1107,9 @@ internal static class MultiplayerDesyncContext
         }
 
         // The game's own multiplayer load, as its Load Game screen uses: a lockstep command that has the host send the save to
-        // the clients and every computer load it together (ServerLoadGame, ClientLoadGame). This used to call
-        // GameSerializationManager.LoadGame, which only loads on this computer, so clients kept running a game the host had
-        // left: the likely cause of the stalled session on 2026-11-01. State here is reset by the load's tick reset.
+        // the clients and every computer load it together (ServerLoadGame, ClientLoadGame). GameSerializationManager.LoadGame
+        // only loads on this computer, so clients would keep running a game the host had left. State here is reset by the
+        // load's tick reset.
         Main.Info($"Multiplayer resync: loading {save}");
         ServiceRepository.GetService<ICommandService>().LoadGame(serialization.BuildFilenameWithPathAndExtension(save));
     }
@@ -1179,7 +1179,7 @@ internal static class MultiplayerDesyncContext
         internal long SpellSlots;
 
         // the remaining uses of each of the character's powers, by name: a power used on one computer only (an
-        // after-rest power whose command didn't run everywhere, Codex's review of PR #28) shows here
+        // after-rest power whose command didn't run everywhere) shows here
         internal long PowerUses;
         internal int TemporaryHitPoints;
     }

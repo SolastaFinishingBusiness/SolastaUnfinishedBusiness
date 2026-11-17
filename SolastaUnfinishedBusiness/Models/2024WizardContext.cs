@@ -130,9 +130,9 @@ public static partial class Tabletop2024Context
     // The one swap Memorize Spell allows is recorded in the condition, as upstream did: Amount (1 once a spell was
     // unselected) and SourceProficiencyBonus (the spell last unselected or selected, by SpellKey; -1 before either).
     // The condition lasts until the next rest and is saved with the game, so reopening Memorize Spell or loading a
-    // save can't grant a second swap. Upstream changed those fields on every click on the clicker's computer only; now
-    // a click changes only this computer's screen session below, and the record is written on every computer together
-    // with the chosen spells when Prepare is pressed (TryPrepareMemorizeSpell); closing without it changes nothing.
+    // save can't grant a second swap. A click changes only this computer's screen session below, and the record is
+    // written on every computer together with the chosen spells when Prepare is pressed (TryPrepareMemorizeSpell);
+    // closing without it changes nothing.
     private static MemorizeSession _memorizeSession;
 
     private sealed class MemorizeSession(ulong conditionGuid, int amount, int spellIndex)
@@ -153,12 +153,12 @@ public static partial class Tabletop2024Context
         return _memorizeSession;
     }
 
-    // The spell in the swap record, the same on every computer and in every language. Upstream stored the spell's
+    // The spell in the swap record, the same on every computer and in every language. Older builds stored the spell's
     // position in SpellsContext.Spells, which is sorted by translated title, so a host in another language loading the
-    // save, or taking over the hero, read it as another spell (Codex's review of 44ff1ad9). This is an FNV-1a hash of
+    // save, or taking over the hero, would read it as another spell. This is an FNV-1a hash of
     // the spell's internal name, always at least 2^30, so a position saved by an older build (a few hundred at most)
     // never equals one. Such a record, still active in a save from before this build, blocks unselecting any spell,
-    // the swapped one included, until the next rest ends it (Codex's review of 69e7a8eb). It isn't translated: it's a
+    // the swapped one included, until the next rest ends it. It isn't translated: it's a
     // position in a list sorted in the language that saved it, which isn't known here.
     private static int SpellKey(SpellDefinition spell)
     {
@@ -208,7 +208,7 @@ public static partial class Tabletop2024Context
     // chosen spells and the swap record go to every computer in one command, MemorizeSpellPrepare, in place of the
     // game's PrepareSpells, so no computer can get one without the other. The screen closes as the game's own would,
     // once the command has run here; if it doesn't run, the screen stays open with nothing changed. A press that
-    // arrives late still applies, alike on every computer (user's choice, 2026-11-09: no undo or reconciliation).
+    // arrives late still applies, alike on every computer, with no undo or reconciliation.
     // False: not Memorize Spell mode.
     internal static bool TryPrepareMemorizeSpell(SpellRepertoirePanel panel)
     {
@@ -269,8 +269,8 @@ public static partial class Tabletop2024Context
             spells.Add(spell);
         }
 
-        // one swap at most, checked here too so no screen path can store more (a controller's Clear emptied the list
-        // without the swap check; Codex's review of 2d285453): at most one spell out of the prepared spells and one in.
+        // one swap at most, checked here too so no screen path can store more (a controller's Clear empties the list
+        // without the swap check): at most one spell out of the prepared spells and one in.
         // Alike on every computer, as the prepared spells are the same everywhere at this tick
         if (repertoire.PreparedSpells.Except(spells).Count() > 1 || spells.Except(repertoire.PreparedSpells).Count() > 1)
         {
@@ -350,7 +350,7 @@ public static partial class Tabletop2024Context
                 yield break;
             }
 
-            // the condition is added on every computer (it used to be added on the clicker's only, a desync); the
+            // the condition is added on every computer (added on the clicker's only, it would desync); the
             // preparation screen only opens once this computer has it too. A late Begin (TimedOut) adds the condition
             // everywhere at once, which is what a successful one does, so there's nothing to undo.
             var outcome = RestCommandContext.Outcome.Failed;

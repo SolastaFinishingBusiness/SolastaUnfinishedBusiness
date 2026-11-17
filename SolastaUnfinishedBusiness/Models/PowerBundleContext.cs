@@ -59,7 +59,7 @@ internal static class PowerBundleContext
     // The game's networked action sends the power as an index into the acting character's own powers, so it can only
     // carry a power that character has. Two kinds of rest power aren't: one another character uses (the Steel
     // Defender's), and one the hero doesn't own at all, which PowerProvider makes up for the moment (Identify after a
-    // rest); both would reach the other computers as no power (Codex's reviews of PR #28).
+    // rest); both would reach the other computers as no power.
     private static bool NeedsCommand(
         FeatureDefinitionPower power, RulesetCharacterHero ruleChar, RulesetUsablePower usablePower,
         GameLocationCharacter actor)
@@ -70,7 +70,7 @@ internal static class PowerBundleContext
     }
 
     // runs on every computer at the same tick (RestCommandContext): a rest power the networked action can't carry
-    // (NeedsCommand). Every computer starts the same action itself, as the clicker alone used to, on the character the
+    // (NeedsCommand). Every computer starts the same action itself, on the character the
     // clicker chose (by ID), and only if that is still the power's user here.
     private static bool UseCustomRestPowerEverywhere(RulesetCharacterHero ruleChar, string argument)
     {
@@ -106,7 +106,7 @@ internal static class PowerBundleContext
     }
 
     // runs on every computer at the same tick (RestCommandContext): a self power used from the rest screen while the
-    // hero isn't on a map (travelling). It used to run on the clicker's computer only, so only that game spent the use.
+    // hero isn't on a map (travelling). Run on the clicker's computer only, only that game would spend the use.
     private static bool UseCustomRestPowerTravelling(RulesetCharacterHero ruleChar, string powerName)
     {
         if (!TryGetCustomRestPower(powerName, out var power))

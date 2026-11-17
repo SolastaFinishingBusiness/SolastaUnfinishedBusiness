@@ -371,7 +371,7 @@ public static class CharacterActionSpendPowerPatcher
 
             //PATCH: a queued Eldritch Blast move whose creature was removed from play (issue #37): the handlers
             // below read each target's rules side, so they are given the targets without that creature. For any
-            // other power this is the same list as before.
+            // other power the list is unchanged.
             var finishedTargets = EldritchBlastMoveContext.FinishedTargets(__instance, targets);
 
             //PATCH: support for `IMagicEffectFinishedOnMe`

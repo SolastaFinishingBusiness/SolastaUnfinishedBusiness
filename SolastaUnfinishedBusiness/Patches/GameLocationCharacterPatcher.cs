@@ -380,9 +380,8 @@ public static class GameLocationCharacterPatcher
 
             // Characters sharing a cell at battle start (MULTIPLAYER) are left to the game's own unstack at initiative
             // (BattleState_Initiative.Begin), which reads only the grid and so gives the same cells on every computer.
-            // The mod used to move them to a "safe" cell here instead, which also asked each computer's own visibility
-            // service which cells enemies could see, so computers could disagree (desync issue 04; removed on the
-            // user's choice, 2026-11-09, PR #28).
+            // Moving them to a "safe" cell here would ask each computer's own visibility service which cells enemies
+            // can see, so computers could disagree (desync issue 04).
         }
     }
 
@@ -819,7 +818,7 @@ public static class GameLocationCharacterPatcher
 
         // Characters being refreshed by the RefreshAll below. If a handler or a forced category takes a wanted condition
         // away again, the check that refresh causes adds it again, and refreshing again would never end. No current light
-        // condition does this (Codex's review); the old code would have looped too. Such a nested check still corrects
+        // condition does this. Such a nested check still corrects
         // the condition but doesn't start another refresh.
         private static readonly HashSet<GameLocationCharacter> Refreshing = [];
 
@@ -875,8 +874,7 @@ public static class GameLocationCharacterPatcher
             // this personal-light check neither adds the condition nor keeps an old copy: one left in the light category
             // from a check made with the setting off is surplus and is removed below. With the setting off, the features
             // count as usual: the condition follows the hero's own illumination (a torch counts, an outdoor night
-            // doesn't), as in the original mod. This replaced the earlier "outdoors only" test here, which kept the
-            // personal-light rule and only dropped the condition in interior sectors.
+            // doesn't), as in the original mod.
             var daylightRuleOn = RacialSunlightSensitivity.Enabled;
             //END PATCH
 
@@ -931,7 +929,7 @@ public static class GameLocationCharacterPatcher
                 }
             }
 
-            // an effect that has already ended counts as gone and is replaced, as the old code's rebuild did
+            // an effect that has already ended counts as gone and is replaced, as a full rebuild would do
             var surplusEffects = new List<RulesetEffect>(__instance.affectingLightEffects);
             var effectsToAdd = new List<EnvironmentEffectDefinition>();
 

@@ -641,21 +641,19 @@ internal static class Level20Context
     //
 
     // Spell Mastery and Signature Spells reuse the spell preparation screen to pick their spells (kept in
-    // ExtraSpellsByTag). Upstream switched the hero's prepared spells to the picks before the screen opened and back
-    // after, on the clicker's computer only, while the screen's choice reached everyone through the game's PrepareSpells
-    // command, so the other computers were left with the picks as their prepared spells and no picks at all (found
-    // reading the code for desync issue 04).
+    // ExtraSpellsByTag). Switching the hero's prepared spells to the picks before the screen opens and back after, on
+    // the clicker's computer only, while the screen's choice reaches everyone through the game's PrepareSpells command,
+    // would leave the other computers with the picks as their prepared spells and no picks at all (desync issue 04).
     //
-    // Now nothing shared changes until Prepare (user's choice, 2026-11-09, simplifying an earlier begin/end design):
+    // So nothing shared changes until Prepare:
     // - the mode lives on the clicker's screen only (TaggedSpellPreparation.Mode): which hero and feature the screen is
     //   picking for, what IsPreparation and IsInvalidSelectedSpell read, and what fills the screen's list with the
     //   current picks (ShowPicks, after the game fills it from the prepared spells);
     // - Prepare sends one command with the chosen spells (TryPrepare, from the DoValidate prefix); on every computer
-    //   at the same tick it makes them the picks and takes them out of the prepared spells, upstream's rule. The
-    //   screen closes, as the game's own does, once the command has run here; closing it without Prepare changes
-    //   nothing, as upstream's end did then.
+    //   at the same tick it makes them the picks and takes them out of the prepared spells. The screen closes, as the
+    //   game's own does, once the command has run here; closing it without Prepare changes nothing.
     // While the screen is open, the clicker's game also gives the repertoire the mode's limit of 2 spells
-    // (MaxPreparedSpell), as upstream did on that computer alone.
+    // (MaxPreparedSpell), on that computer alone.
     internal static class TaggedSpellPreparation
     {
         // the wizard repertoire and feature the clicker's preparation screen is picking for, or null. It's the
@@ -764,7 +762,7 @@ internal static class Level20Context
         // hero's Wizard repertoire, the stored picks are still the ones the screen opened with, and every spell is
         // found. The second check stops a second Prepare pressed before the first came back: each press takes its
         // picks out of the prepared spells, so the first press's picks would stay out even if the second didn't keep
-        // them (Codex's review of 3d896da5). Only the first press of a screen can apply, alike on every computer.
+        // them. Only the first press of a screen can apply, alike on every computer.
         // spellcasting feature|stored picks when the screen opened|spell;spell...
         private static bool SetPicks(RulesetCharacterHero hero, string tag, string argument)
         {
@@ -802,7 +800,7 @@ internal static class Level20Context
             var picks = chosen.Except(repertoire.AutoPreparedSpells).ToList();
 
             // the feature's own limits, checked here too, so no screen path can store picks the screen wouldn't allow
-            // (a controller's Auto button reached the game's usual preparation; Codex's review of 06f6adbe): at most 2,
+            // (a controller's Auto button reaches the game's usual preparation): at most 2,
             // Spell Mastery levels 1 and 2, Signature Spells level 3. Alike on every computer
             if (picks.Count > 2 || picks.Any(x => tag == "SignatureSpells" ? x.SpellLevel != 3 : x.SpellLevel is not (1 or 2)))
             {

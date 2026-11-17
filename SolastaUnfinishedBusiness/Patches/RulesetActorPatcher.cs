@@ -958,8 +958,8 @@ public static class RulesetActorPatcher
             //PATCH: add `IDamageAffinityProvider` from dynamic item properties
             //fixes game not applying damage reductions from dynamic item properties
             //used for Inventor's Resistant Armor infusions
-            // Collected before the hooks below run (#44, Codex's review of PR #60): added afterwards, a resistance
-            // from an infusion could never be removed by them, so for example Elemental Adept's fire spells were
+            // Collected before the hooks below run (#44): added afterwards, a resistance
+            // from an infusion could never be removed by them, so for example Elemental Adept's fire spells would be
             // still halved by a target's fire-resistant armour infusion.
             if (actor is RulesetCharacterHero hero)
             {

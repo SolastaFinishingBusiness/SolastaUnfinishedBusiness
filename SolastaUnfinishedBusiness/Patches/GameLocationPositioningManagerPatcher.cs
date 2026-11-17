@@ -52,7 +52,7 @@ public static class GameLocationPositioningManagerPatcher
     // trap volumes, sight, the AI) and the footing check that starts a fall. While a pushed creature is stepped through
     // the cells between its start and its landing cell, only the first half must run (the occupant lists and the
     // creature's cell); the areas are then worked out by a direct call. Everything else happens once, for the landing
-    // cell, as before. The flag is only raised around those CharacterMoved calls.
+    // cell, as the game does. The flag is only raised around those CharacterMoved calls.
     [HarmonyPatch(typeof(GameLocationPositioningManager), nameof(GameLocationPositioningManager.FinalizeNewPosition))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
