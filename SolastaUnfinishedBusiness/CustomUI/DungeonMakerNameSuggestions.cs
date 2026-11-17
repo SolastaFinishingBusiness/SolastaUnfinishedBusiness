@@ -70,6 +70,10 @@ internal static class DungeonMakerNameSuggestions
     // the frame in which Escape closed the list (HandleKey), or -1
     private static int _escapeFrame = -1;
 
+    // the frame in which Enter or Tab picked a name, and the field it went into (HandleKey)
+    private static int _pickedFrame = -1;
+    private static TMP_InputField _pickedField;
+
     // The game also turns Escape into its Cancel command, which reaches the editor on another path than the text
     // field's key event: the location editor answers it by deselecting the selected gadget, whether a text field has
     // the focus or not. Escape belongs to the list while it is open, so the editors leave Cancel alone then, and in
@@ -201,6 +205,16 @@ internal static class DungeonMakerNameSuggestions
     // The location editor's value field is multi-line, so multi-line fields are handled too.
     internal static bool HandleKey(TMP_InputField field, Event key)
     {
+        // Unity sends a pressed Enter or Tab as two key-down events in the same frame: the key itself, then one with
+        // no key code that carries its character ('\n' or '\t'). The first picks the name and closes the list, so
+        // the second would reach the field with the list closed and put a new line or a tab after the name in a
+        // multi-line field (a single-line one drops both). It is taken here too.
+        if (key is { keyCode: KeyCode.None, character: '\n' or '\r' or '\t' } &&
+            _pickedFrame == Time.frameCount && ReferenceEquals(_pickedField, field))
+        {
+            return true;
+        }
+
         if (!IsOpen || key == null || !ReferenceEquals(_owner.Field, field) || Names.Count == 0)
         {
             return false;
@@ -219,6 +233,8 @@ internal static class DungeonMakerNameSuggestions
 
                 return true;
             case KeyCode.Return or KeyCode.KeypadEnter or KeyCode.Tab when _selected >= 0:
+                _pickedFrame = Time.frameCount;
+                _pickedField = field;
                 Apply(_selected);
 
                 return true;
