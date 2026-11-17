@@ -128,6 +128,9 @@ public static class GameLocationManagerPatcher
             //fixes Inventor's Infusions sometimes breaking and lingering forever without ability to remove them
             TrackItemsCarefully.FixDynamicPropertiesWithoutEffect();
 
+            //PATCH: Dungeon Maker campaign commands: take up what the campaign's variables ask for in this location
+            DungeonMakerCommandsContext.OnLocationReady();
+
             //PATCH: HideExitsAndTeleportersGizmosIfNotDiscovered
             if (!Main.Settings.HideExitsAndTeleportersGizmosIfNotDiscovered || Gui.GameLocation.UserLocation == null)
             {

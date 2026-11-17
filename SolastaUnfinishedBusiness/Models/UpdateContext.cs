@@ -265,7 +265,8 @@ internal static class UpdateContext
     // commit just after the release), so its builds sort above every release before them. Before 1.18.0 develop kept
     // the last release's number and the mark was ignored; such "1.17.0-dev" builds now read as older than 1.17.0.
     // Two marked builds with the same numbers compare equal: the mark holds a commit, which has no order
-    private static int CompareVersions(string left, string right)
+    // internal: the Dungeon Maker campaign stamp (DungeonMakerStampContext) orders versions the same way
+    internal static int CompareVersions(string left, string right)
     {
         var a = WithoutMark(left).Split('.');
         var b = WithoutMark(right).Split('.');

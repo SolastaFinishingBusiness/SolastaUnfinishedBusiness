@@ -1,4 +1,106 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ Tira Percepción para advertir objetivos no percibidos a 10 casillas o menos</i>
+ModUi/&DungeonMakerCategories=Categorías
+ModUi/&DungeonMakerCategoryArmorClass=Clase de armadura
+ModUi/&DungeonMakerCategoryAuthor=Autor
+ModUi/&DungeonMakerCategoryAutoStart=Inicio automático
+ModUi/&DungeonMakerCategoryBaseCreature=Criatura base
+ModUi/&DungeonMakerCategoryBaseItem=Objeto base
+ModUi/&DungeonMakerCategoryBuyback=Recompra %
+ModUi/&DungeonMakerCategoryCampaignStart=Inicio de campaña
+ModUi/&DungeonMakerCategoryChallengeRating=Valor de desafío
+ModUi/&DungeonMakerCategoryCharisma=Carisma
+ModUi/&DungeonMakerCategoryConstitution=Constitución
+ModUi/&DungeonMakerCategoryCost=Coste
+ModUi/&DungeonMakerCategoryCurrentValue=Valor actual
+ModUi/&DungeonMakerCategoryDexterity=Destreza
+ModUi/&DungeonMakerCategoryDialogStates=Estados
+ModUi/&DungeonMakerCategoryEncounterTable=Tabla de encuentros
+ModUi/&DungeonMakerCategoryEntries=Entradas
+ModUi/&DungeonMakerCategoryEnvironment=Entorno
+ModUi/&DungeonMakerCategoryHitPoints=Puntos de golpe
+ModUi/&DungeonMakerCategoryIdentifyFee=Tarifa de identificación
+ModUi/&DungeonMakerCategoryIntelligence=Inteligencia
+ModUi/&DungeonMakerCategoryLabel={0}:
+ModUi/&DungeonMakerCategoryLanguage=Idioma
+ModUi/&DungeonMakerCategoryMapSize=Tamaño del mapa
+ModUi/&DungeonMakerCategoryMarkup=Recargo %
+ModUi/&DungeonMakerCategoryMaxStartLevel=Nivel inicial máx.
+ModUi/&DungeonMakerCategoryMinStartLevel=Nivel inicial mín.
+ModUi/&DungeonMakerCategoryMonsterCount=Entradas de monstruos
+ModUi/&DungeonMakerCategoryNo=No
+ModUi/&DungeonMakerCategoryNoList=Ninguna lista abierta
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=Categoría
+ModUi/&DungeonMakerCategoryScope=Ámbito
+ModUi/&DungeonMakerCategoryStartingValue=Valor inicial
+ModUi/&DungeonMakerCategoryStepCount=Pasos
+ModUi/&DungeonMakerCategoryStockEntries=Entradas de existencias
+ModUi/&DungeonMakerCategoryStrength=Fuerza
+ModUi/&DungeonMakerCategoryTerrain=Terreno
+ModUi/&DungeonMakerCategoryVariableType=Tipo
+ModUi/&DungeonMakerCategoryVariables=Variables
+ModUi/&DungeonMakerCategoryVisualMood=Ambiente visual
+ModUi/&DungeonMakerCategoryWisdom=Sabiduría
+ModUi/&DungeonMakerCategoryYes=Sí
+ModUi/&DungeonMakerNameValue={0}: {1}
+ModUi/&DungeonMakerCommandsPopupTitle=Comandos de campaña de %ModName%
+ModUi/&DungeonMakerCommandsPopupIntro=Las variables de campaña con estos nombres hacen algo. Crea la variable y escríbela o léela con tus artilugios, diálogos y misiones.
+ModUi/&DungeonMakerCommandsLegendBlue=Azul: hace algo cuando tu campaña la escribe.
+ModUi/&DungeonMakerCommandsLegendRed=Rojo: la escribe el mod. Un valor que guardes ahí se sobrescribe.
+ModUi/&DungeonMakerCommandsGroupCommands=Comandos
+ModUi/&DungeonMakerCommandsGroupRequests=Peticiones e interruptores
+ModUi/&DungeonMakerCommandsGroupReadouts=Lecturas y contadores
+ModUi/&DungeonMakerCommandsGroupStatuses=Estados
+ModUi/&DungeonMakerCommandsGroupOwn=Propias del mod
+ModUi/&DungeonMakerCommandsPopupGuide=La guía completa: Mod UI > Dungeon Maker > Comandos de campaña (Documentation/DungeonMakerCommands.md en la carpeta del mod).
+ModUi/&DungeonMakerCommandsPopupClose=Cerrar
+ModUi/&DungeonMakerCommandsPopupHide=Ocultar a partir de ahora
+ModUi/&DungeonMakerCommandsMenuButton=Comandos de campaña
+ModUi/&DungeonMakerCommandsMenuShowPopup=Mostrar la lista de comandos de campaña al abrir por primera vez un editor de ubicación, diálogo o misión <i><color=#F0DAA0>[una vez cada vez que se inicia el juego; el botón ? de los editores la abre en cualquier momento]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=Mostrar pistas sobre los comandos de campaña <i><color=#F0DAA0>[qué hace una variable de comando, al escribir el nombre de una variable o al señalar una en una lista]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=Mostrar avisos de error de los comandos de campaña <i><color=#F0DAA0>[un aviso cuando el valor de un comando no nombra nada de la campaña, así que el comando no haría nada]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=Mostrar la lista de nombres de gadgets sugeridos al escribir el valor de un comando
+ModUi/&DungeonMakerHintDialogTrigger=Comando de %ModName%. String: escribe aquí el nombre de un PNJ u objeto para iniciar su diálogo, como si un miembro del grupo hubiera hecho clic en él. Después el mod la vacía.
+ModUi/&DungeonMakerHintRollTrigger=Comando de %ModName%. String: escribe aquí el nombre de un Activador de tirada, y el personaje que desencadenó este flujo hace su prueba, como si lo hubiera usado. Después el mod la vacía.
+ModUi/&DungeonMakerHintTeleportNode=Comando de %ModName%. String: escribe aquí el nombre de un gadget (normalmente un Node) para teletransportar a su lado al personaje que desencadenó este flujo. Después el mod la vacía.
+ModUi/&DungeonMakerHintTeleportPartyNode=Comando de %ModName%. String: escribe aquí el nombre de un gadget (normalmente un Node) para teletransportar a su lado a todo el grupo, invitados incluidos. Después el mod la vacía.
+ModUi/&DungeonMakerHintListGadgets=Herramienta de %ModName%. Int: 1 lista en el registro del mod los gadgets interactivos de esta ubicación, 2 todos los gadgets con sus condiciones (para encontrar nombres de Nodes y antorchas). El mod la devuelve a 0.
+ModUi/&DungeonMakerHintTorchesLit=Control de antorchas de %ModName%. Int: 1 enciende todas las antorchas de esta ubicación, 2 las apaga todas, 0 no hace nada.
+ModUi/&DungeonMakerHintTorchesAuto=Control de antorchas de %ModName%. Int o Bool: mientras está activa (1), las antorchas de los mapas exteriores se encienden de 18:00 a 08:00 y se apagan de día.
+ModUi/&DungeonMakerHintTorchOne=Control de antorchas de %ModName%. Int llamada Torch_ seguida del nombre de gadget de una antorcha: 1 enciende esa antorcha, 2 la apaga. Tiene prioridad sobre Torches_Lit y Torches_Auto.
+ModUi/&DungeonMakerHintClockSkipBy=Comando de reloj de %ModName%. Int: escribe un número de 1 a {0} para adelantar el reloj del juego esa cantidad de {1} de una vez. El mod la devuelve a 0. No durante un combate.
+ModUi/&DungeonMakerHintClockSkipToDay=Comando de reloj de %ModName%. Int: escribe un número de día (contado como Clock_CampaignDay, de 1 a 180 días por delante) para llevar el reloj a las 00:00 de ese día, o a la hora de Clock_SkipToHour si se escribe a la vez. No durante un combate.
+ModUi/&DungeonMakerHintClockSkipToHour=Comando de reloj de %ModName%. Int: escribe una hora de 1 a 23 para llevar el reloj a esa hora (hoy, o mañana si ya ha pasado); 24 es la próxima medianoche. No durante un combate.
+ModUi/&DungeonMakerHintClockCount=Interruptor de reloj de %ModName%. Int: ponlo a 1 y el mod suma 1 a {0} por cada {1} de juego que pasa. Ponlo a 0 para dejar de contar.
+ModUi/&DungeonMakerHintClockCounter=Contador de reloj de %ModName%. Int: mientras {0} vale 1, el mod suma 1 aquí por cada {1} de juego que pasa, pase como pase. Devuélvelo tú a 0 para empezar de nuevo.
+ModUi/&DungeonMakerHintClockReadout=Lectura de reloj de %ModName%. Int: el mod la mantiene en {0}. Léela, no la escribas.
+ModUi/&DungeonMakerClockHoldsHour=la hora actual (0–23)
+ModUi/&DungeonMakerClockHoldsMinute=el minuto actual (0–59)
+ModUi/&DungeonMakerClockHoldsDay=el número de día que muestra el diario (el día 1 es el primero)
+ModUi/&DungeonMakerClockHoldsDayOfMonth=el día del mes (0–29)
+ModUi/&DungeonMakerClockHoldsMonth=el mes (0–11)
+ModUi/&DungeonMakerClockHoldsYear=el año
+ModUi/&DungeonMakerClockHoldsCampaignDay=los días desde el inicio de la campaña (1 el primer día)
+ModUi/&DungeonMakerClockUnitMinute=minuto
+ModUi/&DungeonMakerClockUnitHour=hora
+ModUi/&DungeonMakerClockUnitDay=día
+ModUi/&DungeonMakerClockUnitHours=horas
+ModUi/&DungeonMakerClockUnitDays=días
+ModUi/&DungeonMakerHintStatus=Estado de {0}, escrito por %ModName% (String): Pending (en espera), Running, Succeeded, Failed o Cancelled. Léelo, no lo escribas.
+ModUi/&DungeonMakerHintInternal=%ModName% guarda sus propios datos con este nombre (un salto de tiempo en curso o comandos guardados). No la crees ni la escribas; elige otro nombre.
+ModUi/&DungeonMakerHintWrittenAs=Esta campaña escribe en {0}, así que el mod no la toca y escribe en {1} en su lugar.
+ModUi/&DungeonMakerHintNoGadgetLocation=Nada en esta ubicación se llama '{0}'. {1} no haría nada.
+ModUi/&DungeonMakerHintNoGadgetCampaign=Nada en esta campaña se llama '{0}'. {1} no haría nada.
+ModUi/&DungeonMakerHintClosest=Nombres más parecidos: {0}
+ModUi/&DungeonMakerSearch=Buscar...
+ModUi/&DungeonMakerSearchClear=Borrar
+ModUi/&DungeonMakerSortAscending=Ascendente
+ModUi/&DungeonMakerSortDefault=Predeterminado
+ModUi/&DungeonMakerSortDescending=Descendente
+ModUi/&DungeonMakerSortLabel=Orden:
+ModUi/&DungeonMakerSortName=Nombre
+ModUi/&DungeonMakerSortTitle=Título
+ModUi/&DungeonMakerSortType=Tipo
 ModUi/&SyncAiPerceptionChecks=La IA espera hasta 3 segundos tiradas de Percepción compartidas antes de decidir qué hacer; las que aún falten se tiran en el ordenador que la ejecuta <i><color=#F0DAA0>[con la opción de Reglas que tira Percepción para objetivos no percibidos; desactivado: la IA las tira en el equipo que la ejecuta, como antes, y las desincronizaciones son muy probables salvo que todos los jugadores tengan igual la opción del juego Juego > Como se Juega > Conservar semilla aleatoria (y aun así posibles); solo partidas multijugador]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=Habilitar golpes y fallas críticas cuando la diferencia entre el resultado de AC y la tirada de ataque modificado es 10 o más
 ModUI/&EnableDamageOnFailedJumpCheck=Aplica 1d4 de daño en las verificaciones de salto fallidas
@@ -257,7 +359,6 @@ ModUi/&EnableSorcererMetamagic2024=Habilitar <color=#D89555>Metamagia</color> en
 ModUi/&EnableSorcererOrigin2024=Habilitar <color=#D89555>Origins</color> en el nivel 3 en lugar de 1
 ModUi/&EnableSorcererQuickenedAction=Habilitar la acción <color=#D89555>Hechizo acelerado</color> para permitir lanzar un hechizo de acción principal con metamagia acelerada aplicada
 ModUi/&EnableSorcererSorcerousRestoration2024=Habilitar <color=#D89555>Restauración hechicera</color> en el nivel 5
-ModUi/&EnableSortingDungeonMakerAssets=Habilitar la clasificación de activos en el editor de Dungeon Maker
 ModUi/&EnableSpeech=Habilitar el habla en campañas personalizadas <i><color=#F0DAA0>[solo narración y héroes]</color></i>
 ModUi/&EnableSpeechActorHelp=• Seleccione un actor
 ModUi/&EnableSpeechOnNpcs=<i>+ Habilitar el habla en los NPC <color=#F0DAA0>[ya sea desde el mapeo de campaña o la asignación automática]</color></i>
@@ -599,3 +700,14 @@ ModUi/&SearchClear=Borrar
 ModUi/&SearchNoResults=Ningún ajuste coincide con "{0}".
 ModUi/&SearchSettings=Buscar ajustes:
 ModUi/&WarnBeforeCrafting=Avisar al empezar a fabricar de que los ingredientes se gastan al instante y de que las tiradas de fabricación pueden fallar <i><color=#F0DAA0>[también enumera las armas o armaduras normales usadas en lugar de las preparadas]</color></i>
+ModUi/&HideCancellingWeaponDamageBonuses=Ocultar las bonificaciones de daño de las armas que se anulan entre sí <i><color=#F0DAA0>[mantén Alt para verlas]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Herramientas de búsqueda y orden en las pantallas del Dungeon Maker:</color>
+ModUi/&DungeonMakerListToolsEditor=Editor de campañas
+ModUi/&DungeonMakerListToolsPicker=Selector de variables
+ModUi/&DungeonMakerListToolsCheats=Trucos > Variables de campaña
+ModUi/&DungeonMakerListToolsPalettes=Paletas del editor de ubicaciones (artilugios, accesorios, salas)
+ModUi/&DungeonMakerListToolsSearch=Búsqueda
+ModUi/&DungeonMakerListToolsPageSort=Orden de la página (Ordenar: y su flecha de dirección)
+ModUi/&DungeonMakerListToolsCategoryOrder=Orden de categorías (el orden de las categorías: Predeterminado o A-Z)
+ModUi/&DungeonMakerListToolsListSort=Orden específico de cada categoría (cada lista tiene su propio orden, con sus valores en una ventana emergente si la fila no los muestra)
+ModUi/&DungeonMakerListToolsSort=Orden (Ordenar: con las claves propias de la lista, y su flecha de dirección; valores en una ventana emergente si la fila no los muestra)

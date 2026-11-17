@@ -415,6 +415,14 @@ internal static class CampaignsDisplay
             Main.Settings.EnableDistanceOnTooltip = toggle;
         }
 
+        // any weapon's damage breakdown (issue #42), so here with the other tooltip settings rather than under
+        // Dungeon Maker, although in practice only Dungeon Maker weapons have such a pair
+        toggle = Main.Settings.HideCancellingWeaponDamageBonuses;
+        if (UI.Toggle(Gui.Localize("ModUi/&HideCancellingWeaponDamageBonuses"), ref toggle))
+        {
+            Main.Settings.HideCancellingWeaponDamageBonuses = toggle;
+        }
+
         toggle = Main.Settings.ShowMotionFormPreview;
         if (UI.Toggle(Gui.Localize("ModUi/&ShowMotionFormPreview"), ref toggle, UI.AutoWidth()))
         {

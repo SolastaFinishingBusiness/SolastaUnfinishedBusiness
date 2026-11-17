@@ -1,4 +1,106 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 인지되지 않은 10칸 이내의 대상을 알아차리기 위해 지각 판정을 굴림</i>
+ModUi/&DungeonMakerCategories=분류
+ModUi/&DungeonMakerCategoryArmorClass=방어도
+ModUi/&DungeonMakerCategoryAuthor=제작자
+ModUi/&DungeonMakerCategoryAutoStart=자동 시작
+ModUi/&DungeonMakerCategoryBaseCreature=기본 생물
+ModUi/&DungeonMakerCategoryBaseItem=기본 아이템
+ModUi/&DungeonMakerCategoryBuyback=매입률 %
+ModUi/&DungeonMakerCategoryCampaignStart=캠페인 시작
+ModUi/&DungeonMakerCategoryChallengeRating=도전 등급
+ModUi/&DungeonMakerCategoryCharisma=매력
+ModUi/&DungeonMakerCategoryConstitution=건강
+ModUi/&DungeonMakerCategoryCost=가격
+ModUi/&DungeonMakerCategoryCurrentValue=현재 값
+ModUi/&DungeonMakerCategoryDexterity=민첩
+ModUi/&DungeonMakerCategoryDialogStates=상태 수
+ModUi/&DungeonMakerCategoryEncounterTable=조우 표
+ModUi/&DungeonMakerCategoryEntries=항목 수
+ModUi/&DungeonMakerCategoryEnvironment=환경
+ModUi/&DungeonMakerCategoryHitPoints=생명력
+ModUi/&DungeonMakerCategoryIdentifyFee=감정 비용
+ModUi/&DungeonMakerCategoryIntelligence=지능
+ModUi/&DungeonMakerCategoryLabel={0}:
+ModUi/&DungeonMakerCategoryLanguage=언어
+ModUi/&DungeonMakerCategoryMapSize=지도 크기
+ModUi/&DungeonMakerCategoryMarkup=가산율 %
+ModUi/&DungeonMakerCategoryMaxStartLevel=최대 시작 레벨
+ModUi/&DungeonMakerCategoryMinStartLevel=최소 시작 레벨
+ModUi/&DungeonMakerCategoryMonsterCount=괴물 항목 수
+ModUi/&DungeonMakerCategoryNo=아니요
+ModUi/&DungeonMakerCategoryNoList=열린 목록 없음
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=분류
+ModUi/&DungeonMakerCategoryScope=범위
+ModUi/&DungeonMakerCategoryStartingValue=시작 값
+ModUi/&DungeonMakerCategoryStepCount=단계 수
+ModUi/&DungeonMakerCategoryStockEntries=재고 항목 수
+ModUi/&DungeonMakerCategoryStrength=근력
+ModUi/&DungeonMakerCategoryTerrain=지형
+ModUi/&DungeonMakerCategoryVariableType=유형
+ModUi/&DungeonMakerCategoryVariables=변수
+ModUi/&DungeonMakerCategoryVisualMood=시각 분위기
+ModUi/&DungeonMakerCategoryWisdom=지혜
+ModUi/&DungeonMakerCategoryYes=예
+ModUi/&DungeonMakerNameValue={0}: {1}
+ModUi/&DungeonMakerCommandsPopupTitle=%ModName% 캠페인 명령
+ModUi/&DungeonMakerCommandsPopupIntro=이 이름의 캠페인 변수는 기능이 있습니다. 변수를 만든 뒤 가젯, 대화, 퀘스트에서 쓰거나 읽으세요.
+ModUi/&DungeonMakerCommandsLegendBlue=파랑: 캠페인이 쓰면 기능이 작동합니다.
+ModUi/&DungeonMakerCommandsLegendRed=빨강: 모드가 씁니다. 여기에 둔 값은 덮어씌워집니다.
+ModUi/&DungeonMakerCommandsGroupCommands=명령
+ModUi/&DungeonMakerCommandsGroupRequests=요청과 스위치
+ModUi/&DungeonMakerCommandsGroupReadouts=표시와 카운터
+ModUi/&DungeonMakerCommandsGroupStatuses=상태
+ModUi/&DungeonMakerCommandsGroupOwn=모드 자체 변수
+ModUi/&DungeonMakerCommandsPopupGuide=전체 안내서: Mod UI > Dungeon Maker > 캠페인 명령 (모드 폴더의 Documentation/DungeonMakerCommands.md).
+ModUi/&DungeonMakerCommandsPopupClose=닫기
+ModUi/&DungeonMakerCommandsPopupHide=앞으로 숨기기
+ModUi/&DungeonMakerCommandsMenuButton=캠페인 명령
+ModUi/&DungeonMakerCommandsMenuShowPopup=장소, 대화 또는 퀘스트 편집기를 처음 열 때 캠페인 명령 목록 표시 <i><color=#F0DAA0>[게임을 시작할 때마다 한 번; 편집기의 ? 버튼으로 언제든지 열 수 있음]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=캠페인 명령 힌트 표시 <i><color=#F0DAA0>[명령 변수가 하는 일. 변수 이름을 입력하거나 목록에서 변수를 가리킬 때 표시]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=캠페인 명령 오류 힌트 표시 <i><color=#F0DAA0>[명령의 값이 캠페인의 어떤 것도 가리키지 않아 명령이 아무것도 하지 않을 때의 경고]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=명령 값을 입력할 때 제안되는 가젯 이름 목록 표시
+ModUi/&DungeonMakerHintDialogTrigger=%ModName%의 명령. String: NPC나 오브젝트의 이름을 쓰면 파티원이 클릭한 것처럼 그 대화가 시작됩니다. 그 후 모드가 비웁니다.
+ModUi/&DungeonMakerHintRollTrigger=%ModName%의 명령. String: 굴림 활성기의 이름을 쓰면 이 흐름을 일으킨 캐릭터가 그것을 사용한 것처럼 판정을 굴립니다. 그 후 모드가 비웁니다.
+ModUi/&DungeonMakerHintTeleportNode=%ModName%의 명령. String: 가젯(보통 Node)의 이름을 쓰면 이 흐름을 일으킨 캐릭터가 그 옆으로 순간이동합니다. 그 후 모드가 비웁니다.
+ModUi/&DungeonMakerHintTeleportPartyNode=%ModName%의 명령. String: 가젯(보통 Node)의 이름을 쓰면 손님을 포함한 파티 전체가 그 옆으로 순간이동합니다. 그 후 모드가 비웁니다.
+ModUi/&DungeonMakerHintListGadgets=%ModName%의 도구. Int: 1이면 이 장소의 상호작용 가젯을, 2이면 모든 가젯을 조건과 함께 모드 로그에 나열합니다(Node와 횃불 이름을 찾기 위해). 모드가 0으로 되돌립니다.
+ModUi/&DungeonMakerHintTorchesLit=%ModName%의 횃불 제어. Int: 1은 이 장소의 모든 횃불을 켜고, 2는 모두 끄며, 0은 아무것도 하지 않습니다.
+ModUi/&DungeonMakerHintTorchesAuto=%ModName%의 횃불 제어. Int 또는 Bool: 켜져 있는(1) 동안 야외 지도의 횃불이 18:00부터 08:00까지 켜지고 낮에는 꺼집니다.
+ModUi/&DungeonMakerHintTorchOne=%ModName%의 횃불 제어. Torch_ 뒤에 횃불의 가젯 이름을 붙인 Int: 1은 그 횃불을 켜고 2는 끕니다. Torches_Lit와 Torches_Auto보다 우선합니다.
+ModUi/&DungeonMakerHintClockSkipBy=%ModName%의 시계 명령. Int: 1부터 {0}까지의 수를 쓰면 게임 시계를 그만큼의 {1} 한 번에 앞으로 돌립니다. 모드가 0으로 되돌립니다. 전투 중에는 불가.
+ModUi/&DungeonMakerHintClockSkipToDay=%ModName%의 시계 명령. Int: 날짜 번호(Clock_CampaignDay처럼 셈, 1~180일 뒤)를 쓰면 시계를 그날 00:00으로, Clock_SkipToHour도 함께 쓰면 그 시각으로 돌립니다. 전투 중에는 불가.
+ModUi/&DungeonMakerHintClockSkipToHour=%ModName%의 시계 명령. Int: 1~23의 시각을 쓰면 시계를 그 시각(오늘, 지났으면 내일)으로 돌립니다. 24는 다음 자정입니다. 전투 중에는 불가.
+ModUi/&DungeonMakerHintClockCount=%ModName%의 시계 스위치. Int: 1로 하면 게임 시간이 1{1} 지날 때마다 모드가 {0}에 1을 더합니다. 0으로 하면 세기를 멈춥니다.
+ModUi/&DungeonMakerHintClockCounter=%ModName%의 시계 카운터. Int: {0}이(가) 1인 동안 시간이 어떻게 지나든 게임 시간이 1{1} 지날 때마다 모드가 여기에 1을 더합니다. 다시 세려면 직접 0으로 되돌리세요.
+ModUi/&DungeonMakerHintClockReadout=%ModName%의 시계 표시값. Int: 모드가 항상 {0}(으)로 유지합니다. 읽기만 하고 쓰지 마세요.
+ModUi/&DungeonMakerClockHoldsHour=현재 시(0~23)
+ModUi/&DungeonMakerClockHoldsMinute=현재 분(0~59)
+ModUi/&DungeonMakerClockHoldsDay=일지에 표시되는 날짜 번호(첫날이 1일)
+ModUi/&DungeonMakerClockHoldsDayOfMonth=그 달의 날짜(0~29)
+ModUi/&DungeonMakerClockHoldsMonth=월(0~11)
+ModUi/&DungeonMakerClockHoldsYear=연도
+ModUi/&DungeonMakerClockHoldsCampaignDay=캠페인 시작 후 지난 일수(첫날이 1)
+ModUi/&DungeonMakerClockUnitMinute=분
+ModUi/&DungeonMakerClockUnitHour=시간
+ModUi/&DungeonMakerClockUnitDay=일
+ModUi/&DungeonMakerClockUnitHours=시간
+ModUi/&DungeonMakerClockUnitDays=일
+ModUi/&DungeonMakerHintStatus={0}의 상태. %ModName%이(가) 씁니다(String): Pending(대기 중), Running, Succeeded, Failed 또는 Cancelled. 읽기만 하고 쓰지 마세요.
+ModUi/&DungeonMakerHintInternal=%ModName%은(는) 이 이름으로 자체 데이터(진행 중인 시간 건너뛰기나 저장된 명령)를 보관합니다. 만들거나 쓰지 말고 다른 이름을 고르세요.
+ModUi/&DungeonMakerHintWrittenAs=이 캠페인이 {0}에 직접 쓰므로, 모드는 그것을 건드리지 않고 대신 {1}에 씁니다.
+ModUi/&DungeonMakerHintNoGadgetLocation=이 장소에는 '{0}'(이)라는 이름이 없습니다. {1}은(는) 아무 일도 하지 않습니다.
+ModUi/&DungeonMakerHintNoGadgetCampaign=이 캠페인에는 '{0}'(이)라는 이름이 없습니다. {1}은(는) 아무 일도 하지 않습니다.
+ModUi/&DungeonMakerHintClosest=가장 비슷한 이름: {0}
+ModUi/&DungeonMakerSearch=검색...
+ModUi/&DungeonMakerSearchClear=지우기
+ModUi/&DungeonMakerSortAscending=오름차순
+ModUi/&DungeonMakerSortDefault=기본
+ModUi/&DungeonMakerSortDescending=내림차순
+ModUi/&DungeonMakerSortLabel=정렬:
+ModUi/&DungeonMakerSortName=이름
+ModUi/&DungeonMakerSortTitle=제목
+ModUi/&DungeonMakerSortType=유형
 ModUi/&SyncAiPerceptionChecks=AI가 행동을 정하기 전에 공유된 지각 판정을 최대 3초 기다리고, 그때까지 없는 판정은 AI를 실행하는 컴퓨터에서 굴림 <i><color=#F0DAA0>[인지되지 않은 대상에게 지각 판정을 굴리는 규칙 옵션이 켜져 있을 때; 끄면: 이전처럼 AI를 실행하는 컴퓨터에서 판정하며, 모든 플레이어가 게임의 '게임 > 게임플레이 > 난수 시드 보존' 옵션을 같게 설정하지 않으면 비동기화가 일어날 가능성이 매우 높음 (같아도 일어날 수 있음); 멀티플레이 전용]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=AC와 수정 된 공격 롤 결과의 차이가 10 이상인 경우 임계 적중 및 누락을 활성화합니다.
 ModUI/&EnableDamageOnFailedJumpCheck=실패한 점프 점검에 1d4 피해를 적용합니다
@@ -257,7 +359,6 @@ ModUi/&EnableSorcererMetamagic2024=<color=#D89555>메타매직</color>을 3레�
 ModUi/&EnableSorcererOrigin2024=레벨 1 대신 레벨 3에서 <color=#D89555>Origins</color> 활성화
 ModUi/&EnableSorcererQuickenedAction=<color=#D89555>빠른 주문</color> 동작을 활성화하여 빠른 메타매직이 적용된 주요 동작 주문을 시전할 수 있습니다.
 ModUi/&EnableSorcererSorcerousRestoration2024=레벨 5에서 <color=#D89555>마법 회복</color>을 활성화합니다.
-ModUi/&EnableSortingDungeonMakerAssets=Dungeon Maker 편집기에서 자산 정렬 활성화
 ModUi/&EnableSpeech=사용자 정의 캠페인에서 음성 활성화 <i><color=#F0DAA0>[내레이션 및 영웅만]</color></i>
 ModUi/&EnableSpeechActorHelp=• 배우를 선택하세요
 ModUi/&EnableSpeechOnNpcs=<i>+ NPC의 음성 활성화 <color=#F0DAA0>[캠페인 매핑 또는 자동 할당에서]</color></i>
@@ -599,3 +700,14 @@ ModUi/&SearchClear=지우기
 ModUi/&SearchNoResults="{0}"와(과) 일치하는 설정이 없습니다.
 ModUi/&SearchSettings=설정 검색:
 ModUi/&WarnBeforeCrafting=제작 시작 시 재료가 즉시 소모되고 제작 판정이 실패할 수 있음을 경고 <i><color=#F0DAA0>[준비된 아이템 대신 쓰이는 일반 무기나 방어구도 표시]</color></i>
+ModUi/&HideCancellingWeaponDamageBonuses=서로 상쇄되는 무기 피해 보너스 숨기기 <i><color=#F0DAA0>[Alt를 누르고 있으면 표시]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>던전 메이커 화면의 검색 및 정렬 도구:</color>
+ModUi/&DungeonMakerListToolsEditor=캠페인 편집기
+ModUi/&DungeonMakerListToolsPicker=변수 선택기
+ModUi/&DungeonMakerListToolsCheats=치트 > 캠페인 변수
+ModUi/&DungeonMakerListToolsPalettes=장소 편집기 팔레트 (장치, 소품, 방)
+ModUi/&DungeonMakerListToolsSearch=검색
+ModUi/&DungeonMakerListToolsPageSort=페이지 정렬 (정렬: 및 방향 화살표)
+ModUi/&DungeonMakerListToolsCategoryOrder=카테고리 정렬 (카테고리 순서: 기본 또는 A-Z)
+ModUi/&DungeonMakerListToolsListSort=카테고리별 정렬 (각 목록마다 자체 정렬이 있으며, 행에 원래 없는 값은 팝업으로 표시)
+ModUi/&DungeonMakerListToolsSort=정렬 (목록 고유 항목을 포함한 정렬: 및 방향 화살표; 행에 원래 없는 값은 팝업으로 표시)

@@ -382,7 +382,62 @@ public class Settings : UnityModManager.ModSettings
     //
 
     public bool EnableLoggingInvalidReferencesInUserCampaigns { get; set; }
-    public bool EnableSortingDungeonMakerAssets { get; set; }
+
+    // How the Dungeon Maker editor's content lists, the variable picker and the campaign variables cheat panel are
+    // shown (CustomUI/DungeonMakerListTools.cs): 0 the campaign's own order, 1 by name, 2 by title or type; and
+    // whether that order is reversed. Set with the bar on those screens. Only what is shown changes, never the
+    // campaign's lists.
+    public int DungeonMakerListSort { get; set; }
+    public bool DungeonMakerListSortDescending { get; set; }
+
+    // The list of the mod's campaign commands opens by itself the first time a location, dialogue or quest editor
+    // is shown in a game launch (issue #42, CustomUI/DungeonMakerCommandsPopup.cs), unless this is on. Set by the
+    // list's "Hide this from now on" button, and from Mod UI > Dungeon Maker; the editors' "?" button opens the
+    // list either way.
+    public bool DungeonMakerHideCommandsPopup { get; set; }
+
+    // The editors' help while a variable name or a command's value is typed, or the pointer is on a variable row,
+    // each on by default: CommandHints is what a name does, ErrorHints the warning that nothing goes by a command's
+    // value (both CustomUI/DungeonMakerNameHints.Show), NameSuggestions the list of gadget names to pick from
+    // (CustomUI/DungeonMakerNameSuggestions.Show). Off hides that kind; names keep their colours, and the "?" list
+    // stays.
+    public bool ShowDungeonMakerCommandHints { get; set; } = true;
+    public bool ShowDungeonMakerErrorHints { get; set; } = true;
+    public bool ShowDungeonMakerNameSuggestions { get; set; } = true;
+
+    // Each list's own category sort, which comes before the order above (issue #42): "list=option:direction"
+    // entries separated by ';', e.g. "Monsters=HitPoints:1" (1 = descending). Read and written by
+    // DungeonMakerListTools.CategoryChoice; a list that isn't there has none.
+    public string DungeonMakerCategorySorts { get; set; } = string.Empty;
+
+    // The sections themselves (the campaign editor's twelve lists, a palette's categories) in title order instead of
+    // the game's; the "Categories:" toggle on those bars (issue #42).
+    public bool DungeonMakerCategoriesAlphabetical { get; set; }
+
+    // Which of those tools each screen has (Mod UI > Dungeon Maker; issue #42): a setting per page and one per
+    // feature under it. A feature is there when its page and itself are on; all on by default. See
+    // DungeonMakerListTools.On. The palettes have no per-list sort, the picker and the cheats panel no category order;
+    // those two show one list, so their main sort and the list's own keys are one tool (Sort).
+    public bool DungeonMakerEditorTools { get; set; } = true;
+    public bool DungeonMakerEditorSearch { get; set; } = true;
+    public bool DungeonMakerEditorPageSort { get; set; } = true;
+    public bool DungeonMakerEditorCategoryOrder { get; set; } = true;
+    public bool DungeonMakerEditorListSort { get; set; } = true;
+    public bool DungeonMakerPickerTools { get; set; } = true;
+    public bool DungeonMakerPickerSearch { get; set; } = true;
+    public bool DungeonMakerPickerSort { get; set; } = true;
+    public bool DungeonMakerCheatsTools { get; set; } = true;
+    public bool DungeonMakerCheatsSearch { get; set; } = true;
+    public bool DungeonMakerCheatsSort { get; set; } = true;
+    public bool DungeonMakerPaletteTools { get; set; } = true;
+    public bool DungeonMakerPaletteSearch { get; set; } = true;
+    public bool DungeonMakerPalettePageSort { get; set; } = true;
+    public bool DungeonMakerPaletteCategoryOrder { get; set; } = true;
+
+    // A weapon's own damage bonus and the enhancement of its item are left out of its damage breakdown when they
+    // cancel each other (in practice a Dungeon Maker custom weapon with a number typed in); the full breakdown is
+    // shown while Alt is held (issue #42; Patches/WeaponDamageDisplayPatcher.cs). Off: always the full breakdown.
+    public bool HideCancellingWeaponDamageBonuses { get; set; } = true;
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }
     public bool AddNewWeaponsAndRecipesToEditor { get; set; }

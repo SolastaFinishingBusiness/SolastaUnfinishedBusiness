@@ -1,4 +1,106 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 若目标在 10 格内且当前未被察觉，则进行一次感知检定</i>
+ModUi/&DungeonMakerCategories=类别
+ModUi/&DungeonMakerCategoryArmorClass=护甲等级
+ModUi/&DungeonMakerCategoryAuthor=作者
+ModUi/&DungeonMakerCategoryAutoStart=自动开始
+ModUi/&DungeonMakerCategoryBaseCreature=基础生物
+ModUi/&DungeonMakerCategoryBaseItem=基础物品
+ModUi/&DungeonMakerCategoryBuyback=回购 %
+ModUi/&DungeonMakerCategoryCampaignStart=战役起点
+ModUi/&DungeonMakerCategoryChallengeRating=挑战等级
+ModUi/&DungeonMakerCategoryCharisma=魅力
+ModUi/&DungeonMakerCategoryConstitution=体质
+ModUi/&DungeonMakerCategoryCost=价格
+ModUi/&DungeonMakerCategoryCurrentValue=当前值
+ModUi/&DungeonMakerCategoryDexterity=敏捷
+ModUi/&DungeonMakerCategoryDialogStates=状态数
+ModUi/&DungeonMakerCategoryEncounterTable=遭遇表
+ModUi/&DungeonMakerCategoryEntries=条目数
+ModUi/&DungeonMakerCategoryEnvironment=环境
+ModUi/&DungeonMakerCategoryHitPoints=生命值
+ModUi/&DungeonMakerCategoryIdentifyFee=鉴定费
+ModUi/&DungeonMakerCategoryIntelligence=智力
+ModUi/&DungeonMakerCategoryLabel={0}：
+ModUi/&DungeonMakerCategoryLanguage=语言
+ModUi/&DungeonMakerCategoryMapSize=地图大小
+ModUi/&DungeonMakerCategoryMarkup=加价 %
+ModUi/&DungeonMakerCategoryMaxStartLevel=最高起始等级
+ModUi/&DungeonMakerCategoryMinStartLevel=最低起始等级
+ModUi/&DungeonMakerCategoryMonsterCount=怪物条目数
+ModUi/&DungeonMakerCategoryNo=否
+ModUi/&DungeonMakerCategoryNoList=没有打开的列表
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=类别
+ModUi/&DungeonMakerCategoryScope=范围
+ModUi/&DungeonMakerCategoryStartingValue=初始值
+ModUi/&DungeonMakerCategoryStepCount=步骤数
+ModUi/&DungeonMakerCategoryStockEntries=库存条目数
+ModUi/&DungeonMakerCategoryStrength=力量
+ModUi/&DungeonMakerCategoryTerrain=地形
+ModUi/&DungeonMakerCategoryVariableType=类型
+ModUi/&DungeonMakerCategoryVariables=变量
+ModUi/&DungeonMakerCategoryVisualMood=视觉氛围
+ModUi/&DungeonMakerCategoryWisdom=感知
+ModUi/&DungeonMakerCategoryYes=是
+ModUi/&DungeonMakerNameValue={0}：{1}
+ModUi/&DungeonMakerCommandsPopupTitle=%ModName% 战役命令
+ModUi/&DungeonMakerCommandsPopupIntro=使用这些名称的战役变量具有功能。创建变量后，用你的装置、对话和任务写入或读取它。
+ModUi/&DungeonMakerCommandsLegendBlue=蓝色：当你的战役写入它时会起作用。
+ModUi/&DungeonMakerCommandsLegendRed=红色：由模组写入。你存放在其中的值会被覆盖。
+ModUi/&DungeonMakerCommandsGroupCommands=命令
+ModUi/&DungeonMakerCommandsGroupRequests=请求与开关
+ModUi/&DungeonMakerCommandsGroupReadouts=读数与计数器
+ModUi/&DungeonMakerCommandsGroupStatuses=状态
+ModUi/&DungeonMakerCommandsGroupOwn=模组自身的变量
+ModUi/&DungeonMakerCommandsPopupGuide=完整指南：Mod UI > Dungeon Maker > 战役命令（模组文件夹中的 Documentation/DungeonMakerCommands.md）。
+ModUi/&DungeonMakerCommandsPopupClose=关闭
+ModUi/&DungeonMakerCommandsPopupHide=以后不再显示
+ModUi/&DungeonMakerCommandsMenuButton=战役命令
+ModUi/&DungeonMakerCommandsMenuShowPopup=首次打开地点、对话或任务编辑器时显示战役命令列表 <i><color=#F0DAA0>[每次启动游戏时一次；编辑器的 ? 按钮随时可以打开]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=显示战役命令的提示 <i><color=#F0DAA0>[命令变量的作用，在输入变量名或在列表中指向变量时显示]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=显示战役命令的错误提示 <i><color=#F0DAA0>[当命令的值没有指向战役中的任何东西、命令将不起作用时给出警告]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=输入命令值时显示建议的装置名称列表
+ModUi/&DungeonMakerHintDialogTrigger=%ModName% 的命令。String：写入 NPC 或物体的名称，即可开始其对话，如同队伍成员点击了它。之后模组会将其清空。
+ModUi/&DungeonMakerHintRollTrigger=%ModName% 的命令。String：写入掷骰激活器的名称，触发此流程的角色会进行其检定，如同使用了它。之后模组会将其清空。
+ModUi/&DungeonMakerHintTeleportNode=%ModName% 的命令。String：写入装置（通常是 Node）的名称，触发此流程的角色会被传送到它旁边。之后模组会将其清空。
+ModUi/&DungeonMakerHintTeleportPartyNode=%ModName% 的命令。String：写入装置（通常是 Node）的名称，整个队伍（包括客人）会被传送到它旁边。之后模组会将其清空。
+ModUi/&DungeonMakerHintListGadgets=%ModName% 的工具。Int：1 在模组日志中列出此地点的可交互装置，2 列出所有装置及其条件（用于查找 Node 和火把的名称）。模组会将其重置为 0。
+ModUi/&DungeonMakerHintTorchesLit=%ModName% 的火把控制。Int：1 点亮此地点的所有火把，2 全部熄灭，0 无效果。
+ModUi/&DungeonMakerHintTorchesAuto=%ModName% 的火把控制。Int 或 Bool：开启（1）期间，室外地图的火把在 18:00 至 08:00 点亮，白天熄灭。
+ModUi/&DungeonMakerHintTorchOne=%ModName% 的火把控制。名为 Torch_ 加火把装置名的 Int：1 点亮该火把，2 熄灭它。优先于 Torches_Lit 和 Torches_Auto。
+ModUi/&DungeonMakerHintClockSkipBy=%ModName% 的时钟命令。Int：写入 1 到 {0} 的数字，游戏时钟会一次前进这么多{1}。模组会将其重置为 0。战斗中不可用。
+ModUi/&DungeonMakerHintClockSkipToDay=%ModName% 的时钟命令。Int：写入日期编号（按 Clock_CampaignDay 计数，向后 1 到 180 天），时钟会前进到那天的 00:00；若同时写入 Clock_SkipToHour，则到那个时刻。战斗中不可用。
+ModUi/&DungeonMakerHintClockSkipToHour=%ModName% 的时钟命令。Int：写入 1 到 23 的小时，时钟会前进到该时刻（今天，若已过则明天）；24 表示下一个午夜。战斗中不可用。
+ModUi/&DungeonMakerHintClockCount=%ModName% 的时钟开关。Int：设为 1 后，游戏时间每过 1 {1}，模组就给 {0} 加 1。设为 0 停止计数。
+ModUi/&DungeonMakerHintClockCounter=%ModName% 的时钟计数器。Int：当 {0} 为 1 时，无论时间如何流逝，游戏时间每过 1 {1}，模组就在这里加 1。要重新计数，请自行将其重置为 0。
+ModUi/&DungeonMakerHintClockReadout=%ModName% 的时钟读数。Int：模组会始终将其保持为{0}。只读，请勿写入。
+ModUi/&DungeonMakerClockHoldsHour=当前小时（0–23）
+ModUi/&DungeonMakerClockHoldsMinute=当前分钟（0–59）
+ModUi/&DungeonMakerClockHoldsDay=日志显示的天数（第一天为第 1 天）
+ModUi/&DungeonMakerClockHoldsDayOfMonth=当月的日（0–29）
+ModUi/&DungeonMakerClockHoldsMonth=月份（0–11）
+ModUi/&DungeonMakerClockHoldsYear=年份
+ModUi/&DungeonMakerClockHoldsCampaignDay=战役开始以来的天数（第一天为 1）
+ModUi/&DungeonMakerClockUnitMinute=分钟
+ModUi/&DungeonMakerClockUnitHour=小时
+ModUi/&DungeonMakerClockUnitDay=天
+ModUi/&DungeonMakerClockUnitHours=小时
+ModUi/&DungeonMakerClockUnitDays=天
+ModUi/&DungeonMakerHintStatus={0} 的状态，由 %ModName% 写入（String）：Pending（等待中）、Running、Succeeded、Failed 或 Cancelled。只读，请勿写入。
+ModUi/&DungeonMakerHintInternal=%ModName% 在此名称下保存自己的数据（进行中的时间跳过或已保存的命令）。请勿创建或写入它；请另选名称。
+ModUi/&DungeonMakerHintWrittenAs=此战役自己写入 {0}，因此模组不会动它，而是改为写入 {1}。
+ModUi/&DungeonMakerHintNoGadgetLocation=此地点中没有名为“{0}”的对象。{1} 不会有任何效果。
+ModUi/&DungeonMakerHintNoGadgetCampaign=此战役中没有名为“{0}”的对象。{1} 不会有任何效果。
+ModUi/&DungeonMakerHintClosest=最接近的名称：{0}
+ModUi/&DungeonMakerSearch=搜索...
+ModUi/&DungeonMakerSearchClear=清除
+ModUi/&DungeonMakerSortAscending=升序
+ModUi/&DungeonMakerSortDefault=默认
+ModUi/&DungeonMakerSortDescending=降序
+ModUi/&DungeonMakerSortLabel=排序：
+ModUi/&DungeonMakerSortName=名称
+ModUi/&DungeonMakerSortTitle=标题
+ModUi/&DungeonMakerSortType=类型
 ModUi/&SyncAiPerceptionChecks=AI 在决定行动前最多等待 3 秒共享的感知检定，之后仍缺少的检定在运行 AI 的电脑上掷骰 <i><color=#F0DAA0>[需开启对未察觉目标进行感知检定的规则选项；关闭：像以前一样在运行 AI 的电脑上检定，除非所有玩家在游戏的“游戏 > 游戏玩法 > 保留随机种子”选项中设置相同，否则极有可能不同步（即使相同也仍可能发生）；仅限多人游戏]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=当护甲等级与修正后的攻击检定结果的差值大于等于 10 时，启用致命命中与严重失手判定
 ModUI/&EnableDamageOnFailedJumpCheck=在跳跃检定失败时造成 1d4 点伤害
@@ -257,7 +359,6 @@ ModUi/&EnableSorcererMetamagic2024=在 2 级（而非 3 级）启用 <color=#D89
 ModUi/&EnableSorcererOrigin2024=在 3 级（而非 1 级）启用 <color=#D89555>术士起源</color>
 ModUi/&EnableSorcererQuickenedAction=启用<color=#D89555>加速法术</color>动作以允许施放应用了加速超魔法的主要动作法术
 ModUi/&EnableSorcererSorcerousRestoration2024=在第 5 级启用<color=#D89555>魔法恢复</color>
-ModUi/&EnableSortingDungeonMakerAssets=在地城编辑器编辑器上启用资产排序
 ModUi/&EnableSpeech=在自定义战役中启用语音<i><color=#F0DAA0>[仅限旁白和英雄]</color></i>
 ModUi/&EnableSpeechActorHelp=• 选择演员
 ModUi/&EnableSpeechOnNpcs=<i>+ 启用 NPC 语音<color=#F0DAA0>[通过战役映射或自动分配]</color></i>
@@ -599,3 +700,14 @@ ModUi/&SearchClear=清除
 ModUi/&SearchNoResults=没有与“{0}”匹配的设置。
 ModUi/&SearchSettings=搜索设置：
 ModUi/&WarnBeforeCrafting=开始制作前警告材料会立即消耗且制作检定可能失败 <i><color=#F0DAA0>[也会列出代替预备物品使用的普通武器或护甲]</color></i>
+ModUi/&HideCancellingWeaponDamageBonuses=隐藏相互抵消的武器伤害加值 <i><color=#F0DAA0>[按住 Alt 可查看]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>地下城制作器界面中的搜索与排序工具：</color>
+ModUi/&DungeonMakerListToolsEditor=战役编辑器
+ModUi/&DungeonMakerListToolsPicker=变量选择器
+ModUi/&DungeonMakerListToolsCheats=作弊 > 战役变量
+ModUi/&DungeonMakerListToolsPalettes=地点编辑器调色板（装置、道具、房间）
+ModUi/&DungeonMakerListToolsSearch=搜索
+ModUi/&DungeonMakerListToolsPageSort=页面排序（排序：及方向箭头）
+ModUi/&DungeonMakerListToolsCategoryOrder=类别排序（类别的顺序：默认或 A-Z）
+ModUi/&DungeonMakerListToolsListSort=类别专属排序（每个列表有自己的排序，行上原本不显示的数值以弹出框显示）
+ModUi/&DungeonMakerListToolsSort=排序（排序：含列表专属项，及方向箭头；行上原本不显示的数值以弹出框显示）
