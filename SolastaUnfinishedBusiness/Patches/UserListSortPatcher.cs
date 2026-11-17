@@ -249,11 +249,11 @@ public static class UserListSortPatcher
 
     private static readonly CategoryOption[] VariableOptions =
     [
-        Option("VariableType", r => As<UserVariable>(r) is { } variable
-                ? SortKey.Of((int)variable.VariableType)
-                : SortKey.Missing,
-            r => As<UserVariable>(r)?.VariableType.ToString() ?? "-"),
-        Option("StartingValue", r => As<UserVariable>(r) is { } variable
+        // a variable row shows its type and starting value itself (UserVariableLine), so neither gets an overlay
+        Shown("VariableType", r => As<UserVariable>(r) is { } variable
+            ? SortKey.Of((int)variable.VariableType)
+            : SortKey.Missing),
+        Shown("StartingValue", r => As<UserVariable>(r) is { } variable
             ? ValueKey(variable.VariableType, variable.VariableDefaultValueInt, variable.VariableDefaultValueBool,
                 variable.VariableDefaultValueString)
             : SortKey.Missing),

@@ -32,9 +32,10 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // CHOOSING WITH THE KEYS, only while the list is open. TMP_InputField handles its keys in KeyPressed, one call per
 // key-down event. A prefix there (DungeonMakerCommandsPatcher) hands the event to HandleKey first, and only for the one
 // field whose list is open: Up and Down move the highlight, Enter and Tab put the highlighted name in, Escape closes
-// the list. A key used here is turned into a harmless one before the field sees it (a tab character, which a
-// single-line field ignores), so Enter doesn't also end the editing and the arrows don't move the caret. With nothing
-// highlighted, Enter and Tab are the field's own, and with the list closed every key is.
+// the list. A key used here is turned into an empty one before the field sees it (no key code and character 0, which
+// both single-line and multi-line fields ignore), so Enter doesn't also end the editing or start a new line and the
+// arrows don't move the caret. With nothing highlighted, Enter and Tab are the field's own, and with the list closed
+// every key is.
 internal static class DungeonMakerNameSuggestions
 {
     internal const int MaxRows = 8;
@@ -76,12 +77,6 @@ internal static class DungeonMakerNameSuggestions
     internal static bool TakesCancel()
     {
         return IsOpen || _escapeFrame == Time.frameCount;
-    }
-
-    // TEMPORARY diagnostics for the Escape deselect: the list's state as one log fragment
-    internal static string DiagState()
-    {
-        return $"frame={Time.frameCount} open={IsOpen} escapeFrame={_escapeFrame}";
     }
 
     // Shows these names for this field, replacing whatever the list showed.
@@ -202,12 +197,11 @@ internal static class DungeonMakerNameSuggestions
     }
 
     // TMP_InputField.KeyPressed, before it runs, for every text field of the game: true when this key was used
-    // for the list, and the field must not act on it. False at once for any field but the one whose list is open,
-    // and for a multi-line field (the "harmless key" the event is turned into would be typed into one).
+    // for the list, and the field must not act on it. False at once for any field but the one whose list is open.
+    // The location editor's value field is multi-line, so multi-line fields are handled too.
     internal static bool HandleKey(TMP_InputField field, Event key)
     {
-        if (!IsOpen || key == null || !ReferenceEquals(_owner.Field, field) || field.multiLine ||
-            Names.Count == 0)
+        if (!IsOpen || key == null || !ReferenceEquals(_owner.Field, field) || Names.Count == 0)
         {
             return false;
         }

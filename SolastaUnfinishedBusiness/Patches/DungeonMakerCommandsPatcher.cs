@@ -612,13 +612,6 @@ public static class DungeonMakerCommandsPatcher
         {
             var listTakesEscape = command == InputCommands.Id.Cancel && DungeonMakerNameSuggestions.TakesCancel();
 
-            // TEMPORARY diagnostics for the Escape deselect
-            if (command == InputCommands.Id.Cancel)
-            {
-                Main.Info($"[EscDiag] HandleInput Cancel: {DungeonMakerNameSuggestions.DiagState()} " +
-                          $"listTakes={listTakesEscape}");
-            }
-
             if (!listTakesEscape && DungeonMakerCommandsPopup.LetEditorHandle(command))
             {
                 return true;
@@ -657,9 +650,10 @@ public static class DungeonMakerCommandsPatcher
     //PATCH: Dungeon Maker editor: the keys of the gadget-name suggestions list (DungeonMakerNameSuggestions,
     //"CHOOSING WITH THE KEYS"). KeyPressed is where a TMP text field handles one key-down event. For the one field
     //whose list is open, Up, Down, Escape, and Enter or Tab on a highlighted row are used for the list, and the
-    //event is turned into a tab character, which a single-line field ignores (KeyPressed returns "go on editing"
-    //for it before anything else is done with the character), so the field neither ends its editing nor moves its
-    //caret. For every other field, and every other key, the prefix does nothing at all.
+    //event is emptied: no key code, which none of KeyPressed's key branches acts on, and character 0, which
+    //Append drops (it returns on a 0 character; no field of the game sets a validator that could change it). So
+    //neither a single-line nor a multi-line field ends its editing, moves its caret or types anything. For every
+    //other field, and every other key, the prefix does nothing at all.
     [HarmonyPatch(typeof(TMPro.TMP_InputField), "KeyPressed")]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -668,20 +662,13 @@ public static class DungeonMakerCommandsPatcher
         [UsedImplicitly]
         public static void Prefix(TMPro.TMP_InputField __instance, UnityEngine.Event evt)
         {
-            // TEMPORARY diagnostics for the Escape deselect
-            if (evt is { keyCode: UnityEngine.KeyCode.Escape })
-            {
-                Main.Info($"[EscDiag] KeyPressed Escape on '{__instance.name}': " +
-                          DungeonMakerNameSuggestions.DiagState());
-            }
-
             if (!DungeonMakerNameSuggestions.HandleKey(__instance, evt))
             {
                 return;
             }
 
             evt.keyCode = UnityEngine.KeyCode.None;
-            evt.character = '\t';
+            evt.character = '\0';
         }
     }
 
@@ -861,20 +848,6 @@ public static class DungeonMakerCommandsPatcher
         public static bool Prefix()
         {
             return !DungeonMakerClockContext.HoldTimers;
-        }
-    }
-
-    // TEMPORARY diagnostics for the Escape deselect: who returns the location editor to its default cursor
-    [HarmonyPatch(typeof(CursorLocationEditorDefault), nameof(CursorLocationEditorDefault.Activate))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class EscDiag_CursorLocationEditorDefault_Activate
-    {
-        [UsedImplicitly]
-        public static void Prefix()
-        {
-            Main.Info($"[EscDiag] default cursor activated: {DungeonMakerNameSuggestions.DiagState()}{Environment.NewLine}" +
-                      Environment.StackTrace);
         }
     }
 }
