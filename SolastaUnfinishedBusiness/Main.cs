@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.ModKit;
+using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
 using UnityModManagerNet;
 
@@ -182,6 +183,8 @@ internal static class Main
     // after an update the settings file lacks the new settings until the mod menu saves it again. Write them now with
     // their defaults. Every other value comes from what was just loaded, so it is written back unchanged. Only do it
     // when the file parses as Settings, so a file the game failed to read is never overwritten with defaults.
+    // The file is also written when a removed setting was carried over (CarryOverRemovedSettings): XmlSerializer
+    // leaves the removed element out of what it writes, so it is carried over once only.
     private static void AddMissingSettingsToFile(UnityModManager.ModEntry modEntry)
     {
         var path = Path.Combine(modEntry.Path, "Settings.xml");
@@ -219,15 +222,67 @@ internal static class Main
                 : x.Name)
             .Where(x => !existing.Contains(x))
             .ToList();
+        var carriedOver = CarryOverRemovedSettings(document, Settings);
 
-        if (missing.Count == 0)
+        if (missing.Count == 0 && !carriedOver)
         {
             return;
         }
 
         File.Copy(path, path + ".bak", true);
         UnityModManager.ModSettings.Save(Settings, modEntry);
-        Info($"added {missing.Count} new settings to Settings.xml: {string.Join(", ", missing)}");
+
+        if (missing.Count > 0)
+        {
+            Info($"added {missing.Count} new settings to Settings.xml: {string.Join(", ", missing)}");
+        }
+    }
+
+    // The element of the removed setting "Enable assets sorting on Dungeon Maker editor". With it on, the location
+    // editor's gadget, prop and room palettes compared blueprints by their category's title and then by the
+    // blueprint's internal name (in place of the game's Compare), and the campaign editor sorted the campaign's own
+    // content lists by title when it opened. The Dungeon Maker list bar (CustomUI/DungeonMakerListTools.cs) replaces
+    // it and shows those orders without changing the campaign.
+    private const string RemovedAssetSortingSetting = "EnableSortingDungeonMakerAssets";
+
+    // Carries a removed setting found on in a settings file over to the settings that replace it. It is read from the
+    // file's XML rather than through a Settings property, so XmlSerializer never writes it back and
+    // AddMissingSettingsToFile never counts it as missing.
+    // For the asset sorting: the list bar's categories in title order and its sort by name, the order the palettes
+    // had (one choice for the palettes and the campaign editor; the campaign editor's lists are then shown by name,
+    // and those the old setting sorted by title keep that order in the campaign itself). True when it changed
+    // something.
+    private static bool CarryOverRemovedSettings(XmlDocument document, Settings settings)
+    {
+        var element = document?.DocumentElement?[RemovedAssetSortingSetting];
+
+        if (settings == null || element == null)
+        {
+            return false;
+        }
+
+        bool on;
+
+        try
+        {
+            on = XmlConvert.ToBoolean(element.InnerText.Trim());
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+
+        if (!on)
+        {
+            return false;
+        }
+
+        settings.DungeonMakerCategoriesAlphabetical = true;
+        settings.DungeonMakerListSort = (int)DungeonMakerListTools.Sort.Name;
+        settings.DungeonMakerListSortDescending = false;
+        Info($"{RemovedAssetSortingSetting} was on: the Dungeon Maker list bar now sorts by name, categories A-Z");
+
+        return true;
     }
 
     internal static void LoadSettingFilenames()
@@ -269,6 +324,24 @@ internal static class Main
     {
         SettingsFilename = Path.Combine(SettingsFolder, $"{filename}.xml");
         Mod.Settings = UnityModManager.ModSettings.Load<Settings>(ModEntry);
+
+        // a settings file saved by an older version may still hold a removed setting; the file itself is left as it
+        // is, and the settings loaded from it are saved without that setting
+        try
+        {
+            if (File.Exists(SettingsFilename))
+            {
+                var document = new XmlDocument();
+
+                document.Load(SettingsFilename);
+                CarryOverRemovedSettings(document, Mod.Settings);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or XmlException or UnauthorizedAccessException)
+        {
+            Error($"{SettingsFilename} could not be read for removed settings: {ex.Message}");
+        }
+
         SettingsFilename = string.Empty;
     }
 

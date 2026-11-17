@@ -63,8 +63,10 @@ public static class UserListSortPatcher
     // game's own classes). Ids are saved in the settings: don't rename them.
     // Counts are of entries (rows), not of the quantities in them.
 
-    // the picker lists the campaign's variables like the editor's Variables list, and shares its category sort
-    private const string PickerList = "Variables";
+    // The picker lists the campaign's variables with the same keys as the editor's Variables list, but keeps its
+    // category sort under an id of its own: the picker's one dropdown clears the sort for Default, Name and Title
+    // (see DungeonMakerListTools.SingleList), which under a shared id would also clear the editor list's sort.
+    private const string PickerList = "PickerVariables";
 
     // the cheat panel's variables are the running game's, with a scope and a current value
     private const string CheatsList = "CampaignVariables";
@@ -334,81 +336,81 @@ public static class UserListSortPatcher
     [UsedImplicitly]
     public static class UserCampaignEditorScreen_RefreshLists
     {
-        // per Refresh method: the list's table, its two move arrows, how to clear its selection, and the group
-        // (the foldable section with the list's header) it sits in
+        // per Refresh method: the list's table, its two move arrows, how to clear its selection, the group
+        // (the foldable section with the list's header) it sits in, and the game's Refresh method itself
         internal static readonly Dictionary<string, ContentList> Lists = new()
         {
             {
                 "RefreshBiomes",
                 new ContentList("Biomes", BiomeOptions, x => x.userBiomesTable, x => x.moveBiomeUpButton, x => x.moveBiomeDownButton,
                     x => Clear(ref x.selectedBiome),
-                    x => x.biomesGroupItem)
+                    x => x.biomesGroupItem, x => x.RefreshBiomes())
             },
             {
                 "RefreshDialogs",
                 new ContentList("Dialogs", DialogOptions, x => x.userDialogsTable, x => x.moveDialogUpButton, x => x.moveDialogDownButton,
                     x => Clear(ref x.selectedDialog),
-                    x => x.dialogsGroupItem)
+                    x => x.dialogsGroupItem, x => x.RefreshDialogs())
             },
             {
                 "RefreshEncounters",
                 new ContentList("Encounters", EncounterOptions, x => x.userEncountersTable, x => x.moveEncounterUpButton, x => x.moveEncounterDownButton,
                     x => Clear(ref x.selectedEncounter),
-                    x => x.encountersGroupItem)
+                    x => x.encountersGroupItem, x => x.RefreshEncounters())
             },
             {
                 "RefreshEncounterTables",
                 new ContentList("EncounterTables", EncounterTableOptions, x => x.userEncounterTablesTable, x => x.moveEncounterTableUpButton,
                     x => x.moveEncounterTableDownButton, x => Clear(ref x.selectedEncounterTable),
-                    x => x.encounterTablesGroupItem)
+                    x => x.encounterTablesGroupItem, x => x.RefreshEncounterTables())
             },
             {
                 "RefreshItems",
                 new ContentList("Items", ItemOptions, x => x.userItemsTable, x => x.moveItemUpButton, x => x.moveItemDownButton,
                     x => Clear(ref x.selectedItem),
-                    x => x.itemsGroupItem)
+                    x => x.itemsGroupItem, x => x.RefreshItems())
             },
             {
                 "RefreshLocations",
                 new ContentList("Locations", LocationOptions, x => x.userLocationsTable, x => x.moveLocationUpButton, x => x.moveLocationDownButton,
                     x => Clear(ref x.selectedLocation),
-                    x => x.locationsGroupItem)
+                    x => x.locationsGroupItem, x => x.RefreshLocations())
             },
             {
                 "RefreshLootPacks",
                 new ContentList("LootPacks", LootPackOptions, x => x.userLootPacksTable, x => x.moveLootPackUpButton, x => x.moveLootPackDownButton,
                     x => Clear(ref x.selectedLootPack),
-                    x => x.lootPacksGroupItem)
+                    x => x.lootPacksGroupItem, x => x.RefreshLootPacks())
             },
             {
                 "RefreshMerchantInventories",
                 new ContentList("MerchantInventories", MerchantOptions, x => x.userMerchantInventoriesTable, x => x.moveMerchantInventoryUpButton,
                     x => x.moveMerchantInventoryDownButton, x => Clear(ref x.selectedMerchantInventory),
-                    x => x.merchantIventoriesGroupItem)
+                    x => x.merchantIventoriesGroupItem, x => x.RefreshMerchantInventories())
             },
             {
                 "RefreshMonsters",
                 new ContentList("Monsters", CharacterOptions, x => x.userMonstersTable, x => x.moveMonsterUpButton, x => x.moveMonsterDownButton,
                     x => Clear(ref x.selectedMonster),
-                    x => x.monstersGroupItem)
+                    x => x.monstersGroupItem, x => x.RefreshMonsters())
             },
             {
                 "RefreshNpcs",
                 new ContentList("Npcs", CharacterOptions, x => x.userNpcsTable, x => x.moveNpcUpButton, x => x.moveNpcDownButton,
                     x => Clear(ref x.selectedNpc),
-                    x => x.npcsGroupItem)
+                    x => x.npcsGroupItem, x => x.RefreshNpcs())
             },
             {
                 "RefreshQuests",
                 new ContentList("Quests", QuestOptions, x => x.userQuestsTable, x => x.moveQuestUpButton, x => x.moveQuestDownButton,
                     x => Clear(ref x.selectedQuest),
-                    x => x.questsGroupItem)
+                    x => x.questsGroupItem, x => x.RefreshQuests())
             },
             {
                 "RefreshVariables",
                 new ContentList("Variables", VariableOptions, x => x.userVariablesTable, x => x.moveVariableUpButton, x => x.moveVariableDownButton,
                     x => Clear(ref x.selectedVariable),
-                    x => x.variablesGroupItem)
+                    x => x.variablesGroupItem, x => x.RefreshVariables())
             }
         };
 
@@ -432,10 +434,16 @@ public static class UserListSortPatcher
             Func<UserCampaignEditorScreen, Button> moveUp,
             Func<UserCampaignEditorScreen, Button> moveDown,
             Func<UserCampaignEditorScreen, bool> clearSelection,
-            Func<UserCampaignEditorScreen, CampaignContentGroupItem> group)
+            Func<UserCampaignEditorScreen, CampaignContentGroupItem> group,
+            Action<UserCampaignEditorScreen> refresh)
         {
             internal readonly Func<UserCampaignEditorScreen, bool> ClearSelection = clearSelection;
             internal readonly Func<UserCampaignEditorScreen, CampaignContentGroupItem> Group = group;
+
+            // The game's RefreshX: binds the rows, marks row i Selected when selectedX is i, and sets the list's
+            // buttons from selectedX (Edit and Delete when it is 0 or more; the location list also Set Start and
+            // Export). Called through the Harmony-patched method, so its postfix applies the view again.
+            internal readonly Action<UserCampaignEditorScreen> Refresh = refresh;
 
             // the settings key of the list's category sort, and the keys it can be sorted by
             internal readonly string Id = id;
@@ -475,8 +483,15 @@ public static class UserListSortPatcher
             // icons work as tabs: one opens its list and folds the eleven others, and a list can also be folded
             // by its header. A list that is folded away loses its selection; in an open list the selection is
             // dropped when the search leaves the selected row out. Either way Edit and Delete never act on an
-            // item that isn't shown. The refresh asked for works the list's buttons out again with nothing
-            // selected; it can't come back here in a loop, as Clear then finds nothing selected.
+            // item that isn't shown.
+            //
+            // The game's RefreshX has already set the row's Selected flag and the list's buttons from the old
+            // selection, so it is run again for this list once the selection is cleared. Marking the screen Dirty
+            // is not enough: from the RefreshX postfix this runs inside UserCampaignEditorScreen.Refresh, which
+            // GuiPanel.RefreshNow calls just before it sets Dirty back to false (RefreshNow IL_0031), so that
+            // request would be dropped and Delete would stay on
+            // with selectedX at -1 (the game's OnDeleteXCb then reads item -1). The second run can't come back
+            // here in a loop, as Clear then finds nothing selected.
             var option = DungeonMakerListTools.ChosenOption(Editor, list.Id, list.Options, out var descending);
             var hidSelected = DungeonMakerListTools.Apply(
                 list.Table(screen), Editor, ContentName, ContentTitle, IsSelected, option?.Key, descending,
@@ -491,7 +506,10 @@ public static class UserListSortPatcher
 
             if ((hidSelected || (group && group.folded)) && list.ClearSelection(screen))
             {
-                screen.Dirty = true;
+                // its postfix has applied the view and the move arrows' state again, with nothing selected
+                list.Refresh(screen);
+
+                return;
             }
 
             // the move arrows swap neighbours in the campaign's order, which a category sort also changes

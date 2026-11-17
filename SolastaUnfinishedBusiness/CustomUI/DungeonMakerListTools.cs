@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using SolastaUnfinishedBusiness.Models;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -206,9 +207,18 @@ internal static class DungeonMakerListTools
         return PageOn(page) && FeatureSettings[page].Any(x => x.Feature == feature && x.Get());
     }
 
+    // The settings the bars' choices are read from and written to (the main sort, its direction, the category order
+    // and each list's category sort): always this computer's own copy. These choices only change what this computer
+    // shows, so they don't follow the host. As a multiplayer client the mod reads the host's copy through
+    // Main.Settings (MultiplayerSessionContext swaps it in with Main.UseSettings), which is never saved and is
+    // dropped on leaving the room; MultiplayerSessionContext.SettingsToSave is the local copy then, and
+    // Main.Settings otherwise.
+    private static Settings ViewSettings => MultiplayerSessionContext.SettingsToSave;
+
     // A choice made on a bar is saved at once. The mod's settings are otherwise written when the mod manager window
     // closes or the game quits, so a crash before that would lose the sorts chosen in that session. The mod's own save
-    // handler is used, which in multiplayer saves this computer's settings, not the host's.
+    // handler is used, which writes MultiplayerSessionContext.SettingsToSave: the same local copy ViewSettings
+    // changes, also while the host's settings are in use.
     private static void SaveChoice()
     {
         try
@@ -293,12 +303,12 @@ internal static class DungeonMakerListTools
     private static Sprite _upArrow;
     private static Sprite _downArrow;
 
-    internal static Sort Kind => (Sort)Mathf.Clamp(Main.Settings.DungeonMakerListSort, 0, 2);
+    internal static Sort Kind => (Sort)Mathf.Clamp(ViewSettings.DungeonMakerListSort, 0, 2);
 
     // the sections themselves in title order rather than the game's
-    internal static bool CategoriesAlphabetical => Main.Settings.DungeonMakerCategoriesAlphabetical;
+    internal static bool CategoriesAlphabetical => ViewSettings.DungeonMakerCategoriesAlphabetical;
 
-    private static bool Descending => Main.Settings.DungeonMakerListSortDescending;
+    private static bool Descending => ViewSettings.DungeonMakerListSortDescending;
 
     internal static string Search(string screen)
     {
@@ -315,7 +325,7 @@ internal static class DungeonMakerListTools
     // descending. A list with nothing saved is on Default.
     internal static (string Id, bool Descending) CategoryChoice(string list)
     {
-        foreach (var entry in (Main.Settings.DungeonMakerCategorySorts ?? string.Empty).Split(';'))
+        foreach (var entry in (ViewSettings.DungeonMakerCategorySorts ?? string.Empty).Split(';'))
         {
             var equals = entry.IndexOf('=');
 
@@ -347,7 +357,7 @@ internal static class DungeonMakerListTools
 
     private static void SetCategoryChoice(string list, string id, bool descending)
     {
-        var entries = (Main.Settings.DungeonMakerCategorySorts ?? string.Empty)
+        var entries = (ViewSettings.DungeonMakerCategorySorts ?? string.Empty)
             .Split(';')
             .Where(x => x.Length > 0 && !x.StartsWith(list + "=", StringComparison.Ordinal))
             .ToList();
@@ -357,7 +367,7 @@ internal static class DungeonMakerListTools
             entries.Add($"{list}={id}:{(descending ? 1 : 0)}");
         }
 
-        Main.Settings.DungeonMakerCategorySorts = string.Join(";", entries);
+        ViewSettings.DungeonMakerCategorySorts = string.Join(";", entries);
         SaveChoice();
     }
 
@@ -839,14 +849,15 @@ internal static class DungeonMakerListTools
         {
             sort.onValueChanged.AddListener(value =>
             {
-                // a list key (single-list screens): it replaces the main sort until a main choice is made again,
-                // keeping the direction it had last
+                // a list key (single-list screens): it replaces the main sort until a main choice is made again.
+                // Going from one list key to another keeps the direction, as every category sort does; coming from
+                // a main choice (no list key saved) starts ascending.
                 if (single != null && value >= MainChoices && value - MainChoices < singleOptions.Count)
                 {
-                    var (id, isDescending) = CategoryChoice(single.ListId);
+                    var isDescending = CategoryChoice(single.ListId).Descending;
                     var chosen = singleOptions[value - MainChoices].Id;
 
-                    SetCategoryChoice(single.ListId, chosen, id == chosen && isDescending);
+                    SetCategoryChoice(single.ListId, chosen, isDescending);
                     Changed();
 
                     return;
@@ -857,7 +868,7 @@ internal static class DungeonMakerListTools
                     SetCategoryChoice(single.ListId, null, false);
                 }
 
-                Main.Settings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
+                ViewSettings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
                 SaveChoice();
                 Changed();
             });
@@ -886,7 +897,7 @@ internal static class DungeonMakerListTools
             categoryOrder.onClick = new Button.ButtonClickedEvent();
             categoryOrder.onClick.AddListener(() =>
             {
-                Main.Settings.DungeonMakerCategoriesAlphabetical = !Main.Settings.DungeonMakerCategoriesAlphabetical;
+                ViewSettings.DungeonMakerCategoriesAlphabetical = !ViewSettings.DungeonMakerCategoriesAlphabetical;
                 SaveChoice();
                 Changed();
             });
@@ -927,7 +938,7 @@ internal static class DungeonMakerListTools
                     return;
                 }
 
-                Main.Settings.DungeonMakerListSortDescending = !Main.Settings.DungeonMakerListSortDescending;
+                ViewSettings.DungeonMakerListSortDescending = !ViewSettings.DungeonMakerListSortDescending;
                 SaveChoice();
                 Changed();
             });
@@ -1151,6 +1162,7 @@ internal static class DungeonMakerListTools
             {
                 var id = value >= 1 && value <= options.Count ? options[value - 1].Id : null;
 
+                // another key keeps the list's direction; Default (null) removes the list's entry and its direction
                 SetCategoryChoice(listId, id, CategoryChoice(listId).Descending);
                 Changed();
             });
