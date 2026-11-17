@@ -252,6 +252,14 @@ internal static class DungeonMakerCommandsPopup
         // inactive gamepad prompt stay as they are.
         var labelObject = label ? label.gameObject : copy.GetComponentInChildren<TMP_Text>(true)?.gameObject;
 
+        // Centres the text in the button. The label stretches over the button between the layout group's paddings
+        // (its LayoutElement has flexible width 1) and its text is left-aligned, which the game's own buttons never
+        // show because GuiButtonSetup fits the layout around the text; without it the text sat at the left edge.
+        if (labelObject && labelObject.TryGetComponent<TMP_Text>(out var labelText))
+        {
+            labelText.alignment = TextAlignmentOptions.Center;
+        }
+
         foreach (Transform child in copy.transform)
         {
             if (labelObject && (child.gameObject == labelObject || labelObject.transform.IsChildOf(child)))
