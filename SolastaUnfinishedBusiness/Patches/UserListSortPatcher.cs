@@ -290,10 +290,14 @@ public static class UserListSortPatcher
     [
         Option("Scope", r => VariableOf(r) is { } variable ? SortKey.Of((int)variable.Scope) : SortKey.Missing,
             r => VariableOf(r)?.Scope.ToString() ?? "-"),
-        // a row shows its current value itself (CampaignVariableLine's integer or flag value), so no overlay
-        Shown("CurrentValue", r => VariableOf(r) is { } variable
-            ? ValueKey(variable.Type, variable.IntValue, variable.BoolValue, variable.StringValue)
-            : SortKey.Missing)
+        // A row shows an integer or flag value itself (CampaignVariableLine), so only a text variable, whose row
+        // shows no value, gets the overlay.
+        Option("CurrentValue", r => VariableOf(r) is { } variable
+                ? ValueKey(variable.Type, variable.IntValue, variable.BoolValue, variable.StringValue)
+                : SortKey.Missing,
+            r => VariableOf(r) is { Type: GameVariableDefinitions.Type.String } variable
+                ? string.IsNullOrEmpty(variable.StringValue) ? "-" : variable.StringValue
+                : null)
     ];
 
     #endregion
