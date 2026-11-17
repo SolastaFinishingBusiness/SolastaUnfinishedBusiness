@@ -78,6 +78,12 @@ internal static class DungeonMakerNameSuggestions
         return IsOpen || _escapeFrame == Time.frameCount;
     }
 
+    // TEMPORARY diagnostics for the Escape deselect: the list's state as one log fragment
+    internal static string DiagState()
+    {
+        return $"frame={Time.frameCount} open={IsOpen} escapeFrame={_escapeFrame}";
+    }
+
     // Shows these names for this field, replacing whatever the list showed.
     internal static void Show(DungeonMakerFieldHint owner, List<string> names)
     {

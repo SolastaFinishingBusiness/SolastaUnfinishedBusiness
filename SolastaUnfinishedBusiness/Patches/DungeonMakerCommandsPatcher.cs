@@ -612,6 +612,13 @@ public static class DungeonMakerCommandsPatcher
         {
             var listTakesEscape = command == InputCommands.Id.Cancel && DungeonMakerNameSuggestions.TakesCancel();
 
+            // TEMPORARY diagnostics for the Escape deselect
+            if (command == InputCommands.Id.Cancel)
+            {
+                Main.Info($"[EscDiag] HandleInput Cancel: {DungeonMakerNameSuggestions.DiagState()} " +
+                          $"listTakes={listTakesEscape}");
+            }
+
             if (!listTakesEscape && DungeonMakerCommandsPopup.LetEditorHandle(command))
             {
                 return true;
@@ -661,6 +668,13 @@ public static class DungeonMakerCommandsPatcher
         [UsedImplicitly]
         public static void Prefix(TMPro.TMP_InputField __instance, UnityEngine.Event evt)
         {
+            // TEMPORARY diagnostics for the Escape deselect
+            if (evt is { keyCode: UnityEngine.KeyCode.Escape })
+            {
+                Main.Info($"[EscDiag] KeyPressed Escape on '{__instance.name}': " +
+                          DungeonMakerNameSuggestions.DiagState());
+            }
+
             if (!DungeonMakerNameSuggestions.HandleKey(__instance, evt))
             {
                 return;
@@ -847,6 +861,20 @@ public static class DungeonMakerCommandsPatcher
         public static bool Prefix()
         {
             return !DungeonMakerClockContext.HoldTimers;
+        }
+    }
+
+    // TEMPORARY diagnostics for the Escape deselect: who returns the location editor to its default cursor
+    [HarmonyPatch(typeof(CursorLocationEditorDefault), nameof(CursorLocationEditorDefault.Activate))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class EscDiag_CursorLocationEditorDefault_Activate
+    {
+        [UsedImplicitly]
+        public static void Prefix()
+        {
+            Main.Info($"[EscDiag] default cursor activated: {DungeonMakerNameSuggestions.DiagState()}{Environment.NewLine}" +
+                      Environment.StackTrace);
         }
     }
 }
