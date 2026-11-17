@@ -578,7 +578,9 @@ public static class DungeonMakerCommandsPatcher
     }
 
     //PATCH: while the commands list is open over one of these editors, it takes the editor's keyboard commands
-    //(Escape closes it, the rest do nothing), and it closes when the editor is hidden (DungeonMakerCommandsPopup)
+    //(Escape closes it, the rest do nothing), and it closes when the editor is hidden (DungeonMakerCommandsPopup).
+    //While the gadget-name suggestions are open, the editor's Cancel (Escape) is theirs too
+    //(DungeonMakerNameSuggestions.TakesCancel): it only closes the list, not the selected gadget.
     [HarmonyPatch]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -598,7 +600,9 @@ public static class DungeonMakerCommandsPatcher
         [UsedImplicitly]
         public static bool Prefix(InputCommands.Id command, ref bool __result)
         {
-            if (DungeonMakerCommandsPopup.LetEditorHandle(command))
+            var listTakesEscape = command == InputCommands.Id.Cancel && DungeonMakerNameSuggestions.TakesCancel();
+
+            if (!listTakesEscape && DungeonMakerCommandsPopup.LetEditorHandle(command))
             {
                 return true;
             }

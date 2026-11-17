@@ -66,6 +66,18 @@ internal static class DungeonMakerNameSuggestions
     private static bool IsOpen => _rect && _rect.gameObject.activeSelf && _owner &&
                                   Main.Settings.ShowDungeonMakerNameSuggestions;
 
+    // the frame in which Escape closed the list (HandleKey), or -1
+    private static int _escapeFrame = -1;
+
+    // The game also turns Escape into its Cancel command, which reaches the editor on another path than the text
+    // field's key event: the location editor answers it by deselecting the selected gadget, whether a text field has
+    // the focus or not. Escape belongs to the list while it is open, so the editors leave Cancel alone then, and in
+    // the frame the list's Escape closed it (the two paths run in the same frame, in no order this code relies on).
+    internal static bool TakesCancel()
+    {
+        return IsOpen || _escapeFrame == Time.frameCount;
+    }
+
     // Shows these names for this field, replacing whatever the list showed.
     internal static void Show(DungeonMakerFieldHint owner, List<string> names)
     {
@@ -211,6 +223,7 @@ internal static class DungeonMakerNameSuggestions
 
                 return true;
             case KeyCode.Escape:
+                _escapeFrame = Time.frameCount;
                 Hide(_owner);
 
                 return true;
