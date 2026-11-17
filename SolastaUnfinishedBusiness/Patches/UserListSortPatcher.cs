@@ -290,7 +290,8 @@ public static class UserListSortPatcher
     [
         Option("Scope", r => VariableOf(r) is { } variable ? SortKey.Of((int)variable.Scope) : SortKey.Missing,
             r => VariableOf(r)?.Scope.ToString() ?? "-"),
-        Option("CurrentValue", r => VariableOf(r) is { } variable
+        // a row shows its current value itself (CampaignVariableLine's integer or flag value), so no overlay
+        Shown("CurrentValue", r => VariableOf(r) is { } variable
             ? ValueKey(variable.Type, variable.IntValue, variable.BoolValue, variable.StringValue)
             : SortKey.Missing)
     ];
