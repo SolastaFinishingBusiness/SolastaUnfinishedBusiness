@@ -8,11 +8,9 @@ using Object = UnityEngine.Object;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// Fast travel for the campfire gather (user directions, 2026-11-02: "ensure that there is no fast travel point within
-// 5 cells of the campfire before creating one. Then, if necessary, create one"; "have all players be moved to the fast
-// travel point"; then "for the campfire gather, we always require to fast travel, even if the character is nearby" and
-// "do not exclude the dead/dying/downed/unconscious characters"; then "ensure that the fast travel only occurs if
-// there is someone outside of the long rest radius"). CampfireRestContext runs it before an ordinary campfire long
+// Fast travel for the campfire gather. A fast travel point within 5 cells of the campfire is used when there is one;
+// otherwise a temporary one is made. The whole party, dead, dying and unconscious characters included, is moved to it,
+// and only when somebody is outside the long rest range. CampfireRestContext runs it before an ordinary campfire long
 // rest when the party is out of range (NeedsTravel): the whole party fast travels to the campfire's point, with no
 // walk.
 //
@@ -57,14 +55,14 @@ internal static class CampfireFastTravelContext
     // where the last fast travel that placed the party went, on every computer. In multiplayer another player's fast
     // travel, agreed before the campfire's and queued at an earlier command tick, can still run first here: the game
     // doesn't refuse a second travel request (FastTravelManager.NetworkedFastTravel), and the travels run in tick order.
-    // Its arrival isn't the gather's, so the gather compares where an arrival went with its own waypoint (Codex's 1.11.0 release review, 2026-11-02; found by
+    // Its arrival isn't the gather's, so the gather compares where an arrival went with its own waypoint (found by
     // reading the game's code, not seen in a game).
     private static int3? _lastArrivalTarget;
 
     // SetupPartyOnDestination is running: the game clears IsFastTraveling and asks for the exploration state at the
     // start of that arrival step (IL_009b), and only then places the party and fades back in over later frames, so
-    // "not travelling, exploring" doesn't mean the travel is over while this is set (in-game test, 2026-11-02: the
-    // gather reported a failed travel although the party arrived)
+    // "not travelling, exploring" doesn't mean the travel is over while this is set (otherwise the gather
+    // reports a failed travel although the party arrived)
     private static bool _arriving;
 
     #region Destination
@@ -83,11 +81,11 @@ internal static class CampfireFastTravelContext
             return;
         }
 
-        // the user asked that no second fast travel point be made next to one that is already there; a waypoint
+        // no second fast travel point is made next to one that is already there; a waypoint
         // hidden by the map (its node inactive) doesn't count, as the game doesn't offer it either. Of those, one the
         // party can fast travel to now (revealed, and in the leader's area when the waypoint asks for that: TryStart's
-        // conditions) comes first, so a nearer unusable point doesn't hide a usable one (Codex's review of fc363341,
-        // 2026-11-02). When none is usable the nearest is kept, and TryStart then fails the gather: no temporary point
+        // conditions) comes first, so a nearer unusable point doesn't hide a usable one. When
+        // none is usable the nearest is kept, and TryStart then fails the gather: no temporary point
         // is made beside an existing one. MapWaypoints has the same order on every computer, so all pick the same one.
         var leader = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters.FirstOrDefault();
         var existing = gameLocation.MapWaypoints
@@ -223,7 +221,7 @@ internal static class CampfireFastTravelContext
     }
 
     // after the travel, a party member still out of the long rest range (the game couldn't place them): the message
-    // naming them, e.g. "Kushiel is out of range for a long rest." (user direction, 2026-11-02), or null when the
+    // naming them, e.g. "Kushiel is out of range for a long rest.", or null when the
     // whole party is in range
     internal static string DescribeOutOfRange(GameLocationCharacter user)
     {
@@ -233,8 +231,8 @@ internal static class CampfireFastTravelContext
     }
 
     // the game routes a fast travel from the first party member (MapWaypointItem.PrepareFastTravel, ExecutePath); when
-    // that leader is dead, dying or unconscious the gather doesn't try (user direction, 2026-11-02: name the leader and
-    // their state, e.g. "Kushiel is dead. Unable to fast travel."). The message, or null when the leader can lead.
+    // that leader is dead, dying or unconscious the gather doesn't try, and the message names the leader and their
+    // state, e.g. "Kushiel is dead. Unable to fast travel.". The message, or null when the leader can lead.
     internal static string DescribeDownedLeader()
     {
         var leader = ServiceRepository.GetService<IGameLocationCharacterService>()?.PartyCharacters.FirstOrDefault();
@@ -415,9 +413,9 @@ internal static class CampfireFastTravelContext
     // route, its waypoint lookup failed), once the game is exploring again with no arrival step running (not
     // travelled). A travel that hasn't begun here after
     // StartTimeoutSeconds is reported as not travelled, and the gather is given up without sending anything more:
-    // the command may only be late (a stalled tick), not dropped, so it may still run (Codex review of c44f860d,
-    // 2026-11-02). It goes away without going on when the gather was dropped meanwhile (another rest screen opened, a
-    // reset); a travel already queued then still runs, as an ordinary whole-party fast travel.
+    // the command may only be late (a stalled tick), not dropped, so it may still run. It goes away without going on
+    // when the gather was dropped meanwhile (another rest screen opened, a reset); a travel already queued then still
+    // runs, as an ordinary whole-party fast travel.
     private sealed class TravelDriver : MonoBehaviour
     {
         private const float StartTimeoutSeconds = 20f;

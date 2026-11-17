@@ -469,8 +469,8 @@ internal static class LightingAndObscurementContext
                 .Any(m => Regex.IsMatch(sensorCharacter.Name, m, RegexOptions.IgnoreCase)))
                 sensorCharacter.SenseModes.Add(new SenseMode(SenseMode.Type.Truesight, 60, 1));
             // Monsters in MonstersThatShouldNotHaveTremorSense (Aksha) lose Tremorsense with this option
-            // (SwitchMonstersOnObscurementRules). This block used to add Tremorsense 60 to them on every perception
-            // check, undoing that (#55).
+            // (SwitchMonstersOnObscurementRules), so this block doesn't add Tremorsense 60 to them on a perception
+            // check, which would undo that (#55).
         }
 
         if (target != null)

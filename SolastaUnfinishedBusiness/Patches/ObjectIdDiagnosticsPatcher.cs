@@ -100,7 +100,7 @@ public static class ObjectIdDiagnosticsPatcher
     }
 
     //PATCH: a character revealed, recorded before the game's reveal and the mod's own reveal postfix (the fire-monster
-    // light, Codex's first candidate) run, with whether the character was already visible (the game then does nothing)
+    // light, a candidate cause) run, with whether the character was already visible (the game then does nothing)
     [HarmonyPatch(typeof(GameLocationCharacterManager), nameof(GameLocationCharacterManager.RevealCharacter))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]

@@ -18,10 +18,9 @@ namespace SolastaUnfinishedBusiness.Models;
 //
 // The maximum is worked out every time from the current options and class levels, not read from the attribute: a hero
 // keeps its own copy of the class feature's modifier (for example Set 2 for a Paladin levelled with the 2024 option
-// on), and switching the option doesn't change that copy, so the attribute followed the option as it was at level-up.
-// The saved copy is never rewritten (user, 2026-11-15: "the character save can still have 2 saved up ... if the
-// setting toggles between 2014 and 2024, it will be based on whatever value the character has saved"); it is only
-// ignored for the class part. Modifiers from anything else, such as the Blessed Soul feat's +1, still count.
+// on), and switching the option doesn't change that copy, so the attribute follows the option as it was at level-up.
+// The saved copy is never rewritten, so the save keeps the value it was made with; it is only ignored for the class
+// part. Modifiers from anything else, such as the Blessed Soul feat's +1, still count.
 public static partial class Tabletop2024Context
 {
     internal enum ChannelDivinityPool
@@ -246,8 +245,7 @@ public static partial class Tabletop2024Context
         }
 
         // InflictCondition's amount is only a source amount; the condition's own amount comes from its AmountOrigin,
-        // which these conditions don't set, so it starts at 0 and is set here (Codex's review: else a pool's first use
-        // was free)
+        // which these conditions don't set, so it starts at 0 and is set here (else a pool's first use would be free)
         var newCondition = character.InflictCondition(
             conditionName,
             DurationType.Permanent,
@@ -297,8 +295,8 @@ public static partial class Tabletop2024Context
 
     // The class a Channel Divinity power belongs to. A bundle's sub-power (such as Divine Spark's Heal, Necrotic and
     // Radiant) has no class origin of its own, only its master power does, so the master's is used; without this the
-    // sub-powers fell into the shared pool, which has no uses when every Channel Divinity class is on the 2024 rules
-    // (seen in game on bb80c00b: Divine Spark's choices were greyed out).
+    // sub-powers would fall into the shared pool, which has no uses when every Channel Divinity class is on the 2024
+    // rules (Divine Spark's choices would be greyed out).
     private static CharacterClassDefinition ChannelDivinityOriginClass(
         RulesetCharacter character, FeatureDefinitionPower power, CharacterClassDefinition originClass)
     {
@@ -404,8 +402,8 @@ public static partial class Tabletop2024Context
             }
 
             // Such an unused pool isn't shown anywhere, so it isn't listed either: otherwise the rest screen shows
-            // "Channel Divinity" a second time beside the game's own line for the shared pool (seen in game on
-            // a70bbacf with both options off and a use left in the Paladin pool from earlier).
+            // "Channel Divinity" a second time beside the game's own line for the shared pool (e.g. with both options
+            // off and a use left in the Paladin pool from earlier).
             if (GetChannelDivinityMax(character, pool) == 0)
             {
                 continue;

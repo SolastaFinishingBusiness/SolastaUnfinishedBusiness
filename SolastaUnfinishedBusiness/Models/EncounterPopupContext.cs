@@ -1,12 +1,12 @@
 namespace SolastaUnfinishedBusiness.Models;
 
-// Issue 11 (2026-11-01, a host in a six-player game, 1.10.0): the travel encounter popup's Proceed did nothing, 9 times,
+// Issue 11 (a host in a six-player game): the travel encounter popup's Proceed did nothing, 9 times,
 // each click a NullReferenceException at EncounterRequestModal.OnProceedCb IL_0005. That is Gui.Game being null: the
 // game had been destroyed (GameManager.DestroyGameAsync, from a load or an exit) or the game service was gone
 // (GameManager.Shutdown), while the popup stayed on screen. The game never closes this popup when the game goes: it hides
 // only when the travel interruption ends, an encounter starts or a player joins a game, and GuiGameScreen.GameDestroying
 // only unhooks. Why the game went under the player is unknown: that launch's Player.log was lost
-// (evidence/encounter-proceed-issue11/FINDINGS.md, with Codex's investigation).
+// (evidence/encounter-proceed-issue11/FINDINGS.md).
 //
 // So, in EncounterRequestModalPatcher: the popup closes when the game is destroyed, its buttons do nothing when there is
 // no game, and this logs what the popup saw, so the next occurrence shows the cause. The guards only act when there is

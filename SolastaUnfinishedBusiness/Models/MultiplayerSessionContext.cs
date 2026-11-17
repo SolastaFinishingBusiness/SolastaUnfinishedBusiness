@@ -185,7 +185,7 @@ internal static class MultiplayerSessionContext
     // Whether a player's reported version counts as this game's build, for every version check (warnings, room list,
     // player slots, the Multiplayer tab, votes). An unverified version never matches, not even an identical one: two
     // DLLs without the mark beside the same Info.json would both report "<version>?unverified", and equal strings
-    // made the checks treat them as one build although their code can differ (Codex's review of PR #30).
+    // would make the checks treat them as one build although their code can differ.
     internal static bool IsSameVerifiedBuild(string version)
     {
         return version != null && version == BuildVersion && !version.EndsWith(UnverifiedSuffix);

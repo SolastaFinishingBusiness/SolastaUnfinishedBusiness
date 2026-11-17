@@ -17,7 +17,7 @@ internal static class MultiplayerDisplay
 
 #if FB_DEVELOPMENT
     // the vote screen preview is a development tool: compiled only into development builds (FB_DEVELOPMENT, see the
-    // project file), never into a release (user direction, 2026-11-02)
+    // project file), never into a release
 
     // the vote screen preview's choices, kept while the game runs (not settings)
     private static int _votePreviewOtherPlayers = 3;

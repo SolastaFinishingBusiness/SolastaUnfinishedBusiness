@@ -696,9 +696,8 @@ internal static partial class SpellBuilders
                 case CharacterActionUsePower:
                 {
                     // Moving the shield recasts the spell; remember the rounds left so the recast below keeps
-                    // them. This used to add 0 and then TryAdd the rounds, which never overwrites, so the stored
-                    // value was always 0 and a moved shield started a fresh minute (moving it every turn kept it
-                    // up forever).
+                    // them. Set, not TryAdd, which never overwrites: an earlier 0 would stay, and a moved shield
+                    // would start a fresh minute (moving it every turn would keep it up forever).
                     actingCharacter.SetSpecialFeatureUses(FizbanPlatinumShieldTag, rulesetSpell.RemainingRounds);
 
                     var spellRepertoire = rulesetSpell.SpellRepertoire;

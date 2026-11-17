@@ -170,7 +170,7 @@ public class CursorMotionHelper : MonoBehaviour
         var beams = _selectionService.SelectedTargets.Count(t => t.Guid == target.Guid);
 
         // The creature under the pointer would get the next beam too, while there is one left to aim: so a creature
-        // already picked once shows the move for two beams when it is hovered again (user, 2026-11-11).
+        // already picked once shows the move for two beams when it is hovered again.
         if (_hovered == target.Guid && _cursor is CursorLocationSelectTarget { remainingTargets: > 0 })
         {
             beams++;

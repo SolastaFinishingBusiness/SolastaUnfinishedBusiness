@@ -8,11 +8,11 @@ using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Models;
 
-// Forced movement through areas (issue #29, task 4; user handoff 2026-11-10).
+// Forced movement through areas (issue #29, task 4).
 //
-// What was wrong. A push or pull (Repelling Blast, Grasp of Hadar, Thorn Whip, Thunderwave, ...) is one move: the game's
-// CharacterActionPushed starts one animation and, when it ends, StopMoving -> FinishMoveTo changes the creature's cell
-// once, from where it started to where it lands. Areas such as Spike Growth or Spirit Guardians are worked out by
+// What the game does. A push or pull (Repelling Blast, Grasp of Hadar, Thorn Whip, Thunderwave, ...) is one move: the
+// game's CharacterActionPushed starts one animation and, when it ends, StopMoving -> FinishMoveTo changes the creature's
+// cell once, from where it started to where it lands. Areas such as Spike Growth or Spirit Guardians are worked out by
 // GameLocationEnvironmentManager.OccupationChanged, which runs after each change of cell and finds the creatures of an
 // area through the map's occupant lists. So only the landing cell ever counted: a creature pushed two cells into Spike
 // Growth took one lot of damage instead of two, and one pushed right through an area to a clear cell took none.
@@ -48,9 +48,9 @@ internal static class ForcedMovementContext
     // "[ForcedMove]" lines per launch (Logging > "Forced movement through areas")
     private const int MaxLines = 300;
 
-    // A route goes through three places, so that it can only ever be used by the push it was worked out for (Codex's
-    // review of PR #31: one "latest route" per creature let a second push, worked out while the first was still on
-    // its way, replace or lose the first one's cells, depending on timing).
+    // A route goes through three places, so that it can only ever be used by the push it was worked out for. A single
+    // "latest route" per creature would let a second push, worked out while the first was still on its way, replace or
+    // lose the first one's cells, depending on timing.
     //
     // 1. Solved: worked out inside the ApplyMotionForm call that is running, waiting for that same call to hand its
     //    push to the action service. Emptied when the call ends, so nothing waits longer than that.
@@ -110,7 +110,7 @@ internal static class ForcedMovementContext
     // pulls are enabled): a list for the solver to put each cell it accepts in, or null when this run isn't recorded.
     // The mod's solver can report its cells itself, which is exact for every distance it supports, including a pull
     // onto the source's own cell (MotionContext.PullOntoCaster, Gravity Fissure), whose last step no plain distance
-    // asks for (Codex's review of PR #31).
+    // asks for.
     internal static List<int3> TakeSolverSteps()
     {
         _solverSteps = _solvingSteps || _motionFormDepth == 0 ? null : [];
@@ -200,7 +200,7 @@ internal static class ForcedMovementContext
                 }
 
                 // No progress: the shorter push ends where an earlier one did without reaching the destination. Not
-                // expected from the game's solver; such a push would keep the old behaviour, the landing cell only.
+                // expected from the game's solver; such a push only counts its landing cell.
                 if (cell == start || cells.Contains(cell))
                 {
                     break;
@@ -298,12 +298,12 @@ internal static class ForcedMovementContext
         }
     }
 
-    // A queued push kept the destination worked out when it was made (issue #33). The game works every push of a cast
-    // out as its beam hits, before any of them has moved the creature, and runs them one after another. So with two
-    // beams of Eldritch Blast and Repelling Blast on one creature, both pushes had the same destination: the first
-    // moved the creature 2 cells and the second found it already there and did nothing. That is why Repelling Blast
-    // only ever pushed once. A pull worked out before a push ran (Grasp of Hadar with Repelling Blast) likewise ran
-    // to a destination that made no sense from where the push had left the creature.
+    // In the game a queued push keeps the destination worked out when it was made (issue #33). The game works every
+    // push of a cast out as its beam hits, before any of them has moved the creature, and runs them one after another.
+    // So with two beams of Eldritch Blast and Repelling Blast on one creature, both pushes get the same destination:
+    // the first moves the creature 2 cells and the second finds it already there and does nothing, so Repelling Blast
+    // only pushes once. A pull worked out before a push runs (Grasp of Hadar with Repelling Blast) likewise runs to a
+    // destination that makes no sense from where the push left the creature.
     //
     // So a push that starts from another cell than it was worked out from is worked out again, from the cell the
     // creature is really on, with the same source point, distance and direction, and the action is given that
@@ -417,7 +417,7 @@ internal static class ForcedMovementContext
         Active.Remove(character);
 
         // Not the move that was recorded: it goes somewhere else. Do nothing and let the game handle the landing cell
-        // as before.
+        // as it always does.
         if (route.Destination != destination)
         {
             return true;
@@ -426,8 +426,8 @@ internal static class ForcedMovementContext
         // Where the creature really is now. Usually where it stood when the push was worked out, and then the
         // solver's cells are the ones it goes through.
         //
-        // Not always (Codex's second review of PR #31): the game works a push out when it is made but runs it later,
-        // from wherever the creature is by then. Since issue #33 such a push is worked out again when it starts
+        // Not always: the game works a push out when it is made but runs it later, from wherever the creature is by
+        // then. Such a push is worked out again when it starts
         // (WorkOutAgain), so its route starts where the creature is. What is left for this branch is a push that
         // wasn't worked out again (the setting is off, or it couldn't be) and runs as the game queued it: one
         // straight move to the old destination, whose cells are those on the straight line. No solver checked
@@ -476,7 +476,7 @@ internal static class ForcedMovementContext
         {
             // The creature is where the effect put it, fully moved there by the game (a teleport runs its own
             // FinishMoveTo, which also ends this move step). Committing the push's landing cell now would drag it
-            // back out, so the game's FinishMoveTo is skipped (Codex's review of PR #31).
+            // back out, so the game's FinishMoveTo is skipped.
             if (IsLogOn)
             {
                 Log($"{Name(character)} was moved to {Cell(character.LocationPosition)} by an area; " +
@@ -487,8 +487,8 @@ internal static class ForcedMovementContext
         }
 
         // Put the creature back on the cell it started from, in the occupant lists only. FinishMoveTo then makes the
-        // real move from start to landing cell exactly as before this change: one Moved event with the true start,
-        // one FinalizeNewPosition for the landing cell, and the areas there worked out from what the steps left.
+        // real move from start to landing cell exactly as the game does without the steps: one Moved event with the true
+        // start, one FinalizeNewPosition for the landing cell, and the areas there worked out from what the steps left.
         if (current != start)
         {
             MoveOccupant(positioningService, character, current, start);

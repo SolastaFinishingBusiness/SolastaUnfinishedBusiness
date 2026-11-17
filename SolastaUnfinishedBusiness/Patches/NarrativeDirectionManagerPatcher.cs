@@ -33,7 +33,7 @@ public static class NarrativeDirectionManagerPatcher
             // Campaigns; 0 = off). Only who appears in the scene changes, not the party or the save; roles of a smaller cast
             // are filled by the game's padding (NarrativeSequenceBuilderPatcher), as for a real small party. Single player
             // only: it changes who holds the scene's roles, and it isn't part of the settings the host sends, so in a
-            // multiplayer room one computer could build a different cast (Codex's review of f00afc52).
+            // multiplayer room one computer could build a different cast.
             if (MultiplayerContext.DevCutsceneHeroLimit > 0 && !Global.IsMultiplayer)
             {
                 var party = Gui.GameCampaign.Party.CharactersList.Select(x => x.RulesetCharacter).ToList();

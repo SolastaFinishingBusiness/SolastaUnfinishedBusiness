@@ -12,7 +12,7 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // Unity gives a press to the nearest object up the hierarchy that handles presses, and only sends a click when that
 // object is also the click handler. The inspection screen's MainPanel has an AudioGUIComponent that handles presses
 // (for its UI sounds), so without taking the press here the row never got a click. The row passes the press and the
-// release on to its parents, so the panel's sounds play as before.
+// release on to its parents, so the panel's sounds still play.
 internal sealed class FeatureDetailsPanel : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
 {
     private BaseDefinition _choice;

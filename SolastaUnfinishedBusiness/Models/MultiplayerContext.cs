@@ -621,10 +621,10 @@ internal static class MultiplayerContext
     // scene; with 4 they stay wherever they were on the map. So the number of markers doesn't say who needs a place: with
     // more than 4 heroes the whole party is staged around the 4 seats.
     //
-    // Parties of up to 4 are put in the same height order on the seats the game used (user direction, 2026-11-07: "implement
-    // it for 4 or lower as well"), unless Gameplay > Campaigns > "Keep the game's order for parties of 4 or fewer" is on
-    // (DisableCutsceneHeightOrderSmallParties, off by default). Off the grid only: there it changes what's shown, not game
-    // state, so computers with different settings stay in sync. Map-played sequences keep the game's placement.
+    // Parties of up to 4 are put in the same height order on the seats the game used, unless Gameplay > Campaigns > "Keep the
+    // game's order for parties of 4 or fewer" is on (DisableCutsceneHeightOrderSmallParties, off by default). Off the grid only:
+    // there it changes what's shown, not game state, so computers with different settings stay in sync. Map-played sequences keep
+    // the game's placement.
 #if FB_DEVELOPMENT
     // Development builds only: how many party members take part in cutscenes, 0 for all (NarrativeDirectionManagerPatcher).
     // Set from the mod menu and kept only while the game runs, never saved, so it can't follow a player into a release.
@@ -671,7 +671,7 @@ internal static class MultiplayerContext
         }
 
         // A party of up to 4 in a scene with fewer seats has extras too; with the opt-out on it keeps the game's order, so only
-        // the heroes without a seat move (Codex's review of f00afc52: the sort ran regardless of the setting there).
+        // the heroes without a seat move.
         var keepsGameOrder = party.Count <= ToolsContext.GamePartySize && !SortsSmallParties(party);
 
         if (isTopDown || party.Count <= seats.Count || keepsGameOrder)
@@ -810,7 +810,7 @@ internal static class MultiplayerContext
     //
     // A teleport of only some heroes moves part of the party, so the party isn't restaged; but a sorted party no longer stands
     // where the scene expects each role, so a role holder can land on another hero. That hero takes a place the movers left,
-    // as for bigger parties (Codex's review of f00afc52: small parties skipped this).
+    // as for bigger parties.
     private static void RestageSmallPartyAfterTeleport(
         NarrativeStateTeleportCharacterBase state,
         Transform[] markers,
