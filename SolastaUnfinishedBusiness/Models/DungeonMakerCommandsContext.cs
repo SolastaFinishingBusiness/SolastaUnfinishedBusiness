@@ -51,7 +51,9 @@ namespace SolastaUnfinishedBusiness.Models;
 //     what started it and the characters passed along (LogResolution), and the game's alert at the top of the
 //     screen (AlertFailure).
 //   For Roll_Trigger the character must still be a conscious party member in the location when the command runs.
-//   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member.
+//   Dialog_Trigger uses the acting character when there is one, otherwise the first conscious party member opens
+//   the dialogue as a stand-in: the dialogue and what it sets off then act for the request's acting character if
+//   it has one (unconscious, say), and for nobody otherwise (StandInRecord).
 //   Teleport_PartyNode needs nobody.
 //
 // FOLLOWING A CHAIN, so the commands work through as many kinds of flow as possible without changing what the
@@ -103,13 +105,14 @@ namespace SolastaUnfinishedBusiness.Models;
 //     variable among them, Commands_SavedState (or Commands_SavedState_2, ... when the campaign has a variable of
 //     that name; it is known after a load by the signature its text starts with, not by its name): the records of the
 //     triggered flows, the timers set going by a character, the waiting commands' acting characters and the whole
-//     one-character teleport queue (SaveState). It is taken out again as soon as they are written, so it exists in the
-//     save only and the running game is not changed by saving;
-//   - after a load (OnLocationReady), it is read, taken out of the variables, and what still fits is put back
-//     before the waiting commands are taken (RestoreState);
-//   - nothing is written when nothing is waiting, so a campaign that doesn't use the commands has no such
-//     variable in its saves, and a save loads without the mod as before (the game then has one more String
-//     variable, which nothing reads).
+//     one-character teleport queue, and the state last applied to each torch (SaveState). It is taken out again as
+//     soon as they are written, so it exists in the save only and the running game is not changed by saving;
+//   - after a load, before the location's first gadget update (PrepareLocation; the game updates the gadgets of
+//     a loading location twice before it is ready, and the flows the save kept can start there), it is read, taken
+//     out of the variables, and what still fits is put back before the waiting commands are taken (RestoreState);
+//   - nothing is written when nothing is waiting and no torch was switched, so a campaign that doesn't use the
+//     commands or the torch variables has no such variable in its saves, and a save loads without the mod as
+//     before (the game then has one more String variable, which nothing reads).
 //
 // ONE-CHARACTER TELEPORT (Teleport_Node), as specified in issue #42:
 //   - It moves the character that caused the activation and never another. Only a party member or a guest
@@ -129,6 +132,8 @@ namespace SolastaUnfinishedBusiness.Models;
 // TORCHES (Int: 1 = lit, 2 = out, 0 or missing = no opinion; strongest first)
 //   Torch_<gadget name>  one torch;   Torches_Lit  every torch in the location;
 //   Torches_Auto         (Int or Bool) on outdoor maps, lit from 18:00 to 08:00.
+//   A state is applied to a torch once, when the variable that decides it asks for a new one; a torch toggled by
+//   hand afterwards stays so, also over leaving the location and over a save and load (TorchStates).
 //
 // DISCOVERY
 //   Dialog_ListGadgets   Int. 1 lists the interactive gadgets of the location in the log, 2 lists every gadget
@@ -271,6 +276,17 @@ internal static class DungeonMakerCommandsContext
 
     private static readonly List<Torch> Torches = [];
 
+    // Per torch of the game being played (TorchKey: its location and its gadget name), the state the mod last
+    // applied to it and the variable that decided it. A torch's lit condition is part of its gadget's state, which
+    // the game keeps when the party leaves the location and in saves; keeping this over the same span is what
+    // makes "applied once per change" hold there too, so a torch a player toggled by hand isn't set back on coming
+    // back or on loading. Kept in saves with the saved state ("L" entries), emptied when another game is played
+    // (PrepareLocation).
+    private static readonly Dictionary<string, TorchState> TorchStates = [];
+
+    // the automatic torches' day or night at the last hour change, to see it switch (NoteHourChanged)
+    private static bool? _autoLitPeriod;
+
     private static int _serial;
 
     // > 0 while this class writes a variable itself, so its own write is not taken as a request
@@ -278,6 +294,10 @@ internal static class DungeonMakerCommandsContext
 
     // the party teleport whose Teleport functor is being stepped right now, if any (see NoteCharacterTeleported)
     private static Request _placing;
+
+    // the Dialog_Trigger request whose dialogue a stand-in character is opening right now, if any (see
+    // StepInteraction and NoteInteracted)
+    private static Request _standInFor;
 
     // the Variable Operation functor that is running right now, if any (see BeginVariableOperation)
     private static FunctorParametersDescription _operation;
@@ -317,6 +337,11 @@ internal static class DungeonMakerCommandsContext
     private const int MaxChainLength = 300;
 
     private static IGameVariableService _subscribedTo;
+
+    // the location object whose commands' state has been set up (PrepareLocation); kept after it unloads, so the
+    // gadget updates the game still makes while the location exits don't set it up again
+    private static GameLocation _preparedLocation;
+
     private static GameLocation _torchLocation;
     private static bool _listRequested;
     private static bool _torchesDirty;
@@ -329,21 +354,81 @@ internal static class DungeonMakerCommandsContext
 
     #region Hooks
 
-    // GameLocationManager.ReadyLocation: a location has finished loading (entered, or loaded from a save).
+    // GameLocation.UpdateGadgets, before it runs. While a location loads (IGameLocationService.LocationIsReady is
+    // still false), GameLocationManager.LoadLocationAsync updates the new location's gadgets twice before it calls
+    // ReadyLocation: right after the LocationEntered event and right after LocationFinalized (read in its IL). The
+    // game's per-frame update (GameLocation.UpdateLocation) doesn't update gadgets of a loading location until it
+    // is ready. Those two updates are the first time any of the location's flows can start, including those a save
+    // kept as triggered (GameGadget.PostLoad sets PendingSavedTrigger at LocationPostLoading, earlier in the same
+    // coroutine), and they can write command variables. So the location's state (the subscription, the save's
+    // records and teleport queue, the waiting commands) is set up here, before the first of them, once per
+    // location object. The location being left is still updated while it exits; it was set up when it loaded, so
+    // it is never set up again.
+    internal static void BeforeGadgetUpdate(GameLocation location)
+    {
+        if (location == null || ReferenceEquals(location, _preparedLocation) ||
+            !ReferenceEquals(location, CurrentLocation) ||
+            ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: false })
+        {
+            return;
+        }
+
+        PrepareLocation();
+    }
+
+    // GameLocationManager.ReadyLocation: a location has finished loading (entered, or loaded from a save). Its state
+    // was set up before its first gadget update (PrepareLocation); this covers a location that became ready without
+    // one, then starts what only runs once the location is ready.
     internal static void OnLocationReady()
+    {
+        if (!ReferenceEquals(_preparedLocation, CurrentLocation))
+        {
+            PrepareLocation();
+        }
+
+        // the mod version the campaign's file was saved with, for the log
+        DungeonMakerStampContext.NotePlaying(CurrentLocation?.UserCampaign);
+
+        var variables = ServiceRepository.GetService<IGameVariableService>();
+
+        if (variables == null)
+        {
+            return;
+        }
+
+        _listRequested = IntValueOf(variables, ListVariable) != 0;
+        _torchesDirty = true;
+        _torchRetriesLeft = TorchRetries;
+        DungeonMakerClockContext.OnLocationReady();
+    }
+
+    // Sets up the commands for the location that is loading (BeforeGadgetUpdate) or, failing that, has just become
+    // ready (OnLocationReady): the subscription to the game's variable event, the saved state (records of triggered
+    // flows and timers, the one-character teleport queue), the commands the variables already hold with the acting
+    // characters the save kept for them. Done before any of the location's flows can start, so a flow that starts
+    // while the location loads finds its record, its kept place in the teleport queue comes after the saved queue,
+    // and the variables it writes are seen with the flow that wrote them.
+    private static void PrepareLocation()
+    {
+        _preparedLocation = CurrentLocation;
+
+        Guarded("location set-up", PrepareLocationState);
+    }
+
+    private static void PrepareLocationState()
     {
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
         // which of the mod's names this campaign owns, before anything below writes to one
         DungeonMakerNamesContext.Refresh(CurrentLocation);
 
-        // the mod version the campaign's file was saved with, for the log
-        DungeonMakerStampContext.NotePlaying(CurrentLocation?.UserCampaign);
-
-        // the variable service belongs to the game being played: move the subscription when it is another one
+        // the variable service belongs to the game being played (a GameSubmanager, made anew with each game, new or
+        // loaded): move the subscription when it is another one
         if (!ReferenceEquals(_subscribedTo, variables))
         {
             DungeonMakerNamesContext.ResetSession();
+            TorchStates.Clear();
+            _autoLitPeriod = null;
 
             if (_subscribedTo != null)
             {
@@ -359,7 +444,7 @@ internal static class DungeonMakerCommandsContext
         }
 
         // Nothing may be left over from another location or another save (the unload hook already dropped those;
-        // this covers a location that went away without it). Requests made while this location was loading stay.
+        // this covers a location that went away without it). Requests already made for this location stay.
         var location = CurrentLocation;
 
         foreach (var stale in Waiting.Values.Where(x => !ReferenceEquals(x.Location, location)).ToArray())
@@ -443,11 +528,6 @@ internal static class DungeonMakerCommandsContext
                 Main.Info($"DM command {command} cancelled: it was running when the game was saved.");
             }
         }
-
-        _listRequested = IntValueOf(variables, ListVariable) != 0;
-        _torchesDirty = true;
-        _torchRetriesLeft = TorchRetries;
-        DungeonMakerClockContext.OnLocationReady();
     }
 
     // GameLocationManager.UnloadLocationAsync: the location is going away, with its gadgets and characters.
@@ -621,18 +701,58 @@ internal static class DungeonMakerCommandsContext
             return;
         }
 
-        var activation = new Activation
-        {
-            MoverKnown = actor != null,
-            SoloTeleportEligible = CanTriggerSoloTeleport(actor),
-            MoverGuid = actor?.Guid ?? 0,
-            MoverName = actor?.Name,
-            Origin = $"'{gadget.UniqueNameId}'" + (actor != null ? $" (used by {actor.Name})" : " (used)"),
-            Chain = gadget.UniqueNameId
-        };
+        var activation = _standInFor != null
+            ? StandInRecord(_standInFor, gadget, actor)
+            : new Activation
+            {
+                MoverKnown = actor != null,
+                SoloTeleportEligible = CanTriggerSoloTeleport(actor),
+                MoverGuid = actor?.Guid ?? 0,
+                MoverName = actor?.Name,
+                Origin = $"'{gadget.UniqueNameId}'" + (actor != null ? $" (used by {actor.Name})" : " (used)"),
+                Chain = gadget.UniqueNameId
+            };
 
         _causes.Add(listener, activation);
         ExpectSoloTeleport(listener, activation);
+    }
+
+    // The record of a dialogue that Dialog_Trigger opened through a stand-in (a conscious party member picked
+    // because the request has no usable acting character). The stand-in is not the cause: the flow, its dialogue
+    // and whatever they set off act for the request's acting character when it has one (it may be unconscious, or
+    // gone, which the command it leads to then reports), and for nobody otherwise, with the request's own reason.
+    // StandIn is set either way: the game hands the stand-in to the flow as its interacting character and passes it
+    // along conditions and events, so "the one character the game passed along" (ResolveActor) would name the
+    // stand-in, and must not be used for this chain.
+    private static Activation StandInRecord(Request request, GameGadget gadget, GameLocationCharacter standIn)
+    {
+        var chain = ExtendChain(request.Chain, gadget.UniqueNameId);
+        var origin = $"{DialogVariable} '{request.Target}'" +
+                     (request.Origin != null ? $" (written by a chain started by {request.Origin})" : string.Empty) +
+                     $", opened through {standIn?.Name ?? "a party member"}";
+
+        if (request.ActorKnown)
+        {
+            return new Activation
+            {
+                MoverKnown = true,
+                SoloTeleportEligible = CanTriggerSoloTeleport(FindCharacter(request.ActorGuid)),
+                MoverGuid = request.ActorGuid,
+                MoverName = request.ActorName ?? FindCharacter(request.ActorGuid)?.Name,
+                StandIn = true,
+                Origin = origin,
+                Chain = chain
+            };
+        }
+
+        return new Activation
+        {
+            Untraced = true,
+            StandIn = true,
+            Origin = $"{origin}, with no acting character ({request.ActorProblem ?? "none was known"})",
+            OriginTerm = request.ProblemTerm ?? "Message/&DungeonMakerTriggerOther",
+            Chain = chain
+        };
     }
 
     // GameGadget.Update, around the whole of it: the game is updating this gadget. This is where the game starts a
@@ -1294,6 +1414,16 @@ internal static class DungeonMakerCommandsContext
     // the in-game hour changed (from the clock's update): automatic torches may have to switch
     internal static void NoteHourChanged()
     {
+        // day and night of the automatic layer: a switch is a change of Torches_Auto's decision everywhere
+        var lit = AutoLitPeriod();
+
+        if (_autoLitPeriod != null && lit != null && lit != _autoLitPeriod)
+        {
+            ForgetTorchesElsewhere(TorchesAutoVariable);
+        }
+
+        _autoLitPeriod = lit ?? _autoLitPeriod;
+
         if (_torchControlSeen)
         {
             _torchesDirty = true;
@@ -1337,6 +1467,7 @@ internal static class DungeonMakerCommandsContext
         {
             _torchControlSeen = true;
             _torchesDirty = true;
+            ForgetTorchesElsewhere(name);
         }
         else
         {
@@ -1498,6 +1629,7 @@ internal static class DungeonMakerCommandsContext
     //                          (DungeonMakerNamesContext.MarkOwnRequest). It decides whether a later write is a
     //                          command, so a computer that loads or joins the game must know it as well as one that
     //                          saw it happen, or the two would act differently on the same write.
+    //   L key location state decider   what was last applied to a torch (TorchStates), in any location of the game
     // Not kept: flows that were running (the game doesn't resume them after a load, so their record and the
     // places they kept have nothing to go with), and commands already handed to the game (cancelled on load).
     private static string SaveState()
@@ -1544,14 +1676,21 @@ internal static class DungeonMakerCommandsContext
             entries.Add(Pack(["O", name]));
         }
 
+        foreach (var torch in TorchStates.OrderBy(x => x.Key, StringComparer.Ordinal))
+        {
+            entries.Add(Pack(["L", torch.Key, torch.Value.Location, torch.Value.Applied.ToString(),
+                torch.Value.Decider]));
+        }
+
         return entries.Count == 0
             ? string.Empty
             : SavedStateSignature + ";" + SavedStateVersion + ";" + string.Join(";", entries);
     }
 
-    // OnLocationReady, after a load: takes the saved state out of the campaign's variables (so it is in a save
-    // only) and puts back what still fits the loaded game. Returns the waiting commands' entries by variable,
-    // for OnLocationReady to apply once it has taken the commands themselves.
+    // PrepareLocation, after a load and before the location's first gadget update: takes the saved state out of
+    // the campaign's variables (so it is in a save only) and puts back what still fits the loaded game. Returns the
+    // waiting commands' entries by variable, for PrepareLocation to apply once it has taken the commands
+    // themselves.
     //
     // Nothing stale is put back: a record only for a flow that exists and is still triggered or has the game's
     // "pending trigger kept in the save" flag (the game starts exactly those after a load; an area's or a plate's
@@ -1584,7 +1723,7 @@ internal static class DungeonMakerCommandsContext
         }
 
         // records first: the queue's kept places refer to them
-        foreach (var entry in fields.Where(x => x.Length == 3 + RecordFieldCount && x[0] is "C" or "A"))
+        foreach (var entry in fields.Where(x => x[0] is "C" or "A" && HoldsRecord(x)))
         {
             var listener = Find(entry[1], entry[2]);
 
@@ -1650,6 +1789,13 @@ internal static class DungeonMakerCommandsContext
                         "it was the campaign's own variable when the game was saved");
                     restored++;
                     break;
+                case "L" when entry.Length == 5 && entry[3] is "1" or "2":
+                    TorchStates[entry[1]] = new TorchState
+                    {
+                        Location = entry[2], Applied = entry[3] == "1" ? 1 : 2, Decider = Text(entry[4])
+                    };
+                    restored++;
+                    break;
                 case "P" when entry.Length == 3:
                     if (Find(entry[1], entry[2]) is { } listener && _causes.TryGetValue(listener, out var cause) &&
                         cause.Expected == null)
@@ -1711,7 +1857,8 @@ internal static class DungeonMakerCommandsContext
         return ulong.TryParse(field, out var id) ? id : 0;
     }
 
-    private const int RecordFieldCount = 9;
+    // A record's fields. A record entry may stop before its last field (StandIn), which then reads as not set.
+    private const int RecordFieldCount = 10;
 
     private static string[] RecordFields(Activation record)
     {
@@ -1719,8 +1866,14 @@ internal static class DungeonMakerCommandsContext
         [
             Flag(record.MoverKnown), record.MoverGuid.ToString(), record.MoverName,
             Flag(record.SoloTeleportEligible), Flag(record.Group), Flag(record.Untraced), record.Origin,
-            record.OriginTerm, record.Chain
+            record.OriginTerm, record.Chain, Flag(record.StandIn)
         ];
+    }
+
+    // whether an entry of this kind holds a whole record from field 3 on (with or without its last field)
+    private static bool HoldsRecord(string[] entry)
+    {
+        return entry.Length == 3 + RecordFieldCount || entry.Length == 3 + RecordFieldCount - 1;
     }
 
     private static Activation ReadRecord(string[] entry, int at)
@@ -1735,7 +1888,8 @@ internal static class DungeonMakerCommandsContext
             Untraced = entry[at + 5] == "1",
             Origin = Text(entry[at + 6]),
             OriginTerm = Text(entry[at + 7]),
-            Chain = Text(entry[at + 8])
+            Chain = Text(entry[at + 8]),
+            StandIn = entry.Length > at + 9 && entry[at + 9] == "1"
         };
     }
 
@@ -1996,6 +2150,16 @@ internal static class DungeonMakerCommandsContext
 
                 break;
 
+            // A dialogue Dialog_Trigger opened through a stand-in for a request with no acting character
+            // (StandInRecord): the character the game hands the flow is the stand-in, so it isn't used.
+            case GameGadgetListenerCharacterInteraction
+                when _runs.TryGetValue(listener, out var opened) && opened.StandIn:
+                request.Chain = opened.Chain;
+                request.Origin = opened.Origin;
+                request.ActorProblem = $"the chain {opened.Chain} was started by {opened.Origin}";
+                request.ProblemTerm = opened.OriginTerm;
+                break;
+
             // an interaction that was not seen being made: the game hands the flow exactly the interacting
             // character (GameGadget.Interact)
             case GameGadgetListenerCharacterInteraction when heroes.Count == 1 && singleActorEligible:
@@ -2083,12 +2247,14 @@ internal static class DungeonMakerCommandsContext
                         request.ActorName = chained.MoverName;
                     }
                 }
-                else if (passedMeans && heroes.Count == 1 && singleActorEligible)
+                else if (passedMeans && heroes.Count == 1 && singleActorEligible && chained is not { StandIn: true })
                 {
                     // The start of the chain wasn't traced to one character (the party arriving together, a flow
                     // kept in a save, a change the mod doesn't follow), but the game passed exactly one eligible
                     // character along the chain: that one acts, by the same rule as an area the party arrives in.
-                    // A timer, a variable or a quest passes nobody, so a chain they start never gets here.
+                    // A timer, a variable or a quest passes nobody, so a chain they start never gets here. Not for
+                    // a chain started by a dialogue opened through a stand-in: the character the game passes along
+                    // it is the stand-in the mod picked (StandInRecord).
                     request.ActorGuid = heroes[0];
                     request.ActorKnown = true;
                     request.ActorNote = "the start of the chain was not traced to one character; the one eligible " +
@@ -2258,6 +2424,9 @@ internal static class DungeonMakerCommandsContext
         var what = isRoll ? "skill check" : "dialogue";
         var actor = ValidActor(request, out var problem);
 
+        // true when the character opening the dialogue is a stand-in rather than the request's acting character
+        var standIn = false;
+
         if (actor == null)
         {
             if (isRoll)
@@ -2267,8 +2436,11 @@ internal static class DungeonMakerCommandsContext
                 return;
             }
 
-            // a dialogue belongs to the party, so anyone conscious can open it
+            // A dialogue belongs to the party, so anyone conscious can open it. The game needs a character to
+            // interact with the gadget; the one picked here only opens the dialogue and is not the acting
+            // character of what the dialogue sets off (NoteInteracted).
             actor = FirstConsciousHero();
+            standIn = true;
 
             if (actor == null)
             {
@@ -2354,10 +2526,24 @@ internal static class DungeonMakerCommandsContext
         request.Flow = ready[0];
         MarkStarted(request);
         Main.Info(
-            $"DM command {request.Variable}: starting the {what} of '{gadget.UniqueNameId}' (flow {request.Flow}) for {actor.Name}.");
+            $"DM command {request.Variable}: starting the {what} of '{gadget.UniqueNameId}' (flow {request.Flow}) " +
+            (standIn
+                ? $"through {actor.Name}, who is not its acting character ({problem ?? "none"})."
+                : $"for {actor.Name}."));
 
-        // Interact marks the flow as triggered and the gadget as dirty; the game's gadget update runs it
-        gadget.Interact(request.Flow, actor);
+        // Interact marks the flow as triggered and the gadget as dirty; the game's gadget update runs it. With a
+        // stand-in, the postfix (NoteInteracted) records the request's own cause for the flow instead of the
+        // stand-in.
+        _standInFor = standIn ? request : null;
+
+        try
+        {
+            gadget.Interact(request.Flow, actor);
+        }
+        finally
+        {
+            _standInFor = null;
+        }
 
         if (!gadget.activeListeners[request.Flow].IsTriggered)
         {
@@ -3259,7 +3445,9 @@ internal static class DungeonMakerCommandsContext
     #region Torches
 
     // The torch list is built once per location, the first time a torch variable is seen there. Torches are then
-    // looked at again only when a torch variable is written or the hour changes, not every few frames.
+    // looked at again only when a torch variable is written or the hour changes, not every few frames. What was
+    // applied to each torch is kept in TorchStates for the whole game, so entering the location again or loading
+    // a save applies only what has changed since (see ApplyTorch).
     private static void ApplyTorches(IGameVariableService variables)
     {
         var location = CurrentLocation;
@@ -3282,6 +3470,7 @@ internal static class DungeonMakerCommandsContext
                 Torches.Add(new Torch
                 {
                     World = world,
+                    Key = TorchKey(location, world.name),
                     Variable = TorchVariablePrefix + world.name,
                     LitIndex = Array.FindIndex(choices, c => LitConditionNames.Any(n => Same(n, c)))
                 });
@@ -3325,7 +3514,12 @@ internal static class DungeonMakerCommandsContext
 
             var own = IntValueOf(variables, torch.Variable);
 
-            notBuilt |= !ApplyTorch(torch, own is 1 or 2 ? own : manual is 1 or 2 ? manual : auto);
+            // the strongest layer with an opinion decides, and is noted with what it decided
+            notBuilt |= own is 1 or 2
+                ? !ApplyTorch(torch, own, torch.Variable)
+                : manual is 1 or 2
+                    ? !ApplyTorch(torch, manual, TorchesVariable)
+                    : !ApplyTorch(torch, auto, TorchesAutoVariable);
         }
 
         // gadgets are built over the first updates of a location: come back for those that were not ready
@@ -3355,15 +3549,59 @@ internal static class DungeonMakerCommandsContext
         return hour >= AutoLitFromHour || hour < AutoOutFromHour ? 1 : 2;
     }
 
+    // whether the automatic layer asks for lit torches at this hour (on an outdoor map, with Torches_Auto on)
+    private static bool? AutoLitPeriod()
+    {
+        var hour = Gui.GameCampaign?.GameTime?.TimeInfo?.Hour;
+
+        return hour == null ? null : hour >= AutoLitFromHour || hour < AutoOutFromHour;
+    }
+
+    // a torch's entry in TorchStates: the location (its Dungeon Maker title, or the game's location definition)
+    // and the torch's gadget name
+    private static string TorchKey(GameLocation location, string gadgetName)
+    {
+        return TorchLocationKey(location) + "\n" + gadgetName;
+    }
+
+    private static string TorchLocationKey(GameLocation location)
+    {
+        return location?.UserLocation?.Title ??
+               (location?.LocationDefinition ? location.LocationDefinition.Name : string.Empty);
+    }
+
+    // A torch variable changed (OnVariableChanged), or the automatic layer switched between day and night
+    // (NoteHourChanged). The torches of the current location see that change at the next gadget update
+    // (ApplyTorches). Those of other locations are not loaded, so their entry is forgotten when that variable was
+    // what decided their state: on the next visit, what the variables then ask for is applied again, as it would
+    // have been had the change been seen there. A change of a layer below the deciding one leaves the entry.
+    private static void ForgetTorchesElsewhere(string decider)
+    {
+        if (TorchStates.Count == 0)
+        {
+            return;
+        }
+
+        var here = TorchLocationKey(CurrentLocation);
+
+        foreach (var key in TorchStates
+                     .Where(x => x.Value.Decider == decider && x.Value.Location != here)
+                     .Select(x => x.Key)
+                     .ToArray())
+        {
+            TorchStates.Remove(key);
+        }
+    }
+
     // Brings one torch to the wanted state, once per change: a torch a player toggles afterwards stays as the
-    // player left it until the layer above it changes again. Returns false when the torch's game object does not
-    // exist yet.
-    private static bool ApplyTorch(Torch torch, int desired)
+    // player left it until the variable that decides it changes again, also over leaving the location and over a
+    // save and load (TorchStates). Returns false when the torch's game object does not exist yet.
+    private static bool ApplyTorch(Torch torch, int desired, string decider)
     {
         if (desired is not (1 or 2))
         {
             // no opinion any more: forget it so that a later state is applied again
-            torch.Applied = 0;
+            TorchStates.Remove(torch.Key);
 
             return true;
         }
@@ -3375,12 +3613,19 @@ internal static class DungeonMakerCommandsContext
             return false;
         }
 
-        if (torch.Applied == desired)
+        if (TorchStates.TryGetValue(torch.Key, out var last) && last.Applied == desired)
         {
+            // the same state, possibly decided by another layer now: the change that counts from here is that
+            // layer's
+            last.Decider = decider;
+
             return true;
         }
 
-        torch.Applied = desired;
+        TorchStates[torch.Key] = new TorchState
+        {
+            Location = TorchLocationKey(CurrentLocation), Applied = desired, Decider = decider
+        };
 
         if (torch.LitIndex < 0)
         {
@@ -3490,6 +3735,10 @@ internal static class DungeonMakerCommandsContext
         // is not known either; Origin then says what started it as far as it can tell
         internal bool Untraced;
 
+        // the chain started with a dialogue Dialog_Trigger opened through a stand-in party member, so the characters
+        // the game passes along it name the stand-in and are not used to find an acting character (StandInRecord)
+        internal bool StandIn;
+
         // The same activation for the next flow of the chain, with that flow's chain text. The place in the
         // teleport queue is not copied: each flow keeps its own (ExpectSoloTeleport).
         internal Activation Copy(string chain)
@@ -3502,6 +3751,7 @@ internal static class DungeonMakerCommandsContext
                 MoverName = MoverName,
                 Group = Group,
                 Untraced = Untraced,
+                StandIn = StandIn,
                 Origin = Origin,
                 OriginTerm = OriginTerm,
                 Chain = chain
@@ -3509,9 +3759,23 @@ internal static class DungeonMakerCommandsContext
         }
     }
 
+    // what was last applied to one torch (TorchStates)
+    private sealed class TorchState
+    {
+        // 1 lit, 2 out
+        internal int Applied;
+
+        // the variable whose value decided it: Torch_<name>, Torches_Lit or Torches_Auto
+        internal string Decider;
+
+        // TorchLocationKey of the torch's location
+        internal string Location;
+    }
+
     private sealed class Torch
     {
-        internal int Applied;
+        // its entry in TorchStates
+        internal string Key;
         internal int LitIndex;
         internal bool Reported;
         internal string Variable;

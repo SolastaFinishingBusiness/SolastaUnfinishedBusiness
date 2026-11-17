@@ -53,6 +53,12 @@ internal static class DungeonMakerStampContext
     // the stamp of the file text read last (see NoteRead), until the reading method's postfix takes it
     private static string _lastRead;
 
+    // The campaign SaveUserCampaign wrote last since the last file text was read. ReadCampaignFromDisk saves the
+    // campaign it reads itself in some cases (after PostLoadJson, and when the file name doesn't match the title;
+    // three calls to SaveUserCampaign before it returns), so by the time its postfix runs, the file may carry the
+    // running version instead of the stamp read from it.
+    private static UserCampaign _savedSinceRead;
+
     // per campaign title, the version its file was saved with (campaigns are known to the game by their title)
     private static readonly Dictionary<string, string> CampaignStamps = [];
 
@@ -91,6 +97,7 @@ internal static class DungeonMakerStampContext
         var text = reader.ReadToEnd();
 
         _lastRead = null;
+        _savedSinceRead = null;
 
         try
         {
@@ -114,15 +121,30 @@ internal static class DungeonMakerStampContext
     }
 
     // UserCampaignPoolManager.ReadCampaignFromDisk, after it ran: the campaign it read, or null when the file was
-    // not a campaign. Remembers the version noted from the file's text, and says it in the log.
+    // not a campaign. Remembers the version noted from the file's text, and says it in the log. When the game saved
+    // that campaign again while reading it, the file now carries what that save wrote (NoteCampaignSaved has
+    // recorded it), and the stamp read before is only said in the log.
     internal static void NoteCampaignRead(UserCampaign campaign)
     {
         var stamp = _lastRead;
+        var rewritten = campaign != null && ReferenceEquals(_savedSinceRead, campaign);
 
         _lastRead = null;
+        _savedSinceRead = null;
 
         if (campaign?.Title == null)
         {
+            return;
+        }
+
+        if (rewritten)
+        {
+            Main.Info($"DM campaign '{campaign.Title}' was " + (stamp == null
+                          ? "saved without a mod version"
+                          : $"last saved with the mod at version {stamp}") +
+                      "; the game saved it again while reading it, so the file now carries " +
+                      (CampaignStamps.TryGetValue(campaign.Title, out var now) ? now : "no mod version") + ".");
+
             return;
         }
 
@@ -151,6 +173,8 @@ internal static class DungeonMakerStampContext
         {
             CampaignStamps[campaign.Title] = version;
         }
+
+        _savedSinceRead = campaign;
     }
 
     // DungeonMakerCommandsContext.OnLocationReady: a location of this campaign has loaded. Says once per campaign

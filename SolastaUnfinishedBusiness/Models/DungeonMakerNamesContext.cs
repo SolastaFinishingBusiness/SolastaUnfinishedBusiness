@@ -166,7 +166,7 @@ internal static class DungeonMakerNamesContext
         return Remapped.TryGetValue(name, out var moved) ? moved : name;
     }
 
-    // DungeonMakerCommandsContext.OnLocationReady, first thing: a location of the campaign has loaded. Works out
+    // DungeonMakerCommandsContext.PrepareLocation, first thing: a location of the campaign is loading. Works out
     // again, from the campaign as it is now, which of the mod's names the campaign owns and where each goes.
     // Outside a Dungeon Maker campaign or location there is nothing to read, and no name is moved.
     internal static void Refresh(GameLocation location)

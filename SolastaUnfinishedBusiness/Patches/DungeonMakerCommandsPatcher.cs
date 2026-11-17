@@ -17,12 +17,21 @@ namespace SolastaUnfinishedBusiness.Patches;
 public static class DungeonMakerCommandsPatcher
 {
     //PATCH: work on the campaign's variable commands right after the game updated its gadgets, which is where the
-    //game itself starts and continues gadget flows
+    //game itself starts and continues gadget flows. Before the first gadget update of a location that is still
+    //loading, the commands' state for that location is set up (DungeonMakerCommandsContext.BeforeGadgetUpdate):
+    //GameLocationManager.LoadLocationAsync updates the gadgets twice before it calls ReadyLocation, and flows kept
+    //in a save can start there.
     [HarmonyPatch(typeof(GameLocation), nameof(GameLocation.UpdateGadgets))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class GameLocation_UpdateGadgets
     {
+        [UsedImplicitly]
+        public static void Prefix(GameLocation __instance)
+        {
+            DungeonMakerCommandsContext.BeforeGadgetUpdate(__instance);
+        }
+
         [UsedImplicitly]
         public static void Postfix()
         {
@@ -457,7 +466,8 @@ public static class DungeonMakerCommandsPatcher
     //PATCH: keep who is behind the waiting commands and chains in the save. The game writes the campaign's
     //variables here; right before, the mod puts its own variable among them, and right after it takes it out
     //again, so the variable exists in the save only (DungeonMakerCommandsContext, "SAVES"). The state says the mod
-    //put it in. Reading a save is not touched here: OnLocationReady reads the variable once the location is ready.
+    //put it in. Reading a save is not touched here: PrepareLocation reads the variable before the loading location's
+    //first gadget update.
     [HarmonyPatch(typeof(GameVariableManager), nameof(GameVariableManager.SerializeElements))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -769,6 +779,24 @@ public static class DungeonMakerCommandsPatcher
         private static void SetHoveredGui(Cursor cursor, bool hovered)
         {
             cursor.HoveredGUI = hovered || Cursor_RefreshHover.PointerOnModPanel();
+        }
+    }
+
+    //PATCH: the location editor's map doesn't pan with the keyboard behind the commands list. The editor's
+    //HandleInput is held back while the list is open (CommandEditors_HandleInput), but the pan keys don't go
+    //through it: CursorLocationEditor.RefreshHover calls UserLocationViewPanel.CheckControls on every hover
+    //refresh, and CheckControls reads the four pan commands straight from the input service (IsCommandActive) and
+    //moves the map (DragLocationGround). CheckControls does nothing else, so it is skipped while the list is open
+    //and runs as always otherwise.
+    [HarmonyPatch(typeof(UserLocationViewPanel), nameof(UserLocationViewPanel.CheckControls))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserLocationViewPanel_CheckControls
+    {
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !DungeonMakerCommandsPopup.IsOpen;
         }
     }
 

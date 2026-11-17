@@ -29,7 +29,8 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 // tooltip look (the hint's panel pieces): a dimmed layer over the screen, a window with a title, a scrolling text
 // and two buttons. It is worked with the mouse; it takes no keys, and closing it only hides it, so nothing is left
 // holding the input. While it is open the editor behind takes neither the wheel nor clicks
-// (DungeonMakerCommandsPatcher.Cursor_RefreshHover).
+// (DungeonMakerCommandsPatcher.Cursor_RefreshHover), nor the map's pan keys
+// (DungeonMakerCommandsPatcher.UserLocationViewPanel_CheckControls).
 internal static class DungeonMakerCommandsPopup
 {
     private const string HelpButtonName = "FbCommandsHelp";

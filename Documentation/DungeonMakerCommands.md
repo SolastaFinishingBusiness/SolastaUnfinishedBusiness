@@ -102,13 +102,16 @@ run its flow during a fight, so it doesn't write its command until the fight is 
 - For `Roll_Trigger` the character must still be a conscious party member in that location when the command runs.
 - A game saved while one of these commands was waiting, or in the middle of a chain, keeps its acting character:
   the mod writes who is behind each waiting command, each gadget that is set off but has not run yet, each timer a
-  character set going and the queue of one-character teleports into the save, in a String variable named
+  character set going, the queue of one-character teleports and the state it last gave each torch into the save,
+  in a String variable named
   `Commands_SavedState` that exists in the save only. If your campaign has a variable of that name, the mod uses
   `Commands_SavedState_2` (and so on), and never reads or changes yours. What is lost over a save and load is
   what the game itself does not keep: a gadget that was in the middle of its steps (waiting before it writes, for
   instance) is not resumed, and an Area Activator or pressure plate that had not run yet is worked out again from
   who stands in it, so it only acts if exactly one character does.
-- `Dialog_Trigger` uses the acting character when there is one, otherwise the first conscious party member.
+- `Dialog_Trigger` uses the acting character when there is one, otherwise the first conscious party member opens
+  the dialogue. That party member only opens it: the dialogue and anything it sets off still act for the command's
+  own acting character (if it had one that can't talk now, for instance an unconscious one), or for nobody.
 
 Typical set-up for an automatic check: an Area Activator whose Variable Operation sets `Roll_Trigger` to the name of
 the Roll Activator. Whoever walks in rolls. It works the same when the Area Activator instead activates a separate
@@ -261,7 +264,8 @@ opinion wins:
    day. Indoor maps are not touched.
 
 A state is applied once when it changes. A torch a player lights or puts out by hand stays that way until the
-variable above it changes again. A torch is any gadget with "torch" in its name.
+variable above it changes again, also when the party leaves the location and comes back, and over a save and load.
+A torch is any gadget with "torch" in its name.
 
 ## Clock
 
