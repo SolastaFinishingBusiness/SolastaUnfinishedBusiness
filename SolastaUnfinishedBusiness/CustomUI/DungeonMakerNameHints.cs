@@ -434,9 +434,10 @@ internal static class DungeonMakerNameHints
     }
 
     // Puts a panel of the mod's and everything in it on the game's GUI layer. The game's tooltip lookup
-    // (GuiManager.UpdateTooltip) and its cursors' hover check (Cursor.RefreshHoverBase) only count pointer hits on
-    // that layer and look past any other, so a panel left on the default layer would let the tooltip of whatever
-    // lies under it show through.
+    // (GuiManager.UpdateTooltip) only counts pointer hits on that layer and walks past any other, so a panel left
+    // on the default layer would let the tooltip of whatever lies under it show through. The cursors' own hover
+    // check (Cursor.RefreshHoverBase) likewise counts the pointer as on the interface only when the topmost hit
+    // is on that layer.
     internal static void PutOnGuiLayer(GameObject panel)
     {
         foreach (var child in panel.GetComponentsInChildren<Transform>(true))

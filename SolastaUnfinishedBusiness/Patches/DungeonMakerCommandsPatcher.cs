@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
 
@@ -739,9 +738,27 @@ public static class DungeonMakerCommandsPatcher
             var setter = AccessTools.PropertySetter(typeof(Cursor), nameof(Cursor.HoveredGUI));
             var custom = new Action<Cursor, bool>(SetHoveredGui).Method;
 
-            // the method's one write of HoveredGUI, right before it returns when the pointer is on the interface
-            return instructions.ReplaceCall(setter, 1, "CursorLocationEditor.RefreshHover",
-                new CodeInstruction(OpCodes.Call, custom));
+            var found = false;
+
+            foreach (var instruction in instructions)
+            {
+                // the method's one write of HoveredGUI, right before it returns when the pointer is on the
+                // interface. The call is changed in place: a branch of the method jumps straight to it, so its
+                // labels must stay on it.
+                if (!found && instruction.Calls(setter))
+                {
+                    instruction.opcode = OpCodes.Call;
+                    instruction.operand = custom;
+                    found = true;
+                }
+
+                yield return instruction;
+            }
+
+            if (!found)
+            {
+                Main.Error("Failed to apply transpiler patch [CursorLocationEditor.RefreshHover]!");
+            }
         }
 
         // the editor's own answer, or true while one of the mod's panels is under the pointer
