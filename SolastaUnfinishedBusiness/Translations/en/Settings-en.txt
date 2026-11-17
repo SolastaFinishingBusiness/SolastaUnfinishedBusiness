@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=Search
 ModUi/&DungeonMakerListToolsPageSort=Page sort (Sort: and its direction arrow)
 ModUi/&DungeonMakerListToolsCategoryOrder=Category sort (the order of the categories: Default or A-Z)
 ModUi/&DungeonMakerListToolsListSort=Category-specific sort (each list has its own sort, with its values shown as a popup if originally unavailable)
+ModUi/&DungeonMakerListToolsSort=Sort (Sort: with the list's own keys, and its direction arrow; values shown as a popup if originally unavailable)

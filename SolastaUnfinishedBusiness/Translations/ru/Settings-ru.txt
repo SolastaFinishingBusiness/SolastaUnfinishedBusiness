@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=Поиск
 ModUi/&DungeonMakerListToolsPageSort=Сортировка страницы (Сортировка: и стрелка направления)
 ModUi/&DungeonMakerListToolsCategoryOrder=Сортировка категорий (порядок категорий: по умолчанию или А-Я)
 ModUi/&DungeonMakerListToolsListSort=Сортировка внутри категории (у каждого списка своя сортировка; её значения показываются во всплывающей подписи, если строка их не показывает)
+ModUi/&DungeonMakerListToolsSort=Сортировка (Сортировка: с собственными ключами списка и стрелка направления; значения во всплывающей подписи, если строка их не показывает)

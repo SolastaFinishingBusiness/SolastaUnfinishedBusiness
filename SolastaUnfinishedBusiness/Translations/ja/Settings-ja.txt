@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=検索
 ModUi/&DungeonMakerListToolsPageSort=ページの並べ替え（並べ替え：と方向の矢印）
 ModUi/&DungeonMakerListToolsCategoryOrder=カテゴリの並べ替え（カテゴリの順序：デフォルトまたは A-Z）
 ModUi/&DungeonMakerListToolsListSort=カテゴリ別の並べ替え（各リストに独自の並べ替えがあり、行に元々表示されていない値はポップアップで表示）
+ModUi/&DungeonMakerListToolsSort=並べ替え（並べ替え：にリスト独自の項目を含む、と方向の矢印。行に元々表示されていない値はポップアップで表示）

@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=Recherche
 ModUi/&DungeonMakerListToolsPageSort=Tri de la page (Trier : et sa flèche de sens)
 ModUi/&DungeonMakerListToolsCategoryOrder=Tri des catégories (leur ordre : Par défaut ou A-Z)
 ModUi/&DungeonMakerListToolsListSort=Tri propre à chaque catégorie (chaque liste a son propre tri, ses valeurs s'affichant dans une bulle si la ligne ne les montre pas déjà)
+ModUi/&DungeonMakerListToolsSort=Tri (Trier : avec les clés propres à la liste, et sa flèche de sens ; valeurs dans une bulle si la ligne ne les montre pas déjà)

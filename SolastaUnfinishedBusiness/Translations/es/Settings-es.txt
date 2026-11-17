@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=Búsqueda
 ModUi/&DungeonMakerListToolsPageSort=Orden de la página (Ordenar: y su flecha de dirección)
 ModUi/&DungeonMakerListToolsCategoryOrder=Orden de categorías (el orden de las categorías: Predeterminado o A-Z)
 ModUi/&DungeonMakerListToolsListSort=Orden específico de cada categoría (cada lista tiene su propio orden, con sus valores en una ventana emergente si la fila no los muestra)
+ModUi/&DungeonMakerListToolsSort=Orden (Ordenar: con las claves propias de la lista, y su flecha de dirección; valores en una ventana emergente si la fila no los muestra)

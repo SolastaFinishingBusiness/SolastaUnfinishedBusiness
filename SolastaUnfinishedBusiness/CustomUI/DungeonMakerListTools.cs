@@ -23,13 +23,16 @@ namespace SolastaUnfinishedBusiness.CustomUI;
 //     palette's categories) in the game's order or ordered by the title on their header. One saved choice for all
 //     of them (Settings.DungeonMakerCategoriesAlphabetical), with no direction.
 //
-// Each list also has a CATEGORY SORT of its own (in the campaign editor inside each list's foldable group; in the
-// variable picker and the cheat panel, which have one list, as a second row of the bar). It starts on Default,
-// which orders the list by the main sort alone, and otherwise holds the list's own keys (hit points, challenge
-// rating, cost, ...). A list is ordered by its category key first, in its direction, and rows with equal keys by
-// the main sort, in its direction, then by the campaign's order. Numbers compare as numbers; an entry without a
-// value for the key comes last in both directions. While a category sort uses a field the rows don't show, each
+// Each list also has a CATEGORY SORT of its own (in the campaign editor inside each list's foldable group). It starts
+// on Default, which orders the list by the main sort alone, and otherwise holds the list's own keys (hit points,
+// challenge rating, cost, ...). A list is ordered by its category key first, in its direction, and rows with equal
+// keys by the main sort, in its direction, then by the campaign's order. Numbers compare as numbers; an entry without
+// a value for the key comes last in both directions. While a category sort uses a field the rows don't show, each
 // row shows that row's value in a small overlay.
+//
+// The variable picker and the cheat panel show a single list, so there the main sort and the list's own keys are
+// one dropdown with one direction arrow (SingleList): choosing one of the list's keys orders the list by that key
+// alone, rows with equal keys in the campaign's order; choosing Default, Name or the second key clears it.
 //
 // The sort and its direction are one saved choice for the three screens (Settings.DungeonMakerListSort and
 // DungeonMakerListSortDescending). The search text belongs to one screen and is emptied when it is shown.
@@ -87,9 +90,11 @@ internal static class DungeonMakerListTools
         // the "Categories" toggle: the order of the sections themselves (the editor's lists, a palette's categories)
         CategoryOrder,
 
-        // each list's own sort (the editor's "Sort:" row in each list; the picker's and cheats panel's second row),
-        // with its value overlays
-        ListSort
+        // each list's own sort (the editor's "Sort:" row in each list), with its value overlays
+        ListSort,
+
+        // a single-list screen's one sort (the picker, the cheats panel): PageSort and ListSort together
+        Sort
     }
 
     // each page's setting, and each of its features' settings, in the order the mod menu shows them
@@ -125,10 +130,8 @@ internal static class DungeonMakerListTools
                 [
                     (Feature.Search, () => Main.Settings.DungeonMakerPickerSearch,
                         v => Main.Settings.DungeonMakerPickerSearch = v),
-                    (Feature.PageSort, () => Main.Settings.DungeonMakerPickerPageSort,
-                        v => Main.Settings.DungeonMakerPickerPageSort = v),
-                    (Feature.ListSort, () => Main.Settings.DungeonMakerPickerListSort,
-                        v => Main.Settings.DungeonMakerPickerListSort = v)
+                    (Feature.Sort, () => Main.Settings.DungeonMakerPickerSort,
+                        v => Main.Settings.DungeonMakerPickerSort = v)
                 ]
             },
             {
@@ -136,10 +139,8 @@ internal static class DungeonMakerListTools
                 [
                     (Feature.Search, () => Main.Settings.DungeonMakerCheatsSearch,
                         v => Main.Settings.DungeonMakerCheatsSearch = v),
-                    (Feature.PageSort, () => Main.Settings.DungeonMakerCheatsPageSort,
-                        v => Main.Settings.DungeonMakerCheatsPageSort = v),
-                    (Feature.ListSort, () => Main.Settings.DungeonMakerCheatsListSort,
-                        v => Main.Settings.DungeonMakerCheatsListSort = v)
+                    (Feature.Sort, () => Main.Settings.DungeonMakerCheatsSort,
+                        v => Main.Settings.DungeonMakerCheatsSort = v)
                 ]
             },
             {
@@ -185,10 +186,22 @@ internal static class DungeonMakerListTools
         }
     }
 
-    // a tool is there on a screen when its page and itself are on (and the page has it at all)
+    // a screen that shows one list, whose main sort and list sort are one dropdown (see the file's summary)
+    internal static bool SingleList(Page page)
+    {
+        return page is Page.Picker or Page.Cheats;
+    }
+
+    // a tool is there on a screen when its page and itself are on (and the page has it at all); on a single-list
+    // screen the main sort and the list sort are both its one Sort
     internal static bool On(string screen, Feature feature)
     {
         var page = PageOf(screen);
+
+        if (SingleList(page) && feature is Feature.PageSort or Feature.ListSort)
+        {
+            feature = Feature.Sort;
+        }
 
         return PageOn(page) && FeatureSettings[page].Any(x => x.Feature == feature && x.Get());
     }
@@ -495,7 +508,9 @@ internal static class DungeonMakerListTools
         // main sort in its direction, and last the campaign's order, so rows that are equal on every key keep
         // their campaign order in both directions. The campaign's own order as the main sort, descending, is the
         // list from its end.
-        var pageSort = On(screen, Feature.PageSort);
+        // On a single-list screen a key of the list replaces the main sort in the one dropdown, so the main sort
+        // (shared with the other screens and not shown there meanwhile) takes no part.
+        var pageSort = On(screen, Feature.PageSort) && !(category != null && SingleList(PageOf(screen)));
         var kind = pageSort ? Kind : Sort.Default;
         var descending = pageSort && Descending;
 
@@ -646,6 +661,26 @@ internal static class DungeonMakerListTools
             return;
         }
 
+        // A single-list screen's list keys go into the main dropdown after its three choices, and it has no
+        // category row. Its list and options are the same for every showing.
+        CategoryView single = null;
+
+        if (category != null && SingleList(PageOf(screen)))
+        {
+            try
+            {
+                single = category();
+            }
+            catch (Exception e)
+            {
+                Main.Error(e);
+            }
+
+            category = null;
+        }
+
+        var singleOptions = single?.Options ?? [];
+
         var bar = list.parent.Find(BarName);
 
         if (!bar)
@@ -673,28 +708,51 @@ internal static class DungeonMakerListTools
             sortLabel.Text = Gui.Localize("ModUi/&DungeonMakerSortLabel");
         }
 
-        // The sort is a dropdown: its three choices, in the order of the Sort values, with this screen's second key.
+        // The sort is a dropdown: its three choices, in the order of the Sort values, with this screen's second key;
+        // on a single-list screen followed by the list's own keys.
+        const int MainChoices = 3;
+
         if (sort)
         {
-            sort.onValueChanged = new TMP_Dropdown.DropdownEvent();
-            sort.ClearOptions();
-            sort.AddOptions(new List<string>
+            var choices = new List<string>
             {
                 Gui.Localize("ModUi/&DungeonMakerSortDefault"),
                 Gui.Localize("ModUi/&DungeonMakerSortName"),
                 Gui.Localize(secondTerm)
-            });
+            };
+
+            choices.AddRange(singleOptions.Select(x => Gui.Localize(x.Term)));
+            sort.onValueChanged = new TMP_Dropdown.DropdownEvent();
+            sort.ClearOptions();
+            sort.AddOptions(choices);
+        }
+
+        // the list key a single-list screen is sorted by (its place in singleOptions, or -1) and its direction
+        (int Index, bool Descending) SingleChoice()
+        {
+            if (single == null)
+            {
+                return (-1, false);
+            }
+
+            var (id, isDescending) = CategoryChoice(single.ListId);
+            var index = id == null ? -1 : singleOptions.ToList().FindIndex(x => x.Id == id);
+
+            return (index, index >= 0 && isDescending);
         }
 
         void Refresh()
         {
+            var (singleIndex, singleDescending) = SingleChoice();
+
             if (sort)
             {
-                sort.SetValueWithoutNotify((int)Kind);
+                sort.SetValueWithoutNotify(singleIndex >= 0 ? MainChoices + singleIndex : (int)Kind);
             }
 
-            // the direction is an arrow; its tooltip says which
-            SetArrow(direction, Descending);
+            // the direction is an arrow; its tooltip says which. On a single-list screen sorted by a list key it is
+            // that key's direction.
+            SetArrow(direction, singleIndex >= 0 ? singleDescending : Descending);
             SetText(clear, "ModUi/&DungeonMakerSearchClear");
 
             // The toggle's text is built from pieces, each translated once: the order ("Default", the main sort's own
@@ -781,6 +839,24 @@ internal static class DungeonMakerListTools
         {
             sort.onValueChanged.AddListener(value =>
             {
+                // a list key (single-list screens): it replaces the main sort until a main choice is made again,
+                // keeping the direction it had last
+                if (single != null && value >= MainChoices && value - MainChoices < singleOptions.Count)
+                {
+                    var (id, isDescending) = CategoryChoice(single.ListId);
+                    var chosen = singleOptions[value - MainChoices].Id;
+
+                    SetCategoryChoice(single.ListId, chosen, id == chosen && isDescending);
+                    Changed();
+
+                    return;
+                }
+
+                if (single != null)
+                {
+                    SetCategoryChoice(single.ListId, null, false);
+                }
+
                 Main.Settings.DungeonMakerListSort = Mathf.Clamp(value, 0, 2);
                 SaveChoice();
                 Changed();
@@ -841,6 +917,16 @@ internal static class DungeonMakerListTools
             direction.onClick = new Button.ButtonClickedEvent();
             direction.onClick.AddListener(() =>
             {
+                // sorted by a list key (single-list screens): that key's direction
+                if (single != null && SingleChoice().Index >= 0 &&
+                    CategoryChoice(single.ListId) is ({ } id, var isDescending))
+                {
+                    SetCategoryChoice(single.ListId, id, !isDescending);
+                    Changed();
+
+                    return;
+                }
+
                 Main.Settings.DungeonMakerListSortDescending = !Main.Settings.DungeonMakerListSortDescending;
                 SaveChoice();
                 Changed();

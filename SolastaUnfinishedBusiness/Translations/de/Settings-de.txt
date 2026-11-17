@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=Suche
 ModUi/&DungeonMakerListToolsPageSort=Seitensortierung (Sortieren: und Richtungspfeil)
 ModUi/&DungeonMakerListToolsCategoryOrder=Kategoriesortierung (Reihenfolge der Kategorien: Standard oder A-Z)
 ModUi/&DungeonMakerListToolsListSort=Kategoriespezifische Sortierung (jede Liste hat ihre eigene Sortierung; ihre Werte erscheinen als Einblendung, wenn die Zeile sie nicht schon zeigt)
+ModUi/&DungeonMakerListToolsSort=Sortierung (Sortieren: mit den eigenen Schlüsseln der Liste, und Richtungspfeil; Werte erscheinen als Einblendung, wenn die Zeile sie nicht schon zeigt)

@@ -416,7 +416,8 @@ public class Settings : UnityModManager.ModSettings
 
     // Which of those tools each screen has (Mod UI > Dungeon Maker; issue #42): a setting per page and one per
     // feature under it. A feature is there when its page and itself are on; all on by default. See
-    // DungeonMakerListTools.On. The palettes have no per-list sort, the picker and the cheats panel no category order.
+    // DungeonMakerListTools.On. The palettes have no per-list sort, the picker and the cheats panel no category order;
+    // those two show one list, so their main sort and the list's own keys are one tool (Sort).
     public bool DungeonMakerEditorTools { get; set; } = true;
     public bool DungeonMakerEditorSearch { get; set; } = true;
     public bool DungeonMakerEditorPageSort { get; set; } = true;
@@ -424,12 +425,10 @@ public class Settings : UnityModManager.ModSettings
     public bool DungeonMakerEditorListSort { get; set; } = true;
     public bool DungeonMakerPickerTools { get; set; } = true;
     public bool DungeonMakerPickerSearch { get; set; } = true;
-    public bool DungeonMakerPickerPageSort { get; set; } = true;
-    public bool DungeonMakerPickerListSort { get; set; } = true;
+    public bool DungeonMakerPickerSort { get; set; } = true;
     public bool DungeonMakerCheatsTools { get; set; } = true;
     public bool DungeonMakerCheatsSearch { get; set; } = true;
-    public bool DungeonMakerCheatsPageSort { get; set; } = true;
-    public bool DungeonMakerCheatsListSort { get; set; } = true;
+    public bool DungeonMakerCheatsSort { get; set; } = true;
     public bool DungeonMakerPaletteTools { get; set; } = true;
     public bool DungeonMakerPaletteSearch { get; set; } = true;
     public bool DungeonMakerPalettePageSort { get; set; } = true;

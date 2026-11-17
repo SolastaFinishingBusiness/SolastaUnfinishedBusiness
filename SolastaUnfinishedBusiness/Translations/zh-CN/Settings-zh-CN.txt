@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=搜索
 ModUi/&DungeonMakerListToolsPageSort=页面排序（排序：及方向箭头）
 ModUi/&DungeonMakerListToolsCategoryOrder=类别排序（类别的顺序：默认或 A-Z）
 ModUi/&DungeonMakerListToolsListSort=类别专属排序（每个列表有自己的排序，行上原本不显示的数值以弹出框显示）
+ModUi/&DungeonMakerListToolsSort=排序（排序：含列表专属项，及方向箭头；行上原本不显示的数值以弹出框显示）

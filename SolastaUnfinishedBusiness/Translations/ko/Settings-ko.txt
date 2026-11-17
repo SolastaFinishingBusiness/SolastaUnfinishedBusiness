@@ -710,3 +710,4 @@ ModUi/&DungeonMakerListToolsSearch=검색
 ModUi/&DungeonMakerListToolsPageSort=페이지 정렬 (정렬: 및 방향 화살표)
 ModUi/&DungeonMakerListToolsCategoryOrder=카테고리 정렬 (카테고리 순서: 기본 또는 A-Z)
 ModUi/&DungeonMakerListToolsListSort=카테고리별 정렬 (각 목록마다 자체 정렬이 있으며, 행에 원래 없는 값은 팝업으로 표시)
+ModUi/&DungeonMakerListToolsSort=정렬 (목록 고유 항목을 포함한 정렬: 및 방향 화살표; 행에 원래 없는 값은 팝업으로 표시)
