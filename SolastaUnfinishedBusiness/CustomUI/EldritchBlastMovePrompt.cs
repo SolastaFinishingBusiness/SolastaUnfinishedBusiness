@@ -83,7 +83,7 @@ internal static class EldritchBlastMovePrompt
             });
         }
 
-        // Skip on the left, in red, and Submit on the right (user, 2026-11-11)
+        // Skip on the left, in red, and Submit on the right
         var first = AddRow(root.transform);
 
         PaintAsSkip(AddButton(first, item.PassButton.gameObject,
@@ -165,7 +165,7 @@ internal static class EldritchBlastMovePrompt
             {
                 var cells = Cells(row.Slider);
 
-                // "0 cells", "1 cell", "2 cells" (user, 2026-11-11), not the game's cell symbol
+                // "0 cells", "1 cell", "2 cells", not the game's cell symbol
                 row.Value.text = Gui.Format(
                     cells == 1 ? "Reaction/&EldritchBlastMoveCell" : "Reaction/&EldritchBlastMoveCells",
                     cells.ToString());

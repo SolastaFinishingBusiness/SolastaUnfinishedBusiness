@@ -56,7 +56,7 @@ public static class CharacterActionPushedPatcher
     }
 
     //PATCH: Eldritch Blast's pushes and pulls with the fall setting on: the creature travels without the falling pose
-    // (issue #37; user, 2026-11-11). The game switches that pose on at the start of every forced move, in the
+    // (issue #37). The game switches that pose on at the start of every forced move, in the
     // coroutine that animates a move, and off again when the move ends on ground the creature can stand on, which is
     // the "getting up" seen after each push and pull. The switching on goes through the mod's test, which leaves it
     // out for a push of a held creature's cast and passes everything else on. The switching off at the end is left

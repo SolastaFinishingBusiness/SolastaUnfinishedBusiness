@@ -32,8 +32,7 @@ public static class FastTravelPatcher
     {
         // the arrival's destination: SetupPartyOnDestination's gridPosition argument, which the FastTravel coroutine
         // passes on from MapWaypointItem.ExecuteTravel (the waypoint's Position). Read from this arrival's own
-        // coroutine, as a travel the game refused before starting (a guest that can't fast travel) never gets here
-        // (Codex's review of e739c280, 2026-11-02).
+        // coroutine, as a travel the game refused before starting (a guest that can't fast travel) never gets here.
         private static FieldInfo _gridPosition;
 
         [UsedImplicitly]

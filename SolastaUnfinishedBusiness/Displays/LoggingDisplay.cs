@@ -2,16 +2,16 @@ using SolastaUnfinishedBusiness.Api.ModKit;
 
 namespace SolastaUnfinishedBusiness.Displays;
 
-// The Logging tab (user, 2026-11-05: "Add a new tab for logging and gate additional logging behind it. Turn it on by
-// default."). These switches only decide what gets recorded, never what happens in the game, so computers with different
-// choices still play the same. As with every setting, a client in a multiplayer room uses the host's choices while there.
+// The Logging tab, which gates the mod's additional logging. These switches only decide what gets recorded, never what
+// happens in the game, so computers with different choices still play the same. As with every setting, a client in a
+// multiplayer room uses the host's choices while there.
 internal static class LoggingDisplay
 {
     internal static void DisplayLogging()
     {
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&LoggingHelp"));
-        // user, 2026-11-05: the host deciding the clients' logging is fine, with a warning
+        // the host decides the clients' logging, so they are warned
         UI.Label(Gui.Localize("ModUi/&LoggingHostWarning"));
         UI.Label();
 

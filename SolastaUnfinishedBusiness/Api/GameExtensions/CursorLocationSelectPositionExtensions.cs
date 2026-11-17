@@ -66,8 +66,8 @@ internal static class CursorLocationSelectPositionExtensions
     ///     .RefreshMovementHelper): a creature with the OnWalls motion range, which the game sets for any movement
     ///     affinity that can move on walls (Spider Climb and others), may also end on a climbable wall
     ///     (CanCharacterStayAtPosition_Walls, not limited to easy climbs). Behind the setting
-    ///     EnableAllyMovementToWalls, on by default (user, 2026-11-15: "allow walls as designations for characters
-    ///     who can walk on walls", default on; #66). Never for a teleport, which keeps the game's real-ground rule.
+    ///     EnableAllyMovementToWalls, on by default (#66). Never for a teleport, which keeps the game's real-ground
+    ///     rule.
     /// </remarks>
     internal static bool CanEndMoveAt(
         this CursorLocationSelectPosition cursor,

@@ -10,7 +10,7 @@ namespace SolastaUnfinishedBusiness.Models;
 // spells or powers that take a minute or more). The action waits on the computer that asked for it until every other
 // player approves, then goes through the lockstep as usual.
 //
-// The approval is the game's own fast travel vote, with only its texts changed (user direction, 2026-11-01): the
+// The approval is the game's own fast travel vote, with only its texts changed: the
 // asking computer calls MultiplayerVoteModal.ShowVote with an encoded parameter (EncodeVoteParameter) and the action
 // as the function to run when the vote passes; the game sends the request, counts the answers and reports the outcome.
 // MultiplayerVoteContext makes that vote work whoever asks, and shows it to every player; this class supplies the
@@ -19,7 +19,7 @@ namespace SolastaUnfinishedBusiness.Models;
 //   busy instead (before asking, and when another computer is busy as the request arrives: that computer refuses
 //   with the reason, MultiplayerVoteContext.RefuseAsBusy);
 // - a fight or cutscene starting while the vote runs cancels it: on the asking computer, and on any other computer,
-//   whether its player answered yet or already accepted (user direction, 2026-11-01), which refuses with the reason;
+//   whether its player answered yet or already accepted, which refuses with the reason;
 //   a vote that passes just as the asking computer gets busy doesn't run its action. The cutscene itself goes on as
 //   the game runs it (it stops every character and places the party), as nothing of the vote holds it up.
 //

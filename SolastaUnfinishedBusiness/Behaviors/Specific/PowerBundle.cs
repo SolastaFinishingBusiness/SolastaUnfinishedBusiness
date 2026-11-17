@@ -18,17 +18,16 @@ internal static class PowerBundle
     private static readonly Dictionary<FeatureDefinitionPower, SpellDefinition> Powers2Spells = [];
     private static readonly Dictionary<FeatureDefinitionPower, Bundle> Bundles = [];
 
-    // Modified effects are kept per live effect, not per power or spell (object-ID desyncs review).
-    // This cache used to be keyed by caster, definition and metamagic only, and only a RefreshAll emptied it. That had
-    // three faults:
-    // - later uses of a power got the first use's result, although modifiers read things that change between uses: the
+    // Modified effects are kept per live effect, not per power or spell. A cache keyed by caster, definition and
+    // metamagic only, emptied only by RefreshAll, would have three faults:
+    // - later uses of a power would get the first use's result, although modifiers read things that change between uses: the
     //   points spent on this use, a toggle such as College of Audacity's Masterful Whirl, remaining movement;
-    // - a tooltip filled it (with no live effect, so modifiers skipped what depends on one), and the next real use on
-    //   that computer got the tooltip's result. Tooltips run on one computer only, so computers could disagree on rules;
-    // - how long a result lasted depended on which computer's panel called RefreshAll.
-    // Each use now makes a new RulesetEffect, so it gets a result worked out for it. The object stays the same for that
+    // - a tooltip would fill it (with no live effect, so modifiers skip what depends on one), and the next real use on
+    //   that computer would get the tooltip's result. Tooltips run on one computer only, so computers could disagree on rules;
+    // - how long a result lasted would depend on which computer's panel called RefreshAll.
+    // Each use makes a new RulesetEffect, so it gets a result worked out for it. The object stays the same for that
     // effect's life, because code changes a live effect's description and expects the change to last (gambits' RangeType,
-    // the teleport cursor's targeting). RefreshAll still drops a caster's results, as before: it moves the caster's
+    // the teleport cursor's targeting). RefreshAll still drops a caster's results: it moves the caster's
     // generation on, and a result from an older generation is worked out again.
     // Held by weak keys, so this table never decides how long an effect lives. Many effects never report ending: a spell
     // targeted and then cancelled, or one made only to read its forms or to preview a position. Whatever holds such an effect
@@ -484,17 +483,17 @@ internal static class PowerBundle
         return result;
     }
 
-    // Diagnostic only, for "when does a kept result go stale" (user, 2026-11-05): an effect's result is kept for its life,
+    // Diagnostic only, for "when does a kept result go stale": an effect's result is kept for its life,
     // so a change made during that life, with no RefreshAll, still isn't seen. This records when the modifiers would now
     // give something different. It runs only when switched on (mod menu, Logging), so it must never change anything: a
     // computer with it on and one with it off have to agree.
     // So it never gives the modifiers the live effect. Three of the 70 write outside their copy
     // (ModifyEffectDescriptionSavingThrowRogue, a Gambits one and Dragon Breath set usablePower.saveDC), and all three do
-    // that only when handed a live power (Codex's review found this; the earlier version here replayed with the live effect
-    // and did write). With no effect they run exactly as for a tooltip. A listing of every assignment and call in all 70
-    // bodies shows no other write; called helpers were checked by their names, not read through.
-    // It compares two no-effect results, the first with the latest, so it sees changes in the caster's situation. It can't
-    // see a modifier's effect-dependent part, such as points spent on this use or the save DC those three set.
+    // that only when handed a live power, so replaying with the live effect would write. With no effect they run exactly as for a
+    // tooltip. A listing of every assignment and call in all 70 bodies shows no other write; called helpers were checked by their
+    // names, not read through. It compares two no-effect results, the first with the latest, so it sees changes in the caster's
+    // situation. It can't see a modifier's effect-dependent part, such as points spent on this use or the save DC those three
+    // set.
     private static void CheckLiveEffect(
         LiveEffectEntry entry,
         EffectDescription original,

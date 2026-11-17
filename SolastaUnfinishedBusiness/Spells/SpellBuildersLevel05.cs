@@ -586,9 +586,8 @@ internal static partial class SpellBuilders
     ///     rerolls and reactions, and changes no effect form list.
     /// </summary>
     /// <remarks>
-    ///     It used to remove the half-damage forms in a "before hit confirmed on me" hook, using a flag set by the
-    ///     save hook. For spells that hook runs before the save is rolled, so a spell used the flag left by the
-    ///     creature's previous successful save, and the flag (written with TryAdd) stayed until the next spell.
+    ///     Not a "before hit confirmed on me" hook with a flag set by the save hook: for spells that hook runs before
+    ///     the save is rolled, so a spell would use the flag left by the creature's previous successful save.
     /// </remarks>
     internal static bool CircleOfMagicalNegationNegatesHalfDamage(RulesetActor target)
     {

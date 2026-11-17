@@ -1624,10 +1624,10 @@ internal static class RaceFeats
 
         #region Knock-Out
 
-        // The hits in progress on each half-orc, in the order they began (Codex's reviews of 0ff72e2b, 60787771 and
-        // 66260705). Keyed on the half-orc being hit, so two half-orcs caught by one spell stay apart; each record is
-        // owned by what made the hit: the attacking character for a weapon attack, the RulesetEffect for a spell or
-        // power. Only the finish of that same attack or effect acts on a record:
+        // The hits in progress on each half-orc, in the order they began. Keyed on the half-orc being hit, so two
+        // half-orcs caught by one spell stay apart; each record is owned by what made the hit: the attacking character for
+        // a weapon attack, the RulesetEffect for a spell or power. Only the finish of that same attack or effect acts on a
+        // record:
         // - a weapon attack has one before-hit and one finish, so each before-hit adds a record;
         // - a spell or power with several beams on one creature has a before-hit per beam and one finish, all with the
         //   same RulesetEffect (both read it from the action's params), so a later beam keeps the record and doesn't
@@ -1639,8 +1639,6 @@ internal static class RaceFeats
         //   half-orc's location character: the table holds the half-orc weakly (WeakKeyTable, as a ConditionalWeakTable
         //   never lets go on this runtime) and each record holds its source weakly, so nothing here keeps a character
         //   or effect alive after a reload or a location change, and no clean-up hook is needed.
-        // The flags used to live in UsedSpecialFeatures, written with TryAdd (never overwriting) and read from the
-        // attacker, so the attack never happened.
         private readonly WeakKeyTable<GameLocationCharacter, List<PendingHit>> _pendingHits = new();
 
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
@@ -1695,7 +1693,7 @@ internal static class RaceFeats
         {
             // A weapon attack's record is identified by its attacker, not by the attack (the before-hit interface
             // carries no action), so a record left by a finish the game skipped could match that attacker's next
-            // finish (Codex's review of f3be1746). The before-hit runs only for a hit
+            // finish. The before-hit runs only for a hit
             // (CharacterActionAttack: HandleCharacterAttackHitConfirmed only on Success or CriticalSuccess), so a
             // hit's finish always finds its own record as the newest; a miss's finish never acts. Either way the
             // finish retires every record of its attacker: one attacker's weapon attacks on the same half-orc never
@@ -1732,7 +1730,7 @@ internal static class RaceFeats
         }
 
         // Only Relentless Endurance counts, and it only ever sets the mark: another feature that prevents a knock-out
-        // later in the same action must not erase it (it used to write 0 for any other source).
+        // later in the same action must not erase it.
         private void KnockOutPreventedHandler(RulesetCharacter rulesetCharacter, BaseDefinition source)
         {
             if (source != DamageAffinityHalfOrcRelentlessEndurance)
@@ -1799,12 +1797,11 @@ internal static class RaceFeats
 
             battleManager ??= ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
-            // A battle must be running. This used to check Gui.Battle.InitiativeRollFinished (original UB code), which
-            // the game clears when a battle's initiative starts and sets only when RollInitiative finishes; nothing
-            // else writes it, the battle's save data included. So in a battle continued from a save it stays false
-            // for the whole fight, and Orcish Fury's attack was silently never offered there (seen in game on
-            // 38a42048 with [OrcishFury] diagnostics: everything else passed). IsBattleInProgress is what the mod's
-            // other reactions check.
+            // A battle must be running. Gui.Battle.InitiativeRollFinished can't tell: the game clears it when a
+            // battle's initiative starts and sets it only when RollInitiative finishes; nothing else writes it, the
+            // battle's save data included. So in a battle continued from a save it stays false for the whole fight,
+            // and Orcish Fury's attack would never be offered there. IsBattleInProgress is what the mod's other
+            // reactions check.
             if (Gui.Battle == null || battleManager is not { IsBattleInProgress: true } || !target.CanReact())
             {
                 yield break;
@@ -1819,10 +1816,7 @@ internal static class RaceFeats
             }
 
             // "Immediately after you use your Relentless Endurance trait, you can use your reaction to make one
-            // weapon attack": any creature a weapon can reach, of the player's choice (user, 2026-11-15: "Let the
-            // player hit any creature of their choice in range. Make it a list selection (one button per enemy) or to
-            // pass to not do the attack"). It used to execute an opportunity attack against the attacker straight
-            // away with the main-hand mode, unchecked; then (0ff72e2b) it was offered against the attacker only.
+            // weapon attack": any creature a weapon can reach, of the player's choice, picked from a list, or none.
             var targets = GetOrcishFuryTargets(target, attacker, battleManager);
 
             if (targets.Count == 0)
@@ -1855,7 +1849,7 @@ internal static class RaceFeats
         // the creature that hit first, then the others by distance, then battle order. The modes are copies: the found
         // mode is the hero's own (RulesetCharacter.AttackModes), and the tag would stay on it even if the prompt is
         // declined, so a later real opportunity attack with it would count as not one (Blade Mastery's advantage, for
-        // one) (Codex's review of 0ff72e2b).
+        // one).
         private static List<ReactionRequestOrcishFury.Target> GetOrcishFuryTargets(
             GameLocationCharacter halfOrc,
             GameLocationCharacter attacker,
@@ -1881,8 +1875,8 @@ internal static class RaceFeats
                 }
 
                 // a plain copy, not one borrowed from the game's pool (RulesetAttackModeExtensions.Clone): one is made per
-                // listed creature and only the chosen one is used, so pooled ones would never go back (Codex's review
-                // of 60787771); the game itself makes attack modes with new (CharacterActionItemForm)
+                // listed creature and only the chosen one is used, so pooled ones would never go back; the game itself
+                // makes attack modes with new (CharacterActionItemForm)
                 var copy = new RulesetAttackMode();
 
                 copy.Copy(mode);

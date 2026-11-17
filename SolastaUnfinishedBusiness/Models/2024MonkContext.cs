@@ -1008,9 +1008,9 @@ public static partial class Tabletop2024Context
         rulesetCharacter.LogCharacterUsedFeature(FeatureMonkPerfectFocus);
     }
 
-    // Perfect Focus for a Monk without Uncanny Metabolism (#55). It used to run only from Uncanny Metabolism's own
-    // initiative listener, which a Monk has only with the Uncanny Metabolism option on, so with that option off Perfect
-    // Focus never worked. A Monk who has Uncanny Metabolism still gets it there, after choosing not to use it.
+    // Perfect Focus for a Monk without Uncanny Metabolism (#55). Uncanny Metabolism's own initiative listener, which a
+    // Monk has only with the Uncanny Metabolism option on, can't carry it alone, or with that option off Perfect Focus
+    // would never work. A Monk who has Uncanny Metabolism still gets it there, after choosing not to use it.
     private sealed class InitiativeEndListenerPerfectFocus : IInitiativeEndListener
     {
         public IEnumerator OnInitiativeEnded(GameLocationCharacter character)

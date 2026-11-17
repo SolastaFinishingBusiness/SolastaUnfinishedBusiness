@@ -135,8 +135,8 @@ public static class CursorLocationSelectPositionPatcher
 
                 __instance.maxDistance = __instance.effectDescription.RangeParameter;
 
-                // Where the chosen ally can be sent. This range belongs to this cursor: it used to be written into the effect's
-                // description, on the aiming computer only, which with no modifier is the definition shared by every use.
+                // Where the chosen ally can be sent. This range belongs to this cursor: written into the effect's description
+                // it would change, on the aiming computer only, what with no modifier is the definition shared by every use.
                 var afterCharacter = __instance.ActionParams.activeEffect switch
                 {
                     RulesetEffectPower rulesetEffectPower => rulesetEffectPower.PowerDefinition

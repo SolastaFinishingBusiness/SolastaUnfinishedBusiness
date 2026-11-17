@@ -61,7 +61,7 @@ public static class RestModalPatcher
             GameRestingManagerPatcher.InRestScreen = true;
 
             // a campfire set to rest at once pressing Start itself: the game's own Start, with no rest checks, no wait
-            // and no approval (user direction, 2026-11-02), as the story puts the party to rest there
+            // and no approval, as the story puts the party to rest there
             if (CampfireRestContext.IsForcedStart)
             {
                 return true;
