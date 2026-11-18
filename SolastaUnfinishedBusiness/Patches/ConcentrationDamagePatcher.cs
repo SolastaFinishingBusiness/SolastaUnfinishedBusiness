@@ -7,14 +7,14 @@ using SolastaUnfinishedBusiness.Models;
 namespace SolastaUnfinishedBusiness.Patches;
 
 /// <summary>
-///     Damage instance scopes for ConcentrationDamageContext around the game's applications that have no scope of
-///     their own, and the damage count each scope adds up.
+///     The hooks of ConcentrationDamageContext: a frame around each RulesetCharacter.SustainDamage call with the damage
+///     it counts, and damage instance scopes around the game's applications that have no scope of their own.
 /// </summary>
 [UsedImplicitly]
 public static class ConcentrationDamagePatcher
 {
-    //PATCH: supports `CombineConcentrationChecks`: counts the damage a creature takes, after difficulty scaling and
-    //before temporary hit points take their share (RulesetCharacter.SustainDamage is the only caller)
+    //PATCH: concentration checks of damage (ConcentrationDamageContext): the damage a creature takes, after difficulty
+    //scaling and before temporary hit points take their share (RulesetCharacter.SustainDamage is the only caller)
     [HarmonyPatch(typeof(RulesetActor), nameof(RulesetActor.AccountReceivedDamage))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -27,22 +27,8 @@ public static class ConcentrationDamagePatcher
         }
     }
 
-    //PATCH: supports `NoConcentrationChecksFromTemporaryHitPoints`: damage temporary hit points absorb in full calls
-    //for no concentration check (the method does nothing else)
-    [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.DamageAbsorbedByTemporaryHitPoints))]
-    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
-    [UsedImplicitly]
-    public static class DamageAbsorbedByTemporaryHitPoints_Patch
-    {
-        [UsedImplicitly]
-        public static bool Prefix()
-        {
-            return !Main.Settings.NoConcentrationChecksFromTemporaryHitPoints;
-        }
-    }
-
-    //PATCH: supports `CombineConcentrationChecks`: marks SustainDamage calls on a shape (Wild Shape form), so the
-    //overflow they pass on to the character in the shape is not counted twice
+    //PATCH: concentration checks of damage (ConcentrationDamageContext): each SustainDamage call is a frame, and the
+    //outermost one works out the checks when it ends
     [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.SustainDamage))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -50,13 +36,13 @@ public static class ConcentrationDamagePatcher
     {
         [UsedImplicitly]
         [HarmonyPriority(Priority.First)]
-        public static void Prefix(RulesetCharacter __instance, out bool __state)
+        public static void Prefix(RulesetCharacter __instance, string damageType, out object __state)
         {
-            __state = ConcentrationDamageContext.BeginSustainDamage(__instance);
+            __state = ConcentrationDamageContext.BeginSustainDamage(__instance, damageType);
         }
 
         [UsedImplicitly]
-        public static Exception Finalizer(Exception __exception, bool __state)
+        public static Exception Finalizer(Exception __exception, object __state)
         {
             ConcentrationDamageContext.EndSustainDamage(__state);
 

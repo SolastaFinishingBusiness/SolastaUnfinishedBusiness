@@ -7,64 +7,48 @@ using SolastaUnfinishedBusiness.Interfaces;
 namespace SolastaUnfinishedBusiness.Models;
 
 /// <summary>
-///     The mod's rules for the concentration saving throws damage calls for.
-///     <para>
-///         Combined checks (CombineConcentrationChecks): the game rolls a concentration save for each damage form a
-///         creature takes (GameLocationCharacter.CheckConcentration, from DamageSustained and
-///         DamageAbsorbedByTemporaryHitPoints), so one hit with two damage types gives two saves. With the setting,
-///         each damage instance is a scope:
-///     </para>
+///     The concentration saving throws damage calls for. The game checks concentration from two callbacks
+///     RulesetCharacter.SustainDamage raises (GameLocationCharacter.DamageSustained and
+///     DamageAbsorbedByTemporaryHitPoints), with only what each tells it: the damage that reached hit points, or the
+///     damage temporary hit points took in full when they were higher than it. A hit they absorb exactly raises
+///     neither, and a Wild Shape form holds no concentrated spell, so damage to it never checks the druid's. Here each
+///     SustainDamage call is a frame: its target, the damage it received (RulesetActor.AccountReceivedDamage, after
+///     difficulty scaling, before temporary hit points), the temporary hit points it used and whether its target is
+///     still conscious; the call SustainDamage makes on the character in a dropped shape for the overflow
+///     (IL_0556) is a frame inside the shape's. The game's own checks are skipped while a frame is open; when the
+///     outermost frame closes the checks are worked out from the frames.
 ///     <list type="bullet">
-///         <item>one weapon hit with the damage riders added to its forms (a power action a hit starts afterwards is
-///         an instance of its own);</item>
-///         <item>one target entry of a spell or power (a Magic Missile dart, a Radiant Motes mote and an Eldritch Blast
-///         beam are each their own entry);</item>
-///         <item>one application of a spell, power or environment effect on a creature (entering an area or a cell of
-///         it, a turn's recurring effect, a trap's activation), and one recurring tick of a condition.</item>
+///         <item>A creature concentrating on a spell that stays conscious saves against the damage it took: all of it,
+///         or with NoConcentrationChecksFromTemporaryHitPoints only what reached hit points. One that drops loses
+///         concentration at once, as in the game.</item>
+///         <item>A shape (with no spell of its own) saves for the spell of the character in it, against the whole hit
+///         including the overflow; the shape rolls while it stands, the character once the shape dropped. With
+///         NoConcentrationChecksFromWildShapeDamage a shape calls for no save and only the overflow counts, as in the
+///         game. A shape holding its own spell (the Shapechange spell) is checked like any creature.</item>
 ///     </list>
-///     <para>
-///         While a scope is the innermost open one, the damage each creature takes is added up and the game's own checks
-///         only mark the creature for a check; when the scope closes, each marked creature makes one check against its
-///         total, without a damage type. Every scope opens and closes within one synchronous call, so its checks roll at
-///         a fixed point of the action that applied it, the same on every computer. Losing consciousness still ends
-///         concentration at once, through the game's own path.
-///     </para>
-///     <para>
-///         Temporary hit points: by default the whole damage counts, before temporary hit points take their share
-///         (RulesetActor.AccountReceivedDamage, which RulesetCharacter.SustainDamage calls after difficulty scaling).
-///         The game itself only counts what reaches hit points when temporary hit points absorb part of a hit, and
-///         nothing when they absorb it exactly. With NoConcentrationChecksFromTemporaryHitPoints, only the damage that
-///         reaches hit points counts.
-///     </para>
-///     <para>
-///         Wild Shape: a shape (RulesetCharacterMonster with an original form) holds no concentrated spell; the
-///         character in it does, and the game checks only the creature hit, so damage to a shape never calls for a
-///         save. By default it does here: the shape saves (its own Constitution) for the spell of the character in it,
-///         against the whole hit, and when the shape drops the character in it saves instead. The overflow
-///         SustainDamage then passes on to that character is part of the same hit and calls for no second save. With
-///         NoConcentrationChecksFromWildShapeDamage, damage to a shape calls for none, and only the overflow does, as
-///         in the game. A shape that holds its own concentrated spell (the Shapechange spell) keeps the game's check.
-///     </para>
+///     With CombineConcentrationChecks, each damage instance is a scope (one weapon hit with the damage added to its
+///     forms; one target entry of a spell or power, so each Magic Missile dart, Radiant Motes mote and Eldritch Blast
+///     beam on its own; one application of a spell, power or environment effect on a creature; one recurring tick).
+///     The damage a spell's holder takes inside it adds up, and it saves once, without a damage type, when the scope
+///     closes. Frames and scopes open and close within one synchronous call, so every save rolls at a fixed point of
+///     the action that dealt the damage, the same on every computer.
 /// </summary>
 internal static class ConcentrationDamageContext
 {
+    // the condition RulesetCharacter.SustainDamage looks for before using temporary hit points
+    private const string TemporaryHitPointsCondition = "ConditionTemporaryHitPoints";
+
     private static readonly Stack<DamageInstance> Scopes = new();
+    private static readonly Stack<DamageFrame> Frames = new();
 
-    // the damage each creature was last dealt by SustainDamage, before temporary hit points; the check SustainDamage's
-    // callbacks then ask for reads it (outside a scope)
-    private static readonly Dictionary<RulesetActor, int> LastDamageReceived = new();
-
-    // the characters in the shapes whose SustainDamage call is in progress (innermost last)
-    private static readonly List<RulesetCharacter> ShapeOwnersTakingDamage = [];
-
-    // set while the combined checks of an instance are rolled, so those checks are not gathered again
-    private static bool _rollingCombined;
-
-    private static bool IsActive => Main.Settings.CombineConcentrationChecks && Scopes.Count > 0 && !_rollingCombined;
+    private static bool IsActive => Main.Settings.CombineConcentrationChecks && Scopes.Count > 0;
 
     private static bool ShapesCheck => !Main.Settings.NoConcentrationChecksFromWildShapeDamage;
 
     private static bool TemporaryHitPointsCount => !Main.Settings.NoConcentrationChecksFromTemporaryHitPoints;
+
+    /// <summary>Whether a SustainDamage frame is open, so the game's own concentration checks are left out.</summary>
+    internal static bool IsTrackingDamage => Frames.Count > 0;
 
     /// <summary>Runs one damage instance's application inside a scope and then rolls its combined checks.</summary>
     internal static T Apply<T>(Func<T> apply)
@@ -109,132 +93,168 @@ internal static class ConcentrationDamageContext
             Scopes.Pop();
         }
 
-        RollCombined(instance);
+        foreach (var entry in instance.Entries)
+        {
+            var roller = entry.Roller;
+
+            // the roller still stands; or the shape that took the damage dropped and the character in it saves
+            if (roller is { IsDeadOrDyingOrUnconscious: false })
+            {
+                RollCheck(roller, entry.Holder, entry.Damage, string.Empty);
+            }
+            else if (roller?.OriginalFormCharacter == entry.Holder &&
+                     entry.Holder is { IsDeadOrDyingOrUnconscious: false })
+            {
+                RollCheck(entry.Holder, entry.Holder, entry.Damage, string.Empty);
+            }
+        }
     }
 
-    /// <summary>Called from the AccountReceivedDamage prefix with the damage a creature takes.</summary>
+    /// <summary>Called before RulesetCharacter.SustainDamage: opens its frame (pass the result to EndSustainDamage).</summary>
+    internal static object BeginSustainDamage(RulesetCharacter character, string damageType)
+    {
+        var frame = new DamageFrame
+        {
+            Actor = character,
+            DamageType = damageType,
+            TemporaryHitPointsBefore = character.HasConditionOfType(TemporaryHitPointsCondition)
+                ? character.temporaryHitPoints
+                : 0
+        };
+
+        if (Frames.Count > 0)
+        {
+            Frames.Peek().Children.Add(frame);
+        }
+
+        Frames.Push(frame);
+
+        return frame;
+    }
+
+    /// <summary>Called from the AccountReceivedDamage prefix (SustainDamage's only call) with the damage taken.</summary>
     internal static void AddReceivedDamage(RulesetActor actor, int damage)
     {
-        LastDamageReceived[actor] = damage;
+        if (Frames.Count > 0 && Frames.Peek().Actor == actor)
+        {
+            Frames.Peek().Received += damage;
+        }
+    }
 
-        if (!IsActive || damage <= 0 || !TemporaryHitPointsCount)
+    /// <summary>Called after RulesetCharacter.SustainDamage: closes its frame, and works out the checks at the outermost.</summary>
+    internal static void EndSustainDamage(object state)
+    {
+        if (state is not DamageFrame frame || Frames.Count == 0 || Frames.Peek() != frame)
         {
             return;
         }
 
-        var isShape = actor is RulesetCharacter { OriginalFormCharacter: not null };
+        Frames.Pop();
 
-        // a shape's damage counts for the character in it, and the overflow its SustainDamage passes on to that
-        // character is already in the shape's count; with shapes calling for no checks, only that overflow counts
-        if (isShape ? !ShapesCheck : ShapesCheck && IsOverflowFromShape(actor))
+        var actor = frame.Actor;
+
+        frame.TemporaryHitPointsUsed = Math.Max(0,
+            frame.TemporaryHitPointsBefore -
+            (actor.HasConditionOfType(TemporaryHitPointsCondition) ? actor.temporaryHitPoints : 0));
+
+        if (Frames.Count == 0)
+        {
+            Resolve(frame);
+        }
+    }
+
+    // the damage of a frame that counts: all of it, or only what reached hit points
+    private static int Counted(DamageFrame frame)
+    {
+        return TemporaryHitPointsCount
+            ? frame.Received
+            : Math.Max(0, frame.Received - frame.TemporaryHitPointsUsed);
+    }
+
+    private static void Resolve(DamageFrame frame)
+    {
+        var actor = frame.Actor;
+        var children = frame.Children;
+
+        // a shape checks for the spell of the character in it; the overflow call on that character is part of the hit
+        if (ShapesCheck && actor is { OriginalFormCharacter: { } owner, ConcentratedSpell: null })
+        {
+            var overflow = children.Where(x => x.Actor == owner).ToList();
+            var overflowReceived = overflow.Sum(x => x.Received);
+            var counted = TemporaryHitPointsCount
+                ? frame.Received
+                : Math.Max(0, frame.Received - overflowReceived - frame.TemporaryHitPointsUsed) +
+                  overflow.Sum(Counted);
+
+            if (owner.ConcentratedSpell != null && counted > 0)
+            {
+                Report(owner, actor.IsDeadOrDyingOrUnconscious ? owner : actor, counted, frame.DamageType);
+            }
+
+            foreach (var child in children.Where(x => x.Actor != owner))
+            {
+                Resolve(child);
+            }
+
+            return;
+        }
+
+        if (actor.ConcentratedSpell != null)
+        {
+            if (actor.IsDeadOrDyingOrUnconscious)
+            {
+                // the game breaks concentration at once, except for a shape (GameLocationCharacter.CheckConcentration)
+                if (!actor.IsSubstitute)
+                {
+                    actor.BreakConcentration();
+                }
+            }
+            else if (Counted(frame) is var damage and > 0)
+            {
+                Report(actor, actor, damage, frame.DamageType);
+            }
+        }
+
+        foreach (var child in children)
+        {
+            Resolve(child);
+        }
+    }
+
+    // a check: added to the open scope's combined check, or rolled now
+    private static void Report(RulesetCharacter holder, RulesetCharacter roller, int damage, string damageType)
+    {
+        // only creatures on the map are checked, as the game's callbacks only exist for them
+        if (GameLocationCharacter.GetFromActor(roller) == null && GameLocationCharacter.GetFromActor(holder) == null)
         {
             return;
         }
 
-        Scopes.Peek().GetEntry(isShape ? GetOwner(actor) : actor).Damage += damage;
-    }
-
-    /// <summary>Called before RulesetCharacter.SustainDamage: true for a shape, whose call must then be ended.</summary>
-    internal static bool BeginSustainDamage(RulesetCharacter character)
-    {
-        if (character.OriginalFormCharacter is not { } owner)
+        if (!IsActive)
         {
-            return false;
+            RollCheck(roller, holder, damage, damageType);
+
+            return;
         }
 
-        ShapeOwnersTakingDamage.Add(owner);
+        var scope = Scopes.Peek();
+        var entry = scope.Entries.Find(x => x.Holder == holder);
 
-        return true;
-    }
-
-    internal static void EndSustainDamage(bool begun)
-    {
-        if (begun && ShapeOwnersTakingDamage.Count > 0)
+        if (entry == null)
         {
-            ShapeOwnersTakingDamage.RemoveAt(ShapeOwnersTakingDamage.Count - 1);
-        }
-    }
-
-    // whether this damage to a character is the overflow of a hit on the shape it is in
-    private static bool IsOverflowFromShape(RulesetActor actor)
-    {
-        return ShapeOwnersTakingDamage.Count > 0 && ShapeOwnersTakingDamage[ShapeOwnersTakingDamage.Count - 1] == actor;
-    }
-
-    // a shape's damage and checks belong to the character in the shape, whose form can change within one instance
-    private static RulesetActor GetOwner(RulesetActor actor)
-    {
-        return actor is RulesetCharacter { OriginalFormCharacter: { } original } ? original : actor;
-    }
-
-    /// <summary>
-    ///     The character in a shape whose concentration damage to the shape should check, or null: the creature hit
-    ///     isn't a shape, the shape holds its own concentrated spell (the game checks that), the character in it
-    ///     concentrates on nothing, or shapes call for no checks.
-    /// </summary>
-    internal static RulesetCharacter GetShapeOwnerToCheck(RulesetCharacter character)
-    {
-        return ShapesCheck &&
-               character is { OriginalFormCharacter: { ConcentratedSpell: not null } owner, ConcentratedSpell: null }
-            ? owner
-            : null;
-    }
-
-    /// <summary>
-    ///     For CheckConcentration outside a combined roll: whether to skip this check because it is a shape's overflow
-    ///     the shape's own check already covered.
-    /// </summary>
-    internal static bool IsCoveredOverflow(RulesetCharacter character)
-    {
-        return !_rollingCombined && ShapesCheck && IsOverflowFromShape(character);
-    }
-
-    /// <summary>
-    ///     For CheckConcentration outside a combined roll: the damage to check, the whole damage before temporary hit
-    ///     points by default (the game passes what reached hit points), else the game's own amount.
-    /// </summary>
-    internal static int GetDamageToCheck(RulesetCharacter character, int damage)
-    {
-        if (_rollingCombined || !TemporaryHitPointsCount ||
-            !LastDamageReceived.TryGetValue(character, out var received))
-        {
-            return damage;
+            entry = new Entry { Holder = holder };
+            scope.Entries.Add(entry);
         }
 
-        LastDamageReceived.Remove(character);
-
-        return Math.Max(damage, received);
-    }
-
-    /// <summary>
-    ///     Called from the CheckConcentration prefix: marks the creature for the open scope's combined check and returns
-    ///     true (the game's own check is then skipped), or returns false outside a scope. With temporary hit points not
-    ///     counting, the amount the game passes (what reached hit points) is the creature's damage.
-    /// </summary>
-    internal static bool TryGather(GameLocationCharacter locationCharacter, RulesetCharacter character, int damage)
-    {
-        if (!IsActive || character == null)
-        {
-            return false;
-        }
-
-        var entry = Scopes.Peek().GetEntry(character.IsSubstitute && ShapesCheck ? GetOwner(character) : character);
-
-        entry.Character = locationCharacter;
-
-        if (!TemporaryHitPointsCount)
-        {
-            entry.Damage += damage;
-        }
-
-        return true;
+        entry.Damage += damage;
+        entry.Roller = roller;
     }
 
     /// <summary>
     ///     Whether a feature keeps the concentration of this character's hero from damage
     ///     (IPreventRemoveConcentrationOnDamage).
     /// </summary>
-    internal static bool KeepsConcentrationFromDamage(RulesetCharacter character)
+    private static bool KeepsConcentrationFromDamage(RulesetCharacter character)
     {
         var hero = character?.GetOriginalHero();
         var concentratedSpell = hero?.ConcentratedSpell;
@@ -246,14 +266,13 @@ internal static class ConcentrationDamageContext
     }
 
     /// <summary>
-    ///     The concentration check of a character in a shape, as GameLocationCharacter.CheckConcentration does it for a
-    ///     creature's own spell: the roller saves (the shape, or the character itself once the shape dropped), and a
-    ///     failure ends the character's concentration.
+    ///     A concentration check as GameLocationCharacter.CheckConcentration makes it for a conscious creature: the
+    ///     roller saves (a shape for the character in it, or the holder itself), and a failure ends the holder's
+    ///     concentration.
     /// </summary>
-    internal static void RollShapeOwnerCheck(
-        RulesetCharacter roller, RulesetCharacter owner, int damage, string damageType)
+    private static void RollCheck(RulesetCharacter roller, RulesetCharacter holder, int damage, string damageType)
     {
-        if (damage <= 0 || owner.ConcentratedSpell == null || KeepsConcentrationFromDamage(owner))
+        if (damage <= 0 || holder.ConcentratedSpell == null || KeepsConcentrationFromDamage(holder))
         {
             return;
         }
@@ -272,71 +291,31 @@ internal static class ConcentrationDamageContext
 
         if (outcome is RuleDefinitions.RollOutcome.Failure or RuleDefinitions.RollOutcome.CriticalFailure)
         {
-            owner.BreakConcentration();
-        }
-    }
-
-    private static void RollCombined(DamageInstance instance)
-    {
-        _rollingCombined = true;
-
-        try
-        {
-            foreach (var entry in instance.Entries)
-            {
-                // only creatures the game asked to check
-                if (entry.Character is not { } character || entry.Damage <= 0)
-                {
-                    continue;
-                }
-
-                var current = character.RulesetCharacter;
-
-                if (current is { IsDeadOrDyingOrUnconscious: false })
-                {
-                    // the creature, or the shape still standing (CheckConcentration then rolls for the character in it)
-                    character.CheckConcentration(current, entry.Damage, string.Empty, true);
-                }
-                else if (entry.Actor is RulesetCharacter { IsDeadOrDyingOrUnconscious: false } owner &&
-                         owner != current && GetShapeOwnerToCheck(current) == owner)
-                {
-                    // the shape dropped: the character in it, who keeps concentrating, saves
-                    RollShapeOwnerCheck(owner, owner, entry.Damage, string.Empty);
-                }
-            }
-        }
-        finally
-        {
-            _rollingCombined = false;
+            holder.BreakConcentration();
         }
     }
 
     internal sealed class DamageInstance
     {
         internal readonly List<Entry> Entries = [];
-
-        internal Entry GetEntry(RulesetActor actor)
-        {
-            var entry = Entries.Find(x => x.Actor == actor);
-
-            if (entry != null)
-            {
-                return entry;
-            }
-
-            entry = new Entry { Actor = actor };
-            Entries.Add(entry);
-
-            return entry;
-        }
     }
 
     internal sealed class Entry
     {
-        internal RulesetActor Actor;
-
-        // set once the game asks this creature for a concentration check inside the instance
-        internal GameLocationCharacter Character;
         internal int Damage;
+        internal RulesetCharacter Holder;
+
+        // the creature that took the damage last (the holder, or a shape it is in)
+        internal RulesetCharacter Roller;
+    }
+
+    private sealed class DamageFrame
+    {
+        internal readonly List<DamageFrame> Children = [];
+        internal RulesetCharacter Actor;
+        internal string DamageType;
+        internal int Received;
+        internal int TemporaryHitPointsBefore;
+        internal int TemporaryHitPointsUsed;
     }
 }
