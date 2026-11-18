@@ -225,7 +225,7 @@ ModUi/&EnableProneAction=<color=#D89555>엎드려 넘어짐</color> 동작을 �
 ModUi/&EnablePullPushOnVerticalDirection=위/아래 축에서도 푸시 및 풀 모션 효과를 작동하도록 설정
 ModUi/&PushOrPullOncePerHit=크리처를 움직이는 주문이나 능력이 명중할 때마다 한 번씩 밀거나 끌기 <i><color=#F0DAA0>[Repelling Blast는 명중한 Eldritch Blast 광선마다 한 번 밀고, 하다르의 손아귀는 광선마다 한 번 끕니다. 끄면 한 번의 시전에서 첫 번째 밀기나 끌기만 크리처를 움직입니다]</color></i>
 ModUi/&CombineConcentrationChecks=피해 1회마다 그 총 피해에 대해 집중 내성 굴림을 한 번만 굴립니다 <i><color=#F0DAA0>[추가 피해를 포함한 무기 명중 1회, 주문이나 능력의 명중 1회, 또는 한 턴의 지속 피해; 마법 화살의 각 다트, Radiant Motes의 각 입자, 섬뜩한 파동의 각 광선은 따로 계산]</color></i>
-ModUi/&NoConcentrationChecksFromWildShapeDamage=야생 변신 형태가 받은 피해로는 집중 내성 굴림을 하지 않습니다 <i><color=#F0DAA0>[기본 게임처럼 드루이드에게 넘어간 피해만 해당]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=야생 변신 형태가 받은 피해로는 집중 내성 굴림을 하지 않습니다 <i><color=#F0DAA0>[서 있는 동안에도, 쓰러질 때에도]</color></i>
 ModUi/&NoConcentrationChecksFromTemporaryHitPoints=임시 체력이 흡수한 피해는 집중 내성 굴림에 포함하지 않습니다 <i><color=#F0DAA0>[체력에 입은 피해만 포함]</color></i>
 ModUi/&CapConcentrationSaveDc30=집중 내성 굴림의 DC 상한을 30으로 제한합니다 <i><color=#F0DAA0>[2024 규칙]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=<color=#D89555>레인저</color>가 모든 전투 스타일을 선택할 수 있도록 허용 <i><color=#F0DAA0>[대형 무기 전투 및 보호 추가]</color></i>
