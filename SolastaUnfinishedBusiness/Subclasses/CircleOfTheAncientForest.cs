@@ -147,7 +147,9 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
         // LEVEL 14
 
         // Forest Barrier: Wall of Thorns as an action, a number of times per long rest equal to the Wisdom modifier;
-        // the pool is a bundle whose choices are the spell's two shapes
+        // the pool is a bundle whose choices are the spell's two shapes. Each choice only aims (the spell's shape and
+        // range, no forms, no lasting effect) and then casts the real spell at 6th level without a slot, so the wall
+        // takes the spell's concentration: a new wall or another concentration spell ends the previous one.
         var powerPoolAncientForestWallOfThorns = FeatureDefinitionPowerBuilder
             .Create("PowerPoolAncientForestWallOfThorns")
             .SetGuiPresentation(Category.Feature, WallOfThornsWallLine)
@@ -170,7 +172,15 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
                 .Create("PowerSharedPoolAncientForest" + spell.name)
                 .SetGuiPresentation(spell.GuiPresentation)
                 .SetSharedPool(ActivationTime.Action, powerPoolAncientForestWallOfThorns)
-                .SetEffectDescription(spell.effectDescription)
+                .SetShowCasting(false)
+                .SetEffectDescription(
+                    EffectDescriptionBuilder
+                        .Create(spell)
+                        .SetDurationData(DurationType.Instantaneous)
+                        .SetEffectForms()
+                        .SetNoSavingThrow()
+                        .Build())
+                .AddCustomSubFeatures(new PowerOrSpellFinishedByMeForestBarrier(spell))
                 .AddToDB();
 
             featureSetWallOfThorns.FeatureSet.Add(wallOfThorns);
@@ -370,6 +380,25 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
 
             rulesetAttacker.LogCharacterActivatesAbility(ability);
             rulesetAttacker.ReceiveHealing(healing, true, rulesetAttacker.Guid, cap);
+        }
+    }
+
+    // Casts the Wall of Thorns shape the Forest Barrier choice aimed, at 6th level and without a slot, on the cells
+    // the power targeted (the cast reuses the power's action parameters). The cast is a real spell, so it needs and
+    // keeps concentration like the spell does.
+    private sealed class PowerOrSpellFinishedByMeForestBarrier(SpellDefinition spell) : IPowerOrSpellFinishedByMe
+    {
+        private const int SlotLevel = 6;
+
+        public IEnumerator OnPowerOrSpellFinishedByMe(CharacterActionMagicEffect action, BaseDefinition baseDefinition)
+        {
+            var actingCharacter = action.ActingCharacter;
+            var spellRepertoire = actingCharacter.RulesetCharacter
+                .GetClassSpellRepertoire(DatabaseHelper.CharacterClassDefinitions.Druid);
+
+            actingCharacter.MyExecuteActionCastNoCost(spell, SlotLevel, action.ActionParams, spellRepertoire);
+
+            yield break;
         }
     }
 }

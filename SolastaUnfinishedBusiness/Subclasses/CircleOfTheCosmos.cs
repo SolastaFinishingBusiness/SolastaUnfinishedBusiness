@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
@@ -35,6 +36,11 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
         $"Condition{Name}Chalice", $"Condition{Name}Chalice14",
         $"Condition{Name}Dragon", $"Condition{Name}Dragon10", $"Condition{Name}Dragon14"
     ];
+
+    // Effects started by a Twinkling Constellations switch, with what the switch keeps from the old form. The action
+    // that runs them still charges the form's pool (CharacterActionUsePower.SpendMagicEffectUses) and resets their
+    // duration (PersistantEffectAction), so MagicEffectFinishedByMeConstellationForm undoes both once it has finished.
+    private static readonly ConditionalWeakTable<RulesetEffect, ConstellationSwitch> ConstellationSwitches = new();
 
     internal static readonly FeatureDefinitionPower PowerStarryForm = BuildStarryForm();
 
@@ -653,15 +659,42 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
             GameLocationCharacter attacker,
             List<GameLocationCharacter> targets)
         {
-            // a constellation switch (Twinkling Constellations) runs the form as a no-cost power: nothing to charge
-            if (action.ActionParams.activeEffect is not RulesetEffectPower rulesetEffectPower ||
-                action.ActionId == ActionDefinitions.Id.PowerNoCost)
+            if (action.ActionParams.activeEffect is not RulesetEffectPower rulesetEffectPower)
             {
                 yield break;
             }
 
             RulesetUsablePower usablePower;
             var rulesetAttacker = attacker.RulesetCharacter;
+
+            // a constellation switch (Twinkling Constellations): no Wild Shape charge, the Starry Form use the action
+            // spent is given back, and the new form keeps the old form's remaining time
+            if (ConstellationSwitches.TryGetValue(rulesetEffectPower, out var constellationSwitch))
+            {
+                ConstellationSwitches.Remove(rulesetEffectPower);
+
+                usablePower = PowerProvider.Get(pool, rulesetAttacker);
+
+                var spentUses = constellationSwitch.PoolUsesBefore - usablePower.RemainingUses;
+
+                if (spentUses > 0)
+                {
+                    rulesetAttacker.UpdateUsageForPowerPool(-spentUses, usablePower);
+                }
+
+                rulesetEffectPower.RemainingRounds = constellationSwitch.RemainingRounds;
+
+                foreach (var conditionGuid in rulesetEffectPower.TrackedConditionGuids)
+                {
+                    if (RulesetEntity.TryGetEntity<RulesetCondition>(conditionGuid, out var rulesetCondition) &&
+                        rulesetCondition != null)
+                    {
+                        rulesetCondition.RemainingRounds = constellationSwitch.RemainingRounds;
+                    }
+                }
+
+                yield break;
+            }
 
             if (rulesetEffectPower.PowerDefinition == PowerDruidWildShape)
             {
@@ -1297,10 +1330,14 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
             var usablePower = PowerProvider.Get(magicEffect, rulesetCharacter);
             var effectPower = implementationService.InstantiateEffectPower(rulesetCharacter, usablePower, false);
 
-            effectPower.remainingRounds = remainingRounds;
+            // Switching costs nothing and keeps the old form's remaining time. The new form runs as a no-cost power;
+            // MagicEffectFinishedByMeConstellationForm recognises this effect, skips the Wild Shape charge, gives back
+            // the pool use the action spends and restores the time the action's persistence step resets.
+            ConstellationSwitches.Remove(effectPower);
+            ConstellationSwitches.Add(effectPower,
+                new ConstellationSwitch(remainingRounds,
+                    PowerProvider.Get(PowerStarryForm, rulesetCharacter).RemainingUses));
 
-            // Switching costs nothing: the new form runs as a no-cost power (no Starry Form use; the Wild Shape charge
-            // in MagicEffectFinishedByMeConstellationForm skips PowerNoCost) and keeps the old form's remaining time.
             var actionService = ServiceRepository.GetService<IGameLocationActionService>();
             var actionParams = new CharacterActionParams(actingCharacter, ActionDefinitions.Id.PowerNoCost)
             {
@@ -1312,5 +1349,11 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
 
             actionService.ExecuteAction(actionParams, null, true);
         }
+    }
+
+    private sealed class ConstellationSwitch(int remainingRounds, int poolUsesBefore)
+    {
+        internal int RemainingRounds { get; } = remainingRounds;
+        internal int PoolUsesBefore { get; } = poolUsesBefore;
     }
 }

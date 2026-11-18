@@ -6,5 +6,5 @@
 - College of Thespian: Improved Terrific Performance's psychic damage now needs a failed save, and Terrific Performance now frightens enemies near the creature you dropped.
 - Eternal Grove: Seed of Life's last heal now comes from the druid.
 - Defiler: Dying Light is only logged when it is used.
-- Ancient Forest: Forest Barrier can now be used: cast Wall of Thorns as an action, a number of times per long rest equal to your Wisdom modifier.
+- Ancient Forest: Forest Barrier can now be used: cast Wall of Thorns (6th level, no spell slot, concentration) as an action, a number of times per long rest equal to your Wisdom modifier.
 - Not tested in game: all of the above.
