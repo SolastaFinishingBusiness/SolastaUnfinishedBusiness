@@ -304,32 +304,35 @@ internal static class TryAlterOutcomeAttributeCheck
         var opponentTotalRoll = opponentBaseBonus + opponentRawRoll + opponentRollModifier;
 
         // handle actor interruptions
-        // AbilityCheckRoll holds the running total: every reaction adds what it changes (a reroll's die difference,
-        // a bonus); a bonus is also added to AbilityCheckActionModifier.AbilityCheckModifier, so the part of the
-        // change that isn't a bonus is the die's
+        // every reaction adds what it changes to AbilityCheckSuccessDelta (a reroll's die difference, a bonus), and a
+        // bonus also to AbilityCheckActionModifier.AbilityCheckModifier (fresh here, so it holds only the reactions'
+        // bonuses); not every reaction updates AbilityCheckRoll, so the total follows the delta, and the die is the
+        // part of the change that isn't a bonus
         PrepareActorAbilityCheckData();
 
-        var actorTotalBefore = totalRoll;
+        var actorDeltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
 
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(rulesetCharacter), abilityCheckData, rawRoll);
 
-        rawRoll += abilityCheckData.AbilityCheckRoll - actorTotalBefore -
-                   abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        totalRoll = abilityCheckData.AbilityCheckRoll;
+        var actorChange = abilityCheckData.AbilityCheckSuccessDelta - actorDeltaBefore;
+
+        totalRoll += actorChange;
+        rawRoll += actorChange - abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // handle opponent interruptions
         PrepareOpponentAbilityCheckData();
 
-        var opponentTotalBefore = opponentTotalRoll;
+        var opponentDeltaBefore = opponentAbilityCheckData.AbilityCheckSuccessDelta;
 
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(opponent), opponentAbilityCheckData, opponentRawRoll);
 
-        opponentRawRoll += opponentAbilityCheckData.AbilityCheckRoll - opponentTotalBefore -
-                           opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        opponentTotalRoll = opponentAbilityCheckData.AbilityCheckRoll;
+        var opponentChange = opponentAbilityCheckData.AbilityCheckSuccessDelta - opponentDeltaBefore;
+
+        opponentTotalRoll += opponentChange;
+        opponentRawRoll += opponentChange - opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // calculate final results
@@ -418,17 +421,18 @@ internal static class TryAlterOutcomeAttributeCheck
             foreach (var tryAlterOutcomeAttributeCheck in unit.RulesetCharacter
                          .GetSubFeaturesByType<ITryAlterOutcomeAttributeCheck>())
             {
-                var rollBefore = abilityCheckData.AbilityCheckRoll;
+                var deltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
                 var modifierBefore = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
 
                 yield return tryAlterOutcomeAttributeCheck.OnTryAlterAttributeCheck(
                     battleManager, rawRoll, abilityCheckData, actingCharacter, unit);
 
-                // the next reaction sees the die as it now is: a reroll keeps its result (two failed rerolls must not
-                // add up), and a bonus, which also raises the modifier, leaves the die unchanged
+                // the next reaction sees the die as it now is: every reaction adds its change to the delta, and a
+                // bonus also to the modifier, so the rest is a reroll's die difference (two failed rerolls must not
+                // add up, a bonus leaves the die unchanged)
                 var modifierAfter = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
 
-                rawRoll += abilityCheckData.AbilityCheckRoll - rollBefore - (modifierAfter - modifierBefore);
+                rawRoll += abilityCheckData.AbilityCheckSuccessDelta - deltaBefore - (modifierAfter - modifierBefore);
             }
         }
     }
