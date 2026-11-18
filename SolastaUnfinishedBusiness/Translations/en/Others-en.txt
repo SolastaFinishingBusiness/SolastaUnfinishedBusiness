@@ -393,6 +393,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=Sundering Blow deals extra +{2} dama
 Feedback/&AdditionalDamageTrueStrikeFormat=True Strike!
 Feedback/&AdditionalDamageTrueStrikeLine={0} strikes {1} and deals extra {2} radiant damage!
 Feedback/&BreakFreeAttempt={0} tries to break free from {2}
+Feedback/&AttackMarginCriticalOutcome={0} (CRITICAL HIT, +10)
 Feedback/&ChangeGloombladeDieType={1} changes the gloomblade die type from {2} to {3}
 Feedback/&ChangeSneakDiceDieType={1} changes the sneak die type from {2} to {3}
 Feedback/&ChangeSneakDiceNumber={1} changes the sneak dice number from {2} to {3}

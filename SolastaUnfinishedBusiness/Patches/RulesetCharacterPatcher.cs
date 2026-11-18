@@ -1332,6 +1332,7 @@ public static class RulesetCharacterPatcher
 
             var service = ServiceRepository.GetService<IGameSettingsService>();
             var disableEnemyCrits = __instance.Side == Side.Enemy && service is { DisableEnemyCrits: true };
+            var marginCriticalHit = false;
             int attackRoll;
 
             if (rawRoll == DiceMaxValue[8] && !disableEnemyCrits)
@@ -1377,6 +1378,8 @@ public static class RulesetCharacterPatcher
                 {
                     if (successDelta >= 10 && !disableEnemyCrits)
                     {
+                        // only a plain hit turned critical by the margin is marked for the combat log
+                        marginCriticalHit = outcome == RollOutcome.Success;
                         outcome = RollOutcome.CriticalSuccess;
                     }
                     else if (successDelta <= -10)
@@ -1426,9 +1429,15 @@ public static class RulesetCharacterPatcher
                         additionalAttackDieRolled?.Invoke(__instance, toHitTrend);
                     }
 
-                    __instance.AttackRolled(
-                        __instance, target, attackMethod, outcome, attackRoll, rawRoll, toHitBonus + rollModifier,
-                        toHitTrends, advantageTrends, opportunity, reactionCounterAttackType);
+                    // a hit that is no longer critical (a target immune to critical hits) isn't marked
+                    var rolledOutcome = outcome;
+
+                    AttackOutcomeRules.InvokeAttackRolled(
+                        marginCriticalHit && outcome == RollOutcome.CriticalSuccess,
+                        () => __instance.AttackRolled(
+                            __instance, target, attackMethod, rolledOutcome, attackRoll, rawRoll,
+                            toHitBonus + rollModifier, toHitTrends, advantageTrends, opportunity,
+                            reactionCounterAttackType));
                     __instance.AccountAttack(outcome);
 
                     if (isCriticalAutomaticOnMe)

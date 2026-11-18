@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=Colpo dirompente infligge +{2} danni
 Feedback/&AdditionalDamageTrueStrikeFormat=Vero colpo!
 Feedback/&AdditionalDamageTrueStrikeLine={0} colpisce {1} e infligge {2} danni radianti extra!
 Feedback/&BreakFreeAttempt={0} cerca di liberarsi da {2}
+Feedback/&AttackMarginCriticalOutcome={0} (COLPO CRITICO, +10)
 Feedback/&ChangeGloombladeDieType={1} cambia il tipo di dado della lama oscura da {2} a {3}
 Feedback/&ChangeSneakDiceDieType={1} cambia il tipo di dado furtivo da {2} a {3}
 Feedback/&ChangeSneakDiceNumber={1} cambia il numero dei dadi furtivi da {2} a {3}
