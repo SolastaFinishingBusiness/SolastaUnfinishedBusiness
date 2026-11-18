@@ -451,6 +451,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Включить правила 2024 го�
 ModUi/&TableTopButton=<b><color=#D89555>Включить Настольные правила</color></b>
 ModUi/&TableTopHelp1=• Следующие разделы перегруппируют и дублируют настройки <color=#D89555>5e 2014 и 2024</color>, разбросанные по всему моду для вашего удобства
 ModUi/&TableTopHelp2=• Используйте соответствующие кнопки, чтобы <b>включить только Настольные правила</b> на вкладке Персонажа, или <b>включить правила 2014 и/или 2024 года</b>, чтобы полностью испытать опыт настольной игры
+ModUi/&TableTopHelp3=• Кнопки QoL, 2014 и 2024 включают свои настройки; большинство из них вступают в силу после перезапуска <b><i><color=#C04040E0>[Необходим перезапуск]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Настольные правила <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Язык перевода
 ModUi/&TotalCraftingTimeModifier=<color=white>Уменьшить время крафта на</color>
@@ -594,7 +595,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Секунд без 
 ModUi/&MultiplayerShowFpsOverlay=Показывать во время сетевой сессии в левом верхнем углу небольшой оверлей с частотой кадров и пингом, которые вам видны
 ModUi/&MultiplayerSpreadOverlappedCharacters=Рисовать персонажей в одной клетке чуть раздвинутыми, чтобы на каждого можно было навести <i><color=#F0DAA0>[только визуально: двое рядом, трое треугольником, больше по более широкому кругу; при движении они возвращаются в центр]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Время и отдых:</color>
-ModUi/&PickPocketNonHostiles=Также добавить добычу для карманной кражи многим невраждебным NPC <i><color=#F0DAA0>[неудача влияет на репутацию]</color></i>
+ModUi/&PickPocketNonHostiles=Также добавить добычу для карманной кражи многим невраждебным NPC <i><color=#F0DAA0>[неудача влияет на репутацию]</color></i> <b><i><color=#C04040E0>[Необходим перезапуск]</color></i></b>
 ModUi/&SearchClear=Очистить
 ModUi/&SearchNoResults=Нет настроек, подходящих под "{0}".
 ModUi/&SearchSettings=Поиск настроек:

@@ -362,7 +362,7 @@ ModUi/&OutlineGridWidthSpeed=<color=white>Multiply the outline grid animation sp
 ModUi/&OverrideMinMaxLevel=Override the required min and max levels when starting new adventures
 ModUi/&OverridePartySize=<color=white>Override the party size</color>
 ModUi/&Patches=<color=#F0DAA0>Patches:</color>
-ModUi/&PickPocketNonHostiles=Also add pickpocketable loot to many non-hostile NPCs <i><color=#F0DAA0>[failure will affect reputation]</color></i>
+ModUi/&PickPocketNonHostiles=Also add pickpocketable loot to many non-hostile NPCs <i><color=#F0DAA0>[failure will affect reputation]</color></i> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&PortraitsOpenFolder=Open portraits folder
 ModUi/&PrimedItems=Primed Items
 ModUi/&QuickCastLightCantripOnWornItemsFirst=Enable quick cast <color=#D89555>Light Cantrip</color> to use head, neck or torso worn items first
@@ -436,6 +436,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Enable 2024 rules</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Enable Tabletop content</color></b>
 ModUi/&TableTopHelp1=• Following sections re-group and duplicate <color=#D89555>5e 2014 and 2024</color> settings scattered across the mod for your convenience
 ModUi/&TableTopHelp2=• Press the buttons to <b>select only tabletop content under Character tab</b>, and <b>enable 2014 and/or 2024 rules</b>, for a true TT experience
+ModUi/&TableTopHelp3=• The QoL, 2014 and 2024 buttons turn their options on; most of them take effect after a restart <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Tabletop <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Target Language
 ModUi/&TotalCraftingTimeModifier=<color=white>Reduce crafting time by</color>
