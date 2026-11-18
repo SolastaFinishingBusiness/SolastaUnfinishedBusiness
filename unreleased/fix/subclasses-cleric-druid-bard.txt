@@ -8,4 +8,5 @@
 - Defiler: Dying Light is only logged when it is used.
 - Ancient Forest: Forest Barrier can now be used: cast Wall of Thorns (6th level, no spell slot, concentration) as an action, a number of times per long rest equal to your Wisdom modifier.
 - Druid Primal Order (Magician): the extra cantrip now shows its "Primal Order" label instead of a text key, and the Forest Barrier description reads correctly.
+- Moonlit Scion: Midnight's Blessing now casts its Moon Beam without spending a spell slot, as described.
 - Not tested in game: all of the above.
