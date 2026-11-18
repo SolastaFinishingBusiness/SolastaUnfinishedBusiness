@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=Guidé par un éclair de perspicacité magique,
 Stage/&IdentityMorphotypeEyeHeader=Style des yeux
 Stage/&SubclassSelectionStageDomainFeatures=Caractéristiques du Domaine Divin
 Stage/&SubclassSelectionStageDomainHeader=Domaine Divin
+Stage/&SubclassSelectionStageDomainNoneDescription=Vous devez sélectionner un domaine divin.
 Subclass/&TraditionOpenHandDescription=Les moines de la voie de la paume se consacrent aux arts martiaux. Redoutables avec ou sans arme, ils projettent ou renversent leurs adversaires et utilisent la force mystique du Ki pour se protéger ou se soigner.
 Subclass/&TraditionOpenHandTitle=Voie de la paume
 Tag/&PrimalOrderCantripSpecialTagTitle=Sort de l'Ordre Primaire

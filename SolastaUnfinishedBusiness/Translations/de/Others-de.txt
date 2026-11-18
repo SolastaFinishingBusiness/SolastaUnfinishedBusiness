@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=Geleitet von einem Geistesblitz führst du eine
 Stage/&IdentityMorphotypeEyeHeader=Augenstil
 Stage/&SubclassSelectionStageDomainFeatures=Funktionen von Divine Domain
 Stage/&SubclassSelectionStageDomainHeader=Göttliche Domäne
+Stage/&SubclassSelectionStageDomainNoneDescription=Du musst eine göttliche Domäne wählen.
 Subclass/&TraditionOpenHandDescription=Die Mönche des Wegs der offenen Hand haben sich selbst der Kampfkunst verschrieben. Gefährlich mit und ohne Waffen, werfen oder lassen sie ihre Gegner stolpern und nutzen die mystische Kraft des Ki, um sich zu schützen und ihre Wunden zu heilen.
 Subclass/&TraditionOpenHandTitle=Weg der offenen Hand
 Tag/&PrimalOrderCantripSpecialTagTitle=Zauberspruch der Urordnung

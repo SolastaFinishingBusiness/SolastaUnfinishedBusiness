@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=마법적 통찰력의 섬광에 이끌려 주�
 Stage/&IdentityMorphotypeEyeHeader=아이 스타일
 Stage/&SubclassSelectionStageDomainFeatures=Divine Domain 기능
 Stage/&SubclassSelectionStageDomainHeader=신성한 도메인
+Stage/&SubclassSelectionStageDomainNoneDescription=신성한 도메인을 선택해야 합니다.
 Subclass/&TraditionOpenHandDescription=오픈 핸드의 길의 승려들은 전투 기술에 헌신합니다. 무기가 있든 없든 위험하며, 그들은 상대방을 던지거나 넘어뜨리고, 기의 신비로운 힘을 사용하여 자신을 보호하고 치유합니다.
 Subclass/&TraditionOpenHandTitle=열린 손의 길
 Tag/&PrimalOrderCantripSpecialTagTitle=원시 주문 주문

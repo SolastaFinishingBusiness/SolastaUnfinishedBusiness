@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -57,6 +58,59 @@ public static class CharacterStageClassSelectionPanelPatcher
             if (commonData.PersonalityMapPanel)
             {
                 commonData.PersonalityMapPanel.RefreshNow();
+            }
+        }
+
+        //PATCH: draws the class tiles' bottom lines and corner marks for the grid's real column count. The game's
+        //OnBeginShow works them out for two columns (index / 2, index % 2), but ClassesTable lays the 326 px tiles out
+        //three to a 980 px row, so with a class count that leaves a short last row the frames land on the wrong tiles.
+        [UsedImplicitly]
+        public static void Postfix([NotNull] CharacterStageClassSelectionPanel __instance)
+        {
+            var table = __instance.classesTable;
+
+            if (!table)
+            {
+                return;
+            }
+
+            var columns = 1;
+            var grid = table.GetComponent<GridLayoutGroup>();
+
+            if (grid)
+            {
+                columns = grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount
+                    ? grid.constraintCount
+                    : Mathf.FloorToInt((table.rect.width + grid.spacing.x) / (grid.cellSize.x + grid.spacing.x));
+            }
+
+            columns = Math.Max(1, columns);
+
+            var slots = new List<GridSelectionSlot>();
+
+            for (var i = 0; i < table.childCount; i++)
+            {
+                var child = table.GetChild(i);
+
+                if (child.gameObject.activeSelf && child.TryGetComponent<GridSelectionSlot>(out var slot))
+                {
+                    slots.Add(slot);
+                }
+            }
+
+            for (var i = 0; i < slots.Count; i++)
+            {
+                // a bottom line where no tile is below; a corner mark on every inner corner (not the first row or
+                // column)
+                if (slots[i].bottomLine)
+                {
+                    slots[i].bottomLine.gameObject.SetActive(i + columns >= slots.Count);
+                }
+
+                if (slots[i].crossHair)
+                {
+                    slots[i].crossHair.gameObject.SetActive(i % columns > 0 && i / columns > 0);
+                }
             }
         }
     }
