@@ -64,6 +64,8 @@ public static class CharacterStageClassSelectionPanelPatcher
         //PATCH: draws the class tiles' bottom lines and corner marks for the grid's real column count. The game's
         //OnBeginShow works them out for two columns (index / 2, index % 2), but ClassesTable lays the 326 px tiles out
         //three to a 980 px row, so with a class count that leaves a short last row the frames land on the wrong tiles.
+        //A tile's prefab has a top, left and bottom frame but no right one (the next tile's left frame or the panel's
+        //edge draws it), so the last tile of a short row gets a right frame of its own.
         [UsedImplicitly]
         public static void Postfix([NotNull] CharacterStageClassSelectionPanel __instance)
         {
@@ -101,8 +103,42 @@ public static class CharacterStageClassSelectionPanelPatcher
                 {
                     slots[i].crossHair.gameObject.SetActive(i % columns > 0 && i / columns > 0);
                 }
+
+                // the last tile, when it isn't in the last column, has an empty cell to its right
+                SetRightFrame(slots[i], i == slots.Count - 1 && i % columns != columns - 1);
             }
         }
+
+        // a copy of the tile's left frame, moved to its right edge; made once per tile and only shown or hidden after
+        // that, as the panel reuses its tiles
+        private static void SetRightFrame(GridSelectionSlot slot, bool show)
+        {
+            var frameRight = slot.transform.Find(FrameRightName);
+
+            if (!frameRight)
+            {
+                if (!show || slot.transform.Find("FrameLeft") is not RectTransform frameLeft)
+                {
+                    return;
+                }
+
+                var copy = UnityEngine.Object.Instantiate(frameLeft.gameObject, slot.transform);
+                var rect = (RectTransform)copy.transform;
+
+                copy.name = FrameRightName;
+                copy.transform.SetSiblingIndex(frameLeft.GetSiblingIndex() + 1);
+                rect.anchorMin = new Vector2(1f, frameLeft.anchorMin.y);
+                rect.anchorMax = new Vector2(1f, frameLeft.anchorMax.y);
+                rect.pivot = new Vector2(1f, frameLeft.pivot.y);
+                rect.anchoredPosition = new Vector2(-frameLeft.anchoredPosition.x, frameLeft.anchoredPosition.y);
+                rect.sizeDelta = frameLeft.sizeDelta;
+                frameRight = copy.transform;
+            }
+
+            frameRight.gameObject.SetActive(show);
+        }
+
+        private const string FrameRightName = "FrameRight";
 
         // The column count GridLayoutGroup lays the tiles out in (its SetCellsAlongAxis): a fixed column count, the
         // children over a fixed row count rounded up, or as many cells as fit in the width inside the padding.
