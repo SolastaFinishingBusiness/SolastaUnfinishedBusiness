@@ -383,9 +383,9 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
         }
     }
 
-    // Casts the Wall of Thorns shape the Forest Barrier choice aimed, at 6th level and without a slot, on the cells
-    // the power targeted (the cast reuses the power's action parameters). The cast is a real spell, so it needs and
-    // keeps concentration like the spell does.
+    // Casts the Wall of Thorns shape the Forest Barrier choice aimed, at 6th level, on the cells the power targeted (the
+    // cast reuses the power's action parameters). The Druid repertoire gives the save DC and attack bonus, but no slot
+    // is spent from it. The cast is a real spell, so it needs and keeps concentration like the spell does.
     private sealed class PowerOrSpellFinishedByMeForestBarrier(SpellDefinition spell) : IPowerOrSpellFinishedByMe
     {
         private const int SlotLevel = 6;
@@ -396,7 +396,8 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
             var spellRepertoire = actingCharacter.RulesetCharacter
                 .GetClassSpellRepertoire(DatabaseHelper.CharacterClassDefinitions.Druid);
 
-            actingCharacter.MyExecuteActionCastNoCost(spell, SlotLevel, action.ActionParams, spellRepertoire);
+            actingCharacter.MyExecuteActionCastNoCost(
+                spell, SlotLevel, action.ActionParams, spellRepertoire, spendSlot: false);
 
             yield break;
         }
