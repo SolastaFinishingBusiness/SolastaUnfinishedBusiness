@@ -101,7 +101,7 @@ internal static class ConcentrationDamageContext
             Scopes.Pop();
         }
 
-        foreach (var entry in instance.Entries.Where(x => x.Roller is { IsDeadOrDyingOrUnconscious: false }))
+        foreach (var entry in instance.Entries)
         {
             RollCheck(entry.Roller, entry.Holder, entry.Damage, string.Empty);
         }
@@ -139,7 +139,8 @@ internal static class ConcentrationDamageContext
 
     /// <summary>
     ///     Called after RulesetCharacter.SustainDamage: closes its frame, and works out the checks at the outermost. A
-    ///     call that threw is left out, as its damage may not have been applied.
+    ///     call that threw calls for no check, as its damage may not have been applied; the hit points it took still
+    ///     count as taken by it, not by the call around it.
     /// </summary>
     internal static void EndSustainDamage(object state, Exception exception)
     {
@@ -150,14 +151,14 @@ internal static class ConcentrationDamageContext
 
         Frames.Pop();
 
+        frame.HitPointsAfter = frame.Actor.CurrentHitPoints;
+
         if (exception != null)
         {
-            frame.Parent?.Children.Remove(frame);
+            frame.Failed = true;
 
             return;
         }
-
-        frame.HitPointsAfter = frame.Actor.CurrentHitPoints;
 
         if (frame.Parent == null)
         {
@@ -188,6 +189,11 @@ internal static class ConcentrationDamageContext
 
     private static void Resolve(DamageFrame frame)
     {
+        if (frame.Failed)
+        {
+            return;
+        }
+
         var actor = frame.Actor;
 
         if (actor.ConcentratedSpell != null && !WildShapeChecks && IsWildShapeForm(actor))
@@ -287,7 +293,21 @@ internal static class ConcentrationDamageContext
     /// </summary>
     private static void RollCheck(RulesetCharacter roller, RulesetCharacter holder, int damage, string damageType)
     {
-        if (damage <= 0 || holder.ConcentratedSpell == null || KeepsConcentrationFromDamage(holder))
+        if (damage <= 0 || holder.ConcentratedSpell == null)
+        {
+            return;
+        }
+
+        // the roller is down (the character in a dropped shape, reduced to 0 by the overflow): concentration ends at once,
+        // as the game ends it for a creature that drops
+        if (roller.IsDeadOrDyingOrUnconscious)
+        {
+            holder.BreakConcentration();
+
+            return;
+        }
+
+        if (KeepsConcentrationFromDamage(holder))
         {
             return;
         }
@@ -362,6 +382,9 @@ internal static class ConcentrationDamageContext
         internal string DamageType;
         internal int HitPointsAfter;
         internal int HitPointsBefore;
+
+        // the call threw: no check of its own
+        internal bool Failed;
         internal DamageFrame Parent;
         internal int Received;
     }
