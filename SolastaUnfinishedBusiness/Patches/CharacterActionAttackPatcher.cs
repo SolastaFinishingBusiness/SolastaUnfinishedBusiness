@@ -33,14 +33,7 @@ public static class CharacterActionAttackPatcher
             return false;
         }
 
-        // a hit's concentration damage instance (ConcentrationDamageContext) is released and its rider window closed
-        // even when the attack's coroutine throws
         internal static IEnumerator ExecuteImpl(CharacterActionAttack __instance)
-        {
-            return Models.ConcentrationDamageContext.GuardHit(ExecuteImplCore(__instance), __instance);
-        }
-
-        private static IEnumerator ExecuteImplCore(CharacterActionAttack __instance)
         {
             var battleManager = ServiceRepository.GetService<IGameLocationBattleService>() as GameLocationBattleManager;
 
@@ -634,11 +627,11 @@ public static class CharacterActionAttackPatcher
                         attackModifier,
                         __instance.RolledSaveThrow,
                         saveOutcomeSuccess);
-                    // one hit with all its riders is one damage instance for concentration checks; the instance is
-                    // held until the finished handlers below have started their rider powers
+                    //PATCH: supports `CombineConcentrationChecks`: one hit with the damage riders added to its forms is
+                    //one damage instance; its combined checks roll as the application ends, before the finished
+                    //handlers below (powers those handlers start are instances of their own)
                     var damageAbsorbedByTemporaryHitPoints = false;
 
-                    var concentrationHit = Models.ConcentrationDamageContext.NewHit(__instance);
                     damageReceived = Models.ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
                         __instance.actualEffectForms,
                         formParams,
@@ -646,7 +639,7 @@ public static class CharacterActionAttackPatcher
                         effectApplication: attackMode.EffectDescription.EffectApplication,
                         filters: attackMode.EffectDescription.EffectFormFilters,
                         damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
-                        terminateEffectOnTarget: out _), concentrationHit);
+                        terminateEffectOnTarget: out _));
 
                     actingCharacter.AttackImpactOn(
                         target, __instance.AttackRollOutcome, actionParams, attackMode, attackModifier);
@@ -868,10 +861,6 @@ public static class CharacterActionAttackPatcher
 
             //BEGIN PATCH
 
-            //PATCH: supports `CombineConcentrationChecks`: power actions the attacker starts from the handlers below
-            //(damage riders such as Spike Barrage) join the hit's damage instance
-            Models.ConcentrationDamageContext.OpenRiderWindow(__instance);
-
             if (Gui.Battle != null && target.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
             {
                 //PATCH: allow custom behavior when physical attack finished on defender
@@ -932,9 +921,6 @@ public static class CharacterActionAttackPatcher
                     }
                 }
             }
-
-            // the hit's combined checks roll here, in this coroutine, once the rider powers started above have ended
-            yield return Models.ConcentrationDamageContext.FinishHit(__instance);
 
             //PATCH: support for Sentinel Fighting Style - allows attacks of opportunity on enemies attacking allies
             yield return AttacksOfOpportunity.ProcessOnCharacterAttackFinished(

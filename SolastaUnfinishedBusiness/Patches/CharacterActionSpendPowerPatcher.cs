@@ -58,9 +58,7 @@ public static class CharacterActionSpendPowerPatcher
             out IEnumerator __result,
             CharacterActionSpendPower __instance)
         {
-            //PATCH: supports `CombineConcentrationChecks`: a hit's rider power holds the hit's damage instance until
-            //it ends
-            __result = ConcentrationDamageContext.ReleaseRiderWhenDone(ExecuteImpl(__instance), __instance.ActionParams);
+            __result = ExecuteImpl(__instance);
 
             return false;
         }
@@ -299,8 +297,7 @@ public static class CharacterActionSpendPowerPatcher
 
                     try
                     {
-                        //PATCH: supports `CombineConcentrationChecks`: one target of the power is one damage instance,
-                        //or part of the hit's instance for a hit's rider power
+                        //PATCH: supports `CombineConcentrationChecks`: one target of the power is one damage instance
                         ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
                                 effectForms,
                                 applyFormsParams,
@@ -308,8 +305,7 @@ public static class CharacterActionSpendPowerPatcher
                                 effectApplication: effectDescription.EffectApplication,
                                 filters: effectDescription.EffectFormFilters,
                                 damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
-                                terminateEffectOnTarget: out _),
-                            ConcentrationDamageContext.GetRiderInstance(__instance.ActionParams));
+                            terminateEffectOnTarget: out _));
                     }
                     finally
                     {

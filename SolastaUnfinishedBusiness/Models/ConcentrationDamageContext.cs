@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace SolastaUnfinishedBusiness.Models;
 
@@ -9,39 +7,28 @@ namespace SolastaUnfinishedBusiness.Models;
 ///     Combines the concentration checks of one damage instance. The game rolls a concentration save for each damage
 ///     form a creature takes (GameLocationCharacter.CheckConcentration, from DamageSustained and
 ///     DamageAbsorbedByTemporaryHitPoints), so one hit with two damage types gives two saves. With the
-///     CombineConcentrationChecks setting, each damage instance gets a <see cref="DamageInstance" />:
+///     CombineConcentrationChecks setting, each damage instance is a scope:
 ///     <list type="bullet">
-///         <item>one attack's hit with its damage riders, including rider powers the attacker starts from the
-///         attack's finished handlers (<see cref="OpenRiderWindow" />); the attack's coroutine waits for those powers
-///         to end and then rolls the checks itself (<see cref="FinishHit" />), so the roll always comes at the same
-///         point of the attack whatever the frame timing of the parallel rider coroutines;</item>
+///         <item>one attack's hit with the damage riders added to its forms (a power action a hit starts afterwards
+///         is an instance of its own);</item>
 ///         <item>one target entry of a spell or power (a Magic Missile dart, a Radiant Motes mote and an Eldritch Blast
 ///         beam are each their own entry);</item>
-///         <item>one application of a spell, power or environment effect on a creature (entering an area, a turn's
-///         recurring effect), and one recurring tick of a condition.</item>
+///         <item>one application of a spell, power or environment effect on a creature (entering an area or a cell of
+///         it, a turn's recurring effect), and one recurring tick of a condition.</item>
 ///     </list>
-///     While an instance is the innermost open scope, the damage each creature takes is added up from
+///     While a scope is the innermost open one, the damage each creature takes is added up from
 ///     RulesetActor.AccountReceivedDamage, which RulesetCharacter.SustainDamage calls with the damage after difficulty
 ///     scaling and before temporary hit points take their share; the game's own checks for a still-conscious creature
 ///     only mark that creature for a check. Damage to a shape (Wild Shape) counts for the character in that shape: the
 ///     full hit the shape takes counts, and the overflow SustainDamage then passes on to the character does not count
-///     again. Once the instance has no holds left, each marked creature makes one check
-///     against its total, without a damage type. Losing consciousness still ends concentration at once, through the
-///     game's own path. Every computer runs the same instances in the same order, so the rolls happen at the same point
-///     of the shared dice sequence.
+///     again. When the scope closes, each marked creature makes one check against its total, without a damage type.
+///     Every scope opens and closes within one synchronous call, so its checks roll at a fixed point of the action that
+///     applied it, the same on every computer. Losing consciousness still ends concentration at once, through the
+///     game's own path.
 /// </summary>
 internal static class ConcentrationDamageContext
 {
     private static readonly Stack<DamageInstance> Scopes = new();
-
-    // each attack's hit instance, from its damage until FinishHit (or GuardHit) releases it
-    private static readonly ConditionalWeakTable<CharacterAction, DamageInstance> Hits = new();
-
-    // the open rider windows of each attacker, innermost last (an attack can start in another one's handlers)
-    private static readonly Dictionary<GameLocationCharacter, List<DamageInstance>> RiderWindows = new();
-
-    // rider power actions and the hit instance they belong to
-    private static readonly ConditionalWeakTable<CharacterActionParams, DamageInstance> Riders = new();
 
     // set while the combined checks of an instance are rolled, so those checks are not gathered again
     private static bool _rollingCombined;
@@ -52,80 +39,10 @@ internal static class ConcentrationDamageContext
 
     private static bool IsActive => Main.Settings.CombineConcentrationChecks && Scopes.Count > 0 && !_rollingCombined;
 
-    /// <summary>
-    ///     The instance of an attack's hit, with one hold the attack keeps until <see cref="FinishHit" />; null with
-    ///     the setting off.
-    /// </summary>
-    internal static DamageInstance NewHit(CharacterAction action)
+    /// <summary>Runs one damage instance's application inside a scope and then rolls its combined checks.</summary>
+    internal static T Apply<T>(Func<T> apply)
     {
-        if (!Main.Settings.CombineConcentrationChecks)
-        {
-            return null;
-        }
-
-        var instance = new DamageInstance { Holds = 1 };
-
-        Hits.Remove(action);
-        Hits.Add(action, instance);
-
-        return instance;
-    }
-
-    /// <summary>
-    ///     Closes the hit's rider window, waits for the rider powers started in it to end (each holds the instance until
-    ///     then), and releases the attack's hold, which rolls the combined checks in the attack's coroutine. A rider
-    ///     action always runs (GameLocationActionManager.ExecuteInstantSingleAction adds it to the unstoppable
-    ///     coroutines) and releases its hold in a finally block.
-    /// </summary>
-    internal static IEnumerator FinishHit(CharacterAction action)
-    {
-        if (!Hits.TryGetValue(action, out var instance))
-        {
-            yield break;
-        }
-
-        CloseRiderWindow(action.ActingCharacter, instance);
-
-        while (instance.Holds > 1)
-        {
-            yield return null;
-        }
-
-        Hits.Remove(action);
-        Release(instance);
-    }
-
-    /// <summary>
-    ///     Runs an attack's coroutine; if it ends without reaching <see cref="FinishHit" /> (an exception), the hit's
-    ///     window is closed and its hold released there.
-    /// </summary>
-    internal static IEnumerator GuardHit(IEnumerator execute, CharacterAction action)
-    {
-        try
-        {
-            while (execute.MoveNext())
-            {
-                yield return execute.Current;
-            }
-        }
-        finally
-        {
-            if (Hits.TryGetValue(action, out var instance))
-            {
-                Hits.Remove(action);
-                CloseRiderWindow(action.ActingCharacter, instance);
-                Release(instance);
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Runs one application inside a scope of the given instance (or of a new one), then releases the scope's hold:
-    ///     a new instance rolls its checks at once, a shared one when its last hold is released.
-    /// </summary>
-    internal static T Apply<T>(Func<T> apply, DamageInstance instance = null)
-    {
-        var scope = Begin(instance);
+        var scope = Begin();
 
         try
         {
@@ -137,22 +54,22 @@ internal static class ConcentrationDamageContext
         }
     }
 
-    /// <summary>Opens a scope (for Harmony prefixes); pass its result to <see cref="End" />.</summary>
-    internal static DamageInstance Begin(DamageInstance instance = null)
+    /// <summary>Opens a scope (for Harmony prefixes); pass its result to <see cref="End" />. Null with the setting off.</summary>
+    internal static DamageInstance Begin()
     {
         if (!Main.Settings.CombineConcentrationChecks)
         {
             return null;
         }
 
-        instance ??= new DamageInstance();
-        instance.Holds++;
+        var instance = new DamageInstance();
+
         Scopes.Push(instance);
 
         return instance;
     }
 
-    /// <summary>Closes a scope opened by <see cref="Begin" /> and releases its hold.</summary>
+    /// <summary>Closes a scope opened by <see cref="Begin" /> and rolls its combined checks.</summary>
     internal static void End(DamageInstance instance)
     {
         if (instance == null)
@@ -165,109 +82,7 @@ internal static class ConcentrationDamageContext
             Scopes.Pop();
         }
 
-        Release(instance);
-    }
-
-    /// <summary>Releases one hold; the last one rolls the instance's checks.</summary>
-    internal static void Release(DamageInstance instance)
-    {
-        if (instance == null || instance.Holds <= 0 || --instance.Holds > 0)
-        {
-            return;
-        }
-
         RollCombined(instance);
-    }
-
-    /// <summary>
-    ///     While an attacker's physical attack runs its finished handlers, rider powers the attacker starts
-    ///     (<see cref="TagRider" />) join the hit's instance.
-    /// </summary>
-    internal static void OpenRiderWindow(CharacterAction action)
-    {
-        if (!Hits.TryGetValue(action, out var instance))
-        {
-            return;
-        }
-
-        if (!RiderWindows.TryGetValue(action.ActingCharacter, out var windows))
-        {
-            windows = [];
-            RiderWindows[action.ActingCharacter] = windows;
-        }
-
-        windows.Add(instance);
-    }
-
-    private static void CloseRiderWindow(GameLocationCharacter attacker, DamageInstance instance)
-    {
-        if (!RiderWindows.TryGetValue(attacker, out var windows))
-        {
-            return;
-        }
-
-        windows.Remove(instance);
-
-        if (windows.Count == 0)
-        {
-            RiderWindows.Remove(attacker);
-        }
-    }
-
-    /// <summary>
-    ///     Called when a character starts a power action: inside that character's rider window the action joins the
-    ///     hit's instance and holds it until the action ends (<see cref="ReleaseRiderWhenDone" />).
-    /// </summary>
-    internal static void TagRider(GameLocationCharacter user, CharacterActionParams actionParams)
-    {
-        if (!Main.Settings.CombineConcentrationChecks ||
-            !RiderWindows.TryGetValue(user, out var windows) ||
-            windows.Count == 0)
-        {
-            return;
-        }
-
-        var instance = windows[windows.Count - 1];
-
-        instance.Holds++;
-        Riders.Remove(actionParams);
-        Riders.Add(actionParams, instance);
-    }
-
-    /// <summary>The hit instance a rider power action belongs to, or null.</summary>
-    internal static DamageInstance GetRiderInstance(CharacterActionParams actionParams)
-    {
-        return actionParams != null && Riders.TryGetValue(actionParams, out var instance) ? instance : null;
-    }
-
-    /// <summary>Runs a rider action's coroutine and releases its hold on the hit's instance when it ends.</summary>
-    internal static IEnumerator ReleaseRiderWhenDone(IEnumerator execute, CharacterActionParams actionParams)
-    {
-        var instance = GetRiderInstance(actionParams);
-
-        if (instance == null)
-        {
-            return execute;
-        }
-
-        return ReleaseWhenDone(execute, actionParams, instance);
-    }
-
-    private static IEnumerator ReleaseWhenDone(
-        IEnumerator execute, CharacterActionParams actionParams, DamageInstance instance)
-    {
-        try
-        {
-            while (execute.MoveNext())
-            {
-                yield return execute.Current;
-            }
-        }
-        finally
-        {
-            Riders.Remove(actionParams);
-            Release(instance);
-        }
     }
 
     /// <summary>
@@ -360,7 +175,6 @@ internal static class ConcentrationDamageContext
     internal sealed class DamageInstance
     {
         internal readonly List<Entry> Entries = [];
-        internal int Holds;
 
         internal Entry GetEntry(RulesetActor actor)
         {
