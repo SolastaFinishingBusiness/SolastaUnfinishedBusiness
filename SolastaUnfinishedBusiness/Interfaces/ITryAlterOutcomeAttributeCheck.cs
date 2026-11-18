@@ -304,25 +304,35 @@ internal static class TryAlterOutcomeAttributeCheck
         var opponentTotalRoll = opponentBaseBonus + opponentRawRoll + opponentRollModifier;
 
         // handle actor interruptions
+        // AbilityCheckRoll holds the total: rerolls and die changes add their difference to it, and bonuses such as
+        // Bardic Inspiration go to AbilityCheckActionModifier.AbilityCheckModifier
         PrepareActorAbilityCheckData();
+
+        var actorTotalBefore = totalRoll;
 
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(rulesetCharacter), abilityCheckData, rawRoll);
 
-        totalRoll = totalRoll - rawRoll + abilityCheckData.AbilityCheckRoll +
+        var actorDieChange = abilityCheckData.AbilityCheckRoll - actorTotalBefore;
+
+        totalRoll = actorTotalBefore + actorDieChange +
                     abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        rawRoll = abilityCheckData.AbilityCheckRoll;
+        rawRoll += actorDieChange;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // handle opponent interruptions
         PrepareOpponentAbilityCheckData();
 
+        var opponentTotalBefore = opponentTotalRoll;
+
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(opponent), opponentAbilityCheckData, opponentRawRoll);
 
-        opponentTotalRoll = opponentTotalRoll - opponentRawRoll + opponentAbilityCheckData.AbilityCheckRoll +
+        var opponentDieChange = opponentAbilityCheckData.AbilityCheckRoll - opponentTotalBefore;
+
+        opponentTotalRoll = opponentTotalBefore + opponentDieChange +
                             opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        opponentRawRoll = opponentAbilityCheckData.AbilityCheckRoll;
+        opponentRawRoll += opponentDieChange;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // calculate final results
@@ -356,12 +366,14 @@ internal static class TryAlterOutcomeAttributeCheck
 
         void PrepareActorAbilityCheckData()
         {
+            // the delta is the margin of success for the reactions, which treat 0 or more as a success: when the
+            // opponent wins ties the actor needs one point more
+            var actorDelta = totalRoll - opponentTotalRoll;
+
             abilityCheckData.AbilityCheckRoll = totalRoll;
-            abilityCheckData.AbilityCheckSuccessDelta = totalRoll - opponentTotalRoll;
+            abilityCheckData.AbilityCheckSuccessDelta = actorWinsTies ? actorDelta : actorDelta - 1;
             abilityCheckData.AbilityCheckRollOutcome =
-                abilityCheckData.AbilityCheckSuccessDelta < (actorWinsTies ? 0 : 1)
-                    ? RollOutcome.Failure
-                    : RollOutcome.Success;
+                abilityCheckData.AbilityCheckSuccessDelta < 0 ? RollOutcome.Failure : RollOutcome.Success;
             abilityCheckData.AbilityCheckActionModifier = new ActionModifier();
         }
 
