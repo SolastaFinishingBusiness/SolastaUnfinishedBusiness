@@ -151,6 +151,10 @@ public static partial class Tabletop2024Context
             SharedSpellsContext.ClassCasterType[RangerClass] =
                 FeatureDefinitionCastSpellBuilder.CasterProgression.Half;
         }
+
+        // The Ranger's known-spells table has a level 1 entry only with this option on; the table is set by the
+        // prepared-spells-tables switch, so it is rebuilt here too.
+        SwitchOneDndPreparedSpellsTables();
     }
 
     internal static void SwitchRangerDeftExplorer()

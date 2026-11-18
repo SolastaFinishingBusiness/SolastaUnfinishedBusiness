@@ -29,6 +29,8 @@ internal static class ToolsDisplay
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&TableTopHelp1"));
         UI.Label(Gui.Localize("ModUi/&TableTopHelp2"));
+        // The preset buttons only store the settings; their switch functions run at the next start.
+        UI.Label(Gui.Localize("ModUi/&TableTopHelp3"));
         UI.Label();
 
         var width = UI.Width(195f);

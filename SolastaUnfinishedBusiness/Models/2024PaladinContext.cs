@@ -187,20 +187,17 @@ public static partial class Tabletop2024Context
         }
     }
 
+    // Runs at startup and on every menu switch, so it removes before adding: each subclass holds the level 20
+    // recharge power at most once.
     internal static void SwitchPaladinRechargeLv20Power()
     {
-        if (Main.Settings.EnablePaladinRechargeLv20Feature)
+        foreach (var (subclass, feature) in SubclassFeatureTuples)
         {
-            foreach (var (subclass, feature) in SubclassFeatureTuples)
+            subclass.FeatureUnlocks.Remove(feature);
+
+            if (Main.Settings.EnablePaladinRechargeLv20Feature)
             {
                 subclass.FeatureUnlocks.Add(feature);
-            }
-        }
-        else
-        {
-            foreach (var (subclass, feature) in SubclassFeatureTuples)
-            {
-                subclass.FeatureUnlocks.Remove(feature);
             }
         }
     }

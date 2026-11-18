@@ -93,6 +93,7 @@ public static partial class Tabletop2024Context
         SwitchBarbarianBrutalStrike();
         SwitchBarbarianInstinctivePounce();
         SwitchBarbarianPersistentRage();
+        SwitchBarbarianPrimalKnowledge();
         SwitchBarbarianReckless();
         SwitchBarbarianRage();
         SwitchBarbarianRelentlessRage();
@@ -152,6 +153,7 @@ public static partial class Tabletop2024Context
         SwitchPaladinAbjureFoes();
         SwitchPaladinChannelDivinity();
         SwitchPaladinLayOnHand();
+        SwitchPaladinRechargeLv20Power();
         SwitchPaladinRestoringTouch();
         SwitchPaladinSpellCastingAtOne();
         SwitchPaladinDivineSmite();
@@ -191,7 +193,7 @@ public static partial class Tabletop2024Context
         SwitchWizardSchoolOfMagicLearningLevel();
         SwitchWeaponMastery();
         SwitchMartialChampion();
-        HomeBrewSomeSpells();
+        SwitchShineCantripDC();
         SmiteSpells2024Context.LateLoad();
     }
 
