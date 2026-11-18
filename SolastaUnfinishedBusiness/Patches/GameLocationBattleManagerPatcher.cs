@@ -560,14 +560,25 @@ public static class GameLocationBattleManagerPatcher
             //PATCH: support for features removing ranged attack disadvantage
             RemoveRangedAttackInMeleeDisadvantage.CheckToRemoveRangedDisadvantage(attackParams);
 
-            //PATCH: check if weapon has MagicAffinityInfusionEnhanceArcaneFocus Infusion
-            //TODO: create an interface if ever required by other use cases
-            if (attackParams.attacker.RulesetActor is RulesetCharacter rulesetCharacter &&
-                rulesetCharacter.Items
-                    .Any(x => x.DynamicItemProperties
-                        .Any(y => y.FeatureDefinition.Name == "MagicAffinityInfusionEnhanceArcaneFocus")))
+            //PATCH: a spell attack by a character carrying a focus with the Enhance Arcane Focus infusion (or its
+            //upgrade) ignores cover
+            if (attackParams.attacker.RulesetActor is RulesetCharacter { CharacterInventory: { } inventory } &&
+                attackParams.attackProximity is BattleDefinitions.AttackProximity.MagicRange
+                    or BattleDefinitions.AttackProximity.MagicReach
+                    or BattleDefinitions.AttackProximity.MagicTouch
+                    or BattleDefinitions.AttackProximity.MagicDistance)
             {
-                attackParams.attackModifier.coverType = CoverType.None;
+                // RulesetCharacter.Items is a scratch list the game fills and clears around each use, so the
+                // inventory is enumerated into a list of our own
+                var items = new List<RulesetItem>();
+
+                inventory.EnumerateAllItems(items);
+
+                if (items.Any(x => x.DynamicItemProperties
+                        .Any(y => y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus"))))
+                {
+                    attackParams.attackModifier.coverType = CoverType.None;
+                }
             }
 
             if (!__result)

@@ -856,3 +856,4 @@ Screen/&InvocationAskStateTitle=запрос
 Screen/&InvocationAskStateDescription=Спрашивает при каждом попадании, насколько переместить существо.
 Reaction/&EldritchBlastMoveCell={0} кл.
 Reaction/&EldritchBlastMoveCells={0} кл.
+Rules/&RateBindChainFormatTitle=Короткий отдых

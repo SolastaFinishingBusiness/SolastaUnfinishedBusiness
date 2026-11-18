@@ -856,3 +856,4 @@ Screen/&InvocationAskStateTitle=询问
 Screen/&InvocationAskStateDescription=每次命中时询问将该生物移动多远。
 Reaction/&EldritchBlastMoveCell={0}格
 Reaction/&EldritchBlastMoveCells={0}格
+Rules/&RateBindChainFormatTitle=短休
