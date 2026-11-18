@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.CustomUI;
@@ -79,7 +80,8 @@ public sealed class OathOfAncients : AbstractSubclass
                 EffectDescriptionBuilder
                     .Create()
                     .SetDurationData(DurationType.Minute, 1)
-                    .SetTargetingData(Side.Enemy, RangeType.Distance, 8, TargetType.IndividualsUnique)
+                    // a creature within 10 feet
+                    .SetTargetingData(Side.Enemy, RangeType.Distance, 2, TargetType.IndividualsUnique)
                     .SetParticleEffectParameters(Entangle)
                     .SetEffectForms(
                         EffectFormBuilder
@@ -269,6 +271,10 @@ public sealed class OathOfAncients : AbstractSubclass
     // ReSharper disable once UnassignedGetOnlyAutoProperty
     internal override DeityDefinition DeityDefinition { get; }
 
+    // Resistance to damage from spells: the resistances are added when a spell is about to hit the warded creature
+    // and removed once that spell has finished, so they cover only the spell's own damage. The removal is registered on
+    // the spell's effect with the creature and condition it added, so it happens even when the warded creature or the
+    // aura's paladin went down during the spell.
     private sealed class MagicEffectBeforeHitConfirmedOnMeAuraWarding(ConditionDefinition conditionWardingAura)
         : IMagicEffectBeforeHitConfirmedOnMe
     {
@@ -282,9 +288,14 @@ public sealed class OathOfAncients : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
+            if (rulesetEffect is not RulesetEffectSpell)
+            {
+                yield break;
+            }
+
             var rulesetDefender = defender.RulesetCharacter;
 
-            rulesetDefender.InflictCondition(
+            var activeCondition = rulesetDefender.InflictCondition(
                 conditionWardingAura.Name,
                 DurationType.Round,
                 0,
@@ -297,6 +308,28 @@ public sealed class OathOfAncients : AbstractSubclass
                 0,
                 0,
                 0);
+
+            // the game refreshes a ward already on the creature (a second ray of the same spell) and returns null;
+            // that ward's removal was registered when it was added
+            if (activeCondition == null)
+            {
+                yield break;
+            }
+
+            // matched by the condition's id: the game pools condition objects, so the same object can come back as
+            // another condition on this creature once the ward is gone
+            var wardGuid = activeCondition.Guid;
+
+            EffectFinishedCleanup.Add(rulesetEffect, () =>
+            {
+                var ward = rulesetDefender.AllConditions.Find(x =>
+                    x.Guid == wardGuid && x.ConditionDefinition == conditionWardingAura);
+
+                if (ward != null)
+                {
+                    rulesetDefender.RemoveCondition(ward);
+                }
+            });
 
             yield break;
         }

@@ -455,14 +455,16 @@ public class PatronArchfey : AbstractSubclass
             GameLocationCharacter attacker,
             GameLocationCharacter defender)
         {
+            // Misty Escape uses the warlock's reaction
             if (defender.RulesetCharacter.GetRemainingPowerUses(powerMistyEscape) == 0 ||
-                defender.IsMyTurn())
+                defender.IsMyTurn() ||
+                !defender.CanReact())
             {
                 yield break;
             }
 
             yield return defender.MyReactToDoNothing(
-                ExtraActionId.DoNothingFree,
+                ExtraActionId.DoNothingReaction,
                 attacker,
                 TagMistyEscape,
                 $"CustomReaction{TagMistyEscape}Description".Localized(Category.Reaction),

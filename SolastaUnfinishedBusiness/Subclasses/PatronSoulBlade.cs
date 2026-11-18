@@ -99,7 +99,8 @@ public sealed class PatronSoulBlade : AbstractSubclass
                 EffectDescriptionBuilder
                     .Create()
                     .SetDurationData(DurationType.Minute, 1)
-                    .SetTargetingData(Side.Enemy, RangeType.Distance, 12, TargetType.IndividualsUnique)
+                    // within 30 feet
+                    .SetTargetingData(Side.Enemy, RangeType.Distance, 6, TargetType.IndividualsUnique)
                     .SetEffectForms(
                         EffectFormBuilder.ConditionForm(conditionHexDefender),
                         EffectFormBuilder.ConditionForm(

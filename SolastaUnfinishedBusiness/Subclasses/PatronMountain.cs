@@ -252,7 +252,8 @@ public class PatronMountain : AbstractSubclass
                 !helper.CanReact() ||
                 !helper.CanPerceiveTarget(attacker) ||
                 !helper.CanPerceiveTarget(defender) ||
-                !helper.IsWithinRange(defender, 7) ||
+                // an ally within 30 feet
+                !helper.IsWithinRange(defender, 6) ||
                 rulesetHelper.GetRemainingUsesOfPower(usablePower) == 0)
             {
                 yield break;

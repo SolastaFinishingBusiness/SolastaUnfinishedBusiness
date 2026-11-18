@@ -890,6 +890,9 @@ public static class CharacterActionMagicEffectPatcher
 
             // BEGIN PATCH
 
+            //PATCH: support for `EffectFinishedCleanup`: clean-ups registered on this effect while it ran
+            EffectFinishedCleanup.Run(actionParams.RulesetEffect);
+
             //PATCH: support for `IMagicEffectFinishedOnMe`
             foreach (var target in targets)
             {
