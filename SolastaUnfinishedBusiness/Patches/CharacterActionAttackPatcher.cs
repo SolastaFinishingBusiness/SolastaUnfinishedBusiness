@@ -631,14 +631,19 @@ public static class CharacterActionAttackPatcher
                         attackModifier,
                         __instance.RolledSaveThrow,
                         saveOutcomeSuccess);
-                    damageReceived = implementationService.ApplyEffectForms(
+                    //PATCH: supports `CombineConcentrationChecks`: one hit with the damage riders added to its forms is
+                    //one damage instance; its combined checks roll as the application ends, before the finished
+                    //handlers below (powers those handlers start are instances of their own)
+                    var damageAbsorbedByTemporaryHitPoints = false;
+
+                    damageReceived = Models.ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
                         __instance.actualEffectForms,
                         formParams,
                         __instance.effectiveDamageTypes,
                         effectApplication: attackMode.EffectDescription.EffectApplication,
                         filters: attackMode.EffectDescription.EffectFormFilters,
-                        damageAbsorbedByTemporaryHitPoints: out var damageAbsorbedByTemporaryHitPoints,
-                        terminateEffectOnTarget: out _);
+                        damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
+                        terminateEffectOnTarget: out _));
 
                     actingCharacter.AttackImpactOn(
                         target, __instance.AttackRollOutcome, actionParams, attackMode, attackModifier);

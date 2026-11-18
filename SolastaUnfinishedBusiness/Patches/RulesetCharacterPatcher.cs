@@ -2675,7 +2675,17 @@ public static class RulesetCharacterPatcher
             string damageType,
             out RollOutcome outcome)
         {
-            RollConcentrationCheck(__instance, saveDC, damageType, out outcome);
+            // A concentration save keeps concentration after the damage is settled; it isn't a save against that
+            // damage, so bonuses tied to a damage type (Dwarven Resilience against poison, for one) don't apply to it.
+            // Concentration-specific bonuses (magic affinities' concentration advantage, IRollSavingCheckInitiated)
+            // still do.
+            //PATCH: supports `CapConcentrationSaveDc30`: the 2024 rules cap a concentration save's DC at 30
+            if (Main.Settings.CapConcentrationSaveDc30)
+            {
+                saveDC = Math.Min(saveDC, 30);
+            }
+
+            RollConcentrationCheck(__instance, saveDC, string.Empty, out outcome);
 
             return false;
         }

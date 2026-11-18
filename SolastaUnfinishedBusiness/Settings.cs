@@ -164,6 +164,8 @@ public class Settings : UnityModManager.ModSettings
     // Eldritch Blast beam). Off: as the game does it, where only the first push of a cast moves the creature. On by
     // default.
     public bool PushOrPullOncePerHit { get; set; } = true;
+    public bool CombineConcentrationChecks { get; set; } = true;
+    [Tag(Type = TagType.T2024)] public bool CapConcentrationSaveDc30 { get; set; }
 
     // Issues #37 and #39: a creature that the pushes and pulls of one action (a spell, a power, an attack with its
     // riders, a shove) move over a drop falls only after that action's last move, from where it then is. Off: it

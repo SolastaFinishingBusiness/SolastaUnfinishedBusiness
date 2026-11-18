@@ -510,6 +510,20 @@ internal static class RulesDisplay
             Main.Settings.PushOrPullOncePerHit = toggle;
         }
 
+        // read while damage is applied (ConcentrationDamageContext): no restart, no switch function
+        toggle = Main.Settings.CombineConcentrationChecks;
+        if (UI.Toggle(Gui.Localize("ModUi/&CombineConcentrationChecks"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.CombineConcentrationChecks = toggle;
+        }
+
+        // read when a concentration save is rolled: no restart, no switch function
+        toggle = Main.Settings.CapConcentrationSaveDc30;
+        if (UI.Toggle(Gui.Localize("ModUi/&CapConcentrationSaveDc30"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.CapConcentrationSaveDc30 = toggle;
+        }
+
         // a creature moved over a drop by an action's pushes and pulls falls after that action's last move (issues
         // #37 and #39). Read as actions start and moves are queued (ForcedMovementFallContext): no restart, no switch
         // function. Turning it off lets holds already made run to their end.
