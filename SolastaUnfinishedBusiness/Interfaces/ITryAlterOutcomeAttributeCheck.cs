@@ -415,6 +415,9 @@ internal static class TryAlterOutcomeAttributeCheck
             Gui.Battle?.AllContenders ??
             locationCharacterService.PartyCharacters.Union(locationCharacterService.GuestCharacters);
 
+        // advantage trends a reaction set for its reroll (Tides of Chaos); a later reroll replaces that die
+        var advantageSetByReaction = false;
+
         foreach (var unit in contenders
                      .Where(u => u.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
                      .ToArray())
@@ -434,6 +437,8 @@ internal static class TryAlterOutcomeAttributeCheck
             {
                 var deltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
                 var modifierBefore = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
+                var advantageTrends = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckAdvantageTrends;
+                var advantageBefore = advantageTrends?.ToArray() ?? [];
 
                 yield return tryAlterOutcomeAttributeCheck.OnTryAlterAttributeCheck(
                     battleManager, rawRoll, abilityCheckData, actingCharacter, unit);
@@ -443,7 +448,25 @@ internal static class TryAlterOutcomeAttributeCheck
                 // add up, a bonus leaves the die unchanged)
                 var modifierAfter = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
 
-                rawRoll += abilityCheckData.AbilityCheckSuccessDelta - deltaBefore - (modifierAfter - modifierBefore);
+                var dieChange = abilityCheckData.AbilityCheckSuccessDelta - deltaBefore - (modifierAfter - modifierBefore);
+
+                rawRoll += dieChange;
+
+                if (advantageTrends == null)
+                {
+                    continue;
+                }
+
+                if (!advantageTrends.SequenceEqual(advantageBefore))
+                {
+                    advantageSetByReaction = true;
+                }
+                else if (dieChange != 0 && advantageSetByReaction)
+                {
+                    // a reroll without advantage (Lucky) replaced the die that a reaction rolled with advantage
+                    advantageTrends.Clear();
+                    advantageSetByReaction = false;
+                }
             }
         }
     }
