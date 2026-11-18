@@ -25,9 +25,9 @@ public static class ConcentrationDamagePatcher
     public static class AccountReceivedDamage_Patch
     {
         [UsedImplicitly]
-        public static void Prefix(RulesetActor __instance, int damage)
+        public static void Prefix(RulesetActor __instance, int amount)
         {
-            ConcentrationDamageContext.AddReceivedDamage(__instance, damage);
+            ConcentrationDamageContext.AddReceivedDamage(__instance, amount);
         }
     }
 
