@@ -831,8 +831,11 @@ internal static class InventorClass
             .ToArray();
 
         PowerBundle.RegisterPowerBundle(power, true, inventorPowers);
+        // every storing power is in the one-stored-spell-at-a-time group, including those a spell list change adds to
+        // the bundle later
         ForceGlobalUniqueEffects.AddToGroup(
-            ForceGlobalUniqueEffects.Group.InventorSpellStoringItem, [.. inventorPowers]);
+            ForceGlobalUniqueEffects.Group.InventorSpellStoringItem,
+            [.. spellStoringItems.Cast<FeatureDefinitionPower>()]);
 
         return power;
     }
