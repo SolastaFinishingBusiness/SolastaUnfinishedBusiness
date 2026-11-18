@@ -710,7 +710,7 @@ internal static class InventorClass
                     Main.Error("found a null power when trying to switch a spell storing item");
                 }
 
-                Switch(PowerInventorSpellStoringItem1, active);
+                Switch(PowerInventorSpellStoringItem1, power, active);
                 break;
             }
             case 2:
@@ -723,24 +723,30 @@ internal static class InventorClass
                     Main.Error("found a null power when trying to switch a spell storing item");
                 }
 
-                Switch(PowerInventorSpellStoringItem2, active);
+                Switch(PowerInventorSpellStoringItem2, power, active);
                 break;
             }
         }
 
         return;
 
-        static void Switch(FeatureDefinitionPower power, bool active)
+        // adds or removes the spell's own storing power in the bundle of storable spells of its level
+        static void Switch(FeatureDefinitionPower bundle, FeatureDefinitionPower subPower, bool active)
         {
-            var subPowers = power.GetBundle()?.SubPowers;
+            if (!subPower)
+            {
+                return;
+            }
+
+            var subPowers = bundle.GetBundle()?.SubPowers;
 
             if (active)
             {
-                subPowers?.TryAdd(power);
+                subPowers?.TryAdd(subPower);
             }
             else
             {
-                subPowers?.Remove(power);
+                subPowers?.Remove(subPower);
             }
         }
     }
