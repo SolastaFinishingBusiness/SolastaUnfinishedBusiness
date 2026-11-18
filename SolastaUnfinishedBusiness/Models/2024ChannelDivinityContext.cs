@@ -342,6 +342,12 @@ public static partial class Tabletop2024Context
         SetChannelDivinityUsed(character, pool, GetChannelDivinityUsed(character, pool) + 1);
     }
 
+    /// <summary>Gives back one spent use of a pool (for features that restore Channel Divinity); none if none is spent.</summary>
+    internal static void RegainChannelDivinity(RulesetCharacter character, ChannelDivinityPool pool)
+    {
+        SetChannelDivinityUsed(character, pool, GetChannelDivinityUsed(character, pool) - 1);
+    }
+
     // RulesetCharacter.UsePower postfix: the game has just added one to the shared count for a Channel Divinity power;
     // when the power's class has its own pool, the use moves there
     internal static void MoveChannelDivinityUse(RulesetCharacter character, RulesetUsablePower usablePower)

@@ -229,8 +229,9 @@ public sealed class PathOfTheBattlerager : AbstractSubclass
 
             EffectHelpers.StartVisualEffect(
                 character, character, SpellDefinitions.CureWounds, EffectHelpers.EffectType.Effect);
+            // Constitution modifier, minimum 1
             rulesetCharacter.ReceiveTemporaryHitPoints(
-                constitutionModifier, DurationType.Minute, 1, TurnOccurenceType.StartOfTurn,
+                System.Math.Max(1, constitutionModifier), DurationType.Minute, 1, TurnOccurenceType.StartOfTurn,
                 rulesetCharacter.guid);
         }
     }

@@ -805,7 +805,8 @@ internal static class InvocationsBuilders
         var powerPerniciousCloak = FeatureDefinitionPowerBuilder
             .Create($"Power{Name}")
             .SetGuiPresentation(Name, Category.Invocation, sprite)
-            .SetUsesFixed(ActivationTime.BonusAction, RechargeRate.None)
+            // once per short or long rest
+            .SetUsesFixed(ActivationTime.BonusAction, RechargeRate.ShortRest)
             .SetExplicitAbilityScore(AttributeDefinitions.Charisma)
             .SetEffectDescription(
                 EffectDescriptionBuilder

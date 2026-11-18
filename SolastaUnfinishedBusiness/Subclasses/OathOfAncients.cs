@@ -79,7 +79,8 @@ public sealed class OathOfAncients : AbstractSubclass
                 EffectDescriptionBuilder
                     .Create()
                     .SetDurationData(DurationType.Minute, 1)
-                    .SetTargetingData(Side.Enemy, RangeType.Distance, 8, TargetType.IndividualsUnique)
+                    // a creature within 10 feet
+                    .SetTargetingData(Side.Enemy, RangeType.Distance, 2, TargetType.IndividualsUnique)
                     .SetParticleEffectParameters(Entangle)
                     .SetEffectForms(
                         EffectFormBuilder
@@ -269,9 +270,29 @@ public sealed class OathOfAncients : AbstractSubclass
     // ReSharper disable once UnassignedGetOnlyAutoProperty
     internal override DeityDefinition DeityDefinition { get; }
 
+    // Resistance to damage from spells: the resistances are added when a spell is about to hit the warded creature
+    // and removed once that spell has finished, so they cover only the spell's own damage.
     private sealed class MagicEffectBeforeHitConfirmedOnMeAuraWarding(ConditionDefinition conditionWardingAura)
-        : IMagicEffectBeforeHitConfirmedOnMe
+        : IMagicEffectBeforeHitConfirmedOnMe, IMagicEffectFinishedOnMe
     {
+        public IEnumerator OnMagicEffectFinishedOnMe(
+            CharacterAction action,
+            GameLocationCharacter attacker,
+            GameLocationCharacter defender,
+            List<GameLocationCharacter> targets)
+        {
+            var rulesetDefender = defender.RulesetCharacter;
+
+            if (rulesetDefender != null &&
+                rulesetDefender.TryGetConditionOfCategoryAndType(
+                    AttributeDefinitions.TagEffect, conditionWardingAura.Name, out var activeCondition))
+            {
+                rulesetDefender.RemoveCondition(activeCondition);
+            }
+
+            yield break;
+        }
+
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
             GameLocationBattleManager battleManager,
             GameLocationCharacter attacker,
@@ -282,6 +303,11 @@ public sealed class OathOfAncients : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
+            if (rulesetEffect is not RulesetEffectSpell)
+            {
+                yield break;
+            }
+
             var rulesetDefender = defender.RulesetCharacter;
 
             rulesetDefender.InflictCondition(

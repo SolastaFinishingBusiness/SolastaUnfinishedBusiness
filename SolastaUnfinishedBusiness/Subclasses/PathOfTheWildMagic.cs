@@ -291,7 +291,8 @@ public sealed class PathOfTheWildMagic : AbstractSubclass
                     EffectDescriptionBuilder
                         .Create()
                         .SetDurationData(DurationType.Round, 0, TurnOccurenceType.StartOfTurn)
-                        .SetTargetingData(Side.Ally, RangeType.Distance, 7, TargetType.Position)
+                        // teleport up to 30 feet
+                        .SetTargetingData(Side.Ally, RangeType.Distance, 6, TargetType.Position)
                         .SetEffectForms(
                             EffectFormBuilder
                                 .Create()
