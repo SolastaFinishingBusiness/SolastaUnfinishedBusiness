@@ -1,0 +1,3 @@
+- Character creation: the class list's tile borders are now drawn for its three columns, so the last rows (Sorcerer, Warlock and Wizard with the Artificer on) are framed properly, and a tile alone at the end of the last row has its right border.
+- The 2024 Divine Domain level-up step now explains, before a domain is picked, that one must be selected (it showed an untranslated key).
+- Not tested in game: both.
