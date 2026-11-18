@@ -233,7 +233,6 @@ internal static class InventorInfusions
                     .SetGuiPresentation($"Feature/&{name}Title",
                         Gui.Format("Feature/&DamageResistanceFormat", Gui.Localize($"Rules/&{element}Title")),
                         ConditionDefinitions.ConditionProtectedFromEnergyLightning)
-                    .AddCustomSubFeatures(ReturningWeapon.AlwaysValid)
                     .SetDamageAffinityType(DamageAffinityType.Resistance)
                     .SetDamageType(element)
                     .AddToDB());

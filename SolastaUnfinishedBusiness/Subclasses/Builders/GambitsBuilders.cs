@@ -1373,6 +1373,10 @@ internal static class GambitsBuilders
                 battleManager,
                 new ReactionResourcePowerPool(pool, Sprites.GambitResourceIcon));
 
+            // the die damage is only for the reaction attack: a declined prompt leaves it unused, and a later attack
+            // before the fighter's next turn must not get it for free
+            RemoveGambitDieDamage(rulesetCharacter, condition);
+
             yield break;
 
             void ReactionValidated()
@@ -1601,6 +1605,9 @@ internal static class GambitsBuilders
             {
                 character.UpdateUsageForPower(_pool, 1);
             }
+
+            // the die damage is only for the readied attack; see Retaliate
+            RemoveGambitDieDamage(character, _condition);
 
             yield break;
         }
@@ -2088,4 +2095,13 @@ internal static class GambitsBuilders
     }
 
     #endregion
+
+    private static void RemoveGambitDieDamage(RulesetCharacter character, ConditionDefinition condition)
+    {
+        if (character.TryGetConditionOfCategoryAndType(
+                AttributeDefinitions.TagEffect, condition.Name, out var activeCondition))
+        {
+            character.RemoveCondition(activeCondition);
+        }
+    }
 }

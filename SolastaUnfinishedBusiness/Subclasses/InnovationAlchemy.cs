@@ -290,7 +290,7 @@ public sealed class InnovationAlchemy : AbstractSubclass
     {
         // ReSharper disable once InlineTemporaryVariable
         const string DAMAGE = DamageTypeAcid;
-        const string SAVE = AttributeDefinitions.Constitution;
+        const string SAVE = AttributeDefinitions.Dexterity;
         const DieType DIE_TYPE = DieType.D6;
         var (toggle, validator) = MakeElementToggleMarker(DAMAGE);
         var effect = EffectFormBuilder.Create()

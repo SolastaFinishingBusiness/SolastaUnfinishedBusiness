@@ -1,0 +1,10 @@
+- Banneret: Inspiring Protection now spends the knight's reaction (it spent an ally's) and asks only once per failed save.
+- Grenadier: acid bombs now call for a Dexterity save, as described.
+- Psi Warrior: Force of Will now gives at least 1 temporary hit point.
+- Battle Smith: "Command Steel Defender" is no longer logged every turn when there is no Steel Defender.
+- Arcane Archer: Ever-Ready Shot's description now says it restores a use when you have none left, which is what it does.
+- Vitriolist: Vitriolic Infusion's extra acid damage now applies once per acid hit, needs the attack to hit, and no longer repeats on later attacks against the same creature that turn.
+- Vivisectionist: Organ Donation works again from level 15, with the Master versions of Emergency Surgery and Emergency Cure.
+- Resistant Armor infusion no longer makes the wearer's thrown weapons return.
+- Maneuvers: declining Riposte, Return Fire or Readied Strike no longer leaves the superiority die's damage on your next attack.
+- Not tested in game: all of the above.
