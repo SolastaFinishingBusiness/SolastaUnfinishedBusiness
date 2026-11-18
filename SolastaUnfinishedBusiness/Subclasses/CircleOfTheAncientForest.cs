@@ -146,10 +146,12 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
 
         // LEVEL 14
 
+        // Forest Barrier: Wall of Thorns as an action, a number of times per long rest equal to the Wisdom modifier;
+        // the pool is a bundle whose choices are the spell's two shapes
         var powerPoolAncientForestWallOfThorns = FeatureDefinitionPowerBuilder
             .Create("PowerPoolAncientForestWallOfThorns")
-            .SetGuiPresentation(Category.Feature, hidden: true)
-            .SetUsesAbilityBonus(ActivationTime.BonusAction, RechargeRate.LongRest, AttributeDefinitions.Wisdom)
+            .SetGuiPresentation(Category.Feature, WallOfThornsWallLine)
+            .SetUsesAbilityBonus(ActivationTime.Action, RechargeRate.LongRest, AttributeDefinitions.Wisdom)
             .SetBonusToAttack(true)
             .AddToDB();
 
@@ -160,19 +162,22 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
             .AddToDB();
 
         var wallOfThornsSpells = new[] { WallOfThornsWallLine, WallOfThornsWallRing };
+        var wallOfThornsPowers = new List<FeatureDefinitionPower>();
 
         foreach (var spell in wallOfThornsSpells)
         {
             FeatureDefinitionPower wallOfThorns = FeatureDefinitionPowerSharedPoolBuilder
                 .Create("PowerSharedPoolAncientForest" + spell.name)
                 .SetGuiPresentation(spell.GuiPresentation)
-                .SetSharedPool(ActivationTime.Rest, powerPoolAncientForestWallOfThorns)
+                .SetSharedPool(ActivationTime.Action, powerPoolAncientForestWallOfThorns)
                 .SetEffectDescription(spell.effectDescription)
-                .AddCustomSubFeatures(ModifyPowerVisibility.Hidden)
                 .AddToDB();
 
             featureSetWallOfThorns.FeatureSet.Add(wallOfThorns);
+            wallOfThornsPowers.Add(wallOfThorns);
         }
+
+        PowerBundle.RegisterPowerBundle(powerPoolAncientForestWallOfThorns, true, wallOfThornsPowers);
 
         var attributeModifierAncientForestBarkskin = FeatureDefinitionAttributeModifierBuilder
             .Create(AttributeModifierBarkskin, "AttributeModifierAncientForestBarkskin")

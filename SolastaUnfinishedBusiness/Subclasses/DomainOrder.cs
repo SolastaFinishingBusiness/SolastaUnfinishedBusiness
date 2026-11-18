@@ -291,6 +291,7 @@ public sealed class DomainOrder : AbstractSubclass
             .AddFeaturesAtLevel(2, featureSetOrdersDemand)
             .AddFeaturesAtLevel(6, EmbodimentOfLaw, metamagicToggle, sorceryPoints)
             .AddFeaturesAtLevel(8, DivineStrike)
+            .AddFeaturesAtLevel(10, FeatureDefinitionPowers.PowerClericDivineInterventionPaladin)
             .AddFeaturesAtLevel(17, powerOrdersWrath)
             .AddFeaturesAtLevel(20, Level20SubclassesContext.PowerClericDivineInterventionImprovementPaladin)
             .AddToDB();
@@ -335,7 +336,8 @@ public sealed class DomainOrder : AbstractSubclass
                 yield break;
             }
 
-            attacker.MyExecuteActionPowerNoCost(usablePower, [.. targets]);
+            // only the spell's allied targets receive the Mark of Authority
+            attacker.MyExecuteActionPowerNoCost(usablePower, [.. allies]);
         }
     }
 

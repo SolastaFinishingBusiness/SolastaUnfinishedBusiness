@@ -653,7 +653,9 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
             GameLocationCharacter attacker,
             List<GameLocationCharacter> targets)
         {
-            if (action.ActionParams.activeEffect is not RulesetEffectPower rulesetEffectPower)
+            // a constellation switch (Twinkling Constellations) runs the form as a no-cost power: nothing to charge
+            if (action.ActionParams.activeEffect is not RulesetEffectPower rulesetEffectPower ||
+                action.ActionId == ActionDefinitions.Id.PowerNoCost)
             {
                 yield break;
             }
@@ -925,7 +927,7 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
                 abilityCheckModifier.AbilityCheckModifierTrends.Add(
                     new TrendInfo(dieRoll, FeatureSourceType.Power, powerWeal.Name, powerWeal)
                     {
-                        dieType = DieType.D4, dieFlag = TrendInfoDieFlag.None
+                        dieType = DieType, dieFlag = TrendInfoDieFlag.None
                     });
                 abilityCheckModifier.AbilityCheckModifier += dieRoll;
                 abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
@@ -965,7 +967,8 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
             var rulesetHelper = helper.RulesetCharacter;
             var usablePower = PowerProvider.Get(powerPool, rulesetHelper);
 
-            if (savingThrowData.SaveOutcomeDelta + MaxDieTypeValue < 0 ||
+            if (savingThrowData.SaveOutcome != RollOutcome.Failure ||
+                savingThrowData.SaveOutcomeDelta + MaxDieTypeValue < 0 ||
                 !helper.CanReact() ||
                 helper.IsOppositeSide(defender.Side) ||
                 !helper.IsWithinRange(defender, 6) ||
@@ -1149,7 +1152,7 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
                 abilityCheckModifier.AbilityCheckModifierTrends.Add(
                     new TrendInfo(dieRoll, FeatureSourceType.Power, powerWoe.Name, powerWoe)
                     {
-                        dieType = DieType.D4, dieFlag = TrendInfoDieFlag.None
+                        dieType = DieType, dieFlag = TrendInfoDieFlag.None
                     });
                 abilityCheckModifier.AbilityCheckModifier += dieRoll;
                 abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
@@ -1296,8 +1299,18 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
 
             effectPower.remainingRounds = remainingRounds;
 
-            //TODO: double check if spend power works here
-            actingCharacter.MyExecuteActionSpendPower(usablePower, actingCharacter);
+            // Switching costs nothing: the new form runs as a no-cost power (no Starry Form use; the Wild Shape charge
+            // in MagicEffectFinishedByMeConstellationForm skips PowerNoCost) and keeps the old form's remaining time.
+            var actionService = ServiceRepository.GetService<IGameLocationActionService>();
+            var actionParams = new CharacterActionParams(actingCharacter, ActionDefinitions.Id.PowerNoCost)
+            {
+                ActionModifiers = [new ActionModifier()],
+                RulesetEffect = effectPower,
+                UsablePower = usablePower,
+                targetCharacters = [actingCharacter]
+            };
+
+            actionService.ExecuteAction(actionParams, null, true);
         }
     }
 }

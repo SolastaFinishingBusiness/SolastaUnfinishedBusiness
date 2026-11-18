@@ -330,7 +330,8 @@ public sealed class CircleOfTheLife : AbstractSubclass
 
             if (druidLevel > 0 && target.CurrentHitPoints > 0)
             {
-                target.ReceiveHealing(druidLevel * 2, true, rulesetCondition.guid);
+                // the healer is the druid who planted the seed
+                target.ReceiveHealing(druidLevel * 2, true, rulesetCondition.SourceGuid);
             }
         }
     }

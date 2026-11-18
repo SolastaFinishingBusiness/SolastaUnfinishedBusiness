@@ -149,8 +149,12 @@ public sealed class CollegeOfThespian : AbstractSubclass
                     .SetSavingThrowData(
                         false, AttributeDefinitions.Wisdom, false, EffectDifficultyClassComputation.SpellCastingFeature)
                     .SetEffectForms(
-                        EffectFormBuilder.DamageForm(
-                            DamageTypePsychic, 2, DieType.D8, overrideWithBardicInspirationDie: true),
+                        // only creatures that fail the Wisdom save take the psychic damage
+                        EffectFormBuilder
+                            .Create()
+                            .HasSavingThrow(EffectSavingThrowType.Negates)
+                            .SetDamageForm(DamageTypePsychic, 2, DieType.D8, overrideWithBardicInspirationDie: true)
+                            .Build(),
                         EffectFormBuilder
                             .Create()
                             .HasSavingThrow(EffectSavingThrowType.Negates)
@@ -281,8 +285,10 @@ public sealed class CollegeOfThespian : AbstractSubclass
                 yield break;
             }
 
+            // enemies within 15 feet of the creature the bard reduced (its own side), that can see the bard
             var targets = Gui.Battle
-                .GetContenders(attacker, hasToPerceivePerceiver: true, withinRange: 3)
+                .GetContenders(downedCreature, attacker, hasToPerceivePerceiver: true, isOppositeSide: false,
+                    withinRange: 3)
                 .ToArray();
 
             var classLevel = rulesetAttacker.GetClassLevel(CharacterClassDefinitions.Bard);
