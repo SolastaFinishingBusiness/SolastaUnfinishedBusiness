@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
@@ -791,7 +792,9 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                     action.AttackRoll = finalRoll;
 
                     if (action.AttackSuccessDelta >= 0)
-                        action.AttackRollOutcome = finalRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
+                    {
+                        action.AttackRollOutcome = AttackOutcomeRules.FromRoll(finalRoll, action.AttackSuccessDelta);
+                    }
                 }
             }
         }

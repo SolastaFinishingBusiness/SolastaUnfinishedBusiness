@@ -1370,6 +1370,20 @@ public static class RulesetCharacterPatcher
                 {
                     outcome = RollOutcome.Failure;
                 }
+
+                // a total that beats the target's AC by 10 or more is a critical hit, one that falls 10 or more short
+                // is a critical miss
+                if (Main.Settings.EnableCriticalHitsMissesAt10)
+                {
+                    if (successDelta >= 10 && !disableEnemyCrits)
+                    {
+                        outcome = RollOutcome.CriticalSuccess;
+                    }
+                    else if (successDelta <= -10)
+                    {
+                        outcome = RollOutcome.CriticalFailure;
+                    }
+                }
             }
 
             var isCriticalAutomaticOnMe = false;
