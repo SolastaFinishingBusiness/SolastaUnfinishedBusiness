@@ -1333,6 +1333,8 @@ public static class RulesetCharacterPatcher
 
             var service = ServiceRepository.GetService<IGameSettingsService>();
             var disableEnemyCrits = __instance.Side == Side.Enemy && service is { DisableEnemyCrits: true };
+            var marginCriticalHit = false;
+            var automaticCriticalBeforeMargin = false;
             int attackRoll;
 
             if (rawRoll == DiceMaxValue[8] && !disableEnemyCrits)
@@ -1378,6 +1380,13 @@ public static class RulesetCharacterPatcher
                 {
                     if (successDelta >= 10 && !disableEnemyCrits)
                     {
+                        // only a plain hit turned critical by the margin is marked for the combat log; a hit that
+                        // is critical anyway on this target (a paralyzed creature attacked from next to it) isn't,
+                        // and keeps the game's automatic critical line below
+                        automaticCriticalBeforeMargin = outcome == RollOutcome.Success &&
+                                                        target is RulesetCharacter automaticTarget &&
+                                                        automaticTarget.IsCriticalAutomaticOnMe(__instance);
+                        marginCriticalHit = outcome == RollOutcome.Success && !automaticCriticalBeforeMargin;
                         outcome = RollOutcome.CriticalSuccess;
                     }
                     else if (successDelta <= -10)
@@ -1387,7 +1396,7 @@ public static class RulesetCharacterPatcher
                 }
             }
 
-            var isCriticalAutomaticOnMe = false;
+            var isCriticalAutomaticOnMe = automaticCriticalBeforeMargin;
 
             if (target is RulesetCharacter character
                 && outcome == RollOutcome.Success
@@ -1427,9 +1436,15 @@ public static class RulesetCharacterPatcher
                         additionalAttackDieRolled?.Invoke(__instance, toHitTrend);
                     }
 
-                    __instance.AttackRolled(
-                        __instance, target, attackMethod, outcome, attackRoll, rawRoll, toHitBonus + rollModifier,
-                        toHitTrends, advantageTrends, opportunity, reactionCounterAttackType);
+                    // a hit that is no longer critical (a target immune to critical hits) isn't marked
+                    var rolledOutcome = outcome;
+
+                    AttackOutcomeRules.InvokeAttackRolled(
+                        marginCriticalHit && outcome == RollOutcome.CriticalSuccess,
+                        () => __instance.AttackRolled(
+                            __instance, target, attackMethod, rolledOutcome, attackRoll, rawRoll,
+                            toHitBonus + rollModifier, toHitTrends, advantageTrends, opportunity,
+                            reactionCounterAttackType));
                     __instance.AccountAttack(outcome);
 
                     if (isCriticalAutomaticOnMe)

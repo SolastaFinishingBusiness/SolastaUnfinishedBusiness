@@ -34,6 +34,29 @@ internal static class AttackOutcomeRules
             : RollOutcome.Failure;
     }
 
+    /// <summary>
+    ///     True while RulesetCharacter.AttackRolled is invoked for an attack roll that the "critical hits and misses at a
+    ///     difference of 10" rule alone made a critical hit (not a natural 20, a widened critical range or an automatic
+    ///     critical), so GameConsole.AttackRolled can show the roll with its modifier and mark the +10.
+    /// </summary>
+    internal static bool MarginCriticalHit { get; private set; }
+
+    internal static void InvokeAttackRolled(bool marginCriticalHit, System.Action invoke)
+    {
+        var previous = MarginCriticalHit;
+
+        MarginCriticalHit = marginCriticalHit;
+
+        try
+        {
+            invoke();
+        }
+        finally
+        {
+            MarginCriticalHit = previous;
+        }
+    }
+
     internal static void CancelCritical(CharacterAction action)
     {
         CriticalCancelled.Remove(action);

@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=Sundering Blow는 추가 +{2} 피해
 Feedback/&AdditionalDamageTrueStrikeFormat=트루 스트라이크!
 Feedback/&AdditionalDamageTrueStrikeLine={0}이 {1}을 공격하여 추가로 {2}의 광휘 피해를 입힙니다!
 Feedback/&BreakFreeAttempt={0}이(가) {2}으로부터 벗어나려고 시도합니다.
+Feedback/&AttackMarginCriticalOutcome={0} (치명타, +10)
 Feedback/&ChangeGloombladeDieType={1}은 Gloomblade 다이 유형을 {2}에서 {3}으로 변경합니다.
 Feedback/&ChangeSneakDiceDieType={1}은 몰래 주사위 유형을 {2}에서 {3}으로 변경합니다.
 Feedback/&ChangeSneakDiceNumber={1}은 몰래 주사위 번호를 {2}에서 {3}으로 변경합니다.

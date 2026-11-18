@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=Sundering Blow verursacht zusätzlic
 Feedback/&AdditionalDamageTrueStrikeFormat=Wahrer Schlag!
 Feedback/&AdditionalDamageTrueStrikeLine={0} schlägt {1} und verursacht zusätzlichen {2} Strahlungsschaden!
 Feedback/&BreakFreeAttempt={0} versucht sich von {2} zu befreien
+Feedback/&AttackMarginCriticalOutcome={0} (KRITISCHER TREFFER, +10)
 Feedback/&ChangeGloombladeDieType={1} ändert den Gloomblade-Würfeltyp von {2} zu {3}
 Feedback/&ChangeSneakDiceDieType={1} ändert den Schleichwürfeltyp von {2} zu {3}
 Feedback/&ChangeSneakDiceNumber={1} ändert die Zahl der Schleichwürfel von {2} auf {3}
