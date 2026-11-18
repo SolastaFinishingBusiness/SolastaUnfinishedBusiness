@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Эта метка может взорваться в любой момент и нанести 5d10 урона звуком.
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Эта метка может взорваться в любой момент и нанести 5d10 урона электричеством.
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=Метка бури
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=Каждый раз, когда вы используете Шквал ударов, вы также получаете преимущества действия Отход. Бонусные атаки, предоставляемые этим умением, наносят дополнительный урон электричеством, равный вашей кости боевых искусств.
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=Ученик бури

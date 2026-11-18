@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Esta marca puede explotar en cualquier momento y causar 5D10 de daño por trueno.
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Esta marca puede explotar en cualquier momento y causar 5D10 de daño por relámpago.
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=Marca de tormenta
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=Siempre que uses tu Ráfaga de golpes, también obtendrás los beneficios de la acción de desenganche. Los ataques adicionales que proporciona infligen un daño de rayo adicional equivalente a tu dado de artes marciales.
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=Discípulo de las Tormentas

@@ -308,7 +308,7 @@ public sealed class RoguishUmbralStalker : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
-            if (!Tabletop2024Context.IsSneakAttackValid(actionModifier, attacker, defender))
+            if (!Tabletop2024Context.IsSneakAttackValid(actionModifier, attacker, defender, attackMode))
             {
                 yield break;
             }
@@ -505,7 +505,7 @@ public sealed class RoguishUmbralStalker : AbstractSubclass
             bool firstTarget,
             bool criticalHit)
         {
-            if (!Tabletop2024Context.IsSneakAttackValid(actionModifier, attacker, defender))
+            if (!Tabletop2024Context.IsSneakAttackValid(actionModifier, attacker, defender, attackMode))
             {
                 yield break;
             }

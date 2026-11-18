@@ -265,7 +265,10 @@ public sealed class RoguishDuelist : AbstractSubclass
             RollOutcome rollOutcome,
             int damageAmount)
         {
-            if (!attacker.UsedSpecialFeatures.ContainsKey("SureFooted"))
+            // Bravado follows a melee weapon hit that could sneak attack
+            if (!attacker.UsedSpecialFeatures.ContainsKey("SureFooted") ||
+                rollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess) ||
+                !ValidatorsWeapon.IsMelee(attackMode))
             {
                 yield break;
             }
@@ -327,7 +330,7 @@ public sealed class RoguishDuelist : AbstractSubclass
             ActionModifier attackModifier,
             RulesetAttackMode attackMode)
         {
-            var isSneakAttackValid = Tabletop2024Context.IsSneakAttackValid(attackModifier, attacker, defender);
+            var isSneakAttackValid = Tabletop2024Context.IsSneakAttackValid(attackModifier, attacker, defender, attackMode);
 
             if (isSneakAttackValid)
             {
