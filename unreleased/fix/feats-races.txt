@@ -1,0 +1,10 @@
+- Second Chance (halfling feat): the halfling now gets the reaction prompt, not the attacker.
+- Inventor: learning or unlearning a spell now adds or removes that spell in Spell-Storing Item.
+- Grudge Bearer: the chosen foes now have disadvantage only on opportunity attacks against you, as described, and a hero can take only one of its three versions.
+- Healer's descriptions now match what it does: Stabilize has uses equal to your Wisdom modifier, and Use Medicine heals 1d6 + your Medicine bonus + your character level.
+- Dark Kobold's Grovel, Cower and Beg and the Aasimar's Angelic Radiance now reach 10 feet, as described.
+- Lizardfolk's Nature's Intuition description now says two skills, which is what it gives.
+- Bountiful Luck's combat log lines now show its name.
+- Warforged (Battleborn) no longer sleep: they get no sleep hours on rests or in camp, so those hours are free for crafting.
+- Aasimar (Malakh): Angelic Radiance's description now says 10 feet instead of "10 feat".
+- Not tested in game: all of the above.

@@ -970,7 +970,11 @@ internal static class SpellsContext
                 return;
             }
 
-            InventorClass.SwitchSpellStoringItemSubPower(spellDefinition, active);
+            // only the Inventor's own spell list decides which spells its Spell-Storing Item can hold
+            if (SpellList == InventorClass.SpellList)
+            {
+                InventorClass.SwitchSpellStoringItemSubPower(spellDefinition, active);
+            }
 
             if (!Main.Settings.AllowDisplayingOfficialSpells &&
                 spellDefinition.ContentPack != CeContentPackContext.CeContentPack)
