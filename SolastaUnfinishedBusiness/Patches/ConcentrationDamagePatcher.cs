@@ -243,8 +243,12 @@ public static class ConcentrationDamagePatcher
                         continue;
                     }
 
-                    parameter.tooltipContent =
-                        Gui.Format("Feedback/&ConcentrationCheckDamageTooltip", damage.ToString());
+                    // CapConcentrationSaveDc30 limits the DC to 30 (RollConcentrationCheck prefix)
+                    parameter.tooltipContent = Gui.Format(
+                        Main.Settings.CapConcentrationSaveDc30
+                            ? "Feedback/&ConcentrationCheckDamageCappedTooltip"
+                            : "Feedback/&ConcentrationCheckDamageTooltip",
+                        damage.ToString());
 
                     break;
                 }
