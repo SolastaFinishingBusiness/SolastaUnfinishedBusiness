@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
@@ -140,9 +141,7 @@ public sealed class InnovationVivisectionist : AbstractSubclass
             .SetShowCasting(false)
             .AddToDB();
 
-        powerOrganDonation.AddCustomSubFeatures(
-            ModifyPowerVisibility.Hidden,
-            new OnReducedToZeroHpByMeOrganDonation(powerOrganDonation, powerEmergencySurgery, powerEmergencyCure));
+        powerOrganDonation.AddCustomSubFeatures(ModifyPowerVisibility.Hidden);
 
         // LEVEL 15
 
@@ -177,6 +176,11 @@ public sealed class InnovationVivisectionist : AbstractSubclass
         PowerBundle.RegisterPowerBundle(powerMasterEmergencyCure, false,
             powerMasterEmergencyCureLesserRestoration, powerMasterEmergencyCureRemoveCurse);
 
+        powerOrganDonation.AddCustomSubFeatures(
+            new OnReducedToZeroHpByMeOrganDonation(
+                powerOrganDonation, powerEmergencySurgery, powerEmergencyCure,
+                powerMasterEmergencySurgery, powerMasterEmergencyCure));
+
         // MAIN
 
         Subclass = CharacterSubclassDefinitionBuilder
@@ -208,7 +212,9 @@ public sealed class InnovationVivisectionist : AbstractSubclass
     private class OnReducedToZeroHpByMeOrganDonation(
         FeatureDefinitionPower powerOrganDonation,
         FeatureDefinitionPower powerEmergencySurgery,
-        FeatureDefinitionPower powerEmergencyCure)
+        FeatureDefinitionPower powerEmergencyCure,
+        FeatureDefinitionPower powerMasterEmergencySurgery,
+        FeatureDefinitionPower powerMasterEmergencyCure)
         : IOnReducedToZeroHpByMe
     {
         public IEnumerator HandleReducedToZeroHpByMe(
@@ -219,8 +225,16 @@ public sealed class InnovationVivisectionist : AbstractSubclass
         {
             var rulesetAttacker = attacker.RulesetCharacter;
             var usablePower = PowerProvider.Get(powerOrganDonation, rulesetAttacker);
-            var usablePowerEmergencyCure = PowerProvider.Get(powerEmergencyCure, rulesetAttacker);
-            var usablePowerEmergencySurgery = PowerProvider.Get(powerEmergencySurgery, rulesetAttacker);
+            // from level 15 the Master powers override the base ones, which then stay full and unused; the uses to
+            // check and repay are those of the power the character actually has
+            var usablePowerEmergencyCure = HeldPower(powerMasterEmergencyCure) ?? HeldPower(powerEmergencyCure);
+            var usablePowerEmergencySurgery =
+                HeldPower(powerMasterEmergencySurgery) ?? HeldPower(powerEmergencySurgery);
+
+            if (usablePowerEmergencyCure == null || usablePowerEmergencySurgery == null)
+            {
+                yield break;
+            }
 
             if (rulesetAttacker.GetRemainingUsesOfPower(usablePower) == 0 ||
                 !attacker.OncePerTurnIsValid(powerOrganDonation.Name) ||
@@ -244,6 +258,11 @@ public sealed class InnovationVivisectionist : AbstractSubclass
             {
                 rulesetAttacker.RepayPowerUse(usablePowerEmergencyCure);
                 rulesetAttacker.RepayPowerUse(usablePowerEmergencySurgery);
+            }
+
+            RulesetUsablePower HeldPower(FeatureDefinitionPower power)
+            {
+                return rulesetAttacker.UsablePowers.FirstOrDefault(x => x.PowerDefinition == power);
             }
         }
     }
