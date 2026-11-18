@@ -1378,8 +1378,11 @@ public static class RulesetCharacterPatcher
                 {
                     if (successDelta >= 10 && !disableEnemyCrits)
                     {
-                        // only a plain hit turned critical by the margin is marked for the combat log
-                        marginCriticalHit = outcome == RollOutcome.Success;
+                        // only a plain hit turned critical by the margin is marked for the combat log; a hit that
+                        // is critical anyway on this target (a paralyzed creature attacked from next to it) isn't
+                        marginCriticalHit = outcome == RollOutcome.Success &&
+                                            !(target is RulesetCharacter automaticTarget &&
+                                              automaticTarget.IsCriticalAutomaticOnMe(__instance));
                         outcome = RollOutcome.CriticalSuccess;
                     }
                     else if (successDelta <= -10)
