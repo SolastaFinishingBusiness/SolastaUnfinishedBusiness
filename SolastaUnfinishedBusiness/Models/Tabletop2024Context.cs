@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
@@ -370,7 +371,7 @@ public static partial class Tabletop2024Context
 
                 if (action.AttackSuccessDelta >= 0)
                 {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
+                    action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
                 }
 
                 rulesetHelper.LogCharacterActivatesAbility(

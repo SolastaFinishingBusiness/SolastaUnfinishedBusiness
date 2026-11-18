@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
@@ -678,7 +679,7 @@ internal static class RaceFeats
 
                 if (action.AttackSuccessDelta >= 0)
                 {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
+                    action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
                 }
 
                 rulesetHelper.InflictCondition(

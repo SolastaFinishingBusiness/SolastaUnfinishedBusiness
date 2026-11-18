@@ -474,7 +474,8 @@ public static class CharacterActionAttackPatcher
                         out var successDelta2,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = attackRollOutcome2;
+                    __instance.AttackRollOutcome =
+                        AttackOutcomeRules.KeepCancelledCritical(__instance, attackRollOutcome2);
                     __instance.AttackSuccessDelta = successDelta2;
                 }
                 else
