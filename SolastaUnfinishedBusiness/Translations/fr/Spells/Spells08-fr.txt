@@ -1,7 +1,7 @@
 Condition/&ConditionMindBlankDescription=Immunisé contre les dégâts psychiques et la condition charmée.
 Condition/&ConditionMindBlankTitle=Esprit vide
 Condition/&ConditionSoulExpulsionCombatAffinityTitle=Instable
-Spell/&AbiDalzimHorridWiltingDescription=Vous puisez l'humidité de chaque créature dans un cube de 9 mètres centré sur un point que vous choisissez à portée. Chaque créature dans cette zone doit effectuer un jet de sauvegarde de Constitution. Les créatures artificielles et les morts-vivants ne sont pas affectés, et les plantes et les élémentaires de glace effectuent ce jet de sauvegarde avec un désavantage. Une créature subit 10d8 dégâts nécrotiques en cas d'échec, ou la moitié de ces dégâts en cas de réussite.
+Spell/&AbiDalzimHorridWiltingDescription=Vous puisez l'humidité de chaque créature dans un cube de 9 mètres centré sur un point que vous choisissez à portée. Chaque créature dans cette zone doit effectuer un jet de sauvegarde de Constitution. Les créatures artificielles et les morts-vivants ne sont pas affectés, et les plantes et les élémentaires de glace effectuent ce jet de sauvegarde avec un désavantage. Une créature subit 12d8 dégâts nécrotiques en cas d'échec, ou la moitié de ces dégâts en cas de réussite.
 Spell/&AbiDalzimHorridWiltingTitle=L'horrible flétrissement d'Abi-Dalzim
 Spell/&GlibnessDescription=Jusqu'à la fin du sort, lorsque vous effectuez un test de Charisme, vous pouvez remplacer le nombre obtenu par un 15.
 Spell/&GlibnessTitle=Bagou
