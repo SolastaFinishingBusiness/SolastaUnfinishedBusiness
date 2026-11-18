@@ -517,6 +517,20 @@ internal static class RulesDisplay
             Main.Settings.CombineConcentrationChecks = toggle;
         }
 
+        // read while damage is applied (ConcentrationDamageContext): no restart, no switch function
+        toggle = Main.Settings.NoConcentrationChecksFromWildShapeDamage;
+        if (UI.Toggle(Gui.Localize("ModUi/&NoConcentrationChecksFromWildShapeDamage"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.NoConcentrationChecksFromWildShapeDamage = toggle;
+        }
+
+        // read while damage is applied (ConcentrationDamageContext): no restart, no switch function
+        toggle = Main.Settings.NoConcentrationChecksFromTemporaryHitPoints;
+        if (UI.Toggle(Gui.Localize("ModUi/&NoConcentrationChecksFromTemporaryHitPoints"), ref toggle, UI.AutoWidth()))
+        {
+            Main.Settings.NoConcentrationChecksFromTemporaryHitPoints = toggle;
+        }
+
         // read when a concentration save is rolled: no restart, no switch function
         toggle = Main.Settings.CapConcentrationSaveDc30;
         if (UI.Toggle(Gui.Localize("ModUi/&CapConcentrationSaveDc30"), ref toggle, UI.AutoWidth()))

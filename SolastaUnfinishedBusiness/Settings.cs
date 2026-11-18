@@ -165,6 +165,8 @@ public class Settings : UnityModManager.ModSettings
     // default.
     public bool PushOrPullOncePerHit { get; set; } = true;
     public bool CombineConcentrationChecks { get; set; } = true;
+    public bool NoConcentrationChecksFromWildShapeDamage { get; set; }
+    public bool NoConcentrationChecksFromTemporaryHitPoints { get; set; }
     [Tag(Type = TagType.T2024)] public bool CapConcentrationSaveDc30 { get; set; }
 
     // Issues #37 and #39: a creature that the pushes and pulls of one action (a spell, a power, an attack with its
