@@ -223,7 +223,8 @@ internal static class MetamagicBuilders
         var metamagic = MetamagicOptionDefinitionBuilder
             .Create(MetamagicPowerful)
             .SetGuiPresentation(Category.Feature)
-            .SetCost()
+            // 1 sorcery point per spell level
+            .SetCost(MetamagicCostMethod.SpellLevel)
             .AddToDB();
 
         metamagic.AddCustomSubFeatures(new ModifyEffectDescriptionMetamagicPowerful(metamagic), validator);

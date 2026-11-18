@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=자유 행동으로, 다음 
 Feature/&PowerRavenScionHeartSeekingShotTitle=마음을 찾는 사격
 Feedback/&AdditionalDamageSniperAimFormat=스나이퍼의 목표
 Feedback/&AdditionalDamageSniperAimLine=스나이퍼의 조준이 추가로 +{2} 피해를 입힙니다!
-Feedback/&TriggerRavenScionRerollLine={0}은 {1} = {2}을 굴립니다. Deadly Focus는 치명타를 발생시킵니다.
+Feedback/&TriggerRavenScionRerollLine={0}은 {1} = {2}을 굴립니다. Deadly Focus로 이점을 가지고 공격을 다시 굴릴 수 있습니다.
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=치명적인 집중력을 사용하여 공격을 다시 시도하세요.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=치명적인 집중력을 사용하여 공격을 다시 시도하세요.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=재시도 공격

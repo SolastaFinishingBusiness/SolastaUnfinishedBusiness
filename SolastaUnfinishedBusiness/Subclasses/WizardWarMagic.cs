@@ -318,10 +318,13 @@ public sealed class WizardWarMagic : AbstractSubclass
             GameLocationCharacter attacker,
             List<GameLocationCharacter> targets)
         {
+            // only a Counterspell that ended the spell it targeted: the game sets that spell's Countered flag only on a
+            // successful counter (CharacterActionCastSpell.CounterEffectAction)
             if (action is not CharacterActionCastSpell actionCastSpell ||
                 actionCastSpell.Countered ||
                 actionCastSpell.ExecutionFailed ||
-                actionCastSpell.ActiveSpell.SpellDefinition != SpellDefinitions.Counterspell)
+                actionCastSpell.ActiveSpell.SpellDefinition != SpellDefinitions.Counterspell ||
+                actionCastSpell.ActionParams.TargetAction is not { Countered: true })
             {
                 yield break;
             }

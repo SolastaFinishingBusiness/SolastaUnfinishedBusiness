@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Questo marchio può esplodere in qualsiasi momento e causare 5D10 danni da tuono.
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Questo marchio può esplodere in qualsiasi momento e causare 5D10 danni da fulmine.
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=Segno della tempesta
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=Ogni volta che usi il tuo Flurry of Blows, ottieni anche i benefici dell'azione di disimpegno. Gli attacchi bonus forniti da esso infliggono danni da fulmine extra pari al tuo dado di arti marziali.
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=Discepolo delle tempeste
