@@ -424,6 +424,7 @@ public static class CharacterActionAttackPatcher
             var attackHasDamaged = false;
             var hit = false;
             var damageReceived = 0;
+            Models.ConcentrationDamageContext.DamageInstance concentrationHit = null;
 
             //PATCH: support for `ITryAlterOutcomeAttack`
             foreach (var tryAlterOutcomeAttack in TryAlterOutcomeAttack.HandlerNegativePriority(
@@ -627,9 +628,11 @@ public static class CharacterActionAttackPatcher
                         attackModifier,
                         __instance.RolledSaveThrow,
                         saveOutcomeSuccess);
-                    // one hit with all its riders is one damage instance for concentration checks
+                    // one hit with all its riders is one damage instance for concentration checks; the instance is
+                    // held until the finished handlers below have started their rider powers
                     var damageAbsorbedByTemporaryHitPoints = false;
 
+                    concentrationHit = Models.ConcentrationDamageContext.NewInstance();
                     damageReceived = Models.ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
                         __instance.actualEffectForms,
                         formParams,
@@ -637,7 +640,7 @@ public static class CharacterActionAttackPatcher
                         effectApplication: attackMode.EffectDescription.EffectApplication,
                         filters: attackMode.EffectDescription.EffectFormFilters,
                         damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
-                        terminateEffectOnTarget: out _));
+                        terminateEffectOnTarget: out _), concentrationHit);
 
                     actingCharacter.AttackImpactOn(
                         target, __instance.AttackRollOutcome, actionParams, attackMode, attackModifier);
@@ -859,6 +862,10 @@ public static class CharacterActionAttackPatcher
 
             //BEGIN PATCH
 
+            //PATCH: supports `CombineConcentrationChecks`: power actions the attacker starts from the handlers below
+            //(damage riders such as Spike Barrage) join the hit's damage instance
+            Models.ConcentrationDamageContext.OpenRiderWindow(actingCharacter, concentrationHit);
+
             if (Gui.Battle != null && target.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
             {
                 //PATCH: allow custom behavior when physical attack finished on defender
@@ -919,6 +926,10 @@ public static class CharacterActionAttackPatcher
                     }
                 }
             }
+
+            // the hit's combined checks roll here, or when the last rider power started above ends
+            Models.ConcentrationDamageContext.CloseRiderWindow(actingCharacter, concentrationHit);
+            Models.ConcentrationDamageContext.Release(concentrationHit);
 
             //PATCH: support for Sentinel Fighting Style - allows attacks of opportunity on enemies attacking allies
             yield return AttacksOfOpportunity.ProcessOnCharacterAttackFinished(

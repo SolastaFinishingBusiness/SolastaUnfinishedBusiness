@@ -58,7 +58,9 @@ public static class CharacterActionSpendPowerPatcher
             out IEnumerator __result,
             CharacterActionSpendPower __instance)
         {
-            __result = ExecuteImpl(__instance);
+            //PATCH: supports `CombineConcentrationChecks`: a hit's rider power holds the hit's damage instance until
+            //it ends
+            __result = ConcentrationDamageContext.ReleaseRiderWhenDone(ExecuteImpl(__instance), __instance.ActionParams);
 
             return false;
         }
@@ -293,18 +295,21 @@ public static class CharacterActionSpendPowerPatcher
                     // cast's. Does nothing for any other power, or with the setting off.
                     ForcedMovementFallContext.EnterLeg(__instance, target);
 
-                    bool damageAbsorbedByTemporaryHitPoints;
+                    var damageAbsorbedByTemporaryHitPoints = false;
 
                     try
                     {
-                        implementationService.ApplyEffectForms(
-                            effectForms,
-                            applyFormsParams,
-                            null,
-                            effectApplication: effectDescription.EffectApplication,
-                            filters: effectDescription.EffectFormFilters,
-                            damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
-                            terminateEffectOnTarget: out _);
+                        //PATCH: supports `CombineConcentrationChecks`: one target of the power is one damage instance,
+                        //or part of the hit's instance for a hit's rider power
+                        ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
+                                effectForms,
+                                applyFormsParams,
+                                null,
+                                effectApplication: effectDescription.EffectApplication,
+                                filters: effectDescription.EffectFormFilters,
+                                damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
+                                terminateEffectOnTarget: out _),
+                            ConcentrationDamageContext.GetRiderInstance(__instance.ActionParams));
                     }
                     finally
                     {

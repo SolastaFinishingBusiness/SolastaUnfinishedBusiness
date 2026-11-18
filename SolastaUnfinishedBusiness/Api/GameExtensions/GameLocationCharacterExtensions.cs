@@ -108,6 +108,8 @@ public static class GameLocationCharacterExtensions
             targetCharacters = [.. targets]
         };
 
+        // a power started from a physical attack's finished handlers joins that hit's damage instance
+        ConcentrationDamageContext.TagRider(character, actionParams);
         actionService.ExecuteInstantSingleAction(actionParams);
     }
 

@@ -743,6 +743,15 @@ public static class GameLocationCharacterPatcher
         [UsedImplicitly]
         public static bool Prefix(GameLocationCharacter __instance, int damage, bool stillConscious)
         {
+            //PATCH: supports `CombineConcentrationChecks`: inside one damage instance a conscious creature is only marked
+            //for the instance's combined check (its damage is counted from AccountReceivedDamage, before temporary hit
+            //points, so a check the game sends with 0 damage still counts); losing consciousness keeps the game's
+            //immediate break. The combined check runs through this prefix again, with the checks below.
+            if (stillConscious && ConcentrationDamageContext.TryGather(__instance))
+            {
+                return false;
+            }
+
             //BUGFIX: don't roll if zero damage
             if (damage <= 0)
             {
@@ -768,14 +777,7 @@ public static class GameLocationCharacterPatcher
                     x.SpellsThatShouldNotRollConcentrationCheckFromDamage(hero)
                         .Contains(concentratedSpell.SpellDefinition));
 
-            if (shouldKeepConcentration)
-            {
-                return false;
-            }
-
-            //PATCH: supports `CombineConcentrationChecks`: inside one damage instance a conscious creature's damage is
-            //gathered and checked once when the instance ends; losing consciousness keeps the game's immediate break
-            return !stillConscious || !ConcentrationDamageContext.TryGather(__instance, damage);
+            return !shouldKeepConcentration;
         }
 
 #if false
