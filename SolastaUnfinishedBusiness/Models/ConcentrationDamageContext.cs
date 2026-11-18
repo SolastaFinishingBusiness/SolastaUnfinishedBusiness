@@ -153,12 +153,8 @@ internal static class ConcentrationDamageContext
 
         frame.HitPointsAfter = frame.Actor.CurrentHitPoints;
 
-        if (exception != null)
-        {
-            frame.Failed = true;
-
-            return;
-        }
+        // its own check is skipped (Resolve), but the calls made inside it are still resolved
+        frame.Failed = exception != null;
 
         if (frame.Parent == null)
         {

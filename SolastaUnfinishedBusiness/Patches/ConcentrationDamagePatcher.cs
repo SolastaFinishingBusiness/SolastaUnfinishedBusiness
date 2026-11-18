@@ -31,6 +31,20 @@ public static class ConcentrationDamagePatcher
         }
     }
 
+    //PATCH: the same for a hero: RulesetCharacterHero overrides AccountReceivedDamage without calling the base method
+    //(it only counts sustainedInjuries), and SustainDamage calls it virtually, so each call reaches one of the two
+    [HarmonyPatch(typeof(RulesetCharacterHero), nameof(RulesetCharacterHero.AccountReceivedDamage))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class RulesetCharacterHero_AccountReceivedDamage_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetCharacterHero __instance, int amount)
+        {
+            ConcentrationDamageContext.AddReceivedDamage(__instance, amount);
+        }
+    }
+
     //PATCH: concentration checks of damage (ConcentrationDamageContext): each SustainDamage call is a frame, and the
     //outermost one works out the checks when it ends
     [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.SustainDamage))]
