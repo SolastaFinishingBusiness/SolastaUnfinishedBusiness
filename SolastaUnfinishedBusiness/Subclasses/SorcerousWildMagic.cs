@@ -742,7 +742,9 @@ public sealed class SorcerousWildMagic : AbstractSubclass
                 List<TrendInfo> advantageTrends =
                     [new(1, FeatureSourceType.CharacterFeature, PowerTidesOfChaos.Name, PowerTidesOfChaos)];
 
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends.SetRange(advantageTrends);
+                // the reroll's advantage is reported on the check data, not written into the check's modifier, which
+                // a caller may reuse for its next check (a jump's second check)
+                abilityCheckData.RerollAdvantageTrends = advantageTrends;
 
                 var dieRoll = rulesetHelper.RollDie(
                     DieType.D20, RollContext.None, false, AdvantageType.Advantage, out _, out _);

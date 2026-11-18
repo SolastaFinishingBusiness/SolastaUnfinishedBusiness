@@ -27,6 +27,18 @@ public sealed class AbilityCheckData
     public int AbilityCheckSuccessDelta { get; set; }
     public ActionModifier AbilityCheckActionModifier { get; set; }
     public CharacterAction Action { get; set; }
+
+    /// <summary>
+    ///     Set by a reaction that rerolls the d20 with advantage or disadvantage (Tides of Chaos), during its call: the
+    ///     trends of that reroll. The check's own ActionModifier is left as it is, as callers reuse it for later checks.
+    /// </summary>
+    public List<TrendInfo> RerollAdvantageTrends { get; set; }
+
+    /// <summary>
+    ///     How the die the check keeps was rolled, after the reactions: null for the original die, else the trends of
+    ///     the last reroll (empty for a straight one). Set by HandleITryAlterOutcomeAttributeCheck.
+    /// </summary>
+    public List<TrendInfo> KeptDieAdvantageTrends { get; set; }
 }
 
 internal static class TryAlterOutcomeAttributeCheck
@@ -321,10 +333,10 @@ internal static class TryAlterOutcomeAttributeCheck
         rawRoll += actorChange - abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
-        // a reroll with advantage (Tides of Chaos) sets the advantage the contest line shows
-        if (abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends.Count > 0)
+        // the contest line shows how the kept die was rolled: a reroll replaces the original die's advantage
+        if (abilityCheckData.KeptDieAdvantageTrends != null)
         {
-            advantageTrends = [..abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends];
+            advantageTrends = [..abilityCheckData.KeptDieAdvantageTrends];
         }
 
         // handle opponent interruptions
@@ -341,9 +353,9 @@ internal static class TryAlterOutcomeAttributeCheck
         opponentRawRoll += opponentChange - opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
-        if (opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends.Count > 0)
+        if (opponentAbilityCheckData.KeptDieAdvantageTrends != null)
         {
-            opponentAdvantageTrends = [..opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends];
+            opponentAdvantageTrends = [..opponentAbilityCheckData.KeptDieAdvantageTrends];
         }
 
         // calculate final results
@@ -415,9 +427,6 @@ internal static class TryAlterOutcomeAttributeCheck
             Gui.Battle?.AllContenders ??
             locationCharacterService.PartyCharacters.Union(locationCharacterService.GuestCharacters);
 
-        // advantage trends a reaction set for its reroll (Tides of Chaos); a later reroll replaces that die
-        var advantageSetByReaction = false;
-
         foreach (var unit in contenders
                      .Where(u => u.RulesetCharacter is { IsDeadOrDyingOrUnconscious: false })
                      .ToArray())
@@ -437,8 +446,7 @@ internal static class TryAlterOutcomeAttributeCheck
             {
                 var deltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
                 var modifierBefore = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
-                var advantageTrends = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckAdvantageTrends;
-                var advantageBefore = advantageTrends?.ToArray() ?? [];
+                abilityCheckData.RerollAdvantageTrends = null;
 
                 yield return tryAlterOutcomeAttributeCheck.OnTryAlterAttributeCheck(
                     battleManager, rawRoll, abilityCheckData, actingCharacter, unit);
@@ -452,21 +460,13 @@ internal static class TryAlterOutcomeAttributeCheck
 
                 rawRoll += dieChange;
 
-                if (advantageTrends == null)
+                // a reroll that changed the die: the kept die is now the reroll's, with its advantage or none
+                if (dieChange != 0 || abilityCheckData.RerollAdvantageTrends != null)
                 {
-                    continue;
+                    abilityCheckData.KeptDieAdvantageTrends = abilityCheckData.RerollAdvantageTrends ?? [];
                 }
 
-                if (!advantageTrends.SequenceEqual(advantageBefore))
-                {
-                    advantageSetByReaction = true;
-                }
-                else if (dieChange != 0 && advantageSetByReaction)
-                {
-                    // a reroll without advantage (Lucky) replaced the die that a reaction rolled with advantage
-                    advantageTrends.Clear();
-                    advantageSetByReaction = false;
-                }
+                abilityCheckData.RerollAdvantageTrends = null;
             }
         }
     }
