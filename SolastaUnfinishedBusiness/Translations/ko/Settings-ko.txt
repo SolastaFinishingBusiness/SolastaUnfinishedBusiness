@@ -224,7 +224,7 @@ ModUi/&EnablePreparedSpellsTables2024=모든 <color=#D89555>주문자</color>가
 ModUi/&EnableProneAction=<color=#D89555>엎드려 넘어짐</color> 동작을 활성화하세요 <i><color=#F0DAA0>[비용 없이 엎드려 넘어질 수 있습니다]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=위/아래 축에서도 푸시 및 풀 모션 효과를 작동하도록 설정
 ModUi/&PushOrPullOncePerHit=크리처를 움직이는 주문이나 능력이 명중할 때마다 한 번씩 밀거나 끌기 <i><color=#F0DAA0>[Repelling Blast는 명중한 Eldritch Blast 광선마다 한 번 밀고, 하다르의 손아귀는 광선마다 한 번 끕니다. 끄면 한 번의 시전에서 첫 번째 밀기나 끌기만 크리처를 움직입니다]</color></i>
-ModUi/&CombineConcentrationChecks=피해 1회마다 그 총 피해에 대해 집중 내성 굴림을 한 번만 굴립니다 <i><color=#F0DAA0>[모든 추가 효과를 포함한 공격 1회, 주문이나 능력의 명중 1회, 또는 한 턴의 지속 피해; 마법 화살의 각 다트, Radiant Motes의 각 입자, 섬뜩한 파동의 각 광선은 따로 계산]</color></i>
+ModUi/&CombineConcentrationChecks=피해 1회마다 그 총 피해에 대해 집중 내성 굴림을 한 번만 굴립니다 <i><color=#F0DAA0>[추가 피해를 포함한 무기 명중 1회, 주문이나 능력의 명중 1회, 또는 한 턴의 지속 피해; 마법 화살의 각 다트, Radiant Motes의 각 입자, 섬뜩한 파동의 각 광선은 따로 계산]</color></i>
 ModUi/&CapConcentrationSaveDc30=집중 내성 굴림의 DC 상한을 30으로 제한합니다 <i><color=#F0DAA0>[2024 규칙]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=<color=#D89555>레인저</color>가 모든 전투 스타일을 선택할 수 있도록 허용 <i><color=#F0DAA0>[대형 무기 전투 및 보호 추가]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=레벨 2에서 <color=#D89555>탐험가 기민함</color> 활성화 <i><color=#F0DAA0>[레인저 기술 전문 지식 1개 획득, 언어 2개 학습]</color></i>
