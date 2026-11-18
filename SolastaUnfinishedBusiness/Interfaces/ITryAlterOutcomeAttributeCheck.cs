@@ -233,8 +233,11 @@ internal static class TryAlterOutcomeAttributeCheck
         List<TrendInfo> opponentModifierTrends,
         AbilityCheckData abilityCheckData,
         AbilityCheckData opponentAbilityCheckData,
-        bool notify = true)
+        bool notify = true,
+        bool actorWinsTies = true)
     {
+        // actorWinsTies: with equal totals the actor succeeds (shove, grapple); when false the actor needs a strictly
+        // higher total and the opponent succeeds on a tie
         var advantageActor = ComputeAdvantage(advantageTrends);
         var isProficientActor = rulesetCharacter.IsProficient(proficiencyName);
 
@@ -356,21 +359,22 @@ internal static class TryAlterOutcomeAttributeCheck
             abilityCheckData.AbilityCheckRoll = totalRoll;
             abilityCheckData.AbilityCheckSuccessDelta = totalRoll - opponentTotalRoll;
             abilityCheckData.AbilityCheckRollOutcome =
-                abilityCheckData.AbilityCheckSuccessDelta < 0 ? RollOutcome.Failure : RollOutcome.Success;
+                abilityCheckData.AbilityCheckSuccessDelta < (actorWinsTies ? 0 : 1)
+                    ? RollOutcome.Failure
+                    : RollOutcome.Success;
             abilityCheckData.AbilityCheckActionModifier = new ActionModifier();
         }
 
         void PrepareOpponentAbilityCheckData()
         {
-            totalRoll++;
+            // the opponent succeeds only where the actor fails: on a tie that is the actor when actorWinsTies
+            var opponentDelta = opponentTotalRoll - totalRoll;
 
             opponentAbilityCheckData.AbilityCheckRoll = opponentTotalRoll;
-            opponentAbilityCheckData.AbilityCheckSuccessDelta = opponentTotalRoll - totalRoll;
+            opponentAbilityCheckData.AbilityCheckSuccessDelta = actorWinsTies ? opponentDelta - 1 : opponentDelta;
             opponentAbilityCheckData.AbilityCheckRollOutcome =
                 opponentAbilityCheckData.AbilityCheckSuccessDelta < 0 ? RollOutcome.Failure : RollOutcome.Success;
             opponentAbilityCheckData.AbilityCheckActionModifier = new ActionModifier();
-
-            totalRoll--;
         }
     }
 
