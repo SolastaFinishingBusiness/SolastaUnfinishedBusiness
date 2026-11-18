@@ -39,6 +39,22 @@ public static class RulesetCharacterHeroPatcher
             !__instance.IsValid(x.GetAllSubFeaturesOfType<IsCharacterValidHandler>()));
     }
 
+    [HarmonyPatch(typeof(RulesetCharacterHero), nameof(RulesetCharacterHero.ComputeRequiredSleepHours))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class ComputeRequiredSleepHours_Patch
+    {
+        //PATCH: a hero with a NoSleepNeeded feature (Battleborn's Arcane Resilience) sleeps 0 hours in rests and camps
+        [UsedImplicitly]
+        public static void Postfix(RulesetCharacterHero __instance, ref int __result)
+        {
+            if (__instance.GetSubFeaturesByType<NoSleepNeeded>().Any())
+            {
+                __result = 0;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(RulesetCharacterHero), nameof(RulesetCharacterHero.RefreshArmorClass))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
