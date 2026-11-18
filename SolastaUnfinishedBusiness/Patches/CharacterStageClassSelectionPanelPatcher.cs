@@ -74,18 +74,6 @@ public static class CharacterStageClassSelectionPanelPatcher
                 return;
             }
 
-            var columns = 1;
-            var grid = table.GetComponent<GridLayoutGroup>();
-
-            if (grid)
-            {
-                columns = grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount
-                    ? grid.constraintCount
-                    : Mathf.FloorToInt((table.rect.width + grid.spacing.x) / (grid.cellSize.x + grid.spacing.x));
-            }
-
-            columns = Math.Max(1, columns);
-
             var slots = new List<GridSelectionSlot>();
 
             for (var i = 0; i < table.childCount; i++)
@@ -97,6 +85,8 @@ public static class CharacterStageClassSelectionPanelPatcher
                     slots.Add(slot);
                 }
             }
+
+            var columns = GetColumnCount(table, slots.Count);
 
             for (var i = 0; i < slots.Count; i++)
             {
@@ -112,6 +102,41 @@ public static class CharacterStageClassSelectionPanelPatcher
                     slots[i].crossHair.gameObject.SetActive(i % columns > 0 && i / columns > 0);
                 }
             }
+        }
+
+        // The column count GridLayoutGroup lays the tiles out in (its SetCellsAlongAxis): a fixed column count, the
+        // children over a fixed row count rounded up, or as many cells as fit in the width inside the padding.
+        private static int GetColumnCount(RectTransform table, int childCount)
+        {
+            var grid = table.GetComponent<GridLayoutGroup>();
+
+            if (!grid)
+            {
+                return 1;
+            }
+
+            int columns;
+
+            switch (grid.constraint)
+            {
+                case GridLayoutGroup.Constraint.FixedColumnCount:
+                    columns = grid.constraintCount;
+                    break;
+                case GridLayoutGroup.Constraint.FixedRowCount:
+                    columns = Mathf.CeilToInt(childCount / (float)grid.constraintCount - 0.001f);
+                    break;
+                default:
+                    var width = table.rect.width;
+
+                    columns = grid.cellSize.x + grid.spacing.x <= 0
+                        ? int.MaxValue
+                        : Mathf.FloorToInt(
+                            (width - grid.padding.horizontal + grid.spacing.x + 0.001f) /
+                            (grid.cellSize.x + grid.spacing.x));
+                    break;
+            }
+
+            return Math.Max(1, columns);
         }
     }
 
