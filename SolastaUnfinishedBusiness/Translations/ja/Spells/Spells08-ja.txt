@@ -1,7 +1,7 @@
 Condition/&ConditionMindBlankDescription=精神的なダメージと魅了された状態に対する免疫。
 Condition/&ConditionMindBlankTitle=マインドブランク
 Condition/&ConditionSoulExpulsionCombatAffinityTitle=落ち着かない
-Spell/&AbiDalzimHorridWiltingDescription=範囲内で選択した点を中心とした 30 フィートの立方体内のすべてのクリーチャーから水分を吸い取ります。そのエリア内の各クリーチャーは耐久力セーヴィング スローを実行する必要があります。人造生物とアンデッドは影響を受けませんが、植物と氷の精霊は不利な条件でこのセーヴィング スローを実行します。セーヴィングに失敗するとクリーチャーは 10d8 の壊死ダメージを受け、成功すると半分のダメージを受けます。
+Spell/&AbiDalzimHorridWiltingDescription=範囲内で選択した点を中心とした 30 フィートの立方体内のすべてのクリーチャーから水分を吸い取ります。そのエリア内の各クリーチャーは耐久力セーヴィング スローを実行する必要があります。人造生物とアンデッドは影響を受けませんが、植物と氷の精霊は不利な条件でこのセーヴィング スローを実行します。セーヴィングに失敗するとクリーチャーは 12d8 の壊死ダメージを受け、成功すると半分のダメージを受けます。
 Spell/&AbiDalzimHorridWiltingTitle=アビ・ダルジムの恐ろしい萎縮
 Spell/&GlibnessDescription=呪文が終了するまで、魅力判定を行う際に、出た目を 15 に置き換えることができます。
 Spell/&GlibnessTitle=口達者

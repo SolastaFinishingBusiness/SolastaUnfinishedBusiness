@@ -1,7 +1,7 @@
 Condition/&ConditionMindBlankDescription=免疫心灵伤害和魅惑状态。
 Condition/&ConditionMindBlankTitle=心灵屏障
 Condition/&ConditionSoulExpulsionCombatAffinityTitle=失魂
-Spell/&AbiDalzimHorridWiltingDescription=你从范围内以你选择的点为中心的 30 英尺立方体中的每个生物身上吸取水分。该区域内的每个生物都必须进行体质豁免检定。构造体和不死生物不受影响，植物和冰元素进行此豁免检定时处于劣势。豁免失败时生物会受到 10d8 暗蚀伤害，豁免成功时伤害减半。
+Spell/&AbiDalzimHorridWiltingDescription=你从范围内以你选择的点为中心的 30 英尺立方体中的每个生物身上吸取水分。该区域内的每个生物都必须进行体质豁免检定。构造体和不死生物不受影响，植物和冰元素进行此豁免检定时处于劣势。豁免失败时生物会受到 12d8 暗蚀伤害，豁免成功时伤害减半。
 Spell/&AbiDalzimHorridWiltingTitle=亚比达奇凋死术
 Spell/&GlibnessDescription=直到法术结束前，当你进行魅力属性检定时，你可以将掷出的数字替换为 15。
 Spell/&GlibnessTitle=花言巧语

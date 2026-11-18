@@ -989,7 +989,8 @@ internal static partial class SpellBuilders
 
         conditionRingOfBlades.GuiPresentation.description = "Condition/&ConditionRingOfBladesDescription";
 
-        var behavior = new ModifyEffectDescriptionRingOfBlades(powerRingOfBlades, conditionRingOfBlades);
+        var behavior =
+            new ModifyEffectDescriptionRingOfBlades(powerRingOfBlades, powerRingOfBladesFree, conditionRingOfBlades);
 
         powerRingOfBlades.AddCustomSubFeatures(behavior);
         powerRingOfBladesFree.AddCustomSubFeatures(behavior);
@@ -1059,13 +1060,16 @@ internal static partial class SpellBuilders
         }
     }
 
+    // Scales both blade powers with the spell's slot level: the free blade thrown on the casting turn as well as the
+    // later ones.
     private sealed class ModifyEffectDescriptionRingOfBlades(
         FeatureDefinitionPower powerRingOfBlades,
+        FeatureDefinitionPower powerRingOfBladesFree,
         ConditionDefinition conditionRingOfBlades) : IModifyEffectDescription
     {
         public bool IsValid(BaseDefinition definition, RulesetCharacter character, EffectDescription effectDescription)
         {
-            return definition == powerRingOfBlades;
+            return definition == powerRingOfBlades || definition == powerRingOfBladesFree;
         }
 
         public EffectDescription GetEffectDescription(

@@ -285,6 +285,8 @@ internal static partial class SpellBuilders
                     .SetParticleEffectParameters(SpikeGrowth)
                     .SetTargetingData(Side.Enemy, RangeType.Self, 0, TargetType.Sphere, 3)
                     .SetDurationData(DurationType.Minute, 1)
+                    // +1d8 piercing for each slot level above 5th
+                    .SetEffectAdvancement(EffectIncrementMethod.PerAdditionalSlotLevel, additionalDicePerIncrement: 1)
                     .SetRecurrentEffect(RecurrentEffect.OnEnter | RecurrentEffect.OnMove | RecurrentEffect.OnTurnStart)
                     .SetEffectForms(
                         EffectFormBuilder.DamageForm(DamageTypePiercing, 2, DieType.D8),
