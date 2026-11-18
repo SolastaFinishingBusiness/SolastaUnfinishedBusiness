@@ -391,6 +391,8 @@ Feedback/&AttackMarginCriticalOutcome={0} (COLPO CRITICO, +10)
 Feedback/&ChangeGloombladeDieType={1} cambia il tipo di dado della lama oscura da {2} a {3}
 Feedback/&ChangeSneakDiceDieType={1} cambia il tipo di dado furtivo da {2} a {3}
 Feedback/&ChangeSneakDiceNumber={1} cambia il numero dei dadi furtivi da {2} a {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=Danni subiti: {0}. La CD è il valore più alto tra 10 e la metà dei danni, al massimo 30.
+Feedback/&ConcentrationCheckDamageTooltip=Danni subiti: {0}. La CD è il valore più alto tra 10 e la metà dei danni.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} tira per mantenere {1} {2} contro DC {3}, tira {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} tira per mantenere {1} contro DC {2}, tira {3} = {4}
 Feedback/&FlankingAttack=Affiancamento
