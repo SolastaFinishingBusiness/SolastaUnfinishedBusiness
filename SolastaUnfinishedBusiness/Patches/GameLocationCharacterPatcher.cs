@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -741,20 +741,40 @@ public static class GameLocationCharacterPatcher
     public static class CheckConcentration_Patch
     {
         [UsedImplicitly]
-        public static bool Prefix(GameLocationCharacter __instance, int damage, bool stillConscious)
+        public static bool Prefix(
+            GameLocationCharacter __instance,
+            RulesetCharacter character,
+            ref int damage,
+            string damageType,
+            bool stillConscious)
         {
-            //PATCH: supports `CombineConcentrationChecks`: inside one damage instance a conscious creature is only marked
-            //for the instance's combined check (its damage is counted from AccountReceivedDamage, before temporary hit
-            //points, so a check the game sends with 0 damage still counts); losing consciousness keeps the game's
-            //immediate break. A shape (Wild Shape form) that drops is marked too: the game skips its check
-            //(CheckConcentration IL_0065-007d: no break for a substitute), and the character in it, who keeps
-            //concentrating, makes the combined check against the whole hit. The combined check runs through this prefix
-            //again, with the checks below.
-            if ((stillConscious || __instance.RulesetCharacter is { IsSubstitute: true }) &&
-                ConcentrationDamageContext.TryGather(__instance))
+            //PATCH: concentration rules of ConcentrationDamageContext (combined checks, temporary hit points, Wild Shape)
+            var isShape = character is { IsSubstitute: true };
+            var shapeOwner = ConcentrationDamageContext.GetShapeOwnerToCheck(character);
+
+            // a shape with no spell of its own calls for no check while shapes don't check (the game's behaviour)
+            if (isShape && shapeOwner == null && character.ConcentratedSpell == null)
             {
                 return false;
             }
+
+            // inside one damage instance a conscious creature, or a shape whose character checks, is only marked for
+            // the instance's combined check; losing consciousness otherwise keeps the game's immediate break. The
+            // combined check runs through this prefix again.
+            if ((stillConscious || shapeOwner != null) &&
+                ConcentrationDamageContext.TryGather(__instance, character, damage))
+            {
+                return false;
+            }
+
+            // the overflow a shape passes on to the character in it, whose check the shape's already made
+            if (ConcentrationDamageContext.IsCoveredOverflow(character))
+            {
+                return false;
+            }
+
+            // the game's check then uses the damage counted before temporary hit points
+            damage = ConcentrationDamageContext.GetDamageToCheck(character, damage);
 
             //BUGFIX: don't roll if zero damage
             if (damage <= 0)
@@ -762,26 +782,18 @@ public static class GameLocationCharacterPatcher
                 return false;
             }
 
+            // a shape checks for the spell of the character in it: the shape saves while it stands, the character once
+            // the shape dropped
+            if (shapeOwner != null)
+            {
+                ConcentrationDamageContext.RollShapeOwnerCheck(
+                    stillConscious ? character : shapeOwner, shapeOwner, damage, damageType);
+
+                return false;
+            }
+
             //PATCH: supports `IPreventRemoveConcentrationOnDamage`
-            if (__instance.RulesetCharacter is not { } rulesetCharacter)
-            {
-                return true;
-            }
-
-            var hero = rulesetCharacter.GetOriginalHero();
-            var concentratedSpell = hero?.ConcentratedSpell;
-
-            if (concentratedSpell == null)
-            {
-                return true;
-            }
-
-            var shouldKeepConcentration = hero.GetSubFeaturesByType<IPreventRemoveConcentrationOnDamage>()
-                .Any(x =>
-                    x.SpellsThatShouldNotRollConcentrationCheckFromDamage(hero)
-                        .Contains(concentratedSpell.SpellDefinition));
-
-            return !shouldKeepConcentration;
+            return !ConcentrationDamageContext.KeepsConcentrationFromDamage(__instance.RulesetCharacter);
         }
 
 #if false

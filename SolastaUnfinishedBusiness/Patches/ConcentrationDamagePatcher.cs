@@ -27,6 +27,20 @@ public static class ConcentrationDamagePatcher
         }
     }
 
+    //PATCH: supports `NoConcentrationChecksFromTemporaryHitPoints`: damage temporary hit points absorb in full calls
+    //for no concentration check (the method does nothing else)
+    [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.DamageAbsorbedByTemporaryHitPoints))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class DamageAbsorbedByTemporaryHitPoints_Patch
+    {
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !Main.Settings.NoConcentrationChecksFromTemporaryHitPoints;
+        }
+    }
+
     //PATCH: supports `CombineConcentrationChecks`: marks SustainDamage calls on a shape (Wild Shape form), so the
     //overflow they pass on to the character in the shape is not counted twice
     [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.SustainDamage))]
