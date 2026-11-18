@@ -1,0 +1,5 @@
+- "Enable critical hits and misses when the difference between the AC and modified attack roll result is 10 or greater" now applies to every attack roll (it only affected Fell Handed before).
+- Critical hit damage option 1 (maximum dice) now adds the maximum of the die actually rolled, so a versatile weapon used two-handed and a Bardic Inspiration die override count properly.
+- Critical hit damage option 3 (double everything) no longer doubles the flat bonus of the spell or weapon again on every critical hit for the rest of the session.
+- A hit that only the "10 over the AC" rule makes critical now shows in the combat log as "16+6 = 22 (CRITICAL HIT, +10)", with the modifiers on hover; natural 20s and critical hits from a wider critical range are shown as before.
+- Not tested in game: all of the above.

@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=サンダーブロウは追加の +{
 Feedback/&AdditionalDamageTrueStrikeFormat=トゥルーストライク！
 Feedback/&AdditionalDamageTrueStrikeLine={0} が {1} を攻撃し、追加の {2} 光ダメージを与えます。
 Feedback/&BreakFreeAttempt={0} は {2} から抜け出そうとします
+Feedback/&AttackMarginCriticalOutcome={0} (クリティカル・ヒット、+10)
 Feedback/&ChangeGloombladeDieType={1} はグルームブレードのダイスの種類を {2} から {3} に変更します
 Feedback/&ChangeSneakDiceDieType={1} はスニークダイスの種類を {2} から {3} に変更します
 Feedback/&ChangeSneakDiceNumber={1} はスニーク ダイス番号を {2} から {3} に変更します

@@ -1142,7 +1142,7 @@ public static class CharacterActionMagicEffectPatcher
                         out successDelta,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = outcome;
+                    __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, outcome);
                     __instance.AttackSuccessDelta = successDelta;
 
                     // Is this still a success?
@@ -1176,7 +1176,7 @@ public static class CharacterActionMagicEffectPatcher
                         out successDelta,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = outcome;
+                    __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, outcome);
                     __instance.AttackSuccessDelta = successDelta;
                 }
 
