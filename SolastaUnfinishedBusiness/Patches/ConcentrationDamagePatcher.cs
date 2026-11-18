@@ -181,4 +181,76 @@ public static class ConcentrationDamagePatcher
             return __exception;
         }
     }
+
+    //PATCH: the damage a concentration check is rolled against, for its combat log line (see ConcentrationCheckRolled_Patch)
+    [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.RollConcentrationCheckFromDamage))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class RollConcentrationCheckFromDamage_Patch
+    {
+        // the check's log line is written synchronously inside this call (RollConcentrationCheck invokes
+        // ConcentrationCheckRolled), so the damage is known for exactly that line
+        internal static int? Damage { get; private set; }
+
+        [UsedImplicitly]
+        public static void Prefix(int damage, out int? __state)
+        {
+            __state = Damage;
+            Damage = damage;
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception, int? __state)
+        {
+            Damage = __state;
+
+            return __exception;
+        }
+    }
+
+    //PATCH: a concentration check's DC in the combat log shows on hover the damage it came from; the game's line only
+    //says "versus DC n" (GameConsole.ConcentrationCheckRolled adds the DC as an AbilityInfo parameter with no tooltip)
+    [HarmonyPatch(typeof(GameConsole), nameof(GameConsole.ConcentrationCheckRolled))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class ConcentrationCheckRolled_Patch
+    {
+        [NotNull]
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
+        {
+            var method = new Action<GameRecordTable, GameRecordEntry, int, int>(AddEntry).Method;
+
+            // saveDC is argument 6 of ConcentrationCheckRolled (this, character, outcome, totalRoll, rawRoll, modifier,
+            // saveDC, ...)
+            return instructions.ReplaceCall("AddEntry", -1, "GameConsole.ConcentrationCheckRolled",
+                new CodeInstruction(OpCodes.Ldarg_S, (byte)6),
+                new CodeInstruction(OpCodes.Call, method));
+        }
+
+        private static void AddEntry(GameRecordTable console, GameRecordEntry entry, int insertionIndex, int saveDC)
+        {
+            if (RollConcentrationCheckFromDamage_Patch.Damage is { } damage)
+            {
+                var dc = saveDC.ToString();
+
+                foreach (var parameter in entry.Parameters)
+                {
+                    if (parameter.parameterType != (int)ConsoleStyleDuplet.ParameterType.AbilityInfo ||
+                        parameter.contentValue != dc ||
+                        !string.IsNullOrEmpty(parameter.tooltipContent))
+                    {
+                        continue;
+                    }
+
+                    parameter.tooltipContent =
+                        Gui.Format("Feedback/&ConcentrationCheckDamageTooltip", damage.ToString());
+
+                    break;
+                }
+            }
+
+            console.AddEntry(entry, insertionIndex);
+        }
+    }
 }

@@ -3,4 +3,5 @@
 - Damage absorbed by temporary hit points now counts in full for concentration saving throws; before, a hit they partly absorbed counted only what got through, and one they absorbed exactly called for no save. New setting, Gameplay > Rules (off by default): only the damage beyond temporary hit points counts (none when they absorb a hit exactly).
 - New setting, Gameplay > Rules (on with the 2024 rules): the DC of concentration saving throws is capped at 30.
 - Concentration saves no longer get bonuses tied to the damage type: Dwarven Resilience, the Belt of Dwarvenkind and similar poison advantages used to apply to concentration saves for poison damage. War Caster and other concentration bonuses still apply.
+- A concentration check's DC in the combat log now shows on hover the damage it was rolled against.
 - Not tested in game: all of the above; not tested on two computers.

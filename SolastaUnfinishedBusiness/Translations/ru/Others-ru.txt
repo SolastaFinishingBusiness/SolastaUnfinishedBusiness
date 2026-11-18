@@ -390,6 +390,7 @@ Feedback/&BreakFreeAttempt={0} пытается вырваться из {2}
 Feedback/&ChangeGloombladeDieType={1} меняет тип кости сумрачного клинка с {2} на {3}
 Feedback/&ChangeSneakDiceDieType={1} изменяет тип кости скрытой атаки с {2} на {3}
 Feedback/&ChangeSneakDiceNumber={1} изменяет число на кости скрытой атаки с {2} на {3}.
+Feedback/&ConcentrationCheckDamageTooltip=Полученный урон: {0}. СЛ равна большему из 10 и половины урона.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} бросает для поддержания {1} {2} против Сл {3}, выкидывает {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} бросает для поддержания {1} против Сл {2}, выкидывает {3} = {4}
 Feedback/&FlankingAttack=Угроза с фланга
