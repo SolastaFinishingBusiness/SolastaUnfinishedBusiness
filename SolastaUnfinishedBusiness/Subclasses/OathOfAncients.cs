@@ -309,11 +309,18 @@ public sealed class OathOfAncients : AbstractSubclass
                 0,
                 0);
 
+            // matched by the condition's id: the game pools condition objects, so the same object can come back as
+            // another condition on this creature once the ward is gone
+            var wardGuid = activeCondition.Guid;
+
             EffectFinishedCleanup.Add(rulesetEffect, () =>
             {
-                if (rulesetDefender.AllConditions.Contains(activeCondition))
+                var ward = rulesetDefender.AllConditions.Find(x =>
+                    x.Guid == wardGuid && x.ConditionDefinition == conditionWardingAura);
+
+                if (ward != null)
                 {
-                    rulesetDefender.RemoveCondition(activeCondition);
+                    rulesetDefender.RemoveCondition(ward);
                 }
             });
 
