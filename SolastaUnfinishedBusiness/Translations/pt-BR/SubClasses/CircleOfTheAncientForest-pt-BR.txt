@@ -30,7 +30,7 @@ Feature/&PowerAncientForestRootedDescription=Gavinhas arbóreas crescem de seus 
 Feature/&PowerAncientForestRootedTitle=Enraizado
 Feature/&PowerPoolAncientForestHerbalBrewDescription=Você pode criar poções de ervas, cada uma das quais dura até o próximo descanso longo. Você cria um total de poções igual ao seu bônus de proficiência. Para cada poção, escolha um dos seguintes efeitos:\n<color=#ADD8E6>Poção Fortificante</color>: concede resistência a diferentes tipos de dano por 1 hora.\n<color=#ADD8E6>Poção Aceleradora</color>: fornece 2d4 pontos de vida.\n<color=#ADD8E6>Poção Toxificante</color>: age como veneno que pode ser aplicado a uma arma que dura 1 minuto. Se o acerto acertar, o alvo recebe 1d4 de dano de veneno em cada acerto.
 Feature/&PowerPoolAncientForestHerbalBrewTitle=Preparação de Ervas
-Feature/&PowerPoolAncientForestWallOfThornsDescription=Você pode conjurar Wall of Thorns um número de vezes igual ao seu modificador de Wisdom. Ele recarrega em descansos longos.
+Feature/&PowerPoolAncientForestWallOfThornsDescription=Você pode conjurar Muralha de Espinhos um número de vezes igual ao seu modificador de Sabedoria. Ele recarrega em descansos longos.
 Feature/&PowerPoolAncientForestWallOfThornsTitle=Muro de espinhos
 Feedback/&AncientForestHerbalBrewDamageAffinityAcidResistancePowerUsedWhileTravellingFormat={0} cria {1}
 Feedback/&AncientForestHerbalBrewDamageAffinityLightningResistancePowerUsedWhileTravellingFormat={0} cria {1}

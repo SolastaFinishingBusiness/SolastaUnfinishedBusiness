@@ -514,7 +514,9 @@ public sealed class PatronMoonlitScion : AbstractSubclass
 
             var spellRepertoire = rulesetCharacter.GetClassSpellRepertoire(CharacterClassDefinitions.Warlock);
 
-            action.ActingCharacter.MyExecuteActionCastNoCost(MoonBeam, slotLevel, action.ActionParams, spellRepertoire);
+            // the Warlock repertoire gives the spell its save DC and attack bonus; the cast spends no pact slot
+            action.ActingCharacter.MyExecuteActionCastNoCost(
+                MoonBeam, slotLevel, action.ActionParams, spellRepertoire, spendSlot: false);
 
             yield break;
         }
