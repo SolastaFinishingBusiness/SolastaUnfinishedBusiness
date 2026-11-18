@@ -27,12 +27,13 @@ namespace SolastaUnfinishedBusiness.Models;
 ///     </para>
 ///     <list type="bullet">
 ///         <item>a creature concentrating that stays conscious saves against the damage it took: all of it, or with
-///         NoConcentrationChecksFromTemporaryHitPoints only the hit points it lost; one that drops loses concentration
-///         at once, as in the game;</item>
-///         <item>a shape that drops makes the character in it save for the spell against the whole hit (the overflow
-///         included);</item>
-///         <item>with NoConcentrationChecksFromWildShapeDamage, damage to a Wild Shape form (any shape not holding the
-///         Shapechange spell) calls for no save, standing or dropping.</item>
+///         NoConcentrationChecksFromTemporaryHitPoints only the hit points it lost (none when temporary hit points
+///         absorb the hit exactly); one reduced to 0 hit points loses concentration at once, as in the game;</item>
+///         <item>a shape reduced to 0 hit points makes the character in it save for the spell against the whole hit (the
+///         overflow included);</item>
+///         <item>with NoConcentrationChecksFromWildShapeDamage, a Wild Shape form (any shape not holding the Shapechange
+///         spell) left with hit points calls for no save, and one reduced to 0 makes the character in it save against
+///         the overflow only (none when there is no overflow).</item>
 ///     </list>
 ///     <para>
 ///         With CombineConcentrationChecks, each damage instance is a scope (one weapon hit with the damage added to
@@ -189,7 +190,18 @@ internal static class ConcentrationDamageContext
     {
         var actor = frame.Actor;
 
-        if (actor.ConcentratedSpell != null && (WildShapeChecks || !IsWildShapeForm(actor)))
+        if (actor.ConcentratedSpell != null && !WildShapeChecks && IsWildShapeForm(actor))
+        {
+            // a Wild Shape form calls for no save itself; once reduced to 0, the character in it saves against the
+            // overflow it took
+            if (actor.IsDeadOrDyingOrUnconscious &&
+                actor.OriginalFormCharacter is { } owner &&
+                frame.Children.Where(x => x.Actor == owner).Sum(Counted) is var overflow and > 0)
+            {
+                Report(actor, owner, overflow, frame.DamageType);
+            }
+        }
+        else if (actor.ConcentratedSpell != null)
         {
             if (!actor.IsDeadOrDyingOrUnconscious)
             {
