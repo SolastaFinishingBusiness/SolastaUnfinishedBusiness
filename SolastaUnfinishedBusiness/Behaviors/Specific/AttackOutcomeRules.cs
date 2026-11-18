@@ -40,11 +40,14 @@ internal static class AttackOutcomeRules
         CriticalCancelled.Add(action, null);
     }
 
-    // applied after the final recompute of an attack's outcome
+    // Applied after the final recompute of one attack's outcome. The mark is used up here: a spell's action makes one
+    // attack per target in turn (several Eldritch Blast beams, for one), and the cancel belongs to that attack only.
     internal static RollOutcome KeepCancelledCritical(CharacterAction action, RollOutcome outcome)
     {
-        return outcome == RollOutcome.CriticalSuccess && CriticalCancelled.TryGetValue(action, out _)
-            ? RollOutcome.Success
-            : outcome;
+        var cancelled = CriticalCancelled.TryGetValue(action, out _);
+
+        CriticalCancelled.Remove(action);
+
+        return outcome == RollOutcome.CriticalSuccess && cancelled ? RollOutcome.Success : outcome;
     }
 }
