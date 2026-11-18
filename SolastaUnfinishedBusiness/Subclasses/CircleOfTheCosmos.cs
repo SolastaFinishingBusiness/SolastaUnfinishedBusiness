@@ -964,6 +964,8 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
                     });
                 abilityCheckModifier.AbilityCheckModifier += dieRoll;
                 abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
+                // the running total includes the bonus (read by the reactions' log lines)
+                abilityCheckData.AbilityCheckRoll += dieRoll;
 
                 (ConsoleStyleDuplet.ParameterType, string) extra;
 
@@ -1189,6 +1191,8 @@ public sealed class CircleOfTheCosmos : AbstractSubclass
                     });
                 abilityCheckModifier.AbilityCheckModifier += dieRoll;
                 abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
+                // the running total includes the bonus (read by the reactions' log lines)
+                abilityCheckData.AbilityCheckRoll += dieRoll;
 
                 (ConsoleStyleDuplet.ParameterType, string) extra;
 
