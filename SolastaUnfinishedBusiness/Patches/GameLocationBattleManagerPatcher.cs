@@ -569,10 +569,11 @@ public static class GameLocationBattleManagerPatcher
                     or BattleDefinitions.AttackProximity.MagicDistance)
             {
                 // RulesetCharacter.Items is a scratch list the game fills and clears around each use, so the
-                // inventory is enumerated into a list of our own
+                // inventory is enumerated into a list of our own: equipped items only (no containers, no inactive
+                // weapon configuration), as for the infusion's casting bonus
                 var items = new List<RulesetItem>();
 
-                inventory.EnumerateAllItems(items);
+                inventory.EnumerateAllItems(items, considerContainers: false, ignoreConfigSlots: true);
 
                 if (items.Any(x => x.DynamicItemProperties
                         .Any(y => y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus"))))
