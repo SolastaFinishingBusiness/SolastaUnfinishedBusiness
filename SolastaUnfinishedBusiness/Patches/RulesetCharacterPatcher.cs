@@ -1803,36 +1803,12 @@ public static class RulesetCharacterPatcher
     [UsedImplicitly]
     public static class ApplyRest_Patch
     {
-        //BUGFIX: chain of the master is a long rest power. only allow bindChain in there if long rest
-        private static void SwitchBindChainPowers(RestType restType, RechargeRate rechargeRate)
-        {
-            FeatureDefinitionPower[] bindChainPowers =
-            [
-                PowerPactChainImp, PowerPactChainPseudodragon, PowerPactChainPseudodragon, PowerPactChainQuasit
-            ];
-
-            if (restType != RestType.ShortRest)
-            {
-                return;
-            }
-
-            foreach (var power in bindChainPowers)
-            {
-                power.rechargeRate = rechargeRate;
-            }
-        }
-
-        [UsedImplicitly]
-        public static void Prefix(RulesetCharacter __instance, RestType restType)
-        {
-            SwitchBindChainPowers(restType, RechargeRate.LongRest);
-        }
-
+        // Binding a Pact of the Chain familiar recovers on a short or long rest: the game's ApplyRest resets the
+        // shared Bind Chain count on every rest (IL_0155-0171), and the recharge label
+        // (Rules/&RateBindChainFormatTitle in the translations) says so.
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RestType restType, bool simulate)
         {
-            SwitchBindChainPowers(restType, RechargeRate.BindChain);
-
             //PATCH: update usage for power pools
             if (!simulate)
             {
@@ -2402,19 +2378,26 @@ public static class RulesetCharacterPatcher
         {
             var setCurrentHitPointsMethod = typeof(RulesetActor).GetProperty("CurrentHitPoints")!.SetMethod;
             var mySetCurrentHitPointsMethod =
-                new Action<RulesetActor, int, bool>(MySetCurrentHitPoints).Method;
+                new Action<RulesetActor, int, bool, IDamageAffinityProvider>(MySetCurrentHitPoints).Method;
 
+            // In the game's SustainDamage, local 8 is "a knockout was prevented" and local 9 the damage affinity
+            // that prevented it (any knockout-preventing feature, not only Relentless Rage).
             return instructions
                 .ReplaceCalls(setCurrentHitPointsMethod,
                     "RulesetCharacter.SustainDamage.set_CurrentHitPoints",
-                    new CodeInstruction(OpCodes.Ldloc, 8), // success
+                    new CodeInstruction(OpCodes.Ldloc, 8), // knockout prevented
+                    new CodeInstruction(OpCodes.Ldloc, 9), // the affinity that prevented it
                     new CodeInstruction(OpCodes.Call, mySetCurrentHitPointsMethod));
         }
 
-        //TODO: review this as I believe it'll bleed into other scenarios. if so should get outcome from RollSaving with another transpiler
-        private static void MySetCurrentHitPoints(RulesetActor actor, int currentHitPoints, bool success)
+        // 2024 Relentless Rage: when Relentless Rage (the Barbarian's level 11 feature) keeps the Barbarian up, they
+        // drop to twice their Barbarian level in hit points instead of 1. Other knockout preventions keep the game's 1.
+        private static void MySetCurrentHitPoints(
+            RulesetActor actor, int currentHitPoints, bool success, IDamageAffinityProvider preventedBy)
         {
-            if (!Main.Settings.EnableBarbarianRelentlessRage2024 || actor is not RulesetCharacter rulesetCharacter)
+            if (!Main.Settings.EnableBarbarianRelentlessRage2024 || actor is not RulesetCharacter rulesetCharacter ||
+                !success || !ReferenceEquals(preventedBy,
+                    Api.DatabaseHelper.FeatureDefinitionDamageAffinitys.DamageAffinityBarbarianRelentlessRage))
             {
                 actor.CurrentHitPoints = currentHitPoints;
 
