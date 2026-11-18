@@ -746,8 +746,12 @@ public static class GameLocationCharacterPatcher
             //PATCH: supports `CombineConcentrationChecks`: inside one damage instance a conscious creature is only marked
             //for the instance's combined check (its damage is counted from AccountReceivedDamage, before temporary hit
             //points, so a check the game sends with 0 damage still counts); losing consciousness keeps the game's
-            //immediate break. The combined check runs through this prefix again, with the checks below.
-            if (stillConscious && ConcentrationDamageContext.TryGather(__instance))
+            //immediate break. A shape (Wild Shape form) that drops is marked too: the game skips its check
+            //(CheckConcentration IL_0065-007d: no break for a substitute), and the character in it, who keeps
+            //concentrating, makes the combined check against the whole hit. The combined check runs through this prefix
+            //again, with the checks below.
+            if ((stillConscious || __instance.RulesetCharacter is { IsSubstitute: true }) &&
+                ConcentrationDamageContext.TryGather(__instance))
             {
                 return false;
             }

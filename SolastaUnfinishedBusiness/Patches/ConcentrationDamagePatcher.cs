@@ -118,6 +118,30 @@ public static class ConcentrationDamagePatcher
         }
     }
 
+    //PATCH: supports `CombineConcentrationChecks`: one activation of an environment effect the game triggers directly
+    //(traps, gadgets) is one damage instance
+    [HarmonyPatch(typeof(GameLocationEnvironmentManager),
+        nameof(GameLocationEnvironmentManager.TriggerEnvironmentEffect))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class TriggerEnvironmentEffect_Patch
+    {
+        [UsedImplicitly]
+        [HarmonyPriority(Priority.First)]
+        public static void Prefix(out object __state)
+        {
+            __state = ConcentrationDamageContext.Begin();
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception, object __state)
+        {
+            ConcentrationDamageContext.End(__state as ConcentrationDamageContext.DamageInstance);
+
+            return __exception;
+        }
+    }
+
     //PATCH: supports `CombineConcentrationChecks`: the same for an environment effect
     [HarmonyPatch(typeof(RulesetEffectEnvironment), nameof(RulesetEffectEnvironment.ApplyEffectOnCharacter))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
