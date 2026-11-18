@@ -119,9 +119,9 @@ public static class ConcentrationDamagePatcher
     }
 
     //PATCH: supports `CombineConcentrationChecks`: one activation of an environment effect the game triggers directly
-    //(traps, gadgets) is one damage instance
+    //(traps, gadgets) is one damage instance; of its three overloads, the one taking the active effect applies the forms
     [HarmonyPatch(typeof(GameLocationEnvironmentManager),
-        nameof(GameLocationEnvironmentManager.TriggerEnvironmentEffect))]
+        nameof(GameLocationEnvironmentManager.TriggerEnvironmentEffect), typeof(RulesetEffectEnvironment))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class TriggerEnvironmentEffect_Patch
