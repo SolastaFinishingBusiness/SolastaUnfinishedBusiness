@@ -1,0 +1,6 @@
+- Ring of Blades: the blade thrown on the casting turn now gets the higher-slot damage too.
+- Mantle of Thorns now deals 1d8 more piercing damage for each slot level above 5th, as its description says.
+- Wrathful Smite: with the 2024 smites off, its description now says psychic damage, which is what it deals; the 2024 version still says necrotic.
+- Abi-Dalzim's Horrid Wilting's description now says 12d8, the damage it deals.
+- Sonic Boom's description now gives its 30 ft radius (150 ft is its range).
+- Not tested in game: all of the above.
