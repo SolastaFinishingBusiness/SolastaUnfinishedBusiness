@@ -225,8 +225,8 @@ ModUi/&EnableProneAction=<color=#D89555>うつ伏せになる</color>アクシ�
 ModUi/&EnablePullPushOnVerticalDirection=プッシュとプルのモーション効果を上下軸でも有効にします
 ModUi/&PushOrPullOncePerHit=クリーチャーを動かす呪文やパワーが命中するたびに、1回ずつ押し出す・引き寄せる <i><color=#F0DAA0>[Repelling Blast は命中した Eldritch Blast の光線ごとに1回押し出し、ハダルの掌握は光線ごとに1回引き寄せる。オフの場合、1回の発動で最初の押し出し・引き寄せだけがクリーチャーを動かす]</color></i>
 ModUi/&CombineConcentrationChecks=ダメージ 1 回ごとに、その合計ダメージに対して精神集中セーヴィング スローを 1 回行う <i><color=#F0DAA0>[追加ダメージを含む 1 回の武器の命中、呪文やパワーの 1 回の命中、またはターンごとの継続ダメージ。マジック・ミサイルの各ダーツ、Radiant Motes の各光球、エルドリッチ・ブラストの各光線はそれぞれ別に数える]</color></i>
-ModUi/&NoConcentrationChecksFromWildShapeDamage=ワイルド・シェイプ中の姿へのダメージでは精神集中セーヴィング スローを行わない <i><color=#F0DAA0>[立っている間も倒れたときも]</color></i>
-ModUi/&NoConcentrationChecksFromTemporaryHitPoints=一時的ヒット・ポイントが吸収したダメージは精神集中セーヴィング スローに数えない <i><color=#F0DAA0>[ヒット・ポイントへのダメージのみ]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=ワイルド・シェイプ中の姿へのダメージでは精神集中セーヴィング スローを行わない <i><color=#F0DAA0>[姿のヒット・ポイントが 0 になったときにドルイドに持ち越されたダメージのみ]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=一時的ヒット・ポイントが吸収したダメージは精神集中セーヴィング スローに数えない <i><color=#F0DAA0>[それを超えたダメージのみ。ちょうど吸収された攻撃ではセーヴィング スローを行わない]</color></i>
 ModUi/&CapConcentrationSaveDc30=精神集中セーヴィング スローの DC の上限を 30 にする <i><color=#F0DAA0>[2024 ルール]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=<color=#D89555>レンジャー</color>が任意の戦闘スタイルを選択できるようにする <i><color=#F0DAA0>[大型武器戦闘と防護を追加]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=レベル 2 で <color=#D89555>Deft Explorer</color> を有効にする <i><color=#F0DAA0>[レンジャー スキルの専門知識を 1 つ取得し、言語を 2 つ習得します]</color></i>
