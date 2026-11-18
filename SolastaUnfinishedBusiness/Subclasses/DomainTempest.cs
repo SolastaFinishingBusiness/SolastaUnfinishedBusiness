@@ -123,10 +123,12 @@ public sealed class DomainTempest : AbstractSubclass
                             .Create()
                             .HasSavingThrow(EffectSavingThrowType.HalfDamage)
                             .SetDamageForm(DamageTypeThunder, 2, DieType.D8)
+                            .SetDiceAdvancement(LevelSourceType.ClassLevel, 0, 20, (5, 1), (11, 2), (17, 3))
                             .Build())
                     .SetImpactEffectParameters(Shatter)
                     .Build())
-            .AddCustomSubFeatures(ModifyPowerVisibility.Hidden)
+            // required as in a feature set
+            .AddCustomSubFeatures(ClassHolder.Cleric, ModifyPowerVisibility.Hidden)
             .AddToDB();
 
         PowerBundle.RegisterPowerBundle(

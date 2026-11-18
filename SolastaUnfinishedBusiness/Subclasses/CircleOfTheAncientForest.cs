@@ -146,10 +146,14 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
 
         // LEVEL 14
 
+        // Forest Barrier: Wall of Thorns as an action, a number of times per long rest equal to the Wisdom modifier;
+        // the pool is a bundle whose choices are the spell's two shapes. Each choice only aims (the spell's shape and
+        // range, no forms, no lasting effect) and then casts the real spell at 6th level without a slot, so the wall
+        // takes the spell's concentration: a new wall or another concentration spell ends the previous one.
         var powerPoolAncientForestWallOfThorns = FeatureDefinitionPowerBuilder
             .Create("PowerPoolAncientForestWallOfThorns")
-            .SetGuiPresentation(Category.Feature, hidden: true)
-            .SetUsesAbilityBonus(ActivationTime.BonusAction, RechargeRate.LongRest, AttributeDefinitions.Wisdom)
+            .SetGuiPresentation(Category.Feature, WallOfThornsWallLine)
+            .SetUsesAbilityBonus(ActivationTime.Action, RechargeRate.LongRest, AttributeDefinitions.Wisdom)
             .SetBonusToAttack(true)
             .AddToDB();
 
@@ -160,19 +164,30 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
             .AddToDB();
 
         var wallOfThornsSpells = new[] { WallOfThornsWallLine, WallOfThornsWallRing };
+        var wallOfThornsPowers = new List<FeatureDefinitionPower>();
 
         foreach (var spell in wallOfThornsSpells)
         {
             FeatureDefinitionPower wallOfThorns = FeatureDefinitionPowerSharedPoolBuilder
                 .Create("PowerSharedPoolAncientForest" + spell.name)
                 .SetGuiPresentation(spell.GuiPresentation)
-                .SetSharedPool(ActivationTime.Rest, powerPoolAncientForestWallOfThorns)
-                .SetEffectDescription(spell.effectDescription)
-                .AddCustomSubFeatures(ModifyPowerVisibility.Hidden)
+                .SetSharedPool(ActivationTime.Action, powerPoolAncientForestWallOfThorns)
+                .SetShowCasting(false)
+                .SetEffectDescription(
+                    EffectDescriptionBuilder
+                        .Create(spell)
+                        .SetDurationData(DurationType.Instantaneous)
+                        .SetEffectForms()
+                        .SetNoSavingThrow()
+                        .Build())
+                .AddCustomSubFeatures(new PowerOrSpellFinishedByMeForestBarrier(spell))
                 .AddToDB();
 
             featureSetWallOfThorns.FeatureSet.Add(wallOfThorns);
+            wallOfThornsPowers.Add(wallOfThorns);
         }
+
+        PowerBundle.RegisterPowerBundle(powerPoolAncientForestWallOfThorns, true, wallOfThornsPowers);
 
         var attributeModifierAncientForestBarkskin = FeatureDefinitionAttributeModifierBuilder
             .Create(AttributeModifierBarkskin, "AttributeModifierAncientForestBarkskin")
@@ -365,6 +380,26 @@ public sealed class CircleOfTheAncientForest : AbstractSubclass
 
             rulesetAttacker.LogCharacterActivatesAbility(ability);
             rulesetAttacker.ReceiveHealing(healing, true, rulesetAttacker.Guid, cap);
+        }
+    }
+
+    // Casts the Wall of Thorns shape the Forest Barrier choice aimed, at 6th level, on the cells the power targeted (the
+    // cast reuses the power's action parameters). The Druid repertoire gives the save DC and attack bonus, but no slot
+    // is spent from it. The cast is a real spell, so it needs and keeps concentration like the spell does.
+    private sealed class PowerOrSpellFinishedByMeForestBarrier(SpellDefinition spell) : IPowerOrSpellFinishedByMe
+    {
+        private const int SlotLevel = 6;
+
+        public IEnumerator OnPowerOrSpellFinishedByMe(CharacterActionMagicEffect action, BaseDefinition baseDefinition)
+        {
+            var actingCharacter = action.ActingCharacter;
+            var spellRepertoire = actingCharacter.RulesetCharacter
+                .GetClassSpellRepertoire(DatabaseHelper.CharacterClassDefinitions.Druid);
+
+            actingCharacter.MyExecuteActionCastNoCost(
+                spell, SlotLevel, action.ActionParams, spellRepertoire, spendSlot: false);
+
+            yield break;
         }
     }
 }

@@ -346,7 +346,9 @@ public sealed class CollegeOfElegance : AbstractSubclass
             var rulesetAttacker = attacker.RulesetCharacter;
 
             if (!rulesetAttacker.IsToggleEnabled(AmazingDisplayToggle) ||
-                !attacker.OnceInMyTurnIsValid(powerAmazingDisplay.Name))
+                !attacker.OnceInMyTurnIsValid(powerAmazingDisplay.Name) ||
+                // uses per long rest equal to the proficiency bonus
+                rulesetAttacker.GetRemainingUsesOfPower(PowerProvider.Get(powerAmazingDisplay, rulesetAttacker)) == 0)
             {
                 yield break;
             }

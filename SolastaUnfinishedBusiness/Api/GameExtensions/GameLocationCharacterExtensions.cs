@@ -56,13 +56,21 @@ public static class GameLocationCharacterExtensions
         SpellDefinition spell,
         int slotLevel,
         CharacterActionParams originalActionParams,
-        RulesetSpellRepertoire spellRepertoire = null)
+        RulesetSpellRepertoire spellRepertoire = null,
+        bool spendSlot = true)
     {
         var actionService = ServiceRepository.GetService<IGameLocationActionService>();
         var rulesetCaster = caster.RulesetCharacter;
         var effectSpell = ServiceRepository.GetService<IRulesetImplementationService>()
             .InstantiateEffectSpell(rulesetCaster, spellRepertoire, spell, slotLevel, false);
         var actionParams = originalActionParams.Clone();
+
+        // a cast through a repertoire spends one of its slots (RulesetCharacter.CastSpell -> SpendSpellSlot) unless
+        // it is marked here
+        if (!spendSlot)
+        {
+            Patches.RulesetCharacterPatcher.SpendSpellSlot_Patch.CastsWithoutSlot.Add(effectSpell, null);
+        }
 
         actionParams.ActionDefinition = actionService.AllActionDefinitions[Id.CastNoCost];
         actionParams.RulesetEffect = effectSpell;

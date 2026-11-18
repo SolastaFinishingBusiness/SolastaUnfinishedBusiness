@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api;
@@ -2855,9 +2856,19 @@ public static class RulesetCharacterPatcher
     [UsedImplicitly]
     public static class SpendSpellSlot_Patch
     {
+        // spell casts that use a repertoire (for its save DC and attack bonus) but spend no slot from it
+        internal static readonly ConditionalWeakTable<RulesetEffectSpell, object> CastsWithoutSlot = new();
+
         [UsedImplicitly]
         public static bool Prefix(RulesetCharacter __instance, RulesetEffectSpell activeSpell)
         {
+            if (CastsWithoutSlot.TryGetValue(activeSpell, out _))
+            {
+                __instance.AccountUsedMagicAndPower(activeSpell.SlotLevel);
+
+                return false;
+            }
+
             FeatureDefinition preserveSlotThresholdFeature = null;
             var preserveSlotThreshold = int.MaxValue;
 
