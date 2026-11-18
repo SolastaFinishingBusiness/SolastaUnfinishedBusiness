@@ -890,6 +890,22 @@ public static class CharacterActionMagicEffectPatcher
 
             // BEGIN PATCH
 
+            //PATCH: support for `IMagicEffectFinishedOnMeAnyState` (every target, whatever its state)
+            foreach (var target in targets)
+            {
+                if (target.RulesetCharacter is not { } rulesetAnyStateTarget)
+                {
+                    continue;
+                }
+
+                foreach (var magicEffectFinishedOnMe in rulesetAnyStateTarget
+                             .GetSubFeaturesByType<IMagicEffectFinishedOnMeAnyState>())
+                {
+                    yield return magicEffectFinishedOnMe.OnMagicEffectFinishedOnMeAnyState(
+                        __instance, actingCharacter, target, targets);
+                }
+            }
+
             //PATCH: support for `IMagicEffectFinishedOnMe`
             foreach (var target in targets)
             {

@@ -273,9 +273,10 @@ public sealed class OathOfAncients : AbstractSubclass
     // Resistance to damage from spells: the resistances are added when a spell is about to hit the warded creature
     // and removed once that spell has finished, so they cover only the spell's own damage.
     private sealed class MagicEffectBeforeHitConfirmedOnMeAuraWarding(ConditionDefinition conditionWardingAura)
-        : IMagicEffectBeforeHitConfirmedOnMe, IMagicEffectFinishedOnMe
+        : IMagicEffectBeforeHitConfirmedOnMe, IMagicEffectFinishedOnMeAnyState
     {
-        public IEnumerator OnMagicEffectFinishedOnMe(
+        // runs even when the spell left the warded creature unconscious, so the resistances never outlast the spell
+        public IEnumerator OnMagicEffectFinishedOnMeAnyState(
             CharacterAction action,
             GameLocationCharacter attacker,
             GameLocationCharacter defender,
