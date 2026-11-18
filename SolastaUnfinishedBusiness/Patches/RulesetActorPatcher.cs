@@ -443,8 +443,9 @@ public static class RulesetActorPatcher
             }
 
             formsParams.formAbilityBonus = rulesetCondition.SourceAbilityBonus;
-            service.ApplyEffectForms(
-                rulesetCondition.ConditionDefinition.RecurrentEffectForms, formsParams, [], out _, out _);
+            // one recurring tick is one damage instance for concentration checks
+            ConcentrationDamageContext.Apply(() => service.ApplyEffectForms(
+                rulesetCondition.ConditionDefinition.RecurrentEffectForms, formsParams, [], out _, out _));
 
             var effectFormsApplied = service.ConditionRecurrentEffectFormsApplied;
 

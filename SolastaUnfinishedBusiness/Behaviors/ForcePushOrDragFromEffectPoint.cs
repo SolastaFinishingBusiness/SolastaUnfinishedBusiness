@@ -37,17 +37,26 @@ internal sealed class ForcePushOrDragFromEffectPoint
             formsParams.position = positions[0];
         }
 
-        return service.ApplyEffectForms(
+        // one target entry of a spell or power is one damage instance for concentration checks (a Magic Missile
+        // dart, a Radiant Motes mote and an Eldritch Blast beam are each their own entry)
+        var absorbed = false;
+        var terminate = false;
+        var damage = Models.ConcentrationDamageContext.Apply(() => service.ApplyEffectForms(
             effectForms,
             formsParams,
             effectiveDamageTypes,
-            out damageAbsorbedByTemporaryHitPoints,
-            out terminateEffectOnTarget,
+            out absorbed,
+            out terminate,
             retargeting,
             proxyOnly,
             forceSelfConditionOnly,
             effectApplication,
-            filters);
+            filters));
+
+        damageAbsorbedByTemporaryHitPoints = absorbed;
+        terminateEffectOnTarget = terminate;
+
+        return damage;
     }
 
     public static bool TryPushFromEffectTargetPoint(

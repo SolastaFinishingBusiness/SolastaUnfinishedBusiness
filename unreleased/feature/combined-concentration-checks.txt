@@ -1,0 +1,4 @@
+- New setting (on by default), Gameplay > Rules: one concentration saving throw per damage instance against its total damage, instead of one per damage type. An attack with all its riders, one hit of a spell or power, or one turn's recurring damage is one instance; each Magic Missile dart, Radiant Motes mote and Eldritch Blast beam counts on its own. Dropping to 0 hit points still ends concentration at once.
+- New setting, Gameplay > Rules (on with the 2024 rules): the DC of concentration saving throws is capped at 30.
+- Concentration saves no longer get bonuses tied to the damage type: Dwarven Resilience, the Belt of Dwarvenkind and similar poison advantages used to apply to concentration saves for poison damage. War Caster and other concentration bonuses still apply.
+- Not tested in game: all of the above; not tested on two computers.

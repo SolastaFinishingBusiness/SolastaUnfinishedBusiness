@@ -741,7 +741,7 @@ public static class GameLocationCharacterPatcher
     public static class CheckConcentration_Patch
     {
         [UsedImplicitly]
-        public static bool Prefix(GameLocationCharacter __instance, int damage)
+        public static bool Prefix(GameLocationCharacter __instance, int damage, bool stillConscious)
         {
             //BUGFIX: don't roll if zero damage
             if (damage <= 0)
@@ -768,7 +768,14 @@ public static class GameLocationCharacterPatcher
                     x.SpellsThatShouldNotRollConcentrationCheckFromDamage(hero)
                         .Contains(concentratedSpell.SpellDefinition));
 
-            return !shouldKeepConcentration;
+            if (shouldKeepConcentration)
+            {
+                return false;
+            }
+
+            //PATCH: supports `CombineConcentrationChecks`: inside one damage instance a conscious creature's damage is
+            //gathered and checked once when the instance ends; losing consciousness keeps the game's immediate break
+            return !stillConscious || !ConcentrationDamageContext.TryGather(__instance, damage);
         }
 
 #if false
