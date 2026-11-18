@@ -842,62 +842,12 @@ internal static class EldritchVersatilityBuilders
                 yield break;
             }
 
-            bool success;
-            // You yourself should pass a check again to copy it if not overload
-            if (!supportCondition.IsOverload)
-            {
-                var checkModifier = new ActionModifier
-                {
-                    AbilityCheckModifier =
-                        GetAbilityScoreModifier(featureOwner, AttributeDefinitions.Intelligence, supportCondition) -
-                        AttributeDefinitions.ComputeAbilityScoreModifier(
-                            featureOwner.TryGetAttributeValue(AttributeDefinitions.Intelligence))
-                };
+            var checkResult = new BattlefieldShorthandCheckResult();
 
-                checkModifier.AbilityCheckModifierTrends.Add(new TrendInfo(checkModifier.AbilityCheckModifier,
-                    FeatureSourceType.CharacterFeature, "PowerPatronEldritchSurgeVersatilitySwitchPool", null));
+            yield return RollBattlefieldShorthandCheck(
+                featureOwner, supportCondition, spellLevel, castAction, checkResult);
 
-                var glc = GameLocationCharacter.GetFromActor(featureOwner);
-
-                if (glc == null) { yield break; }
-
-                var abilityCheckRoll = glc.RollAbilityCheckEx(
-                    AttributeDefinitions.Intelligence, SkillDefinitions.Arcana,
-                    14 + spellLevel + Math.Max(-6, spellLevel - supportCondition.CurrentPoints),
-                    AdvantageType.None,
-                    checkModifier,
-                    false,
-                    -1,
-                    out var rollOutcome,
-                    out var successDelta,
-                    out var rawRoll,
-                    true);
-                
-                
-
-                //PATCH: support for Bardic Inspiration roll off battle and ITryAlterOutcomeAttributeCheck
-                var abilityCheckData = new AbilityCheckData
-                {
-                    AbilityCheckRoll = abilityCheckRoll,
-                    AbilityCheckRollOutcome = rollOutcome,
-                    AbilityCheckSuccessDelta = successDelta,
-                    AbilityCheckActionModifier = checkModifier,
-                    Action = castAction
-                };
-
-                yield return TryAlterOutcomeAttributeCheck
-                    .HandleITryAlterOutcomeAttributeCheck(glc, abilityCheckData, rawRoll);
-
-                castAction.AbilityCheckRoll = abilityCheckData.AbilityCheckRoll;
-                castAction.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckRollOutcome;
-                castAction.AbilityCheckSuccessDelta = abilityCheckData.AbilityCheckSuccessDelta;
-
-                success = castAction.AbilityCheckRollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess;
-            }
-            else
-            {
-                success = true;
-            }
+            var success = checkResult.Success;
 
             var console = Gui.Game.GameConsole;
             var line = success
@@ -910,6 +860,13 @@ internal static class EldritchVersatilityBuilders
                 selectedSpellDefinition.GuiPresentation.Title, tooltipContent: selectedSpellDefinition.Name,
                 tooltipClass: GuiSpellDefinition.TooltipClassSpellDefinition);
             console.AddEntry(entry);
+
+            // only a successful check adds the spell
+            if (!success)
+            {
+                yield break;
+            }
+
             supportCondition.CopiedSpells.Add(selectedSpellDefinition);
             warlockRepertoire.ExtraSpellsByTag["BattlefieldShorthand"].Add(selectedSpellDefinition);
         }
@@ -1576,15 +1533,98 @@ internal static class EldritchVersatilityBuilders
                 selectedSpellDefinition = parentSpell;
             }
 
-            // If the caster has this feature, check if the spell is copied, if so, remove it both from copied list and repertoire
+            // Each cast of a copied spell repeats the check; on a failure the spell is removed from the copied list and the
+            // repertoire
             if (featureOwner != caster.RulesetCharacter ||
-                !supportCondition.CopiedSpells.Remove(selectedSpellDefinition))
+                !supportCondition.CopiedSpells.Contains(selectedSpellDefinition))
             {
                 yield break;
             }
 
+            var checkResult = new BattlefieldShorthandCheckResult();
+
+            yield return RollBattlefieldShorthandCheck(
+                featureOwner, supportCondition, selectedSpellDefinition.SpellLevel, castAction, checkResult);
+
+            if (checkResult.Success)
+            {
+                yield break;
+            }
+
+            supportCondition.CopiedSpells.Remove(selectedSpellDefinition);
+
             warlockRepertoire.ExtraSpellsByTag.TryGetValue("BattlefieldShorthand", out var spells);
             spells?.Remove(selectedSpellDefinition);
+        }
+    }
+    private sealed class BattlefieldShorthandCheckResult
+    {
+        internal bool Success;
+    }
+
+    // The Intelligence (Arcana) check to copy or keep a spell with Battlefield Shorthand; always passes while
+    // overloaded.
+    private static IEnumerator RollBattlefieldShorthandCheck(
+        RulesetCharacter featureOwner,
+        VersatilitySupportRulesetCondition supportCondition,
+        int spellLevel,
+        CharacterActionCastSpell castAction,
+        BattlefieldShorthandCheckResult result)
+    {
+        // You yourself should pass a check again to copy it if not overload
+        if (!supportCondition.IsOverload)
+        {
+            var checkModifier = new ActionModifier
+            {
+                AbilityCheckModifier =
+                    GetAbilityScoreModifier(featureOwner, AttributeDefinitions.Intelligence, supportCondition) -
+                    AttributeDefinitions.ComputeAbilityScoreModifier(
+                        featureOwner.TryGetAttributeValue(AttributeDefinitions.Intelligence))
+            };
+
+            checkModifier.AbilityCheckModifierTrends.Add(new TrendInfo(checkModifier.AbilityCheckModifier,
+                FeatureSourceType.CharacterFeature, "PowerPatronEldritchSurgeVersatilitySwitchPool", null));
+
+            var glc = GameLocationCharacter.GetFromActor(featureOwner);
+
+            if (glc == null) { yield break; }
+
+            var abilityCheckRoll = glc.RollAbilityCheckEx(
+                AttributeDefinitions.Intelligence, SkillDefinitions.Arcana,
+                14 + spellLevel + Math.Max(-6, spellLevel - supportCondition.CurrentPoints),
+                AdvantageType.None,
+                checkModifier,
+                false,
+                -1,
+                out var rollOutcome,
+                out var successDelta,
+                out var rawRoll,
+                true);
+            
+            
+
+            //PATCH: support for Bardic Inspiration roll off battle and ITryAlterOutcomeAttributeCheck
+            var abilityCheckData = new AbilityCheckData
+            {
+                AbilityCheckRoll = abilityCheckRoll,
+                AbilityCheckRollOutcome = rollOutcome,
+                AbilityCheckSuccessDelta = successDelta,
+                AbilityCheckActionModifier = checkModifier,
+                Action = castAction
+            };
+
+            yield return TryAlterOutcomeAttributeCheck
+                .HandleITryAlterOutcomeAttributeCheck(glc, abilityCheckData, rawRoll);
+
+            castAction.AbilityCheckRoll = abilityCheckData.AbilityCheckRoll;
+            castAction.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckRollOutcome;
+            castAction.AbilityCheckSuccessDelta = abilityCheckData.AbilityCheckSuccessDelta;
+
+            result.Success = castAction.AbilityCheckRollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess;
+        }
+        else
+        {
+            result.Success = true;
         }
     }
 }

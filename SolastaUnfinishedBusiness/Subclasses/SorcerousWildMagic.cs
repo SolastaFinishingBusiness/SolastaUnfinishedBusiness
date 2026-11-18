@@ -1004,6 +1004,8 @@ public sealed class SorcerousWildMagic : AbstractSubclass
 
                     abilityCheckModifier.AbilityCheckModifier += dieRoll;
                     abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
+                    // the running total includes the bonus (read by the reactions' log lines)
+                    abilityCheckData.AbilityCheckRoll += dieRoll;
                     abilityCheckData.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckSuccessDelta >= 0
                         ? RollOutcome.Success
                         : RollOutcome.Failure;
@@ -1031,6 +1033,8 @@ public sealed class SorcerousWildMagic : AbstractSubclass
 
                     abilityCheckModifier.AbilityCheckModifier -= dieRoll;
                     abilityCheckData.AbilityCheckSuccessDelta -= dieRoll;
+                    // the running total includes the bonus (read by the reactions' log lines)
+                    abilityCheckData.AbilityCheckRoll -= dieRoll;
                     abilityCheckData.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckSuccessDelta >= 0
                         ? RollOutcome.Success
                         : RollOutcome.Failure;

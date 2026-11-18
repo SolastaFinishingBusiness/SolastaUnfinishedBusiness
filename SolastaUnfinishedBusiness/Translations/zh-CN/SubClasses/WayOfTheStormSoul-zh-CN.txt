@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=这个印记随时可以爆炸，造成 5D10 雷鸣伤害。
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=这个印记随时可以爆炸，造成 5D10 闪电伤害。
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=风暴印记
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=每当你使用疾风连击时，你也会获得撤离动作的好处。它提供的额外攻击会造成额外的闪电伤害，伤害值等于你的武艺骰。
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=风暴门徒

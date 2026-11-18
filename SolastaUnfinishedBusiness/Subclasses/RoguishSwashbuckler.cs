@@ -90,6 +90,14 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
             .SetSpecialDuration(DurationType.Minute, 1)
             .AddToDB();
 
+        // a creature Panache was used on can't be targeted again for an hour
+        var conditionPanacheImmune = ConditionDefinitionBuilder
+            .Create($"Condition{Name}PanacheImmune")
+            .SetGuiPresentation(Category.Condition, ConditionDefinitions.ConditionDistracted)
+            .SetConditionType(ConditionType.Neutral)
+            .SetSpecialDuration(DurationType.Hour, 1)
+            .AddToDB();
+
         conditionPanacheSource.AddCustomSubFeatures(
             new PanacheSourceConditionBehavior(conditionPanache, conditionPanacheSource));
 
@@ -99,7 +107,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
 
         var powerPanache = FeatureDefinitionPowerBuilder
             .Create($"Power{Name}Panache")
-            .SetGuiPresentation(Category.Feature)
+            .SetGuiPresentation(Category.Feature, FeatureDefinitionPowers.PowerRoguishHoodlumMenacing)
             .SetUsesFixed(ActivationTime.Action, RechargeRate.AtWill)
             .SetEffectDescription(
                 EffectDescriptionBuilder
@@ -107,7 +115,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                     .SetTargetingData(Side.Enemy, RangeType.Distance, 12, TargetType.IndividualsUnique)
                     .Build())
             .AddCustomSubFeatures(
-                new CustomBehaviorPanache(conditionPanache, conditionPanacheSource),
+                new CustomBehaviorPanache(conditionPanache, conditionPanacheSource, conditionPanacheImmune),
                 new FilterTargetingCharacterPanache())
             .AddToDB();
 
@@ -322,12 +330,15 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
     private sealed class CustomBehaviorPanache : IPowerOrSpellFinishedByMe
     {
         private readonly ConditionDefinition conditionPanache;
+        private readonly ConditionDefinition conditionPanacheImmune;
         private readonly ConditionDefinition conditionPanacheSource;
 
-        public CustomBehaviorPanache(ConditionDefinition panache, ConditionDefinition source)
+        public CustomBehaviorPanache(
+            ConditionDefinition panache, ConditionDefinition source, ConditionDefinition immune)
         {
             conditionPanache = panache;
             conditionPanacheSource = source;
+            conditionPanacheImmune = immune;
         }
 
         public IEnumerator OnPowerOrSpellFinishedByMe(
@@ -343,6 +354,15 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
             var rulesetAttacker = attacker.RulesetCharacter;
             var defender = action.ActionParams.TargetCharacters[0];
             var rulesetDefender = defender.RulesetCharacter;
+
+            if (rulesetDefender.HasConditionOfCategoryAndType(
+                    AttributeDefinitions.TagEffect, conditionPanacheImmune.Name))
+            {
+                rulesetAttacker.LogCharacterActivatesAbility(
+                    $"Feature/&Power{Name}PanacheTitle",
+                    $"Feedback/&{Name}PanacheTargetImmune");
+                yield break;
+            }
 
             var abilityCheckData = new AbilityCheckData
             {
@@ -367,6 +387,28 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                 defender,
                 abilityCheckData,
                 opponentAbilityCheckData);
+
+            // whatever the contest's result, the target is immune to Panache for an hour
+            rulesetDefender.InflictCondition(
+                conditionPanacheImmune.Name,
+                DurationType.Hour,
+                1,
+                TurnOccurenceType.EndOfTurn,
+                AttributeDefinitions.TagEffect,
+                rulesetAttacker.guid,
+                rulesetAttacker.CurrentFaction.Name,
+                1,
+                conditionPanacheImmune.Name,
+                0,
+                0,
+                0);
+
+            if (abilityCheckData.AbilityCheckRollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess))
+            {
+                rulesetAttacker.LogCharacterActivatesAbility(
+                    $"Feature/&Power{Name}PanacheTitle",
+                    $"Feedback/&{Name}PanacheContestFailed");
+            }
 
             if (abilityCheckData.AbilityCheckRollOutcome is RollOutcome.Success or RollOutcome.CriticalSuccess)
             {
@@ -399,11 +441,14 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                     0);
 
                 rulesetAttacker.LogCharacterActivatesAbility(
-                    $"Feature/&{Name}PanacheTitle",
+                    $"Feature/&Power{Name}PanacheTitle",
                     $"Feedback/&{Name}PanacheContestSucceeded");
             }
         }
 
+        // Persuasion against Insight through the shared contest resolver: one contest line in the combat log with both
+        // rolls and their modifiers, and the reactions that can change an ability check. The attacker needs a strictly
+        // higher total.
         private static IEnumerator ResolveContest(
             GameLocationCharacter actor,
             GameLocationCharacter opponent,
@@ -412,70 +457,37 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
         {
             var rulesetActor = actor.RulesetCharacter;
             var rulesetOpponent = opponent.RulesetCharacter;
+            var actionModifierActor = new ActionModifier();
+            var actionModifierOpponent = new ActionModifier();
 
             var actorBonus = rulesetActor.ComputeBaseAbilityCheckBonus(
                 AttributeDefinitions.Charisma,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
+                actionModifierActor.AbilityCheckModifierTrends,
                 SkillDefinitions.Persuasion);
 
             var opponentBonus = rulesetOpponent.ComputeBaseAbilityCheckBonus(
                 AttributeDefinitions.Wisdom,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
+                actionModifierOpponent.AbilityCheckModifierTrends,
                 SkillDefinitions.Insight);
 
-            var actorTotal = rulesetActor.RollAbilityCheck(
+            yield return TryAlterOutcomeAttributeCheck.ResolveContestCheck(
+                rulesetActor,
                 actorBonus,
+                actionModifierActor.AbilityCheckModifier,
                 AttributeDefinitions.Charisma,
                 SkillDefinitions.Persuasion,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends,
-                0,
-                0,
-                false,
-                -1,
-                out var actorRaw,
-                out var actorFirst,
-                out var actorSecond,
-                out var actorOutcome,
-                out var actorDelta,
-                true,
-                true,
-                true);
-
-            var opponentTotal = rulesetOpponent.RollAbilityCheck(
+                actionModifierActor.AbilityCheckAdvantageTrends,
+                actionModifierActor.AbilityCheckModifierTrends,
+                rulesetOpponent,
                 opponentBonus,
+                actionModifierOpponent.AbilityCheckModifier,
                 AttributeDefinitions.Wisdom,
                 SkillDefinitions.Insight,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends,
-                0,
-                0,
-                false,
-                -1,
-                out var opponentRaw,
-                out var opponentFirst,
-                out var opponentSecond,
-                out var opponentOutcome,
-                out var opponentDelta,
-                true,
-                true,
-                true);
-
-            if (actorTotal > opponentTotal)
-            {
-                abilityCheckData.AbilityCheckRollOutcome = RollOutcome.Success;
-                abilityCheckData.AbilityCheckSuccessDelta = actorTotal - opponentTotal;
-            }
-            else
-            {
-                abilityCheckData.AbilityCheckRollOutcome = RollOutcome.Failure;
-                abilityCheckData.AbilityCheckSuccessDelta = opponentTotal - actorTotal;
-            }
-
-            abilityCheckData.AbilityCheckRoll = actorRaw;
-            opponentAbilityCheckData.AbilityCheckRoll = opponentRaw;
-
-            yield break;
+                actionModifierOpponent.AbilityCheckAdvantageTrends,
+                actionModifierOpponent.AbilityCheckModifierTrends,
+                abilityCheckData,
+                opponentAbilityCheckData,
+                actorWinsTies: false);
         }    
     }
 
@@ -592,6 +604,13 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                 yield break;
             }
 
+            // Panache lasts only during a battle
+            if (Gui.Battle == null)
+            {
+                rulesetCharacter.RemoveCondition(activeCondition);
+                yield break;
+            }
+
             var stillInRange = Gui.Battle
                 .GetContenders(actingCharacter, withinRange: 12)
                 .Any(x => x == source);
@@ -601,7 +620,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                 rulesetCharacter.RemoveCondition(activeCondition);
                 
                 rulesetCharacter.LogCharacterActivatesAbility(
-                    $"Feature/&{Name}PanacheTitle",
+                    $"Feature/&Power{Name}PanacheTitle",
                     $"Feedback/&{Name}PanacheTooFarApart");
             }
         }
@@ -625,7 +644,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                 rulesetDefender.RemoveCondition(activeCondition);
                 
                 rulesetDefender.LogCharacterActivatesAbility(
-                    $"Feature/&{Name}PanacheTitle",
+                    $"Feature/&Power{Name}PanacheTitle",
                     $"Feedback/&{Name}PanacheBrokenByAlly");
             }
         }
@@ -665,6 +684,13 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                 yield break;
             }
 
+            // Panache lasts only during a battle
+            if (Gui.Battle == null)
+            {
+                rulesetCharacter.RemoveCondition(activeCondition);
+                yield break;
+            }
+
             var stillInRange = Gui.Battle
                 .GetContenders(actingCharacter, withinRange: 12)
                 .Any(x => 
@@ -689,7 +715,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
                         contender.RulesetCharacter.RemoveCondition(targetCondition);
                         
                         rulesetCharacter.LogCharacterActivatesAbility(
-                            $"Feature/&{Name}PanacheTitle",
+                            $"Feature/&Power{Name}PanacheTitle",
                             $"Feedback/&{Name}PanacheTooFarApart");
                         break;
                     }

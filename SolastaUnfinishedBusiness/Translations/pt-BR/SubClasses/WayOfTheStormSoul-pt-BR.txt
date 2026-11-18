@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Esta marca pode explodir a qualquer momento e causar 5D10 de dano de trovão.
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Esta marca pode explodir a qualquer momento e causar 5D10 de dano de relâmpago.
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=Marca da Tempestade
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=Sempre que você usa sua Rajada de Golpes, você também ganha os benefícios da ação de desengajar. Ataques bônus fornecidos por ela causam dano de raio extra igual ao seu dado de artes marciais.
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=Discípulo das Tempestades

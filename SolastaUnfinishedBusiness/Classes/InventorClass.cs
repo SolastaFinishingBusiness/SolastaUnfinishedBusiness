@@ -1071,6 +1071,8 @@ internal class TryAlterOutcomeSavingThrowFlashOfGenius(FeatureDefinitionPower po
 
             abilityCheckModifier.AbilityCheckModifier += bonus;
             abilityCheckData.AbilityCheckSuccessDelta += bonus;
+            // the running total includes the bonus (read by the reactions' log lines)
+            abilityCheckData.AbilityCheckRoll += bonus;
             abilityCheckData.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckSuccessDelta >= 0
                 ? RollOutcome.Success
                 : RollOutcome.Failure;

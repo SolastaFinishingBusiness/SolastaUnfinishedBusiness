@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=Como uma ação livre, você
 Feature/&PowerRavenScionHeartSeekingShotTitle=Tiro em Busca do Coração
 Feedback/&AdditionalDamageSniperAimFormat=Mira do Sniper
 Feedback/&AdditionalDamageSniperAimLine=A Mira do Atirador causa +{2} de dano extra!
-Feedback/&TriggerRavenScionRerollLine={0} rola {1} = {2}. Foco Mortal forçará um acerto crítico.
+Feedback/&TriggerRavenScionRerollLine={0} rola {1} = {2}. Foco Mortal permite repetir o ataque com vantagem.
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=Use seu foco mortal para tentar o ataque novamente.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=Use seu foco mortal para tentar o ataque novamente.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=Tentar novamente o ataque
