@@ -189,25 +189,21 @@ internal static class ConcentrationDamageContext
 
     private static void Resolve(DamageFrame frame)
     {
-        if (frame.Failed)
-        {
-            return;
-        }
-
         var actor = frame.Actor;
 
-        if (actor.ConcentratedSpell != null && !WildShapeChecks && IsWildShapeForm(actor))
+        // a call that threw makes no check of its own; the calls made inside it still do
+        if (!frame.Failed && actor.ConcentratedSpell != null && !WildShapeChecks && IsWildShapeForm(actor))
         {
             // a Wild Shape form calls for no save itself; once reduced to 0, the character in it saves against the
             // overflow it took
             if (actor.IsDeadOrDyingOrUnconscious &&
                 actor.OriginalFormCharacter is { } owner &&
-                frame.Children.Where(x => x.Actor == owner).Sum(Counted) is var overflow and > 0)
+                frame.Children.Where(x => x.Actor == owner && !x.Failed).Sum(Counted) is var overflow and > 0)
             {
                 Report(actor, owner, overflow, frame.DamageType);
             }
         }
-        else if (actor.ConcentratedSpell != null)
+        else if (!frame.Failed && actor.ConcentratedSpell != null)
         {
             if (!actor.IsDeadOrDyingOrUnconscious)
             {
@@ -221,7 +217,7 @@ internal static class ConcentrationDamageContext
                 // a dropped shape: the character in it saves for the spell, against the whole hit
                 var damage = TemporaryHitPointsCount
                     ? frame.Received
-                    : OwnHitPointsLost(frame) + frame.Children.Where(x => x.Actor == owner).Sum(OwnHitPointsLost);
+                    : OwnHitPointsLost(frame) + frame.Children.Where(x => x.Actor == owner && !x.Failed).Sum(OwnHitPointsLost);
 
                 if (damage > 0)
                 {
@@ -230,8 +226,12 @@ internal static class ConcentrationDamageContext
             }
             else
             {
-                // the game's immediate break for a creature that dropped (GameLocationCharacter.CheckConcentration)
-                actor.BreakConcentration();
+                // the game's immediate break for a creature that dropped (GameLocationCharacter.CheckConcentration),
+                // unless a feature keeps its concentration from damage
+                if (!KeepsConcentrationFromDamage(actor))
+                {
+                    actor.BreakConcentration();
+                }
             }
         }
 
@@ -293,7 +293,7 @@ internal static class ConcentrationDamageContext
     /// </summary>
     private static void RollCheck(RulesetCharacter roller, RulesetCharacter holder, int damage, string damageType)
     {
-        if (damage <= 0 || holder.ConcentratedSpell == null)
+        if (damage <= 0 || holder.ConcentratedSpell == null || KeepsConcentrationFromDamage(holder))
         {
             return;
         }
@@ -304,11 +304,6 @@ internal static class ConcentrationDamageContext
         {
             holder.BreakConcentration();
 
-            return;
-        }
-
-        if (KeepsConcentrationFromDamage(holder))
-        {
             return;
         }
 
