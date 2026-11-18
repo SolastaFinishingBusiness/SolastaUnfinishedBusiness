@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=在魔法洞察力的指引下，你使用施�
 Stage/&IdentityMorphotypeEyeHeader=眼型
 Stage/&SubclassSelectionStageDomainFeatures=神圣领域特性
 Stage/&SubclassSelectionStageDomainHeader=神圣领域
+Stage/&SubclassSelectionStageDomainNoneDescription=你必须选择一个神圣领域。
 Subclass/&TraditionOpenHandDescription=散打宗的武僧致力于战斗的技艺。 无论是赤手空拳还是白刃在身, 他们都是终极的战技大师。他们精通投技和绊摔, 运用“气”的神秘力量来保护和治疗己身。
 Subclass/&TraditionOpenHandTitle=散打宗
 Tag/&PrimalOrderCantripSpecialTagTitle=原初职能戏法

@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -58,6 +59,85 @@ public static class CharacterStageClassSelectionPanelPatcher
             {
                 commonData.PersonalityMapPanel.RefreshNow();
             }
+        }
+
+        //PATCH: draws the class tiles' bottom lines and corner marks for the grid's real column count. The game's
+        //OnBeginShow works them out for two columns (index / 2, index % 2), but ClassesTable lays the 326 px tiles out
+        //three to a 980 px row, so with a class count that leaves a short last row the frames land on the wrong tiles.
+        [UsedImplicitly]
+        public static void Postfix([NotNull] CharacterStageClassSelectionPanel __instance)
+        {
+            var table = __instance.classesTable;
+
+            if (!table)
+            {
+                return;
+            }
+
+            var slots = new List<GridSelectionSlot>();
+
+            for (var i = 0; i < table.childCount; i++)
+            {
+                var child = table.GetChild(i);
+
+                if (child.gameObject.activeSelf && child.TryGetComponent<GridSelectionSlot>(out var slot))
+                {
+                    slots.Add(slot);
+                }
+            }
+
+            var columns = GetColumnCount(table, slots.Count);
+
+            for (var i = 0; i < slots.Count; i++)
+            {
+                // a bottom line where no tile is below; a corner mark on every inner corner (not the first row or
+                // column)
+                if (slots[i].bottomLine)
+                {
+                    slots[i].bottomLine.gameObject.SetActive(i + columns >= slots.Count);
+                }
+
+                if (slots[i].crossHair)
+                {
+                    slots[i].crossHair.gameObject.SetActive(i % columns > 0 && i / columns > 0);
+                }
+            }
+        }
+
+        // The column count GridLayoutGroup lays the tiles out in (its SetCellsAlongAxis): a fixed column count, the
+        // children over a fixed row count rounded up, or as many cells as fit in the width inside the padding.
+        private static int GetColumnCount(RectTransform table, int childCount)
+        {
+            var grid = table.GetComponent<GridLayoutGroup>();
+
+            if (!grid)
+            {
+                return 1;
+            }
+
+            int columns;
+
+            switch (grid.constraint)
+            {
+                case GridLayoutGroup.Constraint.FixedColumnCount:
+                    columns = grid.constraintCount;
+                    break;
+                case GridLayoutGroup.Constraint.FixedRowCount:
+                    columns = Mathf.CeilToInt(childCount / (float)grid.constraintCount - 0.001f);
+                    break;
+                default:
+                    var width = table.rect.width;
+
+                    columns = grid.cellSize.x + grid.spacing.x <= 0
+                        ? int.MaxValue
+                        : Mathf.FloorToInt(
+                            (width - grid.padding.horizontal + grid.spacing.x + 0.001f) /
+                            (grid.cellSize.x + grid.spacing.x));
+                    break;
+            }
+
+            // never more columns than tiles: a flexible grid with no horizontal pitch lays every tile out in one row
+            return Math.Max(1, Math.Min(columns, childCount));
         }
     }
 

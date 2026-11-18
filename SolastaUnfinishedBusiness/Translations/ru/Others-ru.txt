@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=Руководствуясь вспышкой �
 Stage/&IdentityMorphotypeEyeHeader=Вид глаз
 Stage/&SubclassSelectionStageDomainFeatures=Умения Божественного Домена
 Stage/&SubclassSelectionStageDomainHeader=Божественный Домен
+Stage/&SubclassSelectionStageDomainNoneDescription=Нужно выбрать божественный домен.
 Subclass/&TraditionOpenHandDescription=Монахи, избравшие этот путь, являются непревзойдёнными мастерами боевых искусств, вне зависимости от того, вооружены ли они. Они изучают техники, позволяющие толкать и опрокидывать противника, а также лечить себя, манипулируя энергией ци. Используемые ими медитации позволяют защититься от получаемого вреда.
 Subclass/&TraditionOpenHandTitle=Путь открытой ладони
 Tag/&PrimalOrderCantripSpecialTagTitle=Заговор Первобытного порядка
