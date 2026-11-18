@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Models;
 
 namespace SolastaUnfinishedBusiness.Patches;
@@ -44,7 +48,7 @@ public static class ConcentrationDamagePatcher
         [UsedImplicitly]
         public static Exception Finalizer(Exception __exception, object __state)
         {
-            ConcentrationDamageContext.EndSustainDamage(__state);
+            ConcentrationDamageContext.EndSustainDamage(__state, __exception);
 
             return __exception;
         }
@@ -118,8 +122,9 @@ public static class ConcentrationDamagePatcher
         }
     }
 
-    //PATCH: supports `CombineConcentrationChecks`: one activation of an environment effect the game triggers directly
-    //(traps, gadgets) is one damage instance; of its three overloads, the one taking the active effect applies the forms
+    //PATCH: supports `CombineConcentrationChecks`: each target of an environment effect the game triggers directly
+    //(traps, gadgets) is one damage instance, closed before the next target saves. Of TriggerEnvironmentEffect's three
+    //overloads, the one taking the active effect applies the forms, once per target.
     [HarmonyPatch(typeof(GameLocationEnvironmentManager),
         nameof(GameLocationEnvironmentManager.TriggerEnvironmentEffect), typeof(RulesetEffectEnvironment))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
@@ -127,18 +132,17 @@ public static class ConcentrationDamagePatcher
     public static class TriggerEnvironmentEffect_Patch
     {
         [UsedImplicitly]
-        [HarmonyPriority(Priority.First)]
-        public static void Prefix(out object __state)
+        public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
         {
-            __state = ConcentrationDamageContext.Begin();
-        }
+            var applyEffectFormsMethod = typeof(IRulesetImplementationService).GetMethod(
+                nameof(IRulesetImplementationService.ApplyEffectForms));
+            var inScopeMethod = typeof(ConcentrationDamageContext).GetMethod(
+                nameof(ConcentrationDamageContext.ApplyEffectFormsInScope),
+                BindingFlags.Static | BindingFlags.NonPublic);
 
-        [UsedImplicitly]
-        public static Exception Finalizer(Exception __exception, object __state)
-        {
-            ConcentrationDamageContext.End(__state as ConcentrationDamageContext.DamageInstance);
-
-            return __exception;
+            return instructions.ReplaceCalls(applyEffectFormsMethod,
+                "GameLocationEnvironmentManager.TriggerEnvironmentEffect",
+                new CodeInstruction(OpCodes.Call, inScopeMethod));
         }
     }
 
