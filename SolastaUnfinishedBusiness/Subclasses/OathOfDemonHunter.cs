@@ -355,7 +355,7 @@ public sealed class OathOfDemonHunter : AbstractSubclass
         var featureRestoreChannelDivinity = FeatureDefinitionBuilder
             .Create($"Feature{Name}DemonSlayerRestoreChannelDivinity")
             .SetGuiPresentationNoContent(true)
-            .AddCustomSubFeatures(new OnReducedToZeroHpByMeOrAllyDemonSlayer(conditionTrialMark, powerTrialMark))
+            .AddCustomSubFeatures(new OnReducedToZeroHpByMeOrAllyDemonSlayer(conditionTrialMark))
             .AddToDB();
 
         var featureSetDemonSlayer = FeatureDefinitionFeatureSetBuilder
@@ -719,8 +719,7 @@ public sealed class OathOfDemonHunter : AbstractSubclass
 
     // Demon Slayer - Restore Channel Divinity when marked enemy dies
     private sealed class OnReducedToZeroHpByMeOrAllyDemonSlayer(
-        ConditionDefinition conditionTrialMark,
-        FeatureDefinitionPower powerTrialMark) : IOnReducedToZeroHpByMeOrAlly
+        ConditionDefinition conditionTrialMark) : IOnReducedToZeroHpByMeOrAlly
     {
         public IEnumerator HandleReducedToZeroHpByMeOrAlly(
             GameLocationCharacter attacker,
@@ -745,9 +744,12 @@ public sealed class OathOfDemonHunter : AbstractSubclass
                 yield break;
             }
 
-            // Restore one use of Channel Divinity (Trial Mark power)
-            var usablePower = PowerProvider.Get(powerTrialMark, rulesetAlly);
-            rulesetAlly.UpdateUsageForPowerPool(-1, usablePower);
+            // Restore one use of Channel Divinity: the game counts spent Channel Divinity, not the power's own uses, in
+            // the Paladin's pool (its own with the 2024 Paladin option, else the shared one)
+            Tabletop2024Context.RegainChannelDivinity(
+                rulesetAlly,
+                Tabletop2024Context.GetChannelDivinityPool(
+                    rulesetAlly, DatabaseHelper.CharacterClassDefinitions.Paladin));
         }
     }
 

@@ -641,7 +641,12 @@ public sealed class PathOfTheBeast : AbstractSubclass
                 .SetTargetingData(Side.All, RangeType.Distance, 12, TargetType.IndividualsUnique)
                 .SetSavingThrowData(false, AttributeDefinitions.Wisdom, true,
                     EffectDifficultyClassComputation.AbilityScoreAndProficiency, AttributeDefinitions.Constitution)
-                .SetEffectForms(EffectFormBuilder.ConditionForm(conditionInfectiousFury))
+                // marked only on a failed Wisdom save
+                .SetEffectForms(EffectFormBuilder
+                    .Create()
+                    .HasSavingThrow(EffectSavingThrowType.Negates)
+                    .SetConditionForm(conditionInfectiousFury, ConditionForm.ConditionOperation.Add)
+                    .Build())
                 .Build())
             .AddToDB();
 

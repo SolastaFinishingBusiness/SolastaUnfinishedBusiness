@@ -95,6 +95,8 @@ public sealed class OathOfHatred : AbstractSubclass
                     .SetEffectForms(
                         EffectFormBuilder
                             .Create()
+                            // cursed only on a failed Wisdom save
+                            .HasSavingThrow(EffectSavingThrowType.Negates)
                             .SetConditionForm(
                                 conditionScornfulPrayer,
                                 ConditionForm.ConditionOperation.Add)
