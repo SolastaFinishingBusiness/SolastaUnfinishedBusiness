@@ -390,6 +390,8 @@ Feedback/&BreakFreeAttempt={0} は {2} から抜け出そうとします
 Feedback/&ChangeGloombladeDieType={1} はグルームブレードのダイスの種類を {2} から {3} に変更します
 Feedback/&ChangeSneakDiceDieType={1} はスニークダイスの種類を {2} から {3} に変更します
 Feedback/&ChangeSneakDiceNumber={1} はスニーク ダイス番号を {2} から {3} に変更します
+Feedback/&ConcentrationCheckDamageCappedTooltip=受けたダメージ: {0}。DC は 10 とダメージの半分のうち高い方で、最大 30 です。
+Feedback/&ConcentrationCheckDamageTooltip=受けたダメージ: {0}。DC は 10 とダメージの半分のうち高い方です。
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} ロールで {1} を維持 {2} 対難易度 {3}、ロール {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} ロールで {1} 対難易度 {2} を維持、ロール {3} = {4}
 Feedback/&FlankingAttack=側面攻撃

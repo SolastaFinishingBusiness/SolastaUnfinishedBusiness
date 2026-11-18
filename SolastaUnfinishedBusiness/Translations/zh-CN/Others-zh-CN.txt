@@ -390,6 +390,8 @@ Feedback/&BreakFreeAttempt={0} 试图摆脱 {2}
 Feedback/&ChangeGloombladeDieType={1} 将 gloomblade 模具类型从 {2} 更改为 {3}
 Feedback/&ChangeSneakDiceDieType={1} 将偷袭骰类型从 {2} 更改为 {3}
 Feedback/&ChangeSneakDiceNumber={1} 将偷袭骰值从 {2} 更改为 {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=受到的伤害：{0}。DC 为 10 与伤害一半中的较高者，最高为 30。
+Feedback/&ConcentrationCheckDamageTooltip=受到的伤害：{0}。DC 为 10 与伤害一半中的较高者。
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} 掷骰以维持 {1} {2} 对抗 DC {3}，掷骰 {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} 掷骰以维持 {1} 对抗 DC {2}，掷骰 {3} = {4}
 Feedback/&FlankingAttack=背后夹击

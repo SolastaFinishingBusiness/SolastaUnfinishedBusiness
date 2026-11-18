@@ -390,6 +390,8 @@ Feedback/&BreakFreeAttempt={0} tenta se libertar de {2}
 Feedback/&ChangeGloombladeDieType={1} altera o tipo de dado da lâmina sombria de {2} para {3}
 Feedback/&ChangeSneakDiceDieType={1} altera o tipo de dado furtivo de {2} para {3}
 Feedback/&ChangeSneakDiceNumber={1} altera o número do dado furtivo de {2} para {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=Dano sofrido: {0}. A CD é o maior valor entre 10 e metade do dano, no máximo 30.
+Feedback/&ConcentrationCheckDamageTooltip=Dano sofrido: {0}. A CD é o maior valor entre 10 e metade do dano.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} rola para manter {1} {2} versus DC {3}, rola {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} rola para manter {1} versus DC {2}, rola {3} = {4}
 Feedback/&FlankingAttack=Flanqueando

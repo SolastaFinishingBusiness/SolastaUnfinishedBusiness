@@ -390,6 +390,8 @@ Feedback/&BreakFreeAttempt={0} essaie de se libérer de {2}
 Feedback/&ChangeGloombladeDieType={1} change le type de dé de la lame sombre de {2} à {3}
 Feedback/&ChangeSneakDiceDieType={1} change le type de dé furtif de {2} à {3}
 Feedback/&ChangeSneakDiceNumber={1} change le nombre de dés furtifs de {2} à {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=Dégâts subis : {0}. Le DD est le plus élevé entre 10 et la moitié des dégâts, 30 au maximum.
+Feedback/&ConcentrationCheckDamageTooltip=Dégâts subis : {0}. Le DD est le plus élevé entre 10 et la moitié des dégâts.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} lance pour maintenir {1} {2} contre DC {3}, lance {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} lance pour maintenir {1} contre DC {2}, lance {3} = {4}
 Feedback/&FlankingAttack=Flanquant
