@@ -6,4 +6,5 @@
 - Lizardfolk's Nature's Intuition description now says two skills, which is what it gives.
 - Bountiful Luck's combat log lines now show its name.
 - Warforged (Battleborn) no longer sleep: they get no sleep hours on rests or in camp, so those hours are free for crafting.
+- Aasimar (Malakh): Angelic Radiance's description now says 10 feet instead of "10 feat".
 - Not tested in game: all of the above.
