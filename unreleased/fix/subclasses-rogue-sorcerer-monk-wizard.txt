@@ -12,4 +12,7 @@
 - Arcane Fighter: the extra 1d8 now applies to weapon attacks only.
 - War Magic: Power Surge is only regained when Counterspell actually ends the spell.
 - Descriptions now match what these do: Cloak of Shadows (short rest), Psion Telekinetic push and pull (1 sorcery point), Raven's Deadly Focus (reroll with advantage), Umbral Soul (twice your rogue level), Eye of the Storm (lightning).
+- Swashbuckler: Panache's contest is now one combat log line with both rolls and their modifiers (the losing check no longer reads "Success"), reactions that change ability checks can now be used on it, and the power has an icon. A tie still goes to the target.
+- Swashbuckler: the two Rakish Audacity features are now titled "Rakish Audacity (Initiative)" and "Rakish Audacity (Sneak Attack)".
+- Contested checks (shove, grapple, Panache and others using the mod's contest): each side's total no longer counts its bonus twice after the reaction step, bonuses such as Tactical Mind, Flash of Genius, Weal/Woe and Bend Luck now count in the contest, and two reactions on one check (a bonus then a reroll, or two rerolls) no longer add up to a die nobody rolled; this also applies to other checks that reactions can change (Counterspell, for one).
 - Not tested in game: all of the above.

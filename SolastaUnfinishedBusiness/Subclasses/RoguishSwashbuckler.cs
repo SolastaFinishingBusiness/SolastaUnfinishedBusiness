@@ -108,7 +108,7 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
 
         var powerPanache = FeatureDefinitionPowerBuilder
             .Create($"Power{Name}Panache")
-            .SetGuiPresentation(Category.Feature)
+            .SetGuiPresentation(Category.Feature, FeatureDefinitionPowers.PowerRoguishHoodlumMenacing)
             .SetUsesFixed(ActivationTime.Action, RechargeRate.AtWill)
             .SetEffectDescription(
                 EffectDescriptionBuilder
@@ -447,6 +447,9 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
             }
         }
 
+        // Persuasion against Insight through the shared contest resolver: one contest line in the combat log with both
+        // rolls and their modifiers, and the reactions that can change an ability check. The attacker needs a strictly
+        // higher total.
         private static IEnumerator ResolveContest(
             GameLocationCharacter actor,
             GameLocationCharacter opponent,
@@ -455,70 +458,37 @@ public sealed class RoguishSwashbuckler : AbstractSubclass
         {
             var rulesetActor = actor.RulesetCharacter;
             var rulesetOpponent = opponent.RulesetCharacter;
+            var actionModifierActor = new ActionModifier();
+            var actionModifierOpponent = new ActionModifier();
 
             var actorBonus = rulesetActor.ComputeBaseAbilityCheckBonus(
                 AttributeDefinitions.Charisma,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
+                actionModifierActor.AbilityCheckModifierTrends,
                 SkillDefinitions.Persuasion);
 
             var opponentBonus = rulesetOpponent.ComputeBaseAbilityCheckBonus(
                 AttributeDefinitions.Wisdom,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
+                actionModifierOpponent.AbilityCheckModifierTrends,
                 SkillDefinitions.Insight);
 
-            var actorTotal = rulesetActor.RollAbilityCheck(
+            yield return TryAlterOutcomeAttributeCheck.ResolveContestCheck(
+                rulesetActor,
                 actorBonus,
+                actionModifierActor.AbilityCheckModifier,
                 AttributeDefinitions.Charisma,
                 SkillDefinitions.Persuasion,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
-                abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends,
-                0,
-                0,
-                false,
-                -1,
-                out var actorRaw,
-                out var actorFirst,
-                out var actorSecond,
-                out var actorOutcome,
-                out var actorDelta,
-                true,
-                true,
-                true);
-
-            var opponentTotal = rulesetOpponent.RollAbilityCheck(
+                actionModifierActor.AbilityCheckAdvantageTrends,
+                actionModifierActor.AbilityCheckModifierTrends,
+                rulesetOpponent,
                 opponentBonus,
+                actionModifierOpponent.AbilityCheckModifier,
                 AttributeDefinitions.Wisdom,
                 SkillDefinitions.Insight,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends,
-                opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends,
-                0,
-                0,
-                false,
-                -1,
-                out var opponentRaw,
-                out var opponentFirst,
-                out var opponentSecond,
-                out var opponentOutcome,
-                out var opponentDelta,
-                true,
-                true,
-                true);
-
-            if (actorTotal > opponentTotal)
-            {
-                abilityCheckData.AbilityCheckRollOutcome = RollOutcome.Success;
-                abilityCheckData.AbilityCheckSuccessDelta = actorTotal - opponentTotal;
-            }
-            else
-            {
-                abilityCheckData.AbilityCheckRollOutcome = RollOutcome.Failure;
-                abilityCheckData.AbilityCheckSuccessDelta = opponentTotal - actorTotal;
-            }
-
-            abilityCheckData.AbilityCheckRoll = actorRaw;
-            opponentAbilityCheckData.AbilityCheckRoll = opponentRaw;
-
-            yield break;
+                actionModifierOpponent.AbilityCheckAdvantageTrends,
+                actionModifierOpponent.AbilityCheckModifierTrends,
+                abilityCheckData,
+                opponentAbilityCheckData,
+                actorWinsTies: false);
         }    
     }
 
