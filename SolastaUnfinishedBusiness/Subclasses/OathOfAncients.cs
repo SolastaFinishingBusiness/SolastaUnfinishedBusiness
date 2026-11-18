@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.CustomUI;
@@ -271,29 +272,12 @@ public sealed class OathOfAncients : AbstractSubclass
     internal override DeityDefinition DeityDefinition { get; }
 
     // Resistance to damage from spells: the resistances are added when a spell is about to hit the warded creature
-    // and removed once that spell has finished, so they cover only the spell's own damage.
+    // and removed once that spell has finished, so they cover only the spell's own damage. The removal is registered on
+    // the spell's effect with the creature and condition it added, so it happens even when the warded creature or the
+    // aura's paladin went down during the spell.
     private sealed class MagicEffectBeforeHitConfirmedOnMeAuraWarding(ConditionDefinition conditionWardingAura)
-        : IMagicEffectBeforeHitConfirmedOnMe, IMagicEffectFinishedOnMeAnyState
+        : IMagicEffectBeforeHitConfirmedOnMe
     {
-        // runs even when the spell left the warded creature unconscious, so the resistances never outlast the spell
-        public IEnumerator OnMagicEffectFinishedOnMeAnyState(
-            CharacterAction action,
-            GameLocationCharacter attacker,
-            GameLocationCharacter defender,
-            List<GameLocationCharacter> targets)
-        {
-            var rulesetDefender = defender.RulesetCharacter;
-
-            if (rulesetDefender != null &&
-                rulesetDefender.TryGetConditionOfCategoryAndType(
-                    AttributeDefinitions.TagEffect, conditionWardingAura.Name, out var activeCondition))
-            {
-                rulesetDefender.RemoveCondition(activeCondition);
-            }
-
-            yield break;
-        }
-
         public IEnumerator OnMagicEffectBeforeHitConfirmedOnMe(
             GameLocationBattleManager battleManager,
             GameLocationCharacter attacker,
@@ -311,7 +295,7 @@ public sealed class OathOfAncients : AbstractSubclass
 
             var rulesetDefender = defender.RulesetCharacter;
 
-            rulesetDefender.InflictCondition(
+            var activeCondition = rulesetDefender.InflictCondition(
                 conditionWardingAura.Name,
                 DurationType.Round,
                 0,
@@ -324,6 +308,14 @@ public sealed class OathOfAncients : AbstractSubclass
                 0,
                 0,
                 0);
+
+            EffectFinishedCleanup.Add(rulesetEffect, () =>
+            {
+                if (rulesetDefender.AllConditions.Contains(activeCondition))
+                {
+                    rulesetDefender.RemoveCondition(activeCondition);
+                }
+            });
 
             yield break;
         }
