@@ -136,7 +136,8 @@ public static class CharacterStageClassSelectionPanelPatcher
                     break;
             }
 
-            return Math.Max(1, columns);
+            // never more columns than tiles: a flexible grid with no horizontal pitch lays every tile out in one row
+            return Math.Max(1, Math.Min(columns, childCount));
         }
     }
 
