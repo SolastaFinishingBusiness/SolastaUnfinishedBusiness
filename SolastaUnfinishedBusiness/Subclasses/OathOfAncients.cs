@@ -309,6 +309,13 @@ public sealed class OathOfAncients : AbstractSubclass
                 0,
                 0);
 
+            // the game refreshes a ward already on the creature (a second ray of the same spell) and returns null;
+            // that ward's removal was registered when it was added
+            if (activeCondition == null)
+            {
+                yield break;
+            }
+
             // matched by the condition's id: the game pools condition objects, so the same object can come back as
             // another condition on this creature once the ward is gone
             var wardGuid = activeCondition.Guid;
