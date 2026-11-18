@@ -27,6 +27,29 @@ public static class ConcentrationDamagePatcher
         }
     }
 
+    //PATCH: supports `CombineConcentrationChecks`: marks SustainDamage calls on a shape (Wild Shape form), so the
+    //overflow they pass on to the character in the shape is not counted twice
+    [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.SustainDamage))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class SustainDamage_Patch
+    {
+        [UsedImplicitly]
+        [HarmonyPriority(Priority.First)]
+        public static void Prefix(RulesetCharacter __instance, out bool __state)
+        {
+            __state = ConcentrationDamageContext.BeginSustainDamage(__instance);
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception, bool __state)
+        {
+            ConcentrationDamageContext.EndSustainDamage(__state);
+
+            return __exception;
+        }
+    }
+
     //PATCH: supports `CombineConcentrationChecks`: one recurring tick of a condition is one damage instance, on both
     //the mod's replacement path and the game's own
     [HarmonyPatch(typeof(RulesetActor), nameof(RulesetActor.ExecuteRecurrentForms))]

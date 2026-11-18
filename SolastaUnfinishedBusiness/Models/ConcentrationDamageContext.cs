@@ -12,7 +12,9 @@ namespace SolastaUnfinishedBusiness.Models;
 ///     CombineConcentrationChecks setting, each damage instance gets a <see cref="DamageInstance" />:
 ///     <list type="bullet">
 ///         <item>one attack's hit with its damage riders, including rider powers the attacker starts from the
-///         attack's finished handlers (<see cref="OpenRiderWindow" />);</item>
+///         attack's finished handlers (<see cref="OpenRiderWindow" />); the attack's coroutine waits for those powers
+///         to end and then rolls the checks itself (<see cref="FinishHit" />), so the roll always comes at the same
+///         point of the attack whatever the frame timing of the parallel rider coroutines;</item>
 ///         <item>one target entry of a spell or power (a Magic Missile dart, a Radiant Motes mote and an Eldritch Blast
 ///         beam are each their own entry);</item>
 ///         <item>one application of a spell, power or environment effect on a creature (entering an area, a turn's
@@ -21,7 +23,9 @@ namespace SolastaUnfinishedBusiness.Models;
 ///     While an instance is the innermost open scope, the damage each creature takes is added up from
 ///     RulesetActor.AccountReceivedDamage, which RulesetCharacter.SustainDamage calls with the damage after difficulty
 ///     scaling and before temporary hit points take their share; the game's own checks for a still-conscious creature
-///     only mark that creature for a check. Once the instance has no holds left, each marked creature makes one check
+///     only mark that creature for a check. Damage to a shape (Wild Shape) counts for the character in that shape: the
+///     full hit the shape takes counts, and the overflow SustainDamage then passes on to the character does not count
+///     again. Once the instance has no holds left, each marked creature makes one check
 ///     against its total, without a damage type. Losing consciousness still ends concentration at once, through the
 ///     game's own path. Every computer runs the same instances in the same order, so the rolls happen at the same point
 ///     of the shared dice sequence.
@@ -30,8 +34,11 @@ internal static class ConcentrationDamageContext
 {
     private static readonly Stack<DamageInstance> Scopes = new();
 
-    // the rider window of each attacker whose physical attack is running its finished handlers
-    private static readonly Dictionary<GameLocationCharacter, DamageInstance> RiderWindows = new();
+    // each attack's hit instance, from its damage until FinishHit (or GuardHit) releases it
+    private static readonly ConditionalWeakTable<CharacterAction, DamageInstance> Hits = new();
+
+    // the open rider windows of each attacker, innermost last (an attack can start in another one's handlers)
+    private static readonly Dictionary<GameLocationCharacter, List<DamageInstance>> RiderWindows = new();
 
     // rider power actions and the hit instance they belong to
     private static readonly ConditionalWeakTable<CharacterActionParams, DamageInstance> Riders = new();
@@ -39,12 +46,77 @@ internal static class ConcentrationDamageContext
     // set while the combined checks of an instance are rolled, so those checks are not gathered again
     private static bool _rollingCombined;
 
+    // depth of SustainDamage calls on shapes (Wild Shape forms) in progress; the overflow those calls pass on to the
+    // character in the shape is not counted again
+    private static int _shapeDamageDepth;
+
     private static bool IsActive => Main.Settings.CombineConcentrationChecks && Scopes.Count > 0 && !_rollingCombined;
 
-    /// <summary>A new instance with one hold, released with <see cref="Release" />; null with the setting off.</summary>
-    internal static DamageInstance NewInstance()
+    /// <summary>
+    ///     The instance of an attack's hit, with one hold the attack keeps until <see cref="FinishHit" />; null with
+    ///     the setting off.
+    /// </summary>
+    internal static DamageInstance NewHit(CharacterAction action)
     {
-        return Main.Settings.CombineConcentrationChecks ? new DamageInstance { Holds = 1 } : null;
+        if (!Main.Settings.CombineConcentrationChecks)
+        {
+            return null;
+        }
+
+        var instance = new DamageInstance { Holds = 1 };
+
+        Hits.Remove(action);
+        Hits.Add(action, instance);
+
+        return instance;
+    }
+
+    /// <summary>
+    ///     Closes the hit's rider window, waits for the rider powers started in it to end (each holds the instance until
+    ///     then), and releases the attack's hold, which rolls the combined checks in the attack's coroutine. A rider
+    ///     action always runs (GameLocationActionManager.ExecuteInstantSingleAction adds it to the unstoppable
+    ///     coroutines) and releases its hold in a finally block.
+    /// </summary>
+    internal static IEnumerator FinishHit(CharacterAction action)
+    {
+        if (!Hits.TryGetValue(action, out var instance))
+        {
+            yield break;
+        }
+
+        CloseRiderWindow(action.ActingCharacter, instance);
+
+        while (instance.Holds > 1)
+        {
+            yield return null;
+        }
+
+        Hits.Remove(action);
+        Release(instance);
+    }
+
+    /// <summary>
+    ///     Runs an attack's coroutine; if it ends without reaching <see cref="FinishHit" /> (an exception), the hit's
+    ///     window is closed and its hold released there.
+    /// </summary>
+    internal static IEnumerator GuardHit(IEnumerator execute, CharacterAction action)
+    {
+        try
+        {
+            while (execute.MoveNext())
+            {
+                yield return execute.Current;
+            }
+        }
+        finally
+        {
+            if (Hits.TryGetValue(action, out var instance))
+            {
+                Hits.Remove(action);
+                CloseRiderWindow(action.ActingCharacter, instance);
+                Release(instance);
+            }
+        }
     }
 
     /// <summary>
@@ -111,17 +183,32 @@ internal static class ConcentrationDamageContext
     ///     While an attacker's physical attack runs its finished handlers, rider powers the attacker starts
     ///     (<see cref="TagRider" />) join the hit's instance.
     /// </summary>
-    internal static void OpenRiderWindow(GameLocationCharacter attacker, DamageInstance instance)
+    internal static void OpenRiderWindow(CharacterAction action)
     {
-        if (instance != null)
+        if (!Hits.TryGetValue(action, out var instance))
         {
-            RiderWindows[attacker] = instance;
+            return;
         }
+
+        if (!RiderWindows.TryGetValue(action.ActingCharacter, out var windows))
+        {
+            windows = [];
+            RiderWindows[action.ActingCharacter] = windows;
+        }
+
+        windows.Add(instance);
     }
 
-    internal static void CloseRiderWindow(GameLocationCharacter attacker, DamageInstance instance)
+    private static void CloseRiderWindow(GameLocationCharacter attacker, DamageInstance instance)
     {
-        if (instance != null && RiderWindows.TryGetValue(attacker, out var open) && open == instance)
+        if (!RiderWindows.TryGetValue(attacker, out var windows))
+        {
+            return;
+        }
+
+        windows.Remove(instance);
+
+        if (windows.Count == 0)
         {
             RiderWindows.Remove(attacker);
         }
@@ -134,10 +221,13 @@ internal static class ConcentrationDamageContext
     internal static void TagRider(GameLocationCharacter user, CharacterActionParams actionParams)
     {
         if (!Main.Settings.CombineConcentrationChecks ||
-            !RiderWindows.TryGetValue(user, out var instance))
+            !RiderWindows.TryGetValue(user, out var windows) ||
+            windows.Count == 0)
         {
             return;
         }
+
+        var instance = windows[windows.Count - 1];
 
         instance.Holds++;
         Riders.Remove(actionParams);
@@ -185,12 +275,42 @@ internal static class ConcentrationDamageContext
     /// </summary>
     internal static void AddReceivedDamage(RulesetActor actor, int damage)
     {
-        if (!IsActive || damage <= 0)
+        var isShape = actor is RulesetCharacter { OriginalFormCharacter: not null };
+
+        // the overflow a shape's SustainDamage passes on to the character in the shape is already in the shape's count
+        if (!IsActive || damage <= 0 || (!isShape && _shapeDamageDepth > 0))
         {
             return;
         }
 
-        Scopes.Peek().GetEntry(actor).Damage += damage;
+        Scopes.Peek().GetEntry(GetOwner(actor)).Damage += damage;
+    }
+
+    /// <summary>Called before RulesetCharacter.SustainDamage: true for a shape, whose call must then be ended.</summary>
+    internal static bool BeginSustainDamage(RulesetCharacter character)
+    {
+        if (character.OriginalFormCharacter == null)
+        {
+            return false;
+        }
+
+        _shapeDamageDepth++;
+
+        return true;
+    }
+
+    internal static void EndSustainDamage(bool begun)
+    {
+        if (begun && _shapeDamageDepth > 0)
+        {
+            _shapeDamageDepth--;
+        }
+    }
+
+    // a shape's damage and checks belong to the character in the shape, whose form can change within one instance
+    private static RulesetActor GetOwner(RulesetActor actor)
+    {
+        return actor is RulesetCharacter { OriginalFormCharacter: { } original } ? original : actor;
     }
 
     /// <summary>
@@ -204,7 +324,7 @@ internal static class ConcentrationDamageContext
             return false;
         }
 
-        var entry = Scopes.Peek().GetEntry(character.RulesetCharacter);
+        var entry = Scopes.Peek().GetEntry(GetOwner(character.RulesetCharacter));
 
         entry.Character = character;
 
