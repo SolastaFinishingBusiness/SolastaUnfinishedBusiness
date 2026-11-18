@@ -14,5 +14,5 @@
 - Descriptions now match what these do: Cloak of Shadows (short rest), Psion Telekinetic push and pull (1 sorcery point), Raven's Deadly Focus (reroll with advantage), Umbral Soul (twice your rogue level), Eye of the Storm (lightning).
 - Swashbuckler: Panache's contest is now one combat log line with both rolls and their modifiers (the losing check no longer reads "Success"), reactions that change ability checks can now be used on it, and the power has an icon. A tie still goes to the target.
 - Swashbuckler: the two Rakish Audacity features are now titled "Rakish Audacity (Initiative)" and "Rakish Audacity (Sneak Attack)".
-- Contested checks (shove, grapple, Panache and others using the mod's contest): each side's total no longer counts its bonus twice after the reaction step, so the bigger bonus no longer wins more often than it should.
+- Contested checks (shove, grapple, Panache and others using the mod's contest): each side's total no longer counts its bonus twice after the reaction step, Primal Knowledge's Strength bonus counts once, and two rerolls of one check (Lucky after Magical Guidance, for one) no longer add up to a die nobody rolled.
 - Not tested in game: all of the above.

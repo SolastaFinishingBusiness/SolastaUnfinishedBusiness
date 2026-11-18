@@ -304,8 +304,9 @@ internal static class TryAlterOutcomeAttributeCheck
         var opponentTotalRoll = opponentBaseBonus + opponentRawRoll + opponentRollModifier;
 
         // handle actor interruptions
-        // AbilityCheckRoll holds the total: rerolls and die changes add their difference to it, and bonuses such as
-        // Bardic Inspiration go to AbilityCheckActionModifier.AbilityCheckModifier
+        // AbilityCheckRoll holds the running total: every reaction adds what it changes (a reroll's die difference,
+        // a bonus); a bonus is also added to AbilityCheckActionModifier.AbilityCheckModifier, so the part of the
+        // change that isn't a bonus is the die's
         PrepareActorAbilityCheckData();
 
         var actorTotalBefore = totalRoll;
@@ -313,11 +314,9 @@ internal static class TryAlterOutcomeAttributeCheck
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(rulesetCharacter), abilityCheckData, rawRoll);
 
-        var actorDieChange = abilityCheckData.AbilityCheckRoll - actorTotalBefore;
-
-        totalRoll = actorTotalBefore + actorDieChange +
-                    abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        rawRoll += actorDieChange;
+        rawRoll += abilityCheckData.AbilityCheckRoll - actorTotalBefore -
+                   abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
+        totalRoll = abilityCheckData.AbilityCheckRoll;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // handle opponent interruptions
@@ -328,11 +327,9 @@ internal static class TryAlterOutcomeAttributeCheck
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(opponent), opponentAbilityCheckData, opponentRawRoll);
 
-        var opponentDieChange = opponentAbilityCheckData.AbilityCheckRoll - opponentTotalBefore;
-
-        opponentTotalRoll = opponentTotalBefore + opponentDieChange +
-                            opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        opponentRawRoll += opponentDieChange;
+        opponentRawRoll += opponentAbilityCheckData.AbilityCheckRoll - opponentTotalBefore -
+                           opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
+        opponentTotalRoll = opponentAbilityCheckData.AbilityCheckRoll;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
         // calculate final results
@@ -421,8 +418,17 @@ internal static class TryAlterOutcomeAttributeCheck
             foreach (var tryAlterOutcomeAttributeCheck in unit.RulesetCharacter
                          .GetSubFeaturesByType<ITryAlterOutcomeAttributeCheck>())
             {
+                var rollBefore = abilityCheckData.AbilityCheckRoll;
+                var modifierBefore = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
+
                 yield return tryAlterOutcomeAttributeCheck.OnTryAlterAttributeCheck(
                     battleManager, rawRoll, abilityCheckData, actingCharacter, unit);
+
+                // the next reaction sees the die as it now is: a reroll keeps its result (two failed rerolls must not
+                // add up), and a bonus, which also raises the modifier, leaves the die unchanged
+                var modifierAfter = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
+
+                rawRoll += abilityCheckData.AbilityCheckRoll - rollBefore - (modifierAfter - modifierBefore);
             }
         }
     }
@@ -484,6 +490,9 @@ internal static class TryAlterOutcomeAttributeCheck
         }
 
         var actionModifier = abilityCheckData.AbilityCheckActionModifier;
+
+        // the running total includes the bonus, as for every other reaction (Primal Knowledge, for one)
+        abilityCheckData.AbilityCheckRoll += roll;
 
         if (actionModifier != null)
         {
