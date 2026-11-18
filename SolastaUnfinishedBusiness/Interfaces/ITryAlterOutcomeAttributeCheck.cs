@@ -321,6 +321,12 @@ internal static class TryAlterOutcomeAttributeCheck
         rawRoll += actorChange - abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
 
+        // a reroll with advantage (Tides of Chaos) sets the advantage the contest line shows
+        if (abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends.Count > 0)
+        {
+            advantageTrends = [..abilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends];
+        }
+
         // handle opponent interruptions
         PrepareOpponentAbilityCheckData();
 
@@ -334,6 +340,11 @@ internal static class TryAlterOutcomeAttributeCheck
         opponentTotalRoll += opponentChange;
         opponentRawRoll += opponentChange - opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
+
+        if (opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends.Count > 0)
+        {
+            opponentAdvantageTrends = [..opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckAdvantageTrends];
+        }
 
         // calculate final results
         PrepareActorAbilityCheckData();
