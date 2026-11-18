@@ -451,6 +451,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Habilitar reglas 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Seleccionar contenido de Tabletop</color></b>
 ModUi/&TableTopHelp1=• Las siguientes secciones reagrupan y duplican las configuraciones de <color=#D89555>5e 2014 y 2024</color> esparcidas por el mod para tu conveniencia.
 ModUi/&TableTopHelp2=• Presiona los botones para <b>seleccionar solo contenido de mesa en la pestaña Personaje</b> y <b>habilitar las reglas 2014 y/o 2024</b>, para una verdadera experiencia TT
+ModUi/&TableTopHelp3=• Los botones de calidad de vida, 2014 y 2024 activan sus opciones; la mayoría surten efecto tras reiniciar <b><i><color=#C04040E0>[Requiere reinicio]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Mesa de trabajo <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Lengua de llegada
 ModUi/&TotalCraftingTimeModifier=<color=white>Reducir el tiempo de elaboración</color>
@@ -594,7 +595,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Segundos sin esperas
 ModUi/&MultiplayerShowFpsOverlay=Mostrar arriba a la izquierda, durante una sesión multijugador, una pequeña superposición con los fotogramas por segundo y los pings que puedes ver
 ModUi/&MultiplayerSpreadOverlappedCharacters=Dibujar un poco separados a los personajes que comparten casilla para poder señalar a cada uno <i><color=#F0DAA0>[solo visual: dos lado a lado, tres en triángulo, más en un anillo más amplio; vuelven al centro cuando se mueven]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tiempo y descansos:</color>
-ModUi/&PickPocketNonHostiles=Añadir también botín para robar a muchos PNJ no hostiles <i><color=#F0DAA0>[fallar afecta a la reputación]</color></i>
+ModUi/&PickPocketNonHostiles=Añadir también botín para robar a muchos PNJ no hostiles <i><color=#F0DAA0>[fallar afecta a la reputación]</color></i> <b><i><color=#C04040E0>[Requiere reinicio]</color></i></b>
 ModUi/&SearchClear=Borrar
 ModUi/&SearchNoResults=Ningún ajuste coincide con "{0}".
 ModUi/&SearchSettings=Buscar ajustes:

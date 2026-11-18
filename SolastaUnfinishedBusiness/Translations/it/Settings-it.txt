@@ -451,6 +451,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Abilita le regole del 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Seleziona contenuto Tabletop</color></b>
 ModUi/&TableTopHelp1=• Le sezioni seguenti raggruppano e duplicano le impostazioni <color=#D89555>5e 2014 e 2024</color> sparse nella mod per la tua comodità
 ModUi/&TableTopHelp2=• Premi i pulsanti per <b>selezionare solo i contenuti del tavolo nella scheda Personaggio</b> e <b>abilitare le regole del 2014 e/o del 2024</b>, per una vera esperienza TT
+ModUi/&TableTopHelp3=• I pulsanti QoL, 2014 e 2024 attivano le loro opzioni; la maggior parte ha effetto dopo il riavvio <b><i><color=#C04040E0>[Richiede il riavvio]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Da tavolo <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Lingua di destinazione
 ModUi/&TotalCraftingTimeModifier=<color=white>Riduci il tempo di creazione di</color>
@@ -594,7 +595,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Secondi senza attese
 ModUi/&MultiplayerShowFpsOverlay=Mostra in alto a sinistra, durante una sessione multigiocatore, una piccola sovrapposizione con i fotogrammi al secondo e i ping che puoi vedere
 ModUi/&MultiplayerSpreadOverlappedCharacters=Disegna leggermente distanziati i personaggi che condividono una casella così da poter indicare ciascuno <i><color=#F0DAA0>[solo visivo: due affiancati, tre a triangolo, di più in un anello più ampio; tornano al centro quando si muovono]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tempo e riposi:</color>
-ModUi/&PickPocketNonHostiles=Aggiungi bottino da borseggiare anche a molti PNG non ostili <i><color=#F0DAA0>[un fallimento influisce sulla reputazione]</color></i>
+ModUi/&PickPocketNonHostiles=Aggiungi bottino da borseggiare anche a molti PNG non ostili <i><color=#F0DAA0>[un fallimento influisce sulla reputazione]</color></i> <b><i><color=#C04040E0>[Richiede il riavvio]</color></i></b>
 ModUi/&SearchClear=Cancella
 ModUi/&SearchNoResults=Nessuna impostazione corrisponde a "{0}".
 ModUi/&SearchSettings=Cerca impostazioni:

@@ -311,6 +311,7 @@ internal static class SpellsDisplay
         if (UI.Toggle(Gui.Localize("ModUI/&SwapShineCantrip"), ref toggle, UI.AutoWidth()))
         {
             Main.Settings.SwapShineCantrip = toggle;
+            Tabletop2024Context.SwitchShineCantripDC();
         }
     }
 
