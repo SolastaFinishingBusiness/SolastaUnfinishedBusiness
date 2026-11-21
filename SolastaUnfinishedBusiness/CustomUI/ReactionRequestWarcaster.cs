@@ -2,6 +2,7 @@
 using System.Linq;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
+using SolastaUnfinishedBusiness.Patches;
 using static SolastaUnfinishedBusiness.Feats.OtherFeats;
 
 namespace SolastaUnfinishedBusiness.CustomUI;
@@ -188,6 +189,19 @@ internal class ReactionRequestWarcaster : ReactionRequest
                 spell, spell.SpellLevel, false);
 
             ReactionParams.RulesetEffect = spellEffect;
+
+            // the cast keeps the modifier evaluated for the opportunity attack's weapon, which never ran the spell
+            // attack's cover refund in CanAttack; give it here, before the clones for extra targets are made. It works
+            // on a copy, as that modifier is also the weapon option's (_attackModifiers), kept for a switch back.
+            var firstModifier = reactionParams.ActionModifiers.FirstOrDefault();
+
+            if (firstModifier != null &&
+                GameLocationBattleManagerPatcher.CanAttack_Patch.HasEnhanceArcaneFocus(rulesetCharacter))
+            {
+                firstModifier = firstModifier.Clone();
+                GameLocationBattleManagerPatcher.CanAttack_Patch.IgnoreCover(firstModifier);
+                reactionParams.ActionModifiers[0] = firstModifier;
+            }
 
             var spellTargets = spellEffect.ComputeTargetParameter();
 

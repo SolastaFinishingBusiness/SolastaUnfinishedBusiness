@@ -562,28 +562,14 @@ public static class GameLocationBattleManagerPatcher
 
             //PATCH: a spell attack by a character carrying a focus with the Enhance Arcane Focus infusion (or its
             //upgrade) ignores cover
-            if (attackParams.attacker.RulesetActor is RulesetCharacter { CharacterInventory: { } inventory } &&
-                attackParams.attackProximity is BattleDefinitions.AttackProximity.MagicRange
+            if (attackParams.attacker.RulesetActor is RulesetCharacter attackerCharacter &&
+                attackParams.attackProximity is (BattleDefinitions.AttackProximity.MagicRange
                     or BattleDefinitions.AttackProximity.MagicReach
                     or BattleDefinitions.AttackProximity.MagicTouch
-                    or BattleDefinitions.AttackProximity.MagicDistance)
+                    or BattleDefinitions.AttackProximity.MagicDistance) &&
+                HasEnhanceArcaneFocus(attackerCharacter))
             {
-                // RulesetCharacter.Items is a scratch list the game fills and clears around each use, so the
-                // inventory is enumerated into a list of our own: equipped items only (no containers, no inactive
-                // weapon configuration), as for the infusion's casting bonus
-                var items = new List<RulesetItem>();
-
-                inventory.EnumerateAllItems(items, considerContainers: false, ignoreConfigSlots: true);
-
-                // a loaded item can have a null property list, and a property whose definition didn't load (content
-                // missing from a save) has a null definition; neither counts as the infusion
-                if (items.Any(x => x.DynamicItemProperties?
-                        .Any(y => y?.FeatureDefinition != null &&
-                                  y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus",
-                                      System.StringComparison.Ordinal)) == true))
-                {
-                    IgnoreCover(attackParams.attackModifier);
-                }
+                IgnoreCover(attackParams.attackModifier);
             }
 
             if (!__result)
@@ -600,14 +586,38 @@ public static class GameLocationBattleManagerPatcher
 
         }
 
+        // Whether the character has an equipped item carrying the Enhance Arcane Focus infusion (or its upgrade).
+        // RulesetCharacter.Items is a scratch list the game fills and clears around each use, so the inventory is
+        // enumerated into a list of our own: equipped items only (no containers, no inactive weapon configuration),
+        // as for the infusion's casting bonus. A loaded item can have a null property list, and a property whose
+        // definition didn't load (content missing from a save) has a null definition; neither counts as the infusion.
+        internal static bool HasEnhanceArcaneFocus(RulesetCharacter character)
+        {
+            if (character.CharacterInventory is not { } inventory)
+            {
+                return false;
+            }
+
+            var items = new List<RulesetItem>();
+
+            inventory.EnumerateAllItems(items, considerContainers: false, ignoreConfigSlots: true);
+
+            return items.Any(x => x.DynamicItemProperties?
+                .Any(y => y?.FeatureDefinition != null &&
+                          y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus",
+                              System.StringComparison.Ordinal)) == true);
+        }
+
         // Undoes half and three-quarters cover on an attack. The game's GameLocationBattleManager.ComputeCover, run
         // inside CanAttack, subtracts the cover penalty (2 or 5) from AttackRollModifier, adds a matching
-        // AttacktoHitTrends entry with FeatureSourceType.Cover, then sets CoverType; the roll uses
-        // AttackRollModifier, while CoverType only feeds displays and AI scores. So the penalty is given back from the
-        // cover trends themselves (whatever ComputeCover added to this modifier), those trends are removed so the
-        // roll's tooltip no longer lists them, and the label is cleared. Full cover (no line of sight) is left alone:
-        // ComputeCover adds no penalty for it, and the target isn't valid.
-        private static void IgnoreCover(ActionModifier attackModifier)
+        // AttacktoHitTrends entry with FeatureSourceType.Cover, then sets CoverType. The attack roll uses
+        // AttackRollModifier; CoverType is the cover classification that the target cursor's label, AI scores and
+        // eligibility checks read (a readied attack only triggers below a maximum cover, compared against CoverType
+        // in GameLocationBattleManager.IsValidAttackForReadiedAction). So the penalty is given back from the cover
+        // trends themselves (whatever ComputeCover added to this modifier), those trends are removed so the roll's
+        // tooltip no longer lists them, and the classification is cleared. Full cover (no line of sight) is left
+        // alone: ComputeCover adds no penalty for it, and the target isn't valid.
+        internal static void IgnoreCover(ActionModifier attackModifier)
         {
             if (attackModifier.CoverType is not (CoverType.Half or CoverType.ThreeQuarter))
             {
