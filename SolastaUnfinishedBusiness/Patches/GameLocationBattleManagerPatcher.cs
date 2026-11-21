@@ -575,11 +575,12 @@ public static class GameLocationBattleManagerPatcher
 
                 inventory.EnumerateAllItems(items, considerContainers: false, ignoreConfigSlots: true);
 
-                // a property whose definition didn't load (content missing from a save) has a null definition
-                if (items.Any(x => x.DynamicItemProperties
+                // a loaded item can have a null property list, and a property whose definition didn't load (content
+                // missing from a save) has a null definition; neither counts as the infusion
+                if (items.Any(x => x.DynamicItemProperties?
                         .Any(y => y?.FeatureDefinition != null &&
                                   y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus",
-                                      System.StringComparison.Ordinal))))
+                                      System.StringComparison.Ordinal)) == true))
                 {
                     attackParams.attackModifier.coverType = CoverType.None;
                 }

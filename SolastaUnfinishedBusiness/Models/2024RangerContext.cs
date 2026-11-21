@@ -147,7 +147,13 @@ public static partial class Tabletop2024Context
         }
         else
         {
-            FeatureDefinitionCastSpells.CastSpellRanger.slotsPerLevels = SharedSpellsContext.HalfCastingSlots;
+            // the same table SpellPointsContext.SwitchFeatureDefinitionCastSpellSlots gives a level 2 Ranger, so
+            // running this switch after startup (from the menu, a preset or a host's settings) never puts the
+            // ordinary slot table back while alternate spell points are on. The spell points list is filled in place
+            // by SpellPointsContext.LateLoad, which runs after this switch at startup and sets the table again.
+            FeatureDefinitionCastSpells.CastSpellRanger.slotsPerLevels = Main.Settings.UseAlternateSpellPointsSystem
+                ? SpellPointsContext.SpellPointsHalfCastingSlots
+                : SharedSpellsContext.HalfCastingSlots;
             SharedSpellsContext.ClassCasterType[RangerClass] =
                 FeatureDefinitionCastSpellBuilder.CasterProgression.Half;
         }
