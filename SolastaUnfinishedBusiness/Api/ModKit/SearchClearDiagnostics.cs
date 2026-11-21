@@ -3,15 +3,19 @@ using UnityEngine;
 
 namespace SolastaUnfinishedBusiness.Api.ModKit;
 
-// Temporary diagnostics for the settings search Clear button: on mouse events over the search row it logs the IMGUI
-// event, the Clear button's rect and control ownership, the button's result, and every later change of the field's
-// text until the next non-empty value after a Clear. Lines go to the mod log with the prefix [I55Diag].
+// Temporary diagnostics for the settings search Clear button. On mouse events while Clear is drawn it logs the
+// event (raw and effective type before and after the button), the button's rect, mouse and keyboard ownership and
+// the button's result; after a successful Clear it logs the cleared state, the next Layout's input and published
+// query, and the first non-empty value the text field returns afterwards. Lines go to the mod log with the prefix
+// [I55Diag].
 internal static class SearchClearDiagnostics
 {
     private static bool _watchAfterClear;
+    private static bool _logNextLayout;
 
     internal struct State
     {
+        internal EventType RawType;
         internal EventType Type;
         internal Vector2 Mouse;
         internal int HotBefore;
@@ -26,17 +30,18 @@ internal static class SearchClearDiagnostics
 
     internal static void AfterTextField(string before, string after)
     {
-        var type = Event.current.rawType;
-
-        if (before != after)
+        if (before == after || !Issue55DiagnosticsPatcher.CanLog(Issue55DiagnosticsPatcher.Search))
         {
-            Log($"TextField changed on {type}: '{before}' -> '{after}' keyboard={GUIUtility.keyboardControl}");
+            return;
+        }
 
-            if (_watchAfterClear && !string.IsNullOrEmpty(after))
-            {
-                Log("TextField first non-empty value after a Clear");
-                _watchAfterClear = false;
-            }
+        Log($"TextField changed on {Event.current.rawType}/{Event.current.type}: '{before}' -> '{after}' " +
+            $"keyboard={GUIUtility.keyboardControl}");
+
+        if (_watchAfterClear && !string.IsNullOrEmpty(after))
+        {
+            Log("TextField first non-empty value after a Clear");
+            _watchAfterClear = false;
         }
     }
 
@@ -46,7 +51,8 @@ internal static class SearchClearDiagnostics
 
         return new State
         {
-            Type = current.rawType,
+            RawType = current.rawType,
+            Type = current.type,
             Mouse = current.mousePosition,
             HotBefore = GUIUtility.hotControl,
             KeyboardBefore = GUIUtility.keyboardControl,
@@ -54,28 +60,41 @@ internal static class SearchClearDiagnostics
         };
     }
 
-    internal static void AfterClear(State state, bool clicked, string input)
+    // hotControl after a MouseDown the button took is the button's own control ID
+    internal static void AfterClear(State state, Rect rect, bool clicked, string input)
     {
-        if (!clicked && !IsMouseEvent(state.Type))
+        if ((!clicked && !IsMouseEvent(state.RawType)) ||
+            !Issue55DiagnosticsPatcher.CanLog(Issue55DiagnosticsPatcher.Search))
         {
             return;
         }
 
-        // the rect of the button just drawn; on Layout passes it is a placeholder, so only mouse passes are logged
-        var rect = GUILayoutUtility.GetLastRect();
+        Log($"Clear on {state.RawType}/{state.Type}->{Event.current.type}: clicked={clicked} mouse={state.Mouse} " +
+            $"rect={rect} inside={rect.Contains(state.Mouse)} hot {state.HotBefore}->{GUIUtility.hotControl} " +
+            $"keyboard {state.KeyboardBefore}->{GUIUtility.keyboardControl} focused='{state.Focused}' input='{input}'");
+    }
 
-        Log($"Clear on {state.Type}: clicked={clicked} mouse={state.Mouse} rect={rect} inside={rect.Contains(state.Mouse)} " +
-            $"hot {state.HotBefore}->{GUIUtility.hotControl} keyboard {state.KeyboardBefore}->{GUIUtility.keyboardControl} " +
-            $"focused='{state.Focused}' input='{input}' used={Event.current.type == EventType.Used}");
+    internal static void AfterClearApplied(string input)
+    {
+        _watchAfterClear = true;
+        _logNextLayout = true;
+        Log($"Clear applied: input='{input}' keyboard={GUIUtility.keyboardControl} " +
+            $"focused='{GUI.GetNameOfFocusedControl()}'");
+    }
 
-        if (clicked)
+    internal static void OnLayout(string input, string published)
+    {
+        if (!_logNextLayout)
         {
-            _watchAfterClear = true;
+            return;
         }
+
+        _logNextLayout = false;
+        Log($"next Layout after Clear: input='{input}' published='{published}' keyboard={GUIUtility.keyboardControl}");
     }
 
     private static void Log(string msg)
     {
-        Issue55DiagnosticsPatcher.Log($"Search {msg}");
+        Issue55DiagnosticsPatcher.Log(Issue55DiagnosticsPatcher.Search, msg);
     }
 }

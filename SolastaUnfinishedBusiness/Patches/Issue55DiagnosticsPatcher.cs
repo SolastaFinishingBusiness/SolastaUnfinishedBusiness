@@ -1,32 +1,49 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using HarmonyLib;
 using JetBrains.Annotations;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
-// Temporary diagnostics for the level-up gains screen and the after-rest Close button. Every line goes to the mod
-// log with the prefix [I55Diag]; lines per launch are capped so a long session cannot flood the log. Nothing here
+// Temporary diagnostics for the level-up gains screen, the after-rest Close button and the settings search Clear.
+// Every line goes to the mod log with the prefix [I55Diag]. Each probe has its own line budget per launch, so one
+// probe can't use up another's, and a probe writes one truncation line when its budget runs out. Nothing here
 // changes what the game shows or does.
 [UsedImplicitly]
 public static class Issue55DiagnosticsPatcher
 {
-    private const int MaxLines = 600;
-    private static int _lines;
+    internal const string LevelGains = "LevelGains";
+    internal const string RestAfter = "RestAfter";
+    internal const string Search = "Search";
 
-    internal static void Log(string msg)
+    private const int LinesPerProbe = 250;
+    private static readonly Dictionary<string, int> LinesUsed = new();
+
+    // true while the probe still has budget; checked before building a message so an exhausted probe costs nothing
+    internal static bool CanLog(string probe)
     {
-        if (_lines >= MaxLines)
+        return !LinesUsed.TryGetValue(probe, out var used) || used <= LinesPerProbe;
+    }
+
+    internal static void Log(string probe, string msg)
+    {
+        LinesUsed.TryGetValue(probe, out var used);
+
+        if (used > LinesPerProbe)
         {
             return;
         }
 
-        _lines++;
-        Main.Info($"[I55Diag] f{Time.frameCount} t{Time.realtimeSinceStartup:0.00} {msg}");
+        LinesUsed[probe] = used + 1;
+
+        Main.Info(used == LinesPerProbe
+            ? $"[I55Diag] {probe} budget of {LinesPerProbe} lines used up; no more lines this launch"
+            : $"[I55Diag] f{Time.frameCount} t{Time.realtimeSinceStartup:0.00} {probe} {msg}");
     }
 
     // product of every CanvasGroup alpha from the object up to the first group that ignores its parents
@@ -47,24 +64,29 @@ public static class Issue55DiagnosticsPatcher
         return alpha;
     }
 
-    // screen-space bottom and top of a rect, in pixels from the bottom of the screen as Unity counts them
+    // the rect's four corners in screen pixels (Unity counts y from the bottom), with the canvas mode and camera used;
+    // a world-space canvas without its own camera is projected with Camera.main, as the game's raycaster does
     private static string ScreenSpan(RectTransform rect)
     {
-        if (!rect)
-        {
-            return "null";
-        }
-
         var corners = new Vector3[4];
 
         rect.GetWorldCorners(corners);
 
         var canvas = rect.GetComponentInParent<Canvas>()?.rootCanvas;
-        var camera = canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
-        var bottom = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
-        var top = RectTransformUtility.WorldToScreenPoint(camera, corners[1]);
+        var mode = canvas ? canvas.renderMode : RenderMode.ScreenSpaceOverlay;
+        var camera = mode == RenderMode.ScreenSpaceOverlay ? null : canvas!.worldCamera;
 
-        return $"y {bottom.y:0}..{top.y:0} x {bottom.x:0}";
+        if (!camera && mode == RenderMode.WorldSpace)
+        {
+            camera = Camera.main;
+        }
+
+        var points = corners.Select(c => RectTransformUtility.WorldToScreenPoint(camera, c)).ToArray();
+
+        return
+            $"x {points.Min(p => p.x):0}..{points.Max(p => p.x):0} y {points.Min(p => p.y):0}..{points.Max(p => p.y):0} " +
+            $"canvas={mode} camera={(camera ? camera.name : "none")} " +
+            $"viewport={(camera ? camera.pixelRect.ToString() : $"{Screen.width}x{Screen.height}")}";
     }
 
     private static string Describe(RectTransform rect)
@@ -81,30 +103,42 @@ public static class Issue55DiagnosticsPatcher
 
     #region Level gains
 
+    // the panel refresh each sampler belongs to; a sampler stops once a newer refresh has started its own
+    private static int _levelGainsRefresh;
+
+    private static float OwnAlpha(Component component)
+    {
+        var group = component ? component.GetComponent<CanvasGroup>() : null;
+
+        return group ? group.alpha : -1f;
+    }
+
     private static string DescribeClassFeatures(CharacterStageLevelGainsPanel panel)
     {
-        var list = panel.unlockedClassFeaturesList;
         var rows = new StringBuilder();
+        var list = panel.unlockedClassFeaturesList;
 
         if (list)
         {
             foreach (Transform child in list)
             {
-                if (!child.gameObject.activeSelf)
-                {
-                    continue;
-                }
+                var item = child.GetComponent<FeatureDescriptionItem>();
 
-                var text = child.GetComponentInChildren<TMP_Text>(true)?.text ?? "?";
-
-                rows.Append(" | ").Append(child.name).Append(": ").Append(text);
+                rows.Append(" | ")
+                    .Append(item ? item.Feature?.Name ?? "no feature" : child.name)
+                    .Append(" active=").Append(child.gameObject.activeInHierarchy);
             }
         }
 
+        var modifier = panel.unlockedClassFeaturesModifier;
+        var higher = panel.atHigherLevelModifier;
+
+        // the reveal's GuiModifierAlpha writes the modifier object's own CanvasGroup, so that alpha is logged too
         return
-            $"group[{Describe(panel.unlockedClassFeaturesGroup)}] modifierActive={panel.unlockedClassFeaturesModifier?.gameObject.activeInHierarchy} " +
-            $"higherLevel={panel.atHigherLevelGroup?.gameObject.activeInHierarchy} " +
-            $"higherLevelAlpha={(panel.atHigherLevelGroup ? EffectiveAlpha(panel.atHigherLevelGroup) : -1):0.00} rows:{rows}";
+            $"group[{Describe(panel.unlockedClassFeaturesGroup)}] " +
+            $"modifier active={(modifier ? modifier.gameObject.activeInHierarchy : null)} ownAlpha={OwnAlpha(modifier):0.00} " +
+            $"higherLevel active={(higher ? higher.gameObject.activeInHierarchy : null)} ownAlpha={OwnAlpha(higher):0.00} " +
+            $"rows:{rows}";
     }
 
     [HarmonyPatch(typeof(CharacterStageLevelGainsPanel), nameof(CharacterStageLevelGainsPanel.FillUnlockedClassFeatures))]
@@ -115,6 +149,11 @@ public static class Issue55DiagnosticsPatcher
         [UsedImplicitly]
         public static void Postfix(CharacterStageLevelGainsPanel __instance)
         {
+            if (!CanLog(LevelGains))
+            {
+                return;
+            }
+
             var level = __instance.lastGainedClassLevel;
             var subclass = __instance.lastSubclassDefinition;
             var subclassUnlocks = subclass
@@ -123,7 +162,8 @@ public static class Issue55DiagnosticsPatcher
                     .Select(x => $"{x.FeatureDefinition?.Name} hidden={x.FeatureDefinition?.GuiPresentation?.Hidden}"))
                 : "no cached subclass";
 
-            Log($"LevelGains fill: class={__instance.lastGainedClassDefinition?.Name} level={level} " +
+            Log(LevelGains,
+                $"fill #{_levelGainsRefresh + 1}: class={__instance.lastGainedClassDefinition?.Name} level={level} " +
                 $"subclass={subclass?.Name} subclassUnlocksAtLevel=[{subclassUnlocks}] " +
                 $"activeFeatures={__instance.activeFeatures?.Count} {DescribeClassFeatures(__instance)}");
         }
@@ -134,37 +174,58 @@ public static class Issue55DiagnosticsPatcher
     [UsedImplicitly]
     public static class PostRefreshCharacter_Patch
     {
-        // samples the class feature group while the panel's timed reveal runs, to tell a row that was never bound
-        // from one that was still fading in
+        // the prefix reads the reveal's settings before the game's method starts the animations and clears them
         [UsedImplicitly]
-        public static void Postfix(CharacterStageLevelGainsPanel __instance)
+        public static void Prefix(CharacterStageLevelGainsPanel __instance)
         {
-            Log($"LevelGains postRefresh: startDelay={__instance.startDelay:0.00} animate={__instance.animate} " +
-                $"groups={__instance.modifierGroups?.Count}");
+            _levelGainsRefresh++;
 
-            if (__instance.isActiveAndEnabled)
+            if (CanLog(LevelGains))
             {
-                __instance.StartCoroutine(SampleLevelGains(__instance));
+                Log(LevelGains,
+                    $"postRefresh #{_levelGainsRefresh}: startDelay={__instance.startDelay:0.00} " +
+                    $"animate={__instance.animate} groups={__instance.modifierGroups?.Count}");
             }
         }
 
-        private static IEnumerator SampleLevelGains(CharacterStageLevelGainsPanel panel)
+        // samples the class feature group while the timed reveal runs, to tell a row that was never bound from one
+        // still fading in, and once more when the Higher Level line (revealed last) has fully appeared
+        [UsedImplicitly]
+        public static void Postfix(CharacterStageLevelGainsPanel __instance)
+        {
+            if (__instance.isActiveAndEnabled && CanLog(LevelGains))
+            {
+                __instance.StartCoroutine(SampleLevelGains(__instance, _levelGainsRefresh));
+            }
+        }
+
+        private static IEnumerator SampleLevelGains(CharacterStageLevelGainsPanel panel, int refresh)
         {
             var start = Time.realtimeSinceStartup;
+            var settledLogged = false;
 
-            foreach (var at in new[] { 0.5f, 1.5f, 2.5f, 4f, 6f })
+            foreach (var at in new[] { 0.5f, 1.5f, 2.5f, 4f, 6f, 9f })
             {
                 while (Time.realtimeSinceStartup - start < at)
                 {
+                    if (!settledLogged && panel && OwnAlpha(panel.atHigherLevelModifier) >= 0.99f &&
+                        refresh == _levelGainsRefresh)
+                    {
+                        settledLogged = true;
+                        Log(LevelGains,
+                            $"#{refresh} higher level settled +{Time.realtimeSinceStartup - start:0.00}s " +
+                            DescribeClassFeatures(panel));
+                    }
+
                     yield return null;
                 }
 
-                if (!panel || !panel.isActiveAndEnabled)
+                if (!panel || !panel.isActiveAndEnabled || refresh != _levelGainsRefresh || !CanLog(LevelGains))
                 {
                     yield break;
                 }
 
-                Log($"LevelGains +{at:0.0}s {DescribeClassFeatures(panel)}");
+                Log(LevelGains, $"#{refresh} +{at:0.0}s {DescribeClassFeatures(panel)}");
             }
         }
     }
@@ -179,8 +240,23 @@ public static class Issue55DiagnosticsPatcher
             ? "null"
             : string.Join(",", panel.restModules.Select(x => x ? $"{x.name}:{x.gameObject.activeSelf}" : "null"));
 
+        // the rendered button inside the Close group: its own bounds, activity and the alpha its graphic draws with
+        var button = panel.closeGroup ? panel.closeGroup.GetComponentInChildren<Button>(true) : null;
+        var buttonText = "null";
+
+        if (button)
+        {
+            var graphic = button.targetGraphic;
+            var graphicAlpha = graphic ? graphic.canvasRenderer.GetInheritedAlpha() * graphic.color.a : -1f;
+
+            buttonText =
+                $"{button.name} {Describe(button.transform as RectTransform)} interactable={button.interactable} " +
+                $"graphicAlpha={graphicAlpha:0.00}";
+        }
+
         return
-            $"close[{Describe(panel.closeGroup)}] table[{Describe(panel.RestModulesTable)}] screenH={Screen.height} modules={modules}";
+            $"closeGroup[{Describe(panel.closeGroup)}] closeButton[{buttonText}] table[{Describe(panel.RestModulesTable)}] " +
+            $"modules={modules}";
     }
 
     [HarmonyPatch(typeof(RestAfterPanel), nameof(RestAfterPanel.Refresh))]
@@ -191,7 +267,10 @@ public static class Issue55DiagnosticsPatcher
         [UsedImplicitly]
         public static void Postfix(RestAfterPanel __instance)
         {
-            Log($"RestAfter Refresh: {DescribeRestAfter(__instance)}");
+            if (CanLog(RestAfter))
+            {
+                Log(RestAfter, $"Refresh: {DescribeRestAfter(__instance)}");
+            }
         }
     }
 
@@ -205,7 +284,12 @@ public static class Issue55DiagnosticsPatcher
         [HarmonyPriority(Priority.Last)]
         public static void Postfix(RestAfterPanel __instance)
         {
-            Log($"RestAfter OnBeginShow end: {DescribeRestAfter(__instance)}");
+            if (!CanLog(RestAfter))
+            {
+                return;
+            }
+
+            Log(RestAfter, $"OnBeginShow end: {DescribeRestAfter(__instance)}");
 
             if (__instance.isActiveAndEnabled)
             {
@@ -224,12 +308,12 @@ public static class Issue55DiagnosticsPatcher
                     yield return null;
                 }
 
-                if (!panel || !panel.isActiveAndEnabled)
+                if (!panel || !panel.isActiveAndEnabled || !CanLog(RestAfter))
                 {
                     yield break;
                 }
 
-                Log($"RestAfter +{at:0.0}s {DescribeRestAfter(panel)}");
+                Log(RestAfter, $"+{at:0.0}s {DescribeRestAfter(panel)}");
             }
         }
     }

@@ -79,6 +79,7 @@ internal static partial class UI
         {
             TrackSettingsOpenedBySearch();
             SetSearchText(_searchInput);
+            SearchClearDiagnostics.OnLayout(_searchInput, SearchText);
         }
 
         AlwaysEnabled(() =>
@@ -97,14 +98,19 @@ internal static partial class UI
                 if (IsSearching)
                 {
                     var diag = SearchClearDiagnostics.BeforeClear();
-                    var clicked = GL.Button(Gui.Localize("ModUi/&SearchClear"), GL.ExpandWidth(false));
 
-                    SearchClearDiagnostics.AfterClear(diag, clicked, _searchInput);
+                    // the two calls GUILayout.Button makes, split so the diagnostics see the button's real rect
+                    var content = new GUIContent(Gui.Localize("ModUi/&SearchClear"));
+                    var rect = GUILayoutUtility.GetRect(content, GUI.skin.button, GL.ExpandWidth(false));
+                    var clicked = GUI.Button(rect, content, GUI.skin.button);
+
+                    SearchClearDiagnostics.AfterClear(diag, rect, clicked, _searchInput);
 
                     if (clicked)
                     {
                         _searchInput = string.Empty;
                         GUI.FocusControl(null);
+                        SearchClearDiagnostics.AfterClearApplied(_searchInput);
                     }
                 }
             }
