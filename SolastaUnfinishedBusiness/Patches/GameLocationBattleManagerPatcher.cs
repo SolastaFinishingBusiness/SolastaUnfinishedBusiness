@@ -612,7 +612,7 @@ public static class GameLocationBattleManagerPatcher
         // inside CanAttack, subtracts the cover penalty (2 or 5) from AttackRollModifier, adds a matching
         // AttacktoHitTrends entry with FeatureSourceType.Cover, then sets CoverType. The attack roll uses
         // AttackRollModifier; CoverType is the cover classification that the target cursor's label, AI scores and
-        // eligibility checks read (a readied attack only triggers below a maximum cover, compared against CoverType
+        // eligibility checks read (a readied attack only triggers up to a maximum cover, compared against CoverType
         // in GameLocationBattleManager.IsValidAttackForReadiedAction). So the penalty is given back from the cover
         // trends themselves (whatever ComputeCover added to this modifier), those trends are removed so the roll's
         // tooltip no longer lists them, and the classification is cleared. Full cover (no line of sight) is left
