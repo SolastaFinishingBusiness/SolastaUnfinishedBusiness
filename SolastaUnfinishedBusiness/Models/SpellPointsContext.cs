@@ -22,7 +22,7 @@ internal static class SpellPointsContext
     internal static readonly List<int> SpellCostByLevel = [0, 2, 3, 5, 6, 7, 9, 10, 11, 13];
 
     internal static readonly List<SlotsByLevelDuplet> SpellPointsFullCastingSlots = [];
-    private static readonly List<SlotsByLevelDuplet> SpellPointsHalfCastingSlots = [];
+    internal static readonly List<SlotsByLevelDuplet> SpellPointsHalfCastingSlots = [];
     private static readonly List<SlotsByLevelDuplet> SpellPointsHalfRoundUpCastingSlots = [];
     private static readonly List<SlotsByLevelDuplet> SpellPointsOneThirdCastingSlots = [];
 
