@@ -18,24 +18,41 @@ internal static class SearchClearDiagnostics
     private static Rect _lastRepaintRect;
     private static int _lastRepaintFrame = -1;
 
-    // set by the GUI.DoButton hook while Clear is drawn: Unity's ID for the button and whether it held the mouse
-    private static int _buttonId;
-    private static bool _ownedBefore;
-    private static bool _ownedAfter;
+    // Unity's own MouseUp test in GUI.DoControl; internal, so it is called through reflection
+    private static readonly System.Func<int, bool> HasMouseControl =
+        (System.Func<int, bool>)System.Delegate.CreateDelegate(typeof(System.Func<int, bool>),
+            HarmonyLib.AccessTools.Method(typeof(GUI), "HasMouseControl", [typeof(int)]));
 
-    internal static bool DrawingClear { get; set; }
+    // filled by the GUI.DoButton hook for the current Clear call only; reset before each call, so a hook that did
+    // not run shows as unavailable instead of an earlier call's values
+    private static string _captureBefore;
+    private static string _captureAfter;
 
-    internal static void OnDoButton(int id, bool ownsMouse, bool before)
+    internal static bool DrawingClear { get; private set; }
+
+    internal static void BeginClear()
     {
-        _buttonId = id;
+        _captureBefore = null;
+        _captureAfter = null;
+        DrawingClear = true;
+    }
+
+    internal static void EndClear()
+    {
+        DrawingClear = false;
+    }
+
+    internal static void OnDoButton(int id, bool before)
+    {
+        var capture = $"id={id} hasMouseControl={HasMouseControl(id)} hot={GUIUtility.hotControl}";
 
         if (before)
         {
-            _ownedBefore = ownsMouse;
+            _captureBefore = capture;
         }
         else
         {
-            _ownedAfter = ownsMouse;
+            _captureAfter = capture;
         }
     }
 
@@ -108,8 +125,8 @@ internal static class SearchClearDiagnostics
 
         Log($"Clear on {state.RawType}/{state.Type}->{Event.current.type}: clicked={clicked} mouse={state.Mouse} " +
             $"rect={rectText} lastRepaintRect={_lastRepaintRect} (f{_lastRepaintFrame}) " +
-            $"inLastRepaintRect={_lastRepaintRect.Contains(state.Mouse)} buttonId={_buttonId} " +
-            $"ownsMouse {_ownedBefore}->{_ownedAfter} hot {state.HotBefore}->{GUIUtility.hotControl} " +
+            $"inLastRepaintRect={_lastRepaintRect.Contains(state.Mouse)} " +
+            $"doButton before[{_captureBefore ?? "unavailable"}] after[{_captureAfter ?? "unavailable"}] hot {state.HotBefore}->{GUIUtility.hotControl} " +
             $"keyboard {state.KeyboardBefore}->{GUIUtility.keyboardControl} focused='{state.Focused}' input='{input}'");
     }
 

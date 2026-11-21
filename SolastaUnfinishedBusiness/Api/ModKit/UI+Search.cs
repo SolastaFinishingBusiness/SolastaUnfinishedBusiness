@@ -102,7 +102,7 @@ internal static partial class UI
                     // the two calls GUILayout.Button makes, split so the diagnostics see the button's real rect
                     var content = new GUIContent(Gui.Localize("ModUi/&SearchClear"));
                     var rect = GUILayoutUtility.GetRect(content, GUI.skin.button, GL.ExpandWidth(false));
-                    SearchClearDiagnostics.DrawingClear = true;
+                    SearchClearDiagnostics.BeginClear();
 
                     bool clicked;
 
@@ -112,7 +112,7 @@ internal static partial class UI
                     }
                     finally
                     {
-                        SearchClearDiagnostics.DrawingClear = false;
+                        SearchClearDiagnostics.EndClear();
                     }
 
                     SearchClearDiagnostics.AfterClear(diag, rect, clicked, _searchInput);

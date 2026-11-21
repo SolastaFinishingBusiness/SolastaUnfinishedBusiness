@@ -259,7 +259,7 @@ public static class Issue55DiagnosticsPatcher
         {
             if (Api.ModKit.SearchClearDiagnostics.DrawingClear)
             {
-                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, GUIUtility.hotControl == id, true);
+                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, true);
             }
         }
 
@@ -268,7 +268,7 @@ public static class Issue55DiagnosticsPatcher
         {
             if (Api.ModKit.SearchClearDiagnostics.DrawingClear)
             {
-                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, GUIUtility.hotControl == id, false);
+                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, false);
             }
         }
     }
@@ -299,7 +299,7 @@ public static class Issue55DiagnosticsPatcher
             // IsInteractable also applies the parent CanvasGroups' interactable flags
             buttonText =
                 $"{button.name} {Describe(button.transform as RectTransform)} interactable={button.interactable} " +
-                $"isInteractable={button.IsInteractable()} {graphicText}";
+                $"isInteractable={button.IsInteractable()} isActiveAndEnabled={button.isActiveAndEnabled} {graphicText}";
         }
 
         return
