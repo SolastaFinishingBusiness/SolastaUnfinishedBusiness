@@ -413,7 +413,11 @@ public sealed class DomainDefiler : AbstractSubclass
             }
 
             attacker.SetSpecialFeatureUses(powerDyingLight.Name, isValid ? 1 : 0);
-            rulesetAttacker.LogCharacterUsedPower(powerDyingLight);
+
+            if (isValid)
+            {
+                rulesetAttacker.LogCharacterUsedPower(powerDyingLight);
+            }
         }
 
         public IEnumerator OnPhysicalAttackBeforeHitConfirmedOnEnemy(
@@ -453,7 +457,11 @@ public sealed class DomainDefiler : AbstractSubclass
             }
 
             attacker.SetSpecialFeatureUses(powerDyingLight.Name, isValid ? 1 : 0);
-            rulesetAttacker.LogCharacterUsedPower(powerDyingLight);
+
+            if (isValid)
+            {
+                rulesetAttacker.LogCharacterUsedPower(powerDyingLight);
+            }
         }
     }
 }
