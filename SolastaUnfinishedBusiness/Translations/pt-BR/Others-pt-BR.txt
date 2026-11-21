@@ -858,3 +858,4 @@ Screen/&InvocationAskStateTitle=perguntar
 Screen/&InvocationAskStateDescription=Pergunta o quanto mover a criatura a cada acerto.
 Reaction/&EldritchBlastMoveCell={0} casa
 Reaction/&EldritchBlastMoveCells={0} casas
+Rules/&RateBindChainFormatTitle=Descanso Curto

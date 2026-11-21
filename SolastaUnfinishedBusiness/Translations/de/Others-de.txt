@@ -858,3 +858,4 @@ Screen/&InvocationAskStateTitle=Nachfrage
 Screen/&InvocationAskStateDescription=Fragt bei jedem Treffer, wie weit die Kreatur bewegt wird.
 Reaction/&EldritchBlastMoveCell={0} Feld
 Reaction/&EldritchBlastMoveCells={0} Felder
+Rules/&RateBindChainFormatTitle=Kurze Rast

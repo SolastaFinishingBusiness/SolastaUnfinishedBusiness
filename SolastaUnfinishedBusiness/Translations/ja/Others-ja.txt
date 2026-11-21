@@ -858,3 +858,4 @@ Screen/&InvocationAskStateTitle=確認
 Screen/&InvocationAskStateDescription=命中するたびにクリーチャーをどれだけ動かすか確認する。
 Reaction/&EldritchBlastMoveCell={0}マス
 Reaction/&EldritchBlastMoveCells={0}マス
+Rules/&RateBindChainFormatTitle=小休憩

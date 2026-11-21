@@ -858,3 +858,4 @@ Screen/&InvocationAskStateTitle=demander
 Screen/&InvocationAskStateDescription=Demande de combien déplacer la créature à chaque coup réussi.
 Reaction/&EldritchBlastMoveCell={0} case
 Reaction/&EldritchBlastMoveCells={0} cases
+Rules/&RateBindChainFormatTitle=Repos court

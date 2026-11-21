@@ -858,3 +858,4 @@ Message/&CraftingStartWarningAccept=Start crafting
 Message/&FeatureDetailsChosen=Chosen: {0}
 Message/&FeatureDetailsIncludes=Includes:
 Message/&FeatureDetailsUses=<b>Uses left:</b> {0} of {1}
+Rules/&RateBindChainFormatTitle=Short Rest
