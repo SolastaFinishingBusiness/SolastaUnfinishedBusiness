@@ -314,7 +314,11 @@ public sealed class RangerSkyWarrior : AbstractSubclass
             var rulesetHelper = helper.RulesetCharacter;
             var usablePower = PowerProvider.Get(powerGhostlyHowl, rulesetHelper);
 
+            // an enemy's hit on the ranger: an ally's attack, or one an earlier reaction already turned into a miss,
+            // isn't one
             if (helper != defender ||
+                !attacker.IsOppositeSide(defender.Side) ||
+                action.AttackRollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess) ||
                 !defender.CanReact() ||
                 !defender.CanPerceiveTarget(attacker) ||
                 !defender.IsWithinRange(attacker, 12) ||
@@ -345,19 +349,8 @@ public sealed class RangerSkyWarrior : AbstractSubclass
             GameLocationCharacter attacker,
             List<GameLocationCharacter> targets)
         {
-            var rulesetEffect = action.ActionParams.RulesetEffect;
-
-            if (action.Countered ||
-                action is CharacterActionCastSpell { ExecutionFailed: true } ||
-                action.AttackRoll == 0 ||
-                action.AttackRollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess) ||
-                (rulesetEffect != null &&
-                 !rulesetEffect.EffectDescription.NeedsToRollDie()))
-            {
-                yield break;
-            }
-
-            HandleConditionAndDamage(attacker, action.AttackRollOutcome == RollOutcome.CriticalSuccess);
+            // Death from Above follows melee weapon attacks only, never spell attacks
+            yield break;
         }
 
         public IEnumerator OnPhysicalAttackFinishedByMe(
@@ -370,7 +363,9 @@ public sealed class RangerSkyWarrior : AbstractSubclass
             int damageAmount)
         {
             if (action.AttackRoll == 0 ||
-                action.AttackRollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess))
+                action.AttackRollOutcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess) ||
+                // melee weapon attacks only
+                !ValidatorsWeapon.IsMelee(attackMode))
             {
                 yield break;
             }

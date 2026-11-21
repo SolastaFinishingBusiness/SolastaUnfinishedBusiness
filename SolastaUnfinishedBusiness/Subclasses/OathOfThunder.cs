@@ -228,7 +228,7 @@ public sealed class OathOfThunder : AbstractSubclass
             .SetEffectDescription(
                 EffectDescriptionBuilder
                     .Create()
-                    .SetTargetingData(Side.Enemy, RangeType.Distance, 12, TargetType.Cube, 5)
+                    .SetTargetingData(Side.Enemy, RangeType.Distance, 12, TargetType.Cube, 3)
                     .SetSavingThrowData(true, AttributeDefinitions.Dexterity, true,
                         EffectDifficultyClassComputation.SpellCastingFeature)
                     .SetParticleEffectParameters(PowerDomainElementalLightningBlade)

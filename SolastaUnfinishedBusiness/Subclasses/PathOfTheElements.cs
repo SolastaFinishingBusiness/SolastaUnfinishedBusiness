@@ -40,7 +40,7 @@ public sealed class PathOfTheElements : AbstractSubclass
 
         var powerStorm = FeatureDefinitionPowerBuilder
             .Create($"Power{Name}Storm")
-            .SetGuiPresentation($"Ancestry{Name}Wildfire", Category.Feature,
+            .SetGuiPresentation($"Ancestry{Name}Storm", Category.Feature,
                 Gui.Format($"Feature/&Ancestry{Name}AllDescription", Gui.Localize("Rules/&DamageLightningTitle")),
                 hidden: true)
             .SetUsesFixed(ActivationTime.NoCost)
@@ -68,7 +68,7 @@ public sealed class PathOfTheElements : AbstractSubclass
 
         var powerBlizzard = FeatureDefinitionPowerBuilder
             .Create($"Power{Name}Blizzard")
-            .SetGuiPresentation($"Ancestry{Name}Wildfire", Category.Feature,
+            .SetGuiPresentation($"Ancestry{Name}Blizzard", Category.Feature,
                 Gui.Format($"Feature/&Ancestry{Name}AllDescription", Gui.Localize("Rules/&DamageColdTitle")),
                 hidden: true)
             .SetUsesFixed(ActivationTime.NoCost)
@@ -436,7 +436,7 @@ public sealed class PathOfTheElements : AbstractSubclass
         var featureSetElementalConduit = FeatureDefinitionFeatureSetBuilder
             .Create($"FeatureSet{Name}{ElementalConduit}")
             .SetGuiPresentation(Category.Feature,
-                Gui.Format($"Feature/&FeatureSet{Name}{ElementalBurst}Description",
+                Gui.Format($"Feature/&FeatureSet{Name}{ElementalConduit}Description",
                     Gui.Localize($"Feature/&Power{Name}{ElementalConduit}StormDescription"),
                     Gui.Localize($"Feature/&Feature{Name}{ElementalConduit}BlizzardDescription"),
                     Gui.Localize($"Feature/&Feature{Name}{ElementalConduit}WildfireDescription")))

@@ -150,7 +150,7 @@ public sealed class OathOfDread : AbstractSubclass
                     .SetDurationData(DurationType.Round, 0, TurnOccurenceType.StartOfTurn)
                     .SetTargetingData(Side.Enemy, RangeType.Distance, 6, TargetType.IndividualsUnique)
                     .SetEffectForms(
-                        EffectFormBuilder.DamageForm(DamageTypeNecrotic),
+                        EffectFormBuilder.DamageForm(DamageTypePsychic),
                         EffectFormBuilder.ConditionForm(CustomConditionsContext.StopMovement))
                     .SetImpactEffectParameters(DreadfulOmen)
                     .Build())
