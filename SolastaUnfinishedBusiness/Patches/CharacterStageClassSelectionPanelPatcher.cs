@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -58,6 +59,121 @@ public static class CharacterStageClassSelectionPanelPatcher
             {
                 commonData.PersonalityMapPanel.RefreshNow();
             }
+        }
+
+        //PATCH: draws the class tiles' bottom lines and corner marks for the grid's real column count. The game's
+        //OnBeginShow works them out for two columns (index / 2, index % 2), but ClassesTable lays the 326 px tiles out
+        //three to a 980 px row, so with a class count that leaves a short last row the frames land on the wrong tiles.
+        //A tile's prefab has a top, left and bottom frame but no right one (the next tile's left frame or the panel's
+        //edge draws it), so the last tile of a short row gets a right frame of its own.
+        [UsedImplicitly]
+        public static void Postfix([NotNull] CharacterStageClassSelectionPanel __instance)
+        {
+            var table = __instance.classesTable;
+
+            if (!table)
+            {
+                return;
+            }
+
+            var slots = new List<GridSelectionSlot>();
+
+            for (var i = 0; i < table.childCount; i++)
+            {
+                var child = table.GetChild(i);
+
+                if (child.gameObject.activeSelf && child.TryGetComponent<GridSelectionSlot>(out var slot))
+                {
+                    slots.Add(slot);
+                }
+            }
+
+            var columns = GetColumnCount(table, slots.Count);
+
+            for (var i = 0; i < slots.Count; i++)
+            {
+                // a bottom line where no tile is below; a corner mark on every inner corner (not the first row or
+                // column)
+                if (slots[i].bottomLine)
+                {
+                    slots[i].bottomLine.gameObject.SetActive(i + columns >= slots.Count);
+                }
+
+                if (slots[i].crossHair)
+                {
+                    slots[i].crossHair.gameObject.SetActive(i % columns > 0 && i / columns > 0);
+                }
+
+                // the last tile, when it isn't in the last column, has an empty cell to its right
+                SetRightFrame(slots[i], i == slots.Count - 1 && i % columns != columns - 1);
+            }
+        }
+
+        // a copy of the tile's left frame, moved to its right edge; made once per tile and only shown or hidden after
+        // that, as the panel reuses its tiles
+        private static void SetRightFrame(GridSelectionSlot slot, bool show)
+        {
+            var frameRight = slot.transform.Find(FrameRightName);
+
+            if (!frameRight)
+            {
+                if (!show || slot.transform.Find("FrameLeft") is not RectTransform frameLeft)
+                {
+                    return;
+                }
+
+                var copy = UnityEngine.Object.Instantiate(frameLeft.gameObject, slot.transform);
+                var rect = (RectTransform)copy.transform;
+
+                copy.name = FrameRightName;
+                copy.transform.SetSiblingIndex(frameLeft.GetSiblingIndex() + 1);
+                rect.anchorMin = new Vector2(1f, frameLeft.anchorMin.y);
+                rect.anchorMax = new Vector2(1f, frameLeft.anchorMax.y);
+                rect.pivot = new Vector2(1f, frameLeft.pivot.y);
+                rect.anchoredPosition = new Vector2(-frameLeft.anchoredPosition.x, frameLeft.anchoredPosition.y);
+                rect.sizeDelta = frameLeft.sizeDelta;
+                frameRight = copy.transform;
+            }
+
+            frameRight.gameObject.SetActive(show);
+        }
+
+        private const string FrameRightName = "FrameRight";
+
+        // The column count GridLayoutGroup lays the tiles out in (its SetCellsAlongAxis): a fixed column count, the
+        // children over a fixed row count rounded up, or as many cells as fit in the width inside the padding.
+        private static int GetColumnCount(RectTransform table, int childCount)
+        {
+            var grid = table.GetComponent<GridLayoutGroup>();
+
+            if (!grid)
+            {
+                return 1;
+            }
+
+            int columns;
+
+            switch (grid.constraint)
+            {
+                case GridLayoutGroup.Constraint.FixedColumnCount:
+                    columns = grid.constraintCount;
+                    break;
+                case GridLayoutGroup.Constraint.FixedRowCount:
+                    columns = Mathf.CeilToInt(childCount / (float)grid.constraintCount - 0.001f);
+                    break;
+                default:
+                    var width = table.rect.width;
+
+                    columns = grid.cellSize.x + grid.spacing.x <= 0
+                        ? int.MaxValue
+                        : Mathf.FloorToInt(
+                            (width - grid.padding.horizontal + grid.spacing.x + 0.001f) /
+                            (grid.cellSize.x + grid.spacing.x));
+                    break;
+            }
+
+            // never more columns than tiles: a flexible grid with no horizontal pitch lays every tile out in one row
+            return Math.Max(1, Math.Min(columns, childCount));
         }
     }
 

@@ -593,6 +593,7 @@ Spell/&TrueStrike2024Description=魔法の洞察力のひらめきに導かれ�
 Stage/&IdentityMorphotypeEyeHeader=アイスタイル
 Stage/&SubclassSelectionStageDomainFeatures=神の領域の特徴
 Stage/&SubclassSelectionStageDomainHeader=神の領域
+Stage/&SubclassSelectionStageDomainNoneDescription=神の領域を選択する必要があります。
 Subclass/&TraditionOpenHandDescription=開手の道の僧侶たちは、戦闘術に専念しています。武器の有無にかかわらず危険な彼らは、敵を投げたりつまずかせたりしながら、気の神秘的な力を使って自分自身を守り、癒します。
 Subclass/&TraditionOpenHandTitle=開いた手の道
 Tag/&PrimalOrderCantripSpecialTagTitle=原始秩序の呪文
