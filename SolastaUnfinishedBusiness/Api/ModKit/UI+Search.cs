@@ -87,14 +87,25 @@ internal static partial class UI
             {
                 GL.Label(Gui.Localize("ModUi/&SearchSettings").Bold(), GL.ExpandWidth(false));
                 Space(10f);
+                var inputBefore = _searchInput ?? string.Empty;
+
                 _searchInput = GL.TextField(_searchInput ?? string.Empty, GL.Width(350f));
+                SearchClearDiagnostics.AfterTextField(inputBefore, _searchInput);
                 Space(10f);
 
                 // shown from the frame's search text, so every pass of the frame has the same controls
-                if (IsSearching && GL.Button(Gui.Localize("ModUi/&SearchClear"), GL.ExpandWidth(false)))
+                if (IsSearching)
                 {
-                    _searchInput = string.Empty;
-                    GUI.FocusControl(null);
+                    var diag = SearchClearDiagnostics.BeforeClear();
+                    var clicked = GL.Button(Gui.Localize("ModUi/&SearchClear"), GL.ExpandWidth(false));
+
+                    SearchClearDiagnostics.AfterClear(diag, clicked, _searchInput);
+
+                    if (clicked)
+                    {
+                        _searchInput = string.Empty;
+                        GUI.FocusControl(null);
+                    }
                 }
             }
         });
