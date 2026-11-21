@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=粉碎殴击造成额外 +{2} 伤害
 Feedback/&AdditionalDamageTrueStrikeFormat=真实打击！
 Feedback/&AdditionalDamageTrueStrikeLine={0} 攻击 {1} 并造成额外的 {2} 点光耀伤害！
 Feedback/&BreakFreeAttempt={0} 试图摆脱 {2}
+Feedback/&AttackMarginCriticalOutcome={0}（重击，+10）
 Feedback/&ChangeGloombladeDieType={1} 将 gloomblade 模具类型从 {2} 更改为 {3}
 Feedback/&ChangeSneakDiceDieType={1} 将偷袭骰类型从 {2} 更改为 {3}
 Feedback/&ChangeSneakDiceNumber={1} 将偷袭骰值从 {2} 更改为 {3}

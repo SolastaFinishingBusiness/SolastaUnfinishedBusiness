@@ -474,11 +474,15 @@ public static class CharacterActionAttackPatcher
                         out var successDelta2,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = attackRollOutcome2;
+                    __instance.AttackRollOutcome =
+                        AttackOutcomeRules.KeepCancelledCritical(__instance, attackRollOutcome2);
                     __instance.AttackSuccessDelta = successDelta2;
                 }
                 else
                 {
+                    // an automatic hit has no recompute; the cancel mark is still used up here
+                    __instance.AttackRollOutcome =
+                        AttackOutcomeRules.KeepCancelledCritical(__instance, __instance.AttackRollOutcome);
                     rulesetCharacter.AttackAutomaticHit?.Invoke(
                         rulesetCharacter, rulesetDefender, attackMode.SourceDefinition);
                 }
@@ -678,7 +682,9 @@ public static class CharacterActionAttackPatcher
                     out var successDelta2,
                     __instance.AttackRoll,
                     false);
-                __instance.AttackRollOutcome = attackRollOutcome2;
+                // the final recompute of a miss: a hit whose critical was cancelled can still have been turned into a
+                // miss by a later handler, and the cancel mark is used up here too
+                __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, attackRollOutcome2);
                 __instance.AttackSuccessDelta = successDelta2;
 
                 actingCharacter.AttackImpactOn(

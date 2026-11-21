@@ -72,7 +72,6 @@ public static class RulesetImplementationManagerPatcher
         {
             //crunchycrits
             var dieType = useVersatileDamage ? damageForm.VersatileDieType : damageForm.DieType;
-            var diceMaxValue = DiceMaxValue[(int)damageForm.dieType];
 
             if (damageForm.OverrideWithBardicInspirationDie &&
                 rulesetActor is RulesetCharacterHero hero &&
@@ -80,6 +79,10 @@ public static class RulesetImplementationManagerPatcher
             {
                 dieType = hero.GetBardicInspirationDieValue();
             }
+
+            // the maximum of the die actually rolled: a versatile weapon used two-handed or a Bardic die override
+            // changes it from the form's own die
+            var diceMaxValue = DiceMaxValue[(int)dieType];
 
             var totalDamage = rulesetActor.RollDiceAndSum(
                 dieType,
@@ -207,12 +210,11 @@ public static class RulesetImplementationManagerPatcher
             // duplicates the rolled dices
             rolledValues.AddRange([.. rolledValues]);
 
-            // doubles the rolled damage
-            damageForm.bonusDamage *= 2;
-
+            // doubles the rolled damage and the bonus; the form itself belongs to the attack mode or the effect's
+            // definition, so it must not be changed
             return Mathf.FloorToInt(
                 damageMultiplier *
-                ((2 * totalDamage) + damageForm.BonusDamage - damageRollReduction + additionalDamage));
+                ((2 * totalDamage) + (2 * damageForm.BonusDamage) - damageRollReduction + additionalDamage));
         }
 
         private static int RollDamage(

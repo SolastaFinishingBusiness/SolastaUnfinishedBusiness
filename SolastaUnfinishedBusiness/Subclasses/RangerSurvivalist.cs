@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
@@ -222,6 +223,8 @@ public sealed class RangerSurvivalist : AbstractSubclass
 
             action.AttackRoll--;
             action.AttackRollOutcome = RollOutcome.Success;
+            // keeps it a normal hit when the attack's outcome is recomputed after the reactions
+            AttackOutcomeRules.CancelCritical(action);
         }
     }
 }

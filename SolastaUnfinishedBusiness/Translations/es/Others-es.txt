@@ -387,6 +387,7 @@ Feedback/&AdditionalDamageSunderingBlowLine=¡Golpe desgarrador inflige +{2} de 
 Feedback/&AdditionalDamageTrueStrikeFormat=¡Golpe verdadero!
 Feedback/&AdditionalDamageTrueStrikeLine=¡{0} golpea a {1} y causa {2} de daño radiante adicional!
 Feedback/&BreakFreeAttempt={0} intenta liberarse de {2}
+Feedback/&AttackMarginCriticalOutcome={0} (GOLPE CRÍTICO, +10)
 Feedback/&ChangeGloombladeDieType={1} cambia el tipo de dado de Gloomblade de {2} a {3}
 Feedback/&ChangeSneakDiceDieType={1} cambia el tipo de dado furtivo de {2} a {3}
 Feedback/&ChangeSneakDiceNumber={1} cambia el número del dado furtivo de {2} a {3}

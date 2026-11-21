@@ -2529,14 +2529,7 @@ internal static class OtherFeats
                 action.AttackSuccessDelta += dieRoll - action.AttackRoll;
                 action.AttackRoll = dieRoll;
 
-                if (action.AttackSuccessDelta >= 0)
-                {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
-                }
-                else
-                {
-                    action.AttackRollOutcome = dieRoll == 1 ? RollOutcome.CriticalFailure : RollOutcome.Failure;
-                }
+                action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
 
                 rulesetHelper.LogCharacterActivatesAbility(
                     "Feat/&FeatLuckyTitle",
