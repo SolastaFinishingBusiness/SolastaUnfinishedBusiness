@@ -582,7 +582,7 @@ public static class GameLocationBattleManagerPatcher
                                   y.FeatureDefinition.Name.StartsWith("MagicAffinityInfusionEnhanceArcaneFocus",
                                       System.StringComparison.Ordinal)) == true))
                 {
-                    attackParams.attackModifier.coverType = CoverType.None;
+                    IgnoreCover(attackParams.attackModifier);
                 }
             }
 
@@ -597,7 +597,31 @@ public static class GameLocationBattleManagerPatcher
 
             //PATCH: add modifier or advantage/disadvantage for physical and spell attack
             ApplyCustomModifiers(attackParams);
-            
+
+        }
+
+        // Undoes half and three-quarters cover on an attack. The game's GameLocationBattleManager.ComputeCover, run
+        // inside CanAttack, subtracts the cover penalty (2 or 5) from AttackRollModifier, adds a matching
+        // AttacktoHitTrends entry with FeatureSourceType.Cover, then sets CoverType; the roll uses
+        // AttackRollModifier, while CoverType only feeds displays and AI scores. So the penalty is given back from the
+        // cover trends themselves (whatever ComputeCover added to this modifier), those trends are removed so the
+        // roll's tooltip no longer lists them, and the label is cleared. Full cover (no line of sight) is left alone:
+        // ComputeCover adds no penalty for it, and the target isn't valid.
+        private static void IgnoreCover(ActionModifier attackModifier)
+        {
+            if (attackModifier.CoverType is not (CoverType.Half or CoverType.ThreeQuarter))
+            {
+                return;
+            }
+
+            var trends = attackModifier.AttacktoHitTrends;
+            var penalty = trends
+                .Where(x => x.sourceType == RuleDefinitions.FeatureSourceType.Cover)
+                .Sum(x => x.value);
+
+            trends.RemoveAll(x => x.sourceType == RuleDefinitions.FeatureSourceType.Cover);
+            attackModifier.AttackRollModifier -= penalty;
+            attackModifier.CoverType = CoverType.None;
         }
 
         [NotNull]
