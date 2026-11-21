@@ -482,8 +482,10 @@ internal static class MultiplayerSessionContext
 
     // Main.UseSettings only swaps the settings object; settings whose switch functions change game definitions keep
     // the definitions built from the previous settings. These switches are idempotent, so they are run again whenever
-    // the settings object changes. Other definition-changing settings still apply only at startup.
-    private static void ReapplyDefinitionSwitches()
+    // the settings object changes, and after the mod menu's preset buttons set settings in bulk (so a host's own
+    // definitions match the settings it publishes to the room, which clients apply with these same switches). Other
+    // definition-changing settings still apply only at startup.
+    internal static void ReapplyDefinitionSwitches()
     {
         Tabletop2024Context.SwitchShineCantripDC();
         Tabletop2014Context.SwitchColdResistanceAndImmunityAlsoGrantsWeatherImmunity();

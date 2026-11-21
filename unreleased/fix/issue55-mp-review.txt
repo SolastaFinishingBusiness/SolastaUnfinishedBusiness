@@ -1,0 +1,3 @@
+- In a multiplayer room, a host who uses the QoL, 2014 or 2024 rule buttons now gets the same game changes as the players who join (Shine DC, cold weather immunities, conjure upcasting, Paladin and Barbarian level 20 features, Ranger spellcasting at level 1); before, only the joining players got them until the host restarted.
+- Spell attacks no longer stop with an error when an equipped item carries a property whose content is missing.
+- Not tested in game: both of the above; not tested on two computers.

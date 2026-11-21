@@ -66,6 +66,11 @@ internal static class ToolsDisplay
         {
             property.SetValue(Main.Settings, true);
         }
+
+        // setting the properties directly skips their switch functions; run the ones a client also runs when it
+        // takes these settings from a host, so both computers build the same definitions from them. The preset's
+        // other options still take effect after a restart.
+        MultiplayerSessionContext.ReapplyDefinitionSwitches();
     }
 
     private static void SelectTabletopSet()
