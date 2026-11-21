@@ -540,12 +540,16 @@ public sealed class InnovationVitriolist : AbstractSubclass
             GameLocationCharacter attacker,
             List<GameLocationCharacter> targets)
         {
+            // the infusion's own bonus damage neither listens for acid damage nor unsubscribes at its end
+            if (activeEffect.SourceDefinition == powerVitriolicInfusion)
+            {
+                yield break;
+            }
+
             foreach (var target in targets)
             {
                 target.RulesetActor.DamageReceived += DamageReceivedHandler;
             }
-
-            yield break;
         }
 
         public IEnumerator OnPhysicalAttackFinishedByMe(
@@ -561,7 +565,8 @@ public sealed class InnovationVitriolist : AbstractSubclass
 
             rulesetDefender.DamageReceived -= DamageReceivedHandler;
 
-            if (rulesetDefender.HasConditionOfCategoryAndType(
+            if (rollOutcome is (RollOutcome.Success or RollOutcome.CriticalSuccess) &&
+                rulesetDefender.HasConditionOfCategoryAndType(
                     AttributeDefinitions.TagEffect, conditionVitriolicInfusionMark.Name))
             {
                 InflictDamage(attacker, [defender]);
@@ -597,8 +602,9 @@ public sealed class InnovationVitriolist : AbstractSubclass
 
             var rulesetAttacker = EffectHelpers.GetCharacterByGuid(sourceGuid);
 
+            // the creature that took the acid damage is marked once for this attack or effect
             if (rulesetAttacker == null ||
-                rulesetAttacker.HasConditionOfCategoryAndType(
+                rulesetDefender.HasConditionOfCategoryAndType(
                     AttributeDefinitions.TagEffect, conditionVitriolicInfusionMark.Name))
             {
                 return;
@@ -626,6 +632,16 @@ public sealed class InnovationVitriolist : AbstractSubclass
 
             // vitriolic infusion damage is a use at will power
             attacker.MyExecuteActionSpendPower(usablePower, [.. targets]);
+
+            // the mark is used up by the bonus damage, so a later attack in the same turn needs new acid damage
+            foreach (var rulesetTarget in targets.Select(x => x.RulesetActor))
+            {
+                if (rulesetTarget.TryGetConditionOfCategoryAndType(
+                        AttributeDefinitions.TagEffect, conditionVitriolicInfusionMark.Name, out var mark))
+                {
+                    rulesetTarget.RemoveCondition(mark);
+                }
+            }
         }
     }
 }

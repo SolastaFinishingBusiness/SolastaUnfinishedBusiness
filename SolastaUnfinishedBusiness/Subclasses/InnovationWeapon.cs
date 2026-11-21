@@ -553,7 +553,8 @@ public sealed class InnovationWeapon : AbstractSubclass
         {
             var status = locationCharacter.GetActionStatus(Id.PowerBonus, ActionScope.Battle);
 
-            if (status != ActionStatus.Available)
+            // only commands an existing Steel Defender
+            if (status != ActionStatus.Available || GetBladeDefender(locationCharacter.RulesetCharacter) == null)
             {
                 return;
             }

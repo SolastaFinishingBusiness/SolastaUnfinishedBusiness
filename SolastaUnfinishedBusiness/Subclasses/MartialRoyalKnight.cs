@@ -225,7 +225,10 @@ public sealed class MartialRoyalKnight : AbstractSubclass
         {
             var rulesetDefender = defender.RulesetActor;
 
-            if (rulesetDefender is not { IsDeadOrDyingOrUnconscious: false } ||
+            // every ally in the aura holds this handler and is called once per save; only the defender's own call
+            // asks the knight, so a failed save prompts once
+            if (helper != defender ||
+                rulesetDefender is not { IsDeadOrDyingOrUnconscious: false } ||
                 !rulesetDefender.TryGetConditionOfCategoryAndType(
                     AttributeDefinitions.TagEffect,
                     "ConditionRoyalKnightInspiringProtectionAura",
@@ -260,7 +263,8 @@ public sealed class MartialRoyalKnight : AbstractSubclass
 
             void ReactionValidated()
             {
-                helper.SpendActionType(ActionDefinitions.ActionType.Reaction);
+                // the knight's reaction
+                originalHelper.SpendActionType(ActionDefinitions.ActionType.Reaction);
 
                 TryAlterOutcomeSavingThrow.TryRerollSavingThrow(attacker, defender, savingThrowData, hasHitVisual);
             }
