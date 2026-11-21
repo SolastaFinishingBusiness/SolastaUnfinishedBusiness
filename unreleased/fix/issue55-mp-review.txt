@@ -1,4 +1,0 @@
-- In a multiplayer room, a host who uses the QoL, 2014 or 2024 rule buttons now gets the same game changes as the players who join (Shine DC, cold weather immunities, conjure upcasting, Paladin and Barbarian level 20 features, Ranger spellcasting at level 1); before, only the joining players got them until the host restarted.
-- Spell attacks no longer stop with an error when an equipped item carries a property whose content is missing.
-- With alternate spell points on, switching Ranger spellcasting at level 1 off in the menu (or using the QoL or 2014 buttons, or joining a room) no longer gives a level 2 Ranger the ordinary slot table, which allowed two 1st level slots instead of one.
-- Not tested in game: all of the above; not tested on two computers.

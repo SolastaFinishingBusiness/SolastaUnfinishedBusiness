@@ -1,7 +1,0 @@
-- Paladin's "Level 20 subclass powers recharge" and Barbarian's 2024 Primal Knowledge now apply when the game starts, not only after switching them in the menu.
-- "Enable Shine DC 15" now does what it says: on, Shine's save is DC 15; off, it uses the caster's spell save DC (it was always 15).
-- Cold weather options: turning one option off no longer removes the weather immunities the other option added, nor the game's own (Frozen, Fire Shield, Boots of the Winterland, Ring of Cold Resistance and others lost their chilled and frozen immunities).
-- Ranger spellcasting at level 1 now updates the Ranger's known spells at once, so a level 1 Ranger gets spells to learn without a restart.
-- Turning off upcast Conjure Elemental and Conjure Fey now puts the spells back as they were (they stayed upcastable until a restart), and turning it on twice no longer adds the Invisible Stalker twice.
-- The QoL, 2014 and 2024 rule buttons and "pickpocketable loot on non-hostile NPCs" now say they need a restart to take full effect.
-- Not tested in game: all of the above.
