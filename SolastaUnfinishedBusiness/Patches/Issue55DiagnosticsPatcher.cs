@@ -113,6 +113,22 @@ public static class Issue55DiagnosticsPatcher
         return group ? group.alpha : -1f;
     }
 
+    // the panel's cached class, level and subclass, and the subclass unlocks at that level with their hidden flags
+    private static string DescribeUnlocks(CharacterStageLevelGainsPanel panel)
+    {
+        var level = panel.lastGainedClassLevel;
+        var subclass = panel.lastSubclassDefinition;
+        var unlocks = subclass
+            ? string.Join(", ", subclass.FeatureUnlocks
+                .Where(x => x.Level == level)
+                .Select(x => $"{x.FeatureDefinition?.Name} hidden={x.FeatureDefinition?.GuiPresentation?.Hidden}"))
+            : "no cached subclass";
+
+        return
+            $"class={panel.lastGainedClassDefinition?.Name} level={level} subclass={subclass?.Name} " +
+            $"subclassUnlocksAtLevel=[{unlocks}]";
+    }
+
     private static string DescribeClassFeatures(CharacterStageLevelGainsPanel panel)
     {
         var rows = new StringBuilder();
@@ -126,7 +142,8 @@ public static class Issue55DiagnosticsPatcher
 
                 rows.Append(" | ")
                     .Append(item ? item.Feature?.Name ?? "no feature" : child.name)
-                    .Append(" active=").Append(child.gameObject.activeInHierarchy);
+                    .Append(" self=").Append(child.gameObject.activeSelf)
+                    .Append(" hier=").Append(child.gameObject.activeInHierarchy);
             }
         }
 
@@ -135,7 +152,7 @@ public static class Issue55DiagnosticsPatcher
 
         // the reveal's GuiModifierAlpha writes the modifier object's own CanvasGroup, so that alpha is logged too
         return
-            $"group[{Describe(panel.unlockedClassFeaturesGroup)}] " +
+            $"{DescribeUnlocks(panel)} group[{Describe(panel.unlockedClassFeaturesGroup)}] " +
             $"modifier active={(modifier ? modifier.gameObject.activeInHierarchy : null)} ownAlpha={OwnAlpha(modifier):0.00} " +
             $"higherLevel active={(higher ? higher.gameObject.activeInHierarchy : null)} ownAlpha={OwnAlpha(higher):0.00} " +
             $"rows:{rows}";
@@ -154,18 +171,9 @@ public static class Issue55DiagnosticsPatcher
                 return;
             }
 
-            var level = __instance.lastGainedClassLevel;
-            var subclass = __instance.lastSubclassDefinition;
-            var subclassUnlocks = subclass
-                ? string.Join(", ", subclass.FeatureUnlocks
-                    .Where(x => x.Level == level)
-                    .Select(x => $"{x.FeatureDefinition?.Name} hidden={x.FeatureDefinition?.GuiPresentation?.Hidden}"))
-                : "no cached subclass";
-
             Log(LevelGains,
-                $"fill #{_levelGainsRefresh + 1}: class={__instance.lastGainedClassDefinition?.Name} level={level} " +
-                $"subclass={subclass?.Name} subclassUnlocksAtLevel=[{subclassUnlocks}] " +
-                $"activeFeatures={__instance.activeFeatures?.Count} {DescribeClassFeatures(__instance)}");
+                $"fill #{_levelGainsRefresh + 1}: activeFeatures={__instance.activeFeatures?.Count} " +
+                DescribeClassFeatures(__instance));
         }
     }
 
@@ -208,8 +216,12 @@ public static class Issue55DiagnosticsPatcher
             {
                 while (Time.realtimeSinceStartup - start < at)
                 {
-                    if (!settledLogged && panel && OwnAlpha(panel.atHigherLevelModifier) >= 0.99f &&
-                        refresh == _levelGainsRefresh)
+                    if (!panel || refresh != _levelGainsRefresh || !CanLog(LevelGains))
+                    {
+                        yield break;
+                    }
+
+                    if (!settledLogged && OwnAlpha(panel.atHigherLevelModifier) >= 0.99f)
                     {
                         settledLogged = true;
                         Log(LevelGains,
@@ -232,6 +244,37 @@ public static class Issue55DiagnosticsPatcher
 
     #endregion
 
+    #region Search Clear
+
+    // GUI.DoButton receives the control ID Unity uses to grab the mouse on MouseDown and to check ownership on
+    // MouseUp; while the settings search draws Clear, its ID and ownership before and after are handed to the
+    // search diagnostics
+    [HarmonyPatch(typeof(GUI), "DoButton", typeof(Rect), typeof(int), typeof(GUIContent), typeof(GUIStyle))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GuiDoButton_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(int id)
+        {
+            if (Api.ModKit.SearchClearDiagnostics.DrawingClear)
+            {
+                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, GUIUtility.hotControl == id, true);
+            }
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(int id)
+        {
+            if (Api.ModKit.SearchClearDiagnostics.DrawingClear)
+            {
+                Api.ModKit.SearchClearDiagnostics.OnDoButton(id, GUIUtility.hotControl == id, false);
+            }
+        }
+    }
+
+    #endregion
+
     #region Rest Close
 
     private static string DescribeRestAfter(RestAfterPanel panel)
@@ -247,11 +290,16 @@ public static class Issue55DiagnosticsPatcher
         if (button)
         {
             var graphic = button.targetGraphic;
-            var graphicAlpha = graphic ? graphic.canvasRenderer.GetInheritedAlpha() * graphic.color.a : -1f;
+            var graphicText = graphic
+                ? $"graphic enabled={graphic.enabled} hier={graphic.gameObject.activeInHierarchy} " +
+                  $"culled={graphic.canvasRenderer.cull} " +
+                  $"alpha={graphic.canvasRenderer.GetInheritedAlpha() * graphic.color.a:0.00}"
+                : "graphic=null";
 
+            // IsInteractable also applies the parent CanvasGroups' interactable flags
             buttonText =
                 $"{button.name} {Describe(button.transform as RectTransform)} interactable={button.interactable} " +
-                $"graphicAlpha={graphicAlpha:0.00}";
+                $"isInteractable={button.IsInteractable()} {graphicText}";
         }
 
         return
