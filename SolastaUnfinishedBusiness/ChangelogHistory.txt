@@ -1,3 +1,96 @@
+1.18.0:
+- New setting (on by default), Gameplay > Rules: one concentration saving throw per damage instance against its total damage, instead of one per damage type. An attack with all the damage it adds on the hit (smites, Sneak Attack and the like), one hit of a spell or power, entering or starting a turn in an area, or one recurring tick is one instance (a power a hit sets off afterwards, such as Spike Barrage, is its own; each cell moved through Spike Growth is its own); each Magic Missile dart, Radiant Motes mote and Eldritch Blast beam counts on its own. The DC counts the damage taken before temporary hit points absorb any of it, and monsters' concentration follows the same rule. Dropping to 0 hit points still ends concentration at once.
+- A Wild Shape form reduced to 0 hit points now makes the druid save for concentration against the whole hit (the damage carried over included); before, it called for no save. A form left with hit points saves as before. New setting, Gameplay > Rules (off by default): damage to a Wild Shape form calls for no concentration save, except the damage carried over to the druid when the form is reduced to 0 hit points (none when nothing carries over).
+- Damage absorbed by temporary hit points now counts in full for concentration saving throws; before, a hit they partly absorbed counted only what got through, and one they absorbed exactly called for no save. New setting, Gameplay > Rules (off by default): only the damage beyond temporary hit points counts (none when they absorb a hit exactly).
+- New setting, Gameplay > Rules (on with the 2024 rules): the DC of concentration saving throws is capped at 30.
+- Concentration saves no longer get bonuses tied to the damage type: Dwarven Resilience, the Belt of Dwarvenkind and similar poison advantages used to apply to concentration saves for poison damage. War Caster and other concentration bonuses still apply.
+- A concentration check's DC in the combat log now shows on hover the damage it was rolled against.
+- "Enable critical hits and misses when the difference between the AC and modified attack roll result is 10 or greater" now applies to every attack roll (it only affected Fell Handed before).
+- Critical hit damage option 1 (maximum dice) now adds the maximum of the die actually rolled, so a versatile weapon used two-handed and a Bardic Inspiration die override count properly.
+- Critical hit damage option 3 (double everything) no longer doubles the flat bonus of the spell or weapon again on every critical hit for the rest of the session.
+- A hit that only the "10 over the AC" rule makes critical now shows in the combat log as "16+6 = 22 (CRITICAL HIT, +10)", with the modifiers on hover; natural 20s and critical hits from a wider critical range are shown as before.
+- Paladin's "Level 20 subclass powers recharge" and Barbarian's 2024 Primal Knowledge now apply when the game starts, not only after switching them in the menu.
+- "Enable Shine DC 15" now does what it says: on, Shine's save is DC 15; off, it uses the caster's spell save DC (it was always 15).
+- Cold weather options: turning one option off no longer removes the weather immunities the other option added, nor the game's own (Frozen, Fire Shield, Boots of the Winterland, Ring of Cold Resistance and others lost their chilled and frozen immunities).
+- Ranger spellcasting at level 1 now updates the Ranger's known spells at once, so a level 1 Ranger gets spells to learn without a restart.
+- Turning off upcast Conjure Elemental and Conjure Fey now puts the spells back as they were (they stayed upcastable until a restart), and turning it on twice no longer adds the Invisible Stalker twice.
+- The QoL, 2014 and 2024 rule buttons and "pickpocketable loot on non-hostile NPCs" now say they need a restart to take full effect.
+- In a multiplayer room, a host who uses the QoL, 2014 or 2024 rule buttons now gets the same game changes as the players who join (Shine DC, cold weather immunities, conjure upcasting, Paladin and Barbarian level 20 features, Ranger spellcasting at level 1); before, only the joining players got them until the host restarted.
+- Spell attacks no longer stop with an error when an equipped item carries a property whose content is missing.
+- With alternate spell points on, switching Ranger spellcasting at level 1 off in the menu (or using the QoL or 2014 buttons, or joining a room) no longer gives a level 2 Ranger the ordinary slot table, which allowed two 1st level slots instead of one.
+- 2024 Relentless Rage: only Relentless Rage itself (Barbarian level 11) now leaves the Barbarian at twice their Barbarian level in hit points; other ways of staying up, such as a Half-Orc's Relentless Endurance, leave them at 1 again.
+- Enhanced Arcane Focus infusion: spell attacks by its holder, War Caster cantrips included, now ignore half and three-quarters cover, the upgraded infusion included (it never worked before).
+- Bountiful Luck, Elemental Adept, Elemental Master and other limited rerolls now keep their limits on attack rolls, saves and checks too (only damage rolls checked them).
+- Pact of the Chain: binding a familiar recovers on a short or long rest, as the game already did; the recharge label now says Short Rest, and the mod's attempt to make it long rest only (which didn't work) is removed.
+- Recurring damage that scales with caster level now uses the caster's level, not the target's (no current effect uses it).
+- Ring of Blades: the blade thrown on the casting turn now gets the higher-slot damage too.
+- Mantle of Thorns now deals 1d8 more piercing damage for each slot level above 5th, as its description says.
+- Wrathful Smite: with the 2024 smites off, its description now says psychic damage, which is what it deals; the 2024 version still says necrotic.
+- Abi-Dalzim's Horrid Wilting's description now says 12d8, the damage it deals.
+- Sonic Boom's description now gives its 30 ft radius (150 ft is its range).
+- Second Chance (halfling feat): the halfling now gets the reaction prompt, not the attacker.
+- Inventor: learning or unlearning a spell now adds or removes that spell in Spell-Storing Item.
+- Grudge Bearer: the chosen foes now have disadvantage only on opportunity attacks against you, as described, and a hero can take only one of its three versions.
+- Healer's descriptions now match what it does: Stabilize has uses equal to your Wisdom modifier, and Use Medicine heals 1d6 + your Medicine bonus + your character level.
+- Dark Kobold's Grovel, Cower and Beg and the Aasimar's Angelic Radiance now reach 10 feet, as described.
+- Lizardfolk's Nature's Intuition description now says two skills, which is what it gives.
+- Bountiful Luck's combat log lines now show its name.
+- Warforged (Battleborn) no longer sleep: they get no sleep hours on rests or in camp, so those hours are free for crafting.
+- Aasimar (Malakh): Angelic Radiance's description now says 10 feet instead of "10 feat".
+- Order domain: Voice of Authority now marks only the allies the spell targets (enemies could be marked and compelled to attack), and Order clerics get Divine Intervention at level 10 like the other domains.
+- Tempest domain: Wrath of the Storm's thunder option now scales at levels 5, 11 and 17 like the lightning one.
+- Wildfire: Cauterizing Flames now heals 2d10, as described.
+- Stars: Weal is no longer offered after a successful saving throw; Weal and Woe on ability checks now show the d6 they roll; switching constellations with Twinkling Constellations no longer spends a Starry Form or Wild Shape use and keeps the remaining time.
+- College of Elegance: Amazing Display now stops when its uses run out.
+- College of Thespian: Improved Terrific Performance's psychic damage now needs a failed save, and Terrific Performance now frightens enemies near the creature you dropped.
+- Eternal Grove: Seed of Life's last heal now comes from the druid.
+- Defiler: Dying Light is only logged when it is used.
+- Ancient Forest: Forest Barrier can now be used: cast Wall of Thorns (6th level, no spell slot, concentration) as an action, a number of times per long rest equal to your Wisdom modifier.
+- Druid Primal Order (Magician): the extra cantrip now shows its "Primal Order" label instead of a text key, and the Forest Barrier description reads correctly.
+- Moonlit Scion: Midnight's Blessing now casts its Moon Beam without spending a spell slot, as described.
+- Banneret: Inspiring Protection now spends the knight's reaction (it spent an ally's) and asks only once per failed save.
+- Grenadier: acid bombs now call for a Dexterity save, as described.
+- Psi Warrior: Force of Will now gives at least 1 temporary hit point.
+- Battle Smith: "Command Steel Defender" is no longer logged every turn when there is no Steel Defender.
+- Arcane Archer: Ever-Ready Shot's description now says it restores a use when you have none left, which is what it does.
+- Vitriolist: Vitriolic Infusion's extra acid damage now applies once per acid hit, needs the attack to hit, and no longer repeats on later attacks against the same creature that turn.
+- Vivisectionist: Organ Donation works again from level 15, with the Master versions of Emergency Surgery and Emergency Cure.
+- Resistant Armor infusion no longer makes the wearer's thrown weapons return.
+- Maneuvers: declining Riposte, Return Fire or Readied Strike no longer leaves the superiority die's damage on your next attack.
+- Demon Slayer: Judgment Mark now really gives back a use of Channel Divinity when a marked enemy dies (in the Paladin's own pool with the 2024 rules).
+- Scornful Prayer (Oath of Hatred) and Infectious Fury (Path of the Beast) now do nothing on a successful saving throw.
+- Oath of Dread: Aura of Domination now deals psychic damage, as described.
+- Oath of the Ancients: Aura of Warding now gives resistance only to the damage of the spell that triggers it, not to every hit until your next turn; Nature's Wrath now reaches 10 feet.
+- Archfey: Misty Escape now uses your reaction and needs one.
+- Oath of Thunder: Storm Herald now strikes a 3x3 area (15 feet), and its descriptions give distances in feet.
+- Path of the Elements: Elemental Conduit shows its own description, and the Storm and Blizzard damage is no longer called Wildfire.
+- Ranges now match their descriptions: Searing Vengeance 30 feet, Barrier of Stone 30 feet, Soul Hex 30 feet, Wild Surge teleport 30 feet.
+- Sky Warrior: Death from Above now follows melee weapon attacks only, and Ghostly Howl is offered only against an enemy's hit.
+- Celestial: Healing Light can always heal at least one die. Battlerager: Reckless Abandon gives at least 1 temporary hit point.
+- Cloak of Flies (Pernicious Cloak) now recharges on a short or long rest.
+- Descriptions: Blessed Glow says once per short rest and Spiritual Pact Weapon says a bonus action (what they do); the Paladin level 18 Aura of Courage and Aura of Protection descriptions are no longer swapped.
+- Way of Survival: Physical Perfection now needs a ki point; it no longer revives the monk for free.
+- School of Abjuration: cantrips no longer create or feed the Arcane Ward; in BG3 mode a spell adds its level (not twice it); Projected Ward is no longer offered on a critical miss; the Abjuration Savant text says Abjuration.
+- Oath of the Motherland: Flames of the Motherland's retaliation now deals fire damage.
+- Oath of Devotion: Holy Nimbus now gives advantage on any saving throw against spells cast by fiends or undead.
+- Way of the Light: Purity of Light now restores 4 hit points (allies half that).
+- Domain of Oblivion: Keeper of Oblivion only uses its once-per-turn heal for an enemy you can see dying within 30 feet.
+- Champion: Survivor now also heals at exactly half your hit points.
+- Rogues: Opportunist, Gloomblade, Shadow Dance, Cunning Strike and the Duelist's Bravado now need a weapon your Sneak Attack can use; Bravado also needs a melee hit.
+- Swashbuckler: Panache now makes its target immune for an hour, reports a failed contest, ends with the battle (no more errors after a fight) and shows its name in the log.
+- Eldritch Versatility: Battlefield Shorthand only copies a spell on a successful Arcana check, and each cast of a copied spell repeats the check instead of always removing it.
+- Metamagic: Powerful Spell now costs 1 sorcery point per spell level.
+- Arcane Fighter: the extra 1d8 now applies to weapon attacks only.
+- War Magic: Power Surge is only regained when Counterspell actually ends the spell.
+- Descriptions now match what these do: Cloak of Shadows (short rest), Psion Telekinetic push and pull (1 sorcery point), Raven's Deadly Focus (reroll with advantage), Umbral Soul (twice your rogue level), Eye of the Storm (lightning).
+- Swashbuckler: Panache's contest is now one combat log line with both rolls and their modifiers (the losing check no longer reads "Success"), reactions that change ability checks can now be used on it, and the power has an icon. A tie still goes to the target.
+- Swashbuckler: the two Rakish Audacity features are now titled "Rakish Audacity (Initiative)" and "Rakish Audacity (Sneak Attack)".
+- Contested checks (shove, grapple, Panache and others using the mod's contest): each side's total no longer counts its bonus twice after the reaction step, bonuses such as Tactical Mind, Flash of Genius, Weal/Woe and Bend Luck now count in the contest, and two reactions on one check (a bonus then a reroll, or two rerolls) no longer add up to a die nobody rolled; this also applies to other checks that reactions can change (Counterspell, for one).
+- Character creation: the class list's tile borders are now drawn for its three columns, so the last rows (Sorcerer, Warlock and Wizard with the Artificer on) are framed properly, and a tile alone at the end of the last row has its right border.
+- The 2024 Divine Domain level-up step now explains, before a domain is picked, that one must be selected (it showed an untranslated key).
+- The in-game updater now treats a test build as older than the release with the same number, so testers are offered that release once it is out. Test builds now carry the next version (1.18.0) instead of the last release's.
+- Not tested in game: the release build as a whole. The issue #55 fixes were tested together in single player on one development build, where most of them were seen working; the fixes made after that build were not run in game (a host using the QoL, 2014 or 2024 buttons in a room, the Ranger spell points table, a missing item property in the cover check, and Enhanced Arcane Focus removing the cover penalty, War Caster included). Not seen in game: rerolls (Lucky, Bountiful Luck and others) following the "10 over the AC" rule, Ring of Blades and Mantle of Thorns upcasting, Bountiful Luck, Battleborn sleep hours, Paladin level 20 recharge at startup, the cold weather options, critical hit option 3 twice in a row, Midnight's Blessing, the Primal Order label. Only partly seen: Grudge Bearer, Thespian's Improved Terrific Performance, Vitriolic Infusion, Aura of Warding, the Path of the Elements titles, the Wild Surge teleport, Cunning Strike with a heavy weapon, the rogue and wizard texts, the ki cost of Physical Perfection, Misty Escape with its reaction already used. Not played (no such hero in the test saves): Survivalist, Dark Kobold, Wildfire, Elegance, Eternal Grove, Defiler, Grenadier, Psi Warrior, Battle Smith, Vivisectionist, Demon Slayer, Dread, Thunder, Path of the Elements, Searing Vengeance, Barrier of Stone, Soul Hex, Wild Magic, Celestial, Battlerager, the Paladin level 18 aura texts, Motherland, Devotion, Way of the Light, Oblivion, Champion, Eldritch Versatility, Powerful Spell, Arcane Fighter, War Magic; and concentration saves of enemy casters (combined damage, one save per dart or beam, the DC cap). Not tested: anything on two computers; languages other than English; the update offer from a 1.18.0 test build to the release.
+
 1.17.0:
 - Channel Divinity under the 2024 rules: a Paladin or Cleric whose 2024 Channel Divinity option is on now has that class's own uses (a Paladin/Cleric with both options on has two separate pools). Its powers spend from its own pool; a short rest gives one use back to each 2024 pool and a long rest all. Classes on the 2014 rules keep the shared pool, with as many uses as the higher class gives, all back on any rest.
 - The number of Channel Divinity uses now follows the current options: switching a 2024 option on or off raises or lowers the maximum at once, even for heroes that levelled up with the other setting. A Blessed Soul feat's extra use still counts. The hero's saved data isn't changed.

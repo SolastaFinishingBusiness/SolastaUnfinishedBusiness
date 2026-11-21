@@ -1,6 +1,0 @@
-- 2024 Relentless Rage: only Relentless Rage itself (Barbarian level 11) now leaves the Barbarian at twice their Barbarian level in hit points; other ways of staying up, such as a Half-Orc's Relentless Endurance, leave them at 1 again.
-- Enhanced Arcane Focus infusion: spell attacks by its holder now ignore cover, the upgraded version included (it never worked before).
-- Bountiful Luck, Elemental Adept, Elemental Master and other limited rerolls now keep their limits on attack rolls, saves and checks too (only damage rolls checked them).
-- Pact of the Chain: binding a familiar recovers on a short or long rest, as the game already did; the recharge label now says Short Rest, and the mod's attempt to make it long rest only (which didn't work) is removed.
-- Recurring damage that scales with caster level now uses the caster's level, not the target's (no current effect uses it).
-- Not tested in game: all of the above.

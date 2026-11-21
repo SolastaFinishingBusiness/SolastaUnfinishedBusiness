@@ -1,2 +1,0 @@
-- Enhanced Arcane Focus infusion: spell attacks by its holder, War Caster cantrips included, now really ignore half and three-quarters cover; the cover label went away but the -2 or -5 to hit stayed on the roll.
-- Not tested in game.
