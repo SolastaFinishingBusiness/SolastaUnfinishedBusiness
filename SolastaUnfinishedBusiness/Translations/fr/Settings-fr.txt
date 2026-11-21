@@ -451,6 +451,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Activer les règles 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Sélectionnez le contenu de la table</color></b>
 ModUi/&TableTopHelp1=• Les sections suivantes regroupent et dupliquent les paramètres <color=#D89555>5e 2014 et 2024</color> dispersés dans le mod pour votre commodité
 ModUi/&TableTopHelp2=• Appuyez sur les boutons pour <b>sélectionner uniquement le contenu de table sous l'onglet Personnage</b> et <b>activer les règles 2014 et/ou 2024</b>, pour une véritable expérience TT
+ModUi/&TableTopHelp3=• Les boutons QoL, 2014 et 2024 activent leurs options ; la plupart prennent effet après un redémarrage <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Jeux de société <i>[5e 2014]</i> :</color>
 ModUi/&TargetLanguage=Langue cible
 ModUi/&TotalCraftingTimeModifier=<color=white>Réduisez le temps de fabrication de</color>
@@ -594,7 +595,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Secondes sans attent
 ModUi/&MultiplayerShowFpsOverlay=Afficher en haut à gauche, pendant une session multijoueur, une petite superposition avec les fréquences d'images et pings que vous pouvez voir
 ModUi/&MultiplayerSpreadOverlappedCharacters=Dessiner légèrement écartés les personnages qui partagent une case pour pouvoir pointer chacun <i><color=#F0DAA0>[visuel uniquement : deux côte à côte, trois en triangle, plus en anneau plus large ; ils reviennent au centre quand ils se déplacent]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Temps et repos :</color>
-ModUi/&PickPocketNonHostiles=Ajouter aussi du butin à voler à de nombreux PNJ non hostiles <i><color=#F0DAA0>[un échec affecte la réputation]</color></i>
+ModUi/&PickPocketNonHostiles=Ajouter aussi du butin à voler à de nombreux PNJ non hostiles <i><color=#F0DAA0>[un échec affecte la réputation]</color></i> <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&SearchClear=Effacer
 ModUi/&SearchNoResults=Aucun paramètre ne correspond à "{0}".
 ModUi/&SearchSettings=Rechercher des paramètres :

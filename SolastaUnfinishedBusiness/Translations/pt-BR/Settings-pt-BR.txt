@@ -451,6 +451,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Habilitar regras 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Selecionar conteúdo de mesa</color></b>
 ModUi/&TableTopHelp1=• As seções a seguir reagrupam e duplicam as configurações <color=#D89555>5e 2014 e 2024</color> espalhadas pelo mod para sua conveniência
 ModUi/&TableTopHelp2=• Pressione os botões para <b>selecionar apenas o conteúdo da mesa na aba Personagem</b> e <b>habilitar as regras de 2014 e/ou 2024</b>, para uma verdadeira experiência TT
+ModUi/&TableTopHelp3=• Os botões de qualidade de vida, 2014 e 2024 ativam suas opções; a maioria só tem efeito após reiniciar <b><i><color=#C04040E0>[Requer reinicialização]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Mesa <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Língua alvo
 ModUi/&TotalCraftingTimeModifier=<color=white>Reduza o tempo de criação em</color>
@@ -594,7 +595,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Segundos sem espera 
 ModUi/&MultiplayerShowFpsOverlay=Mostrar no canto superior esquerdo, durante uma sessão multijogador, uma pequena sobreposição com as taxas de quadros e pings que você pode ver
 ModUi/&MultiplayerSpreadOverlappedCharacters=Desenhar levemente afastados os personagens que dividem uma casa para poder apontar cada um <i><color=#F0DAA0>[só visual: dois lado a lado, três em triângulo, mais em um anel maior; eles voltam ao centro quando se movem]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tempo e descansos:</color>
-ModUi/&PickPocketNonHostiles=Também adicionar saque para furtar a muitos NPCs não hostis <i><color=#F0DAA0>[falhar afeta a reputação]</color></i>
+ModUi/&PickPocketNonHostiles=Também adicionar saque para furtar a muitos NPCs não hostis <i><color=#F0DAA0>[falhar afeta a reputação]</color></i> <b><i><color=#C04040E0>[Requer reinicialização]</color></i></b>
 ModUi/&SearchClear=Limpar
 ModUi/&SearchNoResults=Nenhuma configuração corresponde a "{0}".
 ModUi/&SearchSettings=Buscar configurações:
