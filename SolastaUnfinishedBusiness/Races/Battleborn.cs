@@ -1,4 +1,5 @@
 ﻿using SolastaUnfinishedBusiness.Builders;
+using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Models;
@@ -71,6 +72,12 @@ internal static class RaceBattlebornBuilder
                     .SetSavingThrowAdvantageType(RuleDefinitions.AdvantageType.Advantage)
                     .AddToDB(),
                 FeatureDefinitionConditionAffinitys.ConditionAffinityElfFeyAncestrySleep,
+                // "You don't need to sleep": no sleep hours in a rest or a travel camp
+                FeatureDefinitionBuilder
+                    .Create($"Feature{RaceName}NoSleep")
+                    .SetGuiPresentationNoContent(true)
+                    .AddCustomSubFeatures(NoSleepNeeded.Marker)
+                    .AddToDB(),
                 FeatureDefinitionConditionAffinitys.ConditionAffinityDiseaseImmunity,
                 FeatureDefinitionDamageAffinitys.DamageAffinityPoisonResistance)
             .AddToDB();
