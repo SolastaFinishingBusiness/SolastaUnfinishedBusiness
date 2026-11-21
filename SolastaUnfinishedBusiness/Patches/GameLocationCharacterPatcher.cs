@@ -743,6 +743,14 @@ public static class GameLocationCharacterPatcher
         [UsedImplicitly]
         public static bool Prefix(GameLocationCharacter __instance, int damage)
         {
+            //PATCH: the checks of damage dealt through RulesetCharacter.SustainDamage (the only caller, through its
+            //DamageSustained and DamageAbsorbedByTemporaryHitPoints callbacks) are worked out by
+            //ConcentrationDamageContext when the call ends
+            if (ConcentrationDamageContext.IsTrackingDamage)
+            {
+                return false;
+            }
+
             //BUGFIX: don't roll if zero damage
             if (damage <= 0)
             {

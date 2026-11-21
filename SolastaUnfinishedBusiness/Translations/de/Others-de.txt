@@ -391,6 +391,8 @@ Feedback/&AttackMarginCriticalOutcome={0} (KRITISCHER TREFFER, +10)
 Feedback/&ChangeGloombladeDieType={1} ändert den Gloomblade-Würfeltyp von {2} zu {3}
 Feedback/&ChangeSneakDiceDieType={1} ändert den Schleichwürfeltyp von {2} zu {3}
 Feedback/&ChangeSneakDiceNumber={1} ändert die Zahl der Schleichwürfel von {2} auf {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=Erlittener Schaden: {0}. Der SG ist der höhere Wert von 10 und der Hälfte des Schadens, höchstens 30.
+Feedback/&ConcentrationCheckDamageTooltip=Erlittener Schaden: {0}. Der SG ist der höhere Wert von 10 und der Hälfte des Schadens.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} Würfe zum Aufrechterhalten von {1} {2} gegen DC {3}, Würfe {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} Würfe um {1} gegen DC {2} aufrechtzuerhalten, Würfe {3} = {4}
 Feedback/&FlankingAttack=Flankieren

@@ -224,6 +224,10 @@ ModUi/&EnablePreparedSpellsTables2024=允许所有<color=#D89555>施法者</colo
 ModUi/&EnableProneAction=启用<color=#D89555>倒地</color>动作<i><color=#F0DAA0>[你可以无代价倒地]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=使推拉运动效果也适用于上/下轴
 ModUi/&PushOrPullOncePerHit=移动生物的法术或能力每命中一次，就推离或拉近该生物一次 <i><color=#F0DAA0>[斥力魔爆会为魔能爆每一道命中的光束各推离一次，哈达之攫则各拉近一次；关闭时，一次施放中只有第一次推离或拉近会移动生物]</color></i>
+ModUi/&CombineConcentrationChecks=每一次伤害只进行一次专注豁免，对抗其总伤害 <i><color=#F0DAA0>[一次武器命中及其附加伤害、一次法术或能力的命中，或一个回合的持续伤害；魔法飞弹的每一枚飞镖、Radiant Motes 的每一颗光点和魔能爆的每一道光束分别计算]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=对荒野形态造成的伤害不需要进行专注豁免 <i><color=#F0DAA0>[只有形态生命值降至 0 时转移到德鲁伊身上的伤害需要]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=临时生命值吸收的伤害不计入专注豁免 <i><color=#F0DAA0>[只计算超出部分的伤害；恰好被吸收的攻击不需要豁免]</color></i>
+ModUi/&CapConcentrationSaveDc30=专注豁免的 DC 上限为 30 <i><color=#F0DAA0>[2024 规则]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=允许<color=#D89555>游侠</color>选择任意战斗风格<i><color=#F0DAA0>[增加巨武器战斗和防护]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=在 2 级时启用 <color=#D89555>熟练探险家</color> <i><color=#F0DAA0>[获得一项游侠技能专长，并学习 2 种语言]</color></i>
 ModUi/&EnableRangerExpertise2024=在 9 级启用<color=#D89555>专业知识</color> <i><color=#F0DAA0>[获得两项游侠技能专业知识]</color></i>

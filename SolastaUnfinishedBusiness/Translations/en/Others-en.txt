@@ -397,6 +397,8 @@ Feedback/&AttackMarginCriticalOutcome={0} (CRITICAL HIT, +10)
 Feedback/&ChangeGloombladeDieType={1} changes the gloomblade die type from {2} to {3}
 Feedback/&ChangeSneakDiceDieType={1} changes the sneak die type from {2} to {3}
 Feedback/&ChangeSneakDiceNumber={1} changes the sneak dice number from {2} to {3}
+Feedback/&ConcentrationCheckDamageCappedTooltip=Damage taken: {0}. The DC is the higher of 10 and half the damage, at most 30.
+Feedback/&ConcentrationCheckDamageTooltip=Damage taken: {0}. The DC is the higher of 10 and half the damage.
 Feedback/&ConcentrationEffectCheckRolledAnyAdvantageLine={0} rolls to maintain {1} {2} versus DC {3}, rolls {4} = {5}
 Feedback/&ConcentrationEffectCheckRolledLine={0} rolls to maintain {1} versus DC {2}, rolls {3} = {4}
 Feedback/&FlankingAttack=Flanking

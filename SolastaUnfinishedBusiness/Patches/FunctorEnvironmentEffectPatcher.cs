@@ -4,6 +4,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Interfaces;
+using SolastaUnfinishedBusiness.Models;
 using TA;
 using UnityEngine;
 
@@ -192,14 +193,15 @@ public class FunctorEnvironmentEffectPatcher
                         actionModifier, saveOutcome, saveOutcomeDelta, false, index,
                         environmentManager.affectedCharacters.Count, null);
                     formsParams.effectSourceType = RuleDefinitions.EffectSourceType.Environment;
-                    service.ApplyEffectForms(
+                    //PATCH: supports `CombineConcentrationChecks`: one activation on a creature is one damage instance
+                    ConcentrationDamageContext.Apply(() => service.ApplyEffectForms(
                         activeEnvironmentEffect.EffectDescription.EffectForms,
                         formsParams,
                         null,
                         out _,
                         out _,
                         effectApplication: activeEnvironmentEffect.EffectDescription.EffectApplication,
-                        filters: activeEnvironmentEffect.EffectDescription.EffectFormFilters);
+                        filters: activeEnvironmentEffect.EffectDescription.EffectFormFilters));
                 }
 
                 environmentManager.EnvironmentEffectImpactTriggered?.Invoke(activeEnvironmentEffect, affectedCharacter);
