@@ -61,6 +61,7 @@ public static class SmiteSpells2024Context
             SpellBuilders.PowerThunderousSmite.activationTime = ActivationTime.OnAttackHitAuto;
             SpellBuilders.AdditionalDamageWrathfulSmite.specificDamageType = DamageTypeNecrotic;
             SpellsContext.WrathfulSmite.schoolOfMagic = SchoolNecromancy;
+            SpellsContext.WrathfulSmite.GuiPresentation.description = "Spell/&WrathfulSmiteDescription";
         }
         else
         {
@@ -71,6 +72,8 @@ public static class SmiteSpells2024Context
             SpellBuilders.PowerThunderousSmite.activationTime = ActivationTime.OnAttackHitMeleeAuto;
             SpellBuilders.AdditionalDamageWrathfulSmite.specificDamageType = DamageTypePsychic;
             SpellsContext.WrathfulSmite.schoolOfMagic = SchoolEvocation;
+            // the 2014 spell deals psychic damage, as the switch above sets
+            SpellsContext.WrathfulSmite.GuiPresentation.description = "Spell/&WrathfulSmite2014Description";
         }
 
         Global.RefreshControlledCharacter();

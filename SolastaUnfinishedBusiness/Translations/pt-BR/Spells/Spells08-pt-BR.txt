@@ -1,7 +1,7 @@
 Condition/&ConditionMindBlankDescription=Imune a danos psíquicos e à condição encantada.
 Condition/&ConditionMindBlankTitle=Mente em branco
 Condition/&ConditionSoulExpulsionCombatAffinityTitle=Inquieto
-Spell/&AbiDalzimHorridWiltingDescription=Você extrai a umidade de cada criatura em um cubo de 30 pés centralizado em um ponto que você escolher dentro do alcance. Cada criatura naquela área deve fazer um teste de resistência de Constituição. Construtos e mortos-vivos não são afetados, e plantas e elementais de gelo fazem esse teste de resistência com desvantagem. Uma criatura sofre 10d8 de dano necrótico em um teste de resistência falho, ou metade do dano em um teste bem-sucedido.
+Spell/&AbiDalzimHorridWiltingDescription=Você extrai a umidade de cada criatura em um cubo de 30 pés centralizado em um ponto que você escolher dentro do alcance. Cada criatura naquela área deve fazer um teste de resistência de Constituição. Construtos e mortos-vivos não são afetados, e plantas e elementais de gelo fazem esse teste de resistência com desvantagem. Uma criatura sofre 12d8 de dano necrótico em um teste de resistência falho, ou metade do dano em um teste bem-sucedido.
 Spell/&AbiDalzimHorridWiltingTitle=O Horrível Murchidão de Abi-Dalzim
 Spell/&GlibnessDescription=Até que a magia termine, quando você fizer um teste de Carisma, você pode substituir o número rolado por 15.
 Spell/&GlibnessTitle=Loquacidade
