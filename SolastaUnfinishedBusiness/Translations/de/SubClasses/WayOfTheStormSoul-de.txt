@@ -1,4 +1,4 @@
-Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Dieses Zeichen kann jederzeit explodieren und 5W10 Donnerschaden verursachen.
+Condition/&ConditionWayOfTheStormSoulEyeOfTheStormDescription=Dieses Zeichen kann jederzeit explodieren und 5W10 Blitzschaden verursachen.
 Condition/&ConditionWayOfTheStormSoulEyeOfTheStormTitle=Sturmzeichen
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsDescription=Wann immer du deinen Schlaghagel einsetzt, profitierst du auch von der Aktion „Ausweichen“. Die dadurch gewährten Bonusangriffe verursachen zusätzlichen Blitzschaden in Höhe deines Kampfkunstwürfels.
 Feature/&AdditionalDamageWayOfTheStormSoulDiscipleOfStormsTitle=Jünger der Stürme

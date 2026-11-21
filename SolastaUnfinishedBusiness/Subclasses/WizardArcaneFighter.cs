@@ -69,6 +69,8 @@ public sealed class WizardArcaneFighter : AbstractSubclass
             .SetNotificationTag(Name)
             .SetFrequencyLimit(FeatureLimitedUsage.OncePerTurn)
             .SetDamageDice(DieType.D8, 1)
+            // weapon attacks only, never spell attacks
+            .SetAttackModeOnly()
             .AddToDB();
 
         Subclass = CharacterSubclassDefinitionBuilder

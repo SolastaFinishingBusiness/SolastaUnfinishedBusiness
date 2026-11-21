@@ -27,6 +27,18 @@ public sealed class AbilityCheckData
     public int AbilityCheckSuccessDelta { get; set; }
     public ActionModifier AbilityCheckActionModifier { get; set; }
     public CharacterAction Action { get; set; }
+
+    /// <summary>
+    ///     Set by a reaction that rerolls the d20 with advantage or disadvantage (Tides of Chaos), during its call: the
+    ///     trends of that reroll. The check's own ActionModifier is left as it is, as callers reuse it for later checks.
+    /// </summary>
+    public List<TrendInfo> RerollAdvantageTrends { get; set; }
+
+    /// <summary>
+    ///     How the die the check keeps was rolled, after the reactions: null for the original die, else the trends of
+    ///     the last reroll (empty for a straight one). Set by HandleITryAlterOutcomeAttributeCheck.
+    /// </summary>
+    public List<TrendInfo> KeptDieAdvantageTrends { get; set; }
 }
 
 internal static class TryAlterOutcomeAttributeCheck
@@ -233,8 +245,11 @@ internal static class TryAlterOutcomeAttributeCheck
         List<TrendInfo> opponentModifierTrends,
         AbilityCheckData abilityCheckData,
         AbilityCheckData opponentAbilityCheckData,
-        bool notify = true)
+        bool notify = true,
+        bool actorWinsTies = true)
     {
+        // actorWinsTies: with equal totals the actor succeeds (shove, grapple); when false the actor needs a strictly
+        // higher total and the opponent succeeds on a tie
         var advantageActor = ComputeAdvantage(advantageTrends);
         var isProficientActor = rulesetCharacter.IsProficient(proficiencyName);
 
@@ -301,26 +316,47 @@ internal static class TryAlterOutcomeAttributeCheck
         var opponentTotalRoll = opponentBaseBonus + opponentRawRoll + opponentRollModifier;
 
         // handle actor interruptions
+        // every reaction adds what it changes to AbilityCheckSuccessDelta (a reroll's die difference, a bonus), and a
+        // bonus also to AbilityCheckActionModifier.AbilityCheckModifier (fresh here, so it holds only the reactions'
+        // bonuses); not every reaction updates AbilityCheckRoll, so the total follows the delta, and the die is the
+        // part of the change that isn't a bonus
         PrepareActorAbilityCheckData();
+
+        var actorDeltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
 
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(rulesetCharacter), abilityCheckData, rawRoll);
 
-        totalRoll = totalRoll - rawRoll + abilityCheckData.AbilityCheckRoll +
-                    abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        rawRoll = abilityCheckData.AbilityCheckRoll;
+        var actorChange = abilityCheckData.AbilityCheckSuccessDelta - actorDeltaBefore;
+
+        totalRoll += actorChange;
+        rawRoll += actorChange - abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         modifierTrends.AddRange(abilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
+
+        // the contest line shows how the kept die was rolled: a reroll replaces the original die's advantage
+        if (abilityCheckData.KeptDieAdvantageTrends != null)
+        {
+            advantageTrends = [..abilityCheckData.KeptDieAdvantageTrends];
+        }
 
         // handle opponent interruptions
         PrepareOpponentAbilityCheckData();
 
+        var opponentDeltaBefore = opponentAbilityCheckData.AbilityCheckSuccessDelta;
+
         yield return HandleITryAlterOutcomeAttributeCheck(
             GameLocationCharacter.GetFromActor(opponent), opponentAbilityCheckData, opponentRawRoll);
 
-        opponentTotalRoll = opponentTotalRoll - opponentRawRoll + opponentAbilityCheckData.AbilityCheckRoll +
-                            opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
-        opponentRawRoll = opponentAbilityCheckData.AbilityCheckRoll;
+        var opponentChange = opponentAbilityCheckData.AbilityCheckSuccessDelta - opponentDeltaBefore;
+
+        opponentTotalRoll += opponentChange;
+        opponentRawRoll += opponentChange - opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifier;
         opponentModifierTrends.AddRange(opponentAbilityCheckData.AbilityCheckActionModifier.AbilityCheckModifierTrends);
+
+        if (opponentAbilityCheckData.KeptDieAdvantageTrends != null)
+        {
+            opponentAdvantageTrends = [..opponentAbilityCheckData.KeptDieAdvantageTrends];
+        }
 
         // calculate final results
         PrepareActorAbilityCheckData();
@@ -353,8 +389,12 @@ internal static class TryAlterOutcomeAttributeCheck
 
         void PrepareActorAbilityCheckData()
         {
+            // the delta is the margin of success for the reactions, which treat 0 or more as a success: when the
+            // opponent wins ties the actor needs one point more
+            var actorDelta = totalRoll - opponentTotalRoll;
+
             abilityCheckData.AbilityCheckRoll = totalRoll;
-            abilityCheckData.AbilityCheckSuccessDelta = totalRoll - opponentTotalRoll;
+            abilityCheckData.AbilityCheckSuccessDelta = actorWinsTies ? actorDelta : actorDelta - 1;
             abilityCheckData.AbilityCheckRollOutcome =
                 abilityCheckData.AbilityCheckSuccessDelta < 0 ? RollOutcome.Failure : RollOutcome.Success;
             abilityCheckData.AbilityCheckActionModifier = new ActionModifier();
@@ -362,15 +402,14 @@ internal static class TryAlterOutcomeAttributeCheck
 
         void PrepareOpponentAbilityCheckData()
         {
-            totalRoll++;
+            // the opponent succeeds only where the actor fails: on a tie that is the actor when actorWinsTies
+            var opponentDelta = opponentTotalRoll - totalRoll;
 
             opponentAbilityCheckData.AbilityCheckRoll = opponentTotalRoll;
-            opponentAbilityCheckData.AbilityCheckSuccessDelta = opponentTotalRoll - totalRoll;
+            opponentAbilityCheckData.AbilityCheckSuccessDelta = actorWinsTies ? opponentDelta - 1 : opponentDelta;
             opponentAbilityCheckData.AbilityCheckRollOutcome =
                 opponentAbilityCheckData.AbilityCheckSuccessDelta < 0 ? RollOutcome.Failure : RollOutcome.Success;
             opponentAbilityCheckData.AbilityCheckActionModifier = new ActionModifier();
-
-            totalRoll--;
         }
     }
 
@@ -405,8 +444,29 @@ internal static class TryAlterOutcomeAttributeCheck
             foreach (var tryAlterOutcomeAttributeCheck in unit.RulesetCharacter
                          .GetSubFeaturesByType<ITryAlterOutcomeAttributeCheck>())
             {
+                var deltaBefore = abilityCheckData.AbilityCheckSuccessDelta;
+                var modifierBefore = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
+                abilityCheckData.RerollAdvantageTrends = null;
+
                 yield return tryAlterOutcomeAttributeCheck.OnTryAlterAttributeCheck(
                     battleManager, rawRoll, abilityCheckData, actingCharacter, unit);
+
+                // the next reaction sees the die as it now is: every reaction adds its change to the delta, and a
+                // bonus also to the modifier, so the rest is a reroll's die difference (two failed rerolls must not
+                // add up, a bonus leaves the die unchanged)
+                var modifierAfter = abilityCheckData.AbilityCheckActionModifier?.AbilityCheckModifier ?? 0;
+
+                var dieChange = abilityCheckData.AbilityCheckSuccessDelta - deltaBefore - (modifierAfter - modifierBefore);
+
+                rawRoll += dieChange;
+
+                // a reroll that changed the die: the kept die is now the reroll's, with its advantage or none
+                if (dieChange != 0 || abilityCheckData.RerollAdvantageTrends != null)
+                {
+                    abilityCheckData.KeptDieAdvantageTrends = abilityCheckData.RerollAdvantageTrends ?? [];
+                }
+
+                abilityCheckData.RerollAdvantageTrends = null;
             }
         }
     }
@@ -468,6 +528,9 @@ internal static class TryAlterOutcomeAttributeCheck
         }
 
         var actionModifier = abilityCheckData.AbilityCheckActionModifier;
+
+        // the running total includes the bonus, as for every other reaction (Primal Knowledge, for one)
+        abilityCheckData.AbilityCheckRoll += roll;
 
         if (actionModifier != null)
         {

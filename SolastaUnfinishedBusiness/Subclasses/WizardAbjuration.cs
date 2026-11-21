@@ -397,8 +397,10 @@ public sealed class WizardAbjuration : AbstractSubclass
             var rulesetCharacter = attacker.RulesetCharacter;
             var spellCast = actionCastSpell.ActiveSpell;
 
+            // abjuration spells of 1st level and higher; a cantrip neither creates nor feeds the ward
             if (GetDefinition<SchoolOfMagicDefinition>(spellCast.SchoolOfMagic) !=
-                SchoolOfMagicDefinitions.SchoolAbjuration)
+                SchoolOfMagicDefinitions.SchoolAbjuration ||
+                spellCast.SpellDefinition.SpellLevel == 0)
             {
                 yield break;
             }
@@ -410,7 +412,8 @@ public sealed class WizardAbjuration : AbstractSubclass
             {
                 // if ward already exists, update pool
                 var usablePowerArcaneWard = PowerProvider.Get(PowerArcaneWard, rulesetCharacter);
-                var amount = WardRechargeMultiplier * spellCast.EffectLevel;
+                // BG3 mode: the spell's level; otherwise twice the slot level
+                var amount = (IsBg3Mode ? 1 : WardRechargeMultiplier) * spellCast.EffectLevel;
 
                 rulesetCharacter.UpdateUsageForPowerPool(-amount, usablePowerArcaneWard);
 
@@ -509,7 +512,8 @@ public sealed class WizardAbjuration : AbstractSubclass
             RulesetAttackMode attackMode,
             RulesetEffect rulesetEffect)
         {
-            if (action.AttackRollOutcome == RollOutcome.Failure || defender.RulesetCharacter == null)
+            if (action.AttackRollOutcome is RollOutcome.Failure or RollOutcome.CriticalFailure ||
+                defender.RulesetCharacter == null)
             {
                 yield break;
             }

@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=フリーアクションと�
 Feature/&PowerRavenScionHeartSeekingShotTitle=ハートシーキングショット
 Feedback/&AdditionalDamageSniperAimFormat=スナイパーの狙い
 Feedback/&AdditionalDamageSniperAimLine=スナイパーの狙いは追加の+{2}ダメージを与えます！
-Feedback/&TriggerRavenScionRerollLine={0} は {1} = {2} をロールします。 Deadly Focus はクリティカルヒットを強制します。
+Feedback/&TriggerRavenScionRerollLine={0} は {1} = {2} をロールします。 Deadly Focus により、有利で攻撃を振り直せます。
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=致命的な集中力を使って攻撃を再試行してください。
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=致命的な集中力を使って攻撃を再試行してください。
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=リトライアタック

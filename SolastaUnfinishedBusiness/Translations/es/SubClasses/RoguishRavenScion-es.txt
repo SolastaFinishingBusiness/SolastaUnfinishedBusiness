@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=Como acción gratuita, puede
 Feature/&PowerRavenScionHeartSeekingShotTitle=Disparo que busca el corazón
 Feedback/&AdditionalDamageSniperAimFormat=La puntería del francotirador
 Feedback/&AdditionalDamageSniperAimLine=¡La puntería del francotirador inflige +{2} de daño adicional!
-Feedback/&TriggerRavenScionRerollLine={0} tira {1} = {2}. Concentración letal forzará un golpe crítico.
+Feedback/&TriggerRavenScionRerollLine={0} tira {1} = {2}. Concentración letal te permite repetir el ataque con ventaja.
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=Utiliza tu concentración letal para reintentar el ataque.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=Utiliza tu concentración letal para reintentar el ataque.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=Ataque de reintento

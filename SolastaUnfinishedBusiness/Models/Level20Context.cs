@@ -1267,8 +1267,9 @@ internal static class Level20Context
 
             void ReactionValidated()
             {
+                // the die becomes a 20; like every other reaction it adds its change to the delta
                 abilityCheckData.AbilityCheckRoll += 20 - rawRoll;
-                abilityCheckData.AbilityCheckSuccessDelta = 0;
+                abilityCheckData.AbilityCheckSuccessDelta += 20 - rawRoll;
                 abilityCheckData.AbilityCheckRollOutcome = RollOutcome.CriticalSuccess;
             }
         }

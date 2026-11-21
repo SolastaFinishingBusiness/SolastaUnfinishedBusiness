@@ -2286,6 +2286,9 @@ internal static partial class DatabaseHelper
         internal static FeatureDefinitionPower PowerRoguishHoodlumDirtyFighting { get; } =
             GetDefinition<FeatureDefinitionPower>("PowerRoguishHoodlumDirtyFighting");
 
+        internal static FeatureDefinitionPower PowerRoguishHoodlumMenacing { get; } =
+            GetDefinition<FeatureDefinitionPower>("PowerRoguishHoodlumMenacing");
+
         internal static FeatureDefinitionPower PowerRoguishDarkweaverShadowy { get; } =
             GetDefinition<FeatureDefinitionPower>("PowerRoguishDarkweaverShadowy");
 

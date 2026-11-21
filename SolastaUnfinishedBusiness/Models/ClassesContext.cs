@@ -340,6 +340,8 @@ internal static class ClassesContext
                 abilityCheckData.AbilityCheckRollOutcome = abilityCheckData.AbilityCheckSuccessDelta >= 0
                     ? RollOutcome.Success
                     : RollOutcome.Failure;
+                // the new die is kept even when it equals the old one: a straight reroll
+                abilityCheckData.RerollAdvantageTrends = [];
 
                 var totalRoll = abilityCheckData.AbilityCheckRoll.ToString();
                 rulesetHelper.LogCharacterActivatesAbility(
