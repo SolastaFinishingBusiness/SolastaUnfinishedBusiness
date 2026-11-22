@@ -1,2 +1,2 @@
 - The changelog is now Documentation/ChangelogHistory.md in the repository, written in Markdown, and the mod's Changelog button opens it on GitHub, formatted. The mod's own copy is in its Documentation folder. Versions up to 1.18.0, whose Changelog button opens the old ChangelogHistory.txt, find a note there saying where it moved.
-- Not tested in game: the Changelog button (in the mod menu and in the update message) opening the new page; the page itself can only be opened once a release has put the file on the release branch.
+- Not tested in game: the Changelog button (in the mod menu and in the welcome message) opening the new page; the page itself can only be opened once a release has put the file on the release branch.

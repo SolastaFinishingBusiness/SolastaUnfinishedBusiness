@@ -113,13 +113,17 @@ jobs:
         # the zip ships the changelog in the mod's Documentation folder and no longer at the mod's root, and the
         # newest release's section can be read the way a tag's run reads its release notes
         run: |
-          unzip -l SolastaUnfinishedBusiness.zip | grep -q ' SolastaUnfinishedBusiness/Documentation/ChangelogHistory.md$' ||
+          # the listing is read once into a variable, so no pipe's early exit can decide a check
+          listing=$(unzip -l SolastaUnfinishedBusiness.zip)
+          grep -q ' SolastaUnfinishedBusiness/Documentation/ChangelogHistory.md$' <<< "$listing" ||
             { echo "::error::The zip has no Documentation/ChangelogHistory.md"; exit 1; }
-          if unzip -l SolastaUnfinishedBusiness.zip | grep -q ' SolastaUnfinishedBusiness/ChangelogHistory.txt$'; then
+          if grep -q ' SolastaUnfinishedBusiness/ChangelogHistory.txt$' <<< "$listing"; then
             echo "::error::The zip still has ChangelogHistory.txt"; exit 1
           fi
-          newest=$(tr -d '\r' < Documentation/ChangelogHistory.md | sed -n 's/^## //p' | head -n 1)
-          if [ -z "$(.github/scripts/release-notes.sh "$newest" Documentation/ChangelogHistory.md)" ]; then
+          newest=$(sed -n 's/^## //p' Documentation/ChangelogHistory.md | tr -d '\r' | sed -n '1p')
+          # its own assignment, so a failing extractor fails the step
+          notes=$(.github/scripts/release-notes.sh "$newest" Documentation/ChangelogHistory.md)
+          if [ -z "$notes" ]; then
             echo "::error::The section '## $newest' of the changelog came out empty"; exit 1
           fi
           echo "Newest changelog section: $newest"
