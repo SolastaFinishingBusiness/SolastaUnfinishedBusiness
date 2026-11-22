@@ -205,7 +205,8 @@ jobs:
   # shape does, suffixes included (1.19.0-rc1), before next-version.sh checks the version; so whoever may push tags can
   # reach the token. A failure here leaves the release published: re-run only this job from the run's page (a full
   # re-run stops at the "already released" check). If the run stopped after publishing but before the build job
-  # succeeded, this job can't run at all: raise Info.json's Version and the project's AssemblyVersion by hand.
+  # succeeded, this job can't run at all: run `next-version.sh <tag> <develop's current version>` and, only if it prints
+  # a version, raise Info.json's Version and the project's AssemblyVersion to it by hand.
   bump-develop:
     needs: build
     if: github.ref_type == 'tag'
@@ -230,11 +231,13 @@ jobs:
           fi
           next_version="$GITHUB_WORKSPACE/.github/scripts/next-version.sh"
           # git asks this script for the login on every clone, fetch of a missing file and push; it reads the token
-          # from this step's environment, so the token is never on a command line or in a clone's config
+          # from this step's environment, so the token is never on a command line or in a clone's config. Credential
+          # helpers are switched off for these commands, so none is asked first or handed the token to store.
           askpass="$RUNNER_TEMP/askpass.sh"
           printf '%s\n' '#!/bin/sh' 'case "$1" in Username*) echo x-access-token ;; *) echo "$TOKEN" ;; esac' > "$askpass"
           chmod 700 "$askpass"
           export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 TOKEN
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0=
           remote="https://github.com/$GITHUB_REPOSITORY.git"
           work="$RUNNER_TEMP/develop"
           for attempt in 1 2 3; do
