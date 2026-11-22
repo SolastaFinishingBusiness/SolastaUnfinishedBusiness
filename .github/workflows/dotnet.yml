@@ -5,8 +5,8 @@
 # A push to any branch (or a run by hand on a branch) only builds: the zip is kept as the run's artifact
 # "SolastaUnfinishedBusiness-<version>-dev.<commit>" for testing, and nothing is released. Artifacts are kept 14 days
 # for develop's builds, which are the release candidates, and 5 days for every other branch's.
-# Versions: right after a release, develop's Info.json is raised to the next minor version (1.19.0 after 1.18.0), so
-# its development builds sort above every earlier release and below their own release (SemVer pre-release order, used
+# Versions: right after a release, the job bump-develop raises develop's Info.json to the next minor version (1.20.0
+# after 1.19.0), so its development builds sort above every earlier release and below their own release (SemVer pre-release order, used
 # by the in-game updater). The release commit sets the final number from what the release holds (kept, lowered to a
 # patch such as 1.18.1, or raised to a major) and gathers unreleased/ into a new section of the changelog.
 # A development build (every build but a tag's) is marked "<version>-dev.<first 8 characters of the commit>" in its
@@ -127,6 +127,9 @@ jobs:
             echo "::error::The section '### $newest' of the changelog came out empty"; exit 1
           fi
           echo "Newest changelog section: $newest"
+      - name: Check the post-release version logic
+        if: github.ref_type != 'tag'
+        run: .github/scripts/next-version.sh --test
       - name: Name the test build
         if: github.ref_type != 'tag'
         run: echo "ARTIFACT=SolastaUnfinishedBusiness-$(jq -r .Version SolastaFiles/Mods/SolastaUnfinishedBusiness/Info.json)" >> "$GITHUB_ENV"
@@ -194,3 +197,75 @@ jobs:
           script: |
             const run = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/issue-status.js`);
             await run({ github, context, core });
+
+  # Raises develop to the next minor version once a tag's release is published, so develop's test builds sort above it.
+  # It pushes straight to develop with DEVELOP_PUSH_TOKEN, a token of an account allowed to bypass develop's pull
+  # request rule; the secret lives in the "release" environment, which only version tags may use, so branch runs never
+  # see it. The workflow's own token can't push there. A failure here leaves the release published: re-run only this
+  # job from the run's page (a full re-run stops at the "already released" check).
+  bump-develop:
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      # the scripts come from the released commit; develop's files are only read and edited, never run
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Raise develop to the next minor version
+        env:
+          TOKEN: ${{ secrets.DEVELOP_PUSH_TOKEN }}
+        # Each attempt starts from a fresh clone of develop's tip, works out again whether a raise is due, and makes a
+        # new commit, so a push rejected because develop moved never reuses a commit made on an older tip.
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::DEVELOP_PUSH_TOKEN isn't set in the release environment"
+            exit 1
+          fi
+          next_version="$GITHUB_WORKSPACE/.github/scripts/next-version.sh"
+          remote="https://x-access-token:$TOKEN@github.com/$GITHUB_REPOSITORY.git"
+          work="$RUNNER_TEMP/develop"
+          for attempt in 1 2 3; do
+            rm -rf "$work"
+            info=SolastaUnfinishedBusiness/Info.json
+            project=SolastaUnfinishedBusiness/SolastaUnfinishedBusiness.csproj
+            # only develop's tip, and only the two files the raise edits
+            git clone --quiet --depth 1 --branch develop --filter=blob:none --no-checkout "$remote" "$work"
+            cd "$work"
+            git sparse-checkout set --no-cone "/$info" "/$project"
+            git checkout --quiet develop
+            current=$(jq -r .Version "$info")
+            assembly=$(sed -n 's|^ *<AssemblyVersion>\(.*\)</AssemblyVersion>.*$|\1|p' "$project")
+            if [ "$assembly" != "$current" ]; then
+              echo "::error::develop's Info.json says $current but its AssemblyVersion says $assembly"
+              exit 1
+            fi
+            next=$("$next_version" "$GITHUB_REF_NAME" "$current")
+            if [ -z "$next" ]; then
+              echo "develop carries $current; no raise needed after $GITHUB_REF_NAME"
+              exit 0
+            fi
+            # only the two version values change; the files keep their formatting, line endings and byte order mark
+            sed -i "s|^\(  \"Version\": \"\)$current\(\",\)|\1$next\2|" "$info"
+            sed -i "s|^\( *<AssemblyVersion>\)$current\(</AssemblyVersion>\)|\1$next\2|" "$project"
+            if [ "$(jq -r .Version "$info")" != "$next" ] ||
+              [ "$(sed -n 's|^ *<AssemblyVersion>\(.*\)</AssemblyVersion>.*$|\1|p' "$project")" != "$next" ] ||
+              [ "$(git diff --numstat | awk '{ added += $1; removed += $2 } END { print added "/" removed "/" NR }')" != "2/2/2" ]; then
+              echo "::error::The version edit didn't change exactly the two version lines"
+              git diff
+              exit 1
+            fi
+            git -c user.name="Mira Dev Agent" -c user.email=mira.dev.agent@gmail.com commit --quiet -a \
+              -m "Release workflow: develop carries $next after the $GITHUB_REF_NAME release"
+            if git push --quiet origin HEAD:develop; then
+              echo "develop raised from $current to $next"
+              exit 0
+            fi
+            echo "::warning::Push attempt $attempt was rejected; starting again from develop's tip"
+            cd "$GITHUB_WORKSPACE"
+          done
+          echo "::error::develop couldn't be raised to the next version after 3 attempts; the release is published"
+          exit 1
