@@ -11,7 +11,10 @@ if (!(Test-Path $target)) {mkdir $target}
 # Compress-Archive -Path "$env:SolastaInstallDir\Mods\SolastaUnfinishedBusiness\UnofficialTranslations" -Update -DestinationPath ".\SolastaUnfinishedBusiness.zip"
 
 if (Test-Path -Path ".\obj\Release Install\SolastaUnfinishedBusiness.dll") {
-	Copy-Item "ChangelogHistory.txt" $target -Force
+	# the changelog goes in the mod's Documentation folder; a staging folder from an older build may still hold the .txt
+	if (Test-Path "$target\ChangelogHistory.txt") {Remove-Item "$target\ChangelogHistory.txt"}
+	if (!(Test-Path "$target\Documentation")) {mkdir "$target\Documentation"}
+	Copy-Item "..\Documentation\ChangelogHistory.md" "$target\Documentation" -Force
     Copy-Item $target\..\SolastaUnfinishedBusiness.dll $target -Force
 	Copy-Item $target\..\SolastaUnfinishedBusiness.pdb $target -Force
     Copy-Item ".\Info.json" $target -Force
