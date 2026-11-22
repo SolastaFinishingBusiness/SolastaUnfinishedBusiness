@@ -303,7 +303,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ChangelogHistory.txt">
+    <!-- The changelog is kept at the repository root's Documentation folder and ships in the mod's Documentation
+         folder. ChangelogHistory.txt beside this file only tells builds up to 1.18.0, whose Changelog button opens
+         that file on the release branch, where the changelog moved; it is not shipped. -->
+    <None Include="..\Documentation\ChangelogHistory.md" Link="Documentation\ChangelogHistory.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Info.json">
@@ -323,8 +326,7 @@
     </None>
   </ItemGroup>
 
-  <!-- The built Info.json's version (user direction, 2026-11-02): the source Info.json holds the last release's version,
-       raised only when releasing; a development build's copy gets "-dev." and the first 8 characters of the commit it
+  <!-- The built Info.json's version: a development build's copy gets "-dev." and the first 8 characters of the commit it
        was built from, e.g. 1.10.0-dev.649e587d. Unity Mod Manager reads only the first three dot-separated parts and
        drops their non-digits (UnityModManager.ParseVersion), so it sees 1.10.0; the commit must stay after a dot, or
        its digits would join the patch number. Written on every build, so a release build after a development build in

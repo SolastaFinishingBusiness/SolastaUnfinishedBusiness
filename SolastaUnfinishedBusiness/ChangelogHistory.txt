@@ -1,0 +1,3 @@
+The changelog has moved to https://github.com/SolastaFinishingBusiness/SolastaUnfinishedBusiness/blob/release/Documentation/ChangelogHistory.md
+
+Copy that address into a web browser to read it.

@@ -1,19 +1,16 @@
-# Builds the mod and publishes a GitHub release whenever a version tag is pushed (e.g. `git push origin 1.6.1.1`).
+# Builds the mod and publishes a GitHub release whenever a version tag is pushed (e.g. `git push origin 1.19.0`).
 # The tag must match Info.json's Version and must not have been released before; the release notes are that
-# version's entry in ChangelogHistory.txt, and the title is the version plus the Solasta version it was built for.
-# A failed release can be re-run by hand from the Actions tab by choosing the version tag as the ref.
+# version's section of Documentation/ChangelogHistory.md, and the title is the version plus the Solasta version it was
+# built for. A failed release can be re-run by hand from the Actions tab by choosing the version tag as the ref.
 # A push to any branch (or a run by hand on a branch) only builds: the zip is kept as the run's artifact
-# "SolastaUnfinishedBusiness-<version>-dev.<commit>" for testing, and nothing is released. Artifacts are kept for a
-# limited time (user direction, 2026-11-02: "build from any branch, but ensure that the lifespan of artifacts will be
-# limited"): 14 days for develop's builds, which are the release candidates, and 5 days for every other branch's.
-# Versions (user direction, 2026-11-16, replacing 2026-11-02's "the last release's version between releases"):
-# right after a release, develop's Info.json is raised to the next minor version (1.18.0 after 1.17.0), so its
-# development builds sort above every earlier release and below their own release (SemVer pre-release order, used by
-# the in-game updater). The release commit sets the final number from what the release holds (kept, lowered to a
-# patch such as 1.17.1, or raised to a major) and gathers unreleased/ into ChangelogHistory.txt.
-# A development build (every build but
-# a tag's) is marked "<version>-dev.<first 8 characters of the commit>" in its built Info.json (the project file's
-# StampBuildVersion); a tag's build carries the plain version.
+# "SolastaUnfinishedBusiness-<version>-dev.<commit>" for testing, and nothing is released. Artifacts are kept 14 days
+# for develop's builds, which are the release candidates, and 5 days for every other branch's.
+# Versions: right after a release, develop's Info.json is raised to the next minor version (1.19.0 after 1.18.0), so
+# its development builds sort above every earlier release and below their own release (SemVer pre-release order, used
+# by the in-game updater). The release commit sets the final number from what the release holds (kept, lowered to a
+# patch such as 1.18.1, or raised to a major) and gathers unreleased/ into a new section of the changelog.
+# A development build (every build but a tag's) is marked "<version>-dev.<first 8 characters of the commit>" in its
+# built Info.json (the project file's StampBuildVersion); a tag's build carries the plain version.
 
 name: .NET
 
@@ -111,6 +108,21 @@ jobs:
             exit 1
           fi
           echo "Built version: $built"
+      - name: Check the changelog
+        if: github.ref_type != 'tag'
+        # the zip ships the changelog in the mod's Documentation folder and no longer at the mod's root, and the
+        # newest release's section can be read the way a tag's run reads its release notes
+        run: |
+          unzip -l SolastaUnfinishedBusiness.zip | grep -q ' SolastaUnfinishedBusiness/Documentation/ChangelogHistory.md$' ||
+            { echo "::error::The zip has no Documentation/ChangelogHistory.md"; exit 1; }
+          if unzip -l SolastaUnfinishedBusiness.zip | grep -q ' SolastaUnfinishedBusiness/ChangelogHistory.txt$'; then
+            echo "::error::The zip still has ChangelogHistory.txt"; exit 1
+          fi
+          newest=$(tr -d '\r' < Documentation/ChangelogHistory.md | sed -n 's/^## //p' | head -n 1)
+          if [ -z "$(.github/scripts/release-notes.sh "$newest" Documentation/ChangelogHistory.md)" ]; then
+            echo "::error::The section '## $newest' of the changelog came out empty"; exit 1
+          fi
+          echo "Newest changelog section: $newest"
       - name: Name the test build
         if: github.ref_type != 'tag'
         run: echo "ARTIFACT=SolastaUnfinishedBusiness-$(jq -r .Version SolastaFiles/Mods/SolastaUnfinishedBusiness/Info.json)" >> "$GITHUB_ENV"
@@ -150,13 +162,10 @@ jobs:
           echo "Release build version: $built"
       - name: Release Notes
         if: github.ref_type == 'tag'
-        # the version's changelog entry: the lines after "<version>:" up to the next blank line
         run: |
-          tr -d '\r' < SolastaUnfinishedBusiness/ChangelogHistory.txt |
-            awk -v header="$GITHUB_REF_NAME:" '$0 == header { found = 1; next } found && $0 == "" { exit } found' \
-            > release-notes.md
+          .github/scripts/release-notes.sh "$GITHUB_REF_NAME" Documentation/ChangelogHistory.md > release-notes.md
           if [ ! -s release-notes.md ]; then
-            echo "::error::No ChangelogHistory.txt entry for $GITHUB_REF_NAME"
+            echo "::error::No '## $GITHUB_REF_NAME' section in Documentation/ChangelogHistory.md"
             exit 1
           fi
       - name: Publish Release
