@@ -200,9 +200,12 @@ jobs:
 
   # Raises develop to the next minor version once a tag's release is published, so develop's test builds sort above it.
   # It pushes straight to develop with DEVELOP_PUSH_TOKEN, a token of an account allowed to bypass develop's pull
-  # request rule; the secret lives in the "release" environment, which only version tags may use, so branch runs never
-  # see it. The workflow's own token can't push there. A failure here leaves the release published: re-run only this
-  # job from the run's page (a full re-run stops at the "already released" check).
+  # request rule. The workflow's own token can't push there. The secret lives in the "release" environment, whose only
+  # deployment rule admits tags matching the glob [0-9]*.[0-9]*.[0-9]*: branch runs never see it, but any tag of that
+  # shape does, suffixes included (1.19.0-rc1), before next-version.sh checks the version; so whoever may push tags can
+  # reach the token. A failure here leaves the release published: re-run only this job from the run's page (a full
+  # re-run stops at the "already released" check). If the run stopped after publishing but before the build job
+  # succeeded, this job can't run at all: raise Info.json's Version and the project's AssemblyVersion by hand.
   bump-develop:
     needs: build
     if: github.ref_type == 'tag'
@@ -226,7 +229,13 @@ jobs:
             exit 1
           fi
           next_version="$GITHUB_WORKSPACE/.github/scripts/next-version.sh"
-          remote="https://x-access-token:$TOKEN@github.com/$GITHUB_REPOSITORY.git"
+          # git asks this script for the login on every clone, fetch of a missing file and push; it reads the token
+          # from this step's environment, so the token is never on a command line or in a clone's config
+          askpass="$RUNNER_TEMP/askpass.sh"
+          printf '%s\n' '#!/bin/sh' 'case "$1" in Username*) echo x-access-token ;; *) echo "$TOKEN" ;; esac' > "$askpass"
+          chmod 700 "$askpass"
+          export GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 TOKEN
+          remote="https://github.com/$GITHUB_REPOSITORY.git"
           work="$RUNNER_TEMP/develop"
           for attempt in 1 2 3; do
             rm -rf "$work"
