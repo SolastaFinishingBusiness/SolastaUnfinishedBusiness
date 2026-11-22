@@ -1,4 +1,7 @@
-1.18.0:
+# Changelog
+
+## 1.18.0
+
 - New setting (on by default), Gameplay > Rules: one concentration saving throw per damage instance against its total damage, instead of one per damage type. An attack with all the damage it adds on the hit (smites, Sneak Attack and the like), one hit of a spell or power, entering or starting a turn in an area, or one recurring tick is one instance (a power a hit sets off afterwards, such as Spike Barrage, is its own; each cell moved through Spike Growth is its own); each Magic Missile dart, Radiant Motes mote and Eldritch Blast beam counts on its own. The DC counts the damage taken before temporary hit points absorb any of it, and monsters' concentration follows the same rule. Dropping to 0 hit points still ends concentration at once.
 - A Wild Shape form reduced to 0 hit points now makes the druid save for concentration against the whole hit (the damage carried over included); before, it called for no save. A form left with hit points saves as before. New setting, Gameplay > Rules (off by default): damage to a Wild Shape form calls for no concentration save, except the damage carried over to the druid when the form is reduced to 0 hit points (none when nothing carries over).
 - Damage absorbed by temporary hit points now counts in full for concentration saving throws; before, a hit they partly absorbed counted only what got through, and one they absorbed exactly called for no save. New setting, Gameplay > Rules (off by default): only the damage beyond temporary hit points counts (none when they absorb a hit exactly).
@@ -91,7 +94,8 @@
 - The in-game updater now treats a test build as older than the release with the same number, so testers are offered that release once it is out. Test builds now carry the next version (1.18.0) instead of the last release's.
 - Not tested in game: the release build as a whole. The issue #55 fixes were tested together in single player on one development build, where most of them were seen working; the fixes made after that build were not run in game (a host using the QoL, 2014 or 2024 buttons in a room, the Ranger spell points table, a missing item property in the cover check, and Enhanced Arcane Focus removing the cover penalty, War Caster included). Not seen in game: rerolls (Lucky, Bountiful Luck and others) following the "10 over the AC" rule, Ring of Blades and Mantle of Thorns upcasting, Bountiful Luck, Battleborn sleep hours, Paladin level 20 recharge at startup, the cold weather options, critical hit option 3 twice in a row, Midnight's Blessing, the Primal Order label. Only partly seen: Grudge Bearer, Thespian's Improved Terrific Performance, Vitriolic Infusion, Aura of Warding, the Path of the Elements titles, the Wild Surge teleport, Cunning Strike with a heavy weapon, the rogue and wizard texts, the ki cost of Physical Perfection, Misty Escape with its reaction already used. Not played (no such hero in the test saves): Survivalist, Dark Kobold, Wildfire, Elegance, Eternal Grove, Defiler, Grenadier, Psi Warrior, Battle Smith, Vivisectionist, Demon Slayer, Dread, Thunder, Path of the Elements, Searing Vengeance, Barrier of Stone, Soul Hex, Wild Magic, Celestial, Battlerager, the Paladin level 18 aura texts, Motherland, Devotion, Way of the Light, Oblivion, Champion, Eldritch Versatility, Powerful Spell, Arcane Fighter, War Magic; and concentration saves of enemy casters (combined damage, one save per dart or beam, the DC cap). Not tested: anything on two computers; languages other than English; the update offer from a 1.18.0 test build to the release.
 
-1.17.0:
+## 1.17.0
+
 - Channel Divinity under the 2024 rules: a Paladin or Cleric whose 2024 Channel Divinity option is on now has that class's own uses (a Paladin/Cleric with both options on has two separate pools). Its powers spend from its own pool; a short rest gives one use back to each 2024 pool and a long rest all. Classes on the 2014 rules keep the shared pool, with as many uses as the higher class gives, all back on any rest.
 - The number of Channel Divinity uses now follows the current options: switching a 2024 option on or off raises or lowers the maximum at once, even for heroes that levelled up with the other setting. A Blessed Soul feat's extra use still counts. The hero's saved data isn't changed.
 - The portrait counter and the reaction cost show every pool's remaining uses together; the portrait tooltip has a line per pool.
@@ -124,7 +128,8 @@
 - Slayer, Fatal Strike (level 17): a hit on a surprised creature now makes it roll the Constitution save, as described. It never happened, for the same reason.
 - Not tested in game: the release build as a whole (each change was tested on its own development build); anything on two computers; languages other than English. Channel Divinity: a long rest, Blessed Soul's extra use, Defensive Strike, a single-class Paladin or Cleric on the 2014 rules, a hero levelled with the other option, and the rest screen listing each pool once. Falls: Gravity Well rays split between creatures, a reaction push in the middle of an action, Shove, a push that also knocks prone, a blocked last move and a large creature. Destinations of the six moving features: a climbable wall with Spider Climb, a flying creature's move ending in mid-air, and the five features other than Second Wind. Perfect Focus without Uncanny Metabolism, the failed-jump damage option, Spirit Walker's prompt, Aksha's senses and Top K. Elemental Adept and Elemental Master spells against a resistant or immune creature, and weapon attacks of the type; Devastating Strikes, Elemental Bane, Mark of the Dammed, Poisoner, Beacons of Corruption, Vitriolic Arsenal, Ardent Hate, Rising Dawn and the Resistant Armor infusion. Gravity Well with a spell that has a saving throw. Orcish Fury's Pass, a ranged-only target, an AI-controlled half-orc and controller input; Psionic Adept; Circle of Power. Command and Fatal Strike on a surprised creature. Tested in single player: the Channel Divinity pools (spending, switching the options, a short rest, save and load, Divine Spark, the 2014 shared pool), falls put off for Eldritch Blast, Thunderwave with Thunderous Strike and Gravity Well with Scorching Ray, Gravity Well's push, a hero's own fire resistance with Elemental Adept, Mind Sculpt, Supreme Will, Orcish Fury, Fizban's Platinum Shield, Self Restoration, Relentless Hunter, Background ASI, Spare the Dying, and Second Wind's move up stairs, onto ledges and to cells in the air.
 
-1.16.0:
+## 1.16.0
+
 - Repelling Blast and Grasp of Hadar have a third state in the Invocations popup, after off and on: "prompt", shown with a light blue question mark. Click the invocation to go through off, on and prompt. With either on prompt, each beam of Eldritch Blast that hits asks, just before it moves the creature, how far Repelling Blast pushes and Grasp of Hadar pulls it (a slider each: 0, 5 or 10 feet) and which goes first. Submit moves the creature for that beam and Skip leaves it; Submit for All and Skip for All do the same for every remaining beam of the cast. A prompt that times out moves the full distance. Enemies and AI-controlled casters aren't asked.
 - Repelling Blast and Grasp of Hadar together: the push now always comes before the pull. It used to follow the order of the character's powers.
 - Eldritch Blast aiming preview: with Repelling Blast or Grasp of Hadar active, the preview now grows by 10 feet for each beam aimed at the same creature, however many beams the cast has, and shows one more while a creature already picked is hovered. With both active it shows the push and the pull that follows side by side; only the push was shown before.
@@ -132,7 +137,8 @@
 - Eldritch Blast with Repelling Blast or Grasp of Hadar: a creature moved over a drop now falls only after the last push or pull of that cast, including those on other creatures its other beams hit, from where it then is. So a pull can bring a creature back onto a ledge before it falls, and a second push carries on from mid-air instead of from the bottom of the drop. New setting, on by default: Gameplay > Rules > "Let a creature fall only after all forced movements from a single action has been resolved". Off: the creature falls as soon as a move leaves it without footing, as before. Areas crossed, damage and everything else keep their usual timing. With the setting on, the creature also travels through each of these pushes and pulls without dropping into its falling pose and getting up again after every one; a real fall at the end plays as usual. Off: every push and pull plays the game's falling pose and recovery, as before.
 - Not tested in game: anything on two computers; a prompt that times out, or one outside combat; AI-controlled casters; a cast of more than two beams; "Push or pull a creature once for each hit" turned off; a fall held back by moves on another creature; languages other than English. The prompt has no controller support yet. Tested in single player: the prompt, both orders, Submit and Skip, the aiming preview, beams split between two creatures, and falls over a drop with the new setting on and off.
 
-1.15.0:
+## 1.15.0
+
 - Multiplayer, after a rest: Memorize Spell, Spell Mastery and Signature Spells now apply on every player's game. They ran on the game of the player who clicked them only: Memorize Spell's tracking made one game number its objects differently from the others (a desync), and Spell Mastery and Signature Spells left the other players with the chosen spells as the wizard's prepared spells and no Mastery or Signature spells. The mod's own after-rest powers (for example the Inventor's and the Celestial patron's) are now used on every player's game too.
 - Multiplayer, battle start: characters sharing a cell when a battle starts are no longer moved by the mod to a "safe" cell; the game's own placement spreads them out when initiative is rolled, the same way on every player's game. The mod's choice also asked each player's game what enemies could see, so games could put the same character in different places. The setting Multiplayer > Movement > "When a battle starts, move characters sharing a cell to the closest safe cell" is removed with it, so a sneaking character is no longer kept out of enemies' sight when moved apart.
 - Multiplayer, desync check: at the end of every turn in a battle, each player's game now checks that character (hit points, cell, facing, conditions, spell slots, power uses) against the host's. If they differ, the host gets the usual desync report and Resync offer, naming the character and round, instead of only finding it on a later check. Uses the existing settings for desync detection.
@@ -143,7 +149,8 @@
 - Repelling Blast now pushes once for each beam of Eldritch Blast that hits: two beams on the same creature push it twice, up to 20 feet, stopping at walls and other creatures as before. It used to push 10 feet however many beams hit, because every push was worked out before any of them had moved the creature, so the later ones had nowhere left to go. The same goes for Grasp of Hadar's pull, and for any spell or power that pushes or pulls one creature more than once in a cast: each move now starts from where the one before left the creature. With Repelling Blast and Grasp of Hadar both on, a beam pushes the creature 10 feet and then pulls it 10 feet back. A new setting, Gameplay > Rules > "Push or pull a creature once for each hit of a spell or power that moves it" (on by default), turns this off.
 - Not tested in game: the multiplayer changes above (they need two computers, and the Spell Mastery and Signature Spells paths a level 18 or 20 wizard); the update window and the version check; pushes and pulls through areas, and Repelling Blast once for each beam, on two computers, with vertical pushes and pulls turned off, or when the second push is blocked (both were tested in single player with vertical pushes and pulls on).
 
-1.14.0:
+## 1.14.0
+
 - Lighting: when Darkness, Fog Cloud, smoke or another heavily obscuring cloud appears, moves or ends, the creatures in it now get their lighting updated straight away, as when they move. Before, a creature standing still with no torch or lamp nearby kept its old lighting state (and the effects of its light sensitivities) until it moved. A new setting, Gameplay > Rules > "Update the lighting of creatures as soon as Darkness, Fog Cloud ... changes" (on by default), turns it off.
 - Light Sensitivity of Dark Kobolds, Dark Elves and Gray Dwarves: with Character > Backgrounds & Races > "Enable Light Sensitivity ... to only trigger outdoors in daylight" on (off by default), it is now a condition of its own, Sunlight Sensitivity, whose tooltip says when it applies, and it follows daylight. It applies outdoors from 08:00 to 18:00, so a torch at night no longer triggers it. Standing in magical darkness, Fog Cloud, smoke or another cloud that fully obscures the character stops it. With the setting off, it works as before: in any bright light, indoors or out.
 - Travel encounters: if the game is closed or reloaded while the encounter popup is open, the popup now closes, instead of staying with Proceed, Fight and Avoid doing nothing. A new Logging switch, Travel encounter popup (on), records what the popup saw, to find out why the game went away under it once in multiplayer.
@@ -154,7 +161,8 @@
 - Cutscenes: with more than 4 heroes the whole party now stands together, with the shortest heroes in front (the shortest at the centre) and the tallest in a staggered row just behind, which turns with the party, each of them seen through a gap in the front row. Before, in scenes with a second stage heroes 5 and 6 began far away, out of the scene (for example at the meeting with Kythaela), and when a scene moved the party they could be left behind or end up standing inside another hero. Close-ups follow the speaker to where they stand, and rear heroes turn their heads to the camera during answer prompts. Parties of 4 or fewer stand in the same height order on the game's own markers; Gameplay > Campaigns > "Keep the game's order for parties of 4 or fewer in cutscenes" (off by default) turns that off. Who speaks and who rolls isn't changed by any of this. Tested in single player in Coparann and Caer Cyflen, with parties of 2 to 6; not tested in multiplayer.
 - Tested in game (single player, in development builds): Sunlight Sensitivity at 07:37 and after 08:00, its tooltip, the setting switched off and on in torchlight at night, Fog Cloud and Darkness cast on a hero and ended, and a save from an earlier build; the new lighting setting in its menu; a travel encounter popup shown and closed by Fight; respec keeping the stats and the rest rule; cutscenes with parties of 2 to 6. Not tested: anything on two computers (including undoing an unlearned invocation and cutscenes in multiplayer); a creature with no torch or lamp nearby when a cloud changes (every tested hero carried a torch); 18:00; the hero tooltip's cell count; the final review fixes of the cutscene placement; the translated texts in game; the popup closing when the game goes away under it
 
-1.13.0:
+## 1.13.0
+
 - Multiplayer, the desyncs where computers number new game objects differently: fixed the causes found so far, so the numbers no longer drift apart in these cases. All players need this version and should start from the same save.
 - Saving no longer makes a spell or power run its "effect ended" step extra times when it ends. Each save added one more run (a game bug), and a quick save happens on one computer only.
 - Using a power no longer recalculates the hero on the computer showing that hero's portrait panel. The panel just redraws.
@@ -168,17 +176,20 @@
 - Mod menu: a new Logging tab switches the extra records on or off, together or one by one: object ID records, out-of-date power and spell effects, and perception. All are on by default, and they don't change the game. In a multiplayer room, the host's choices apply to every player, and the tab warns about this.
 - Tested in game (single player, in a development build): after saves every active power has one "effect ended" handler; light checks don't remake light conditions; the Logging tab; an old settings file loads and Quick Correct's switch is gone; a spell targeted and cancelled 6 times, then a cast that still applies; Level Down read from a save, used, levelled back up, saved and loaded; the game's own Load button in the game log. Not tested: anything on two computers, including Resync, the multiplayer load, whether object numbers now stay equal between computers, and whether the stalled session after a resync is fixed; teleport aiming and range; Maneuvering Attack; memory over a long session; frame rate
 
-1.12.1:
+## 1.12.1
+
 - Multiplayer, temporary diagnostics for the desyncs where computers number new game objects differently: in a multiplayer room, each computer keeps a record of the objects it creates and saves it to FinishingBusinessDiagnostics in the game's data folder (beside Player.log) after each map change or load, and when the mod detects a desync. Comparing two players' files shows which object only one computer made. It changes nothing in the game and will be removed once the cause is found
 - Tested in game (single player, in a development build, where the records also run outside a multiplayer room): loading a save writes the record file with no errors, and two loads of the same save record the same objects in the same order. Not tested: a real multiplayer room, including the files written at a desync, and the records of characters being revealed
 
-1.12.0:
+## 1.12.0
+
 - In-game update: the game that starts again after an update is installed now loads Unity Mod Manager and the mod. It started without any mods, because the mod loader (Unity Doorstop) does nothing in a game that inherits its settings from the game that ran the update; the update helper now starts the game without them. The update helper that runs is the one of the version being updated from, so an update from 1.11.0 or older still starts the game once without mods: quit it and start it again through Steam (the update itself is installed)
 - In-game update: when installing an update fails, the message on the next start now gives the real reason. When the first try failed before it changed anything (for example a missing download), each retry failed on a missing backup folder instead, and that error replaced the reason. Tested outside the game with an update whose download was missing
 - In-game update: after Update, a message now shows the download's progress as a bar that fills, with the percentage in its centre (the game's own bar), and stays full while the download is checked; before, the message closed and the progress only showed in the mod menu. Hide closes the message and the download goes on. When the download is ready, the next message asks "Version X is downloaded and verified. Would you like to restart Solasta to install the mod?", with Restart and Later (it was "Quit now"); if the download failed, it says why. These show when updating from 1.12.0 or later
 - Tested in game (single player): the update from 1.10.0 to 1.11.0, which showed the game starting again without mods; then, with these changes, a real update to 1.11.0 from this build set to an older version: the progress bar, Hide, Later and Restart, the install after quitting, the game starting again with the mod loaded, and the result message. The message after a failed install was tested outside the game. Not tested: a rollback, multiplayer
 
-1.11.0:
+## 1.11.0
+
 - Mod menu search: searching no longer stops the menu with an error ("Getting control ... in a group with only ... controls") and a Reset button. The search opened each collapsed section only as it drew that section, so parts of the page drawn above it in the same frame (such as the Spells page's Expand All row) changed between Unity's drawing passes. Every section now opens as soon as the search starts
 - Mod menu search: "Display all known spells from other classes during level up" and "Display Warlock pact slots on spell selection" (Gameplay > Rules, multiclass options) are no longer switched back when a search ends. The search took them for section headers and put them back as they were before it
 - Multiplayer, approval of actions that pass in-game time (rests, waiting, learning or scribing spells, Mark Deity, rituals, long spells and powers): it is now the game's own fast travel vote with its own texts, instead of message boxes. The other players get the travel request window (Accept, Refuse, and the game's 20 second timer, which refuses when it runs out); the vote screen lists every player's vote; when it passes the game says everyone accepted, and a refusal names who refused. A character in combat or a cutscene still answers for its player, and the asking player is told which character is busy. Unlike a travel request, an approval request doesn't stop the characters' current actions
@@ -188,9 +199,10 @@
 - Multiplayer, approvals and cutscenes: a player who already accepted an approval and then gets into a fight or a cutscene now takes the acceptance back, which ends the vote with the reason (before, only a player who hadn't answered yet did). A vote that passes in the same moment the asking player gets into one doesn't run its action
 - Campfires: when the party is out of the long rest range (the game needs every member within 10 cells; a downed character more than 10 cells from the one using the campfire counts too), the whole party, downed characters and guests included, first fast travels to the campfire with the game's own fast travel (the map shows the leader on the way, the route is checked for traps and watching enemies, and everyone is placed in formation at the point), then rests: to a fast travel point within 5 cells of the campfire if the map has one, otherwise to a temporary "Campfire" point the mod adds for it and removes afterwards. A party in range rests as before. There is no walk: when the party can't fast travel (a fight, a running script, the point hidden or not discovered, no route) or enemies interrupt it, the party doesn't rest and is told so. The game routes the travel from the party's leader (the first portrait): when that character is dead, dying or unconscious, the party doesn't travel or rest, and the message names them and their state, e.g. "Kushiel is unconscious. Unable to fast travel." Someone still out of range after the travel (the game found no free cell for them at the point) also stops the rest, and the message names them, e.g. "Thgil is out of range for a long rest." The rest screen closes during the travel (it pauses the game) and opens again for the rest, which only starts once every rest rule passes. When the party already rested that day, the campfire's offer to wait until it can rest again now gathers the party first, then waits and rests: before, the party waited the hours and the game then refused the rest because the party was spread out. In multiplayer the approval says the party gathers ("gather the party at the campfire, then take a long rest"). New setting, on by default: Gameplay > Campaigns, also under Gameplay > Multiplayer
 - Multiplayer, campfires: any player can start a long rest at a campfire, not only the host (with "Let every player start a short or long rest", on by default). A campfire that rests at once, without the rest screen's choice (one the story uses), never asks for approval: before, it asked when the rest screen's own rules passed, which that campfire doesn't apply
-- Tested in game (single player): the mod menu search (searching from the Spells page, scrolling the results, and both options keeping a change made from the search results); the travel and approval vote screens with made-up players (a development-only preview that release builds don't contain), as the asking player and as a player who is asked; campfires: a party in range resting with no travel, a party out of range fast travelling together to the campfire's fast travel point, an unconscious member who isn't the leader included, then waiting and resting, and an unconscious party leader stopping the gather with "<name> is unconscious. Unable to fast travel." Not tested: a search with characters in the Encounters table; the network side of the travel and approval votes (it needs a multiplayer session); the "out of range for a long rest" message, the dead and dying leader messages, the temporary fast travel point, a campfire with two nearby points, the rest screen's Start with someone too far, a failed or interrupted travel, and client and rest-at-once campfires
+- Tested in game (single player): the mod menu search (searching from the Spells page, scrolling the results, and both options keeping a change made from the search results); the travel and approval vote screens with made-up players (a development-only preview that release builds don't contain), as the asking player and as a player who is asked; campfires: a party in range resting with no travel, a party out of range fast travelling together to the campfire's fast travel point, an unconscious member who isn't the leader included, then waiting and resting, and an unconscious party leader stopping the gather with "\<name> is unconscious. Unable to fast travel." Not tested: a search with characters in the Encounters table; the network side of the travel and approval votes (it needs a multiplayer session); the "out of range for a long rest" message, the dead and dying leader messages, the temporary fast travel point, a campfire with two nearby points, the rest screen's Start with someone too far, a failed or interrupted travel, and client and rest-at-once campfires
 
-1.10.0:
+## 1.10.0
+
 - Multiplayer, enemy-turn speed-up: a change now waits at its agreed tick until every player's game has reached it, then all apply it on that tick. A wait long enough to notice shows under the button whom it waits for, and that the speed stays as it is until the host confirms. A cancelled change (a player too late or out of time, a player joining or leaving, a host change or lost connection) is reported once with its reason, and the speed doesn't change. The host's "speed up by default" pauses for the rest of the session after one of its changes is cancelled
 - Multiplayer, desync correction: before correcting a player automatically, the host makes a recovery save ("FB Recovery 1" to "3", taking turns, never a player's own save) and corrects only once the game confirms it was written; without one nothing is corrected and the host is told why. The corrected player reports whether the correction applied, and the next check says whether it held: only then is it called verified. A correction that was refused, didn't hold or couldn't be checked within 60 seconds names the player, tells them too, and offers the host a reload. Each correction is reported once, separately for each player, and a player whose correction failed isn't corrected automatically again until the games match
 - Multiplayer, resync: it saves to a new recovery save and loads exactly that save. Before, if the quick save didn't finish in time it could go on to load the previous quick save. If the save can't be made, nothing is loaded, the other players are told, and the host is pointed to the last recovery save
@@ -207,157 +219,187 @@
 - Temporary diagnostics: the mod log gets [Perception] lines (at most 128 per launch) for each shared Perception check, its roll and the AI's waits, so the players' logs can be compared to confirm every computer rolls the same. They will be removed once a multiplayer session confirms it
 - Tested in game in single player: the Perception roll for non-perceived targets (with disadvantage when blinded), a blinded creature rolling again, the two Perception settings' texts, and the update check (at launch and with the Check for updates button) reporting the installed version as the latest. Not tested in game: anything in a multiplayer session (the Perception sync between players, the AI's wait, the speed-up wait, corrections, recovery saves and resync), the checks a creature makes again once its blindness ends, the update option in the game's Settings > GUI, a real update, download, install or rollback, and the character sheet and translation fixes. The backend checks (Tests/RecoveryChecks and Tests/PerceptionChecks) cover the barrier's state, the install transaction, the helper's install, rollback and failed install on test folders, and the shared Perception results and the AI's wait, not the game's UI, a real update or a real network
 
-1.8.1:
+## 1.8.1
+
 - Campaigns: the enemy-turn speed-up button in single player is now on by default (it can still be turned off in the Campaigns settings)
 - Not tested in game: this change
 
-1.8.0:
+## 1.8.0
+
 - Campaigns: new setting to show the enemy-turn speed-up button in single player too (off by default). A click keeps enemy turns sped up, at the game time modifier, until it's clicked again or a party member's turn starts; the game's own speed-up still works while space is held
 - Not tested in game: this change
 
-1.7.5:
+## 1.7.5
+
 - Multiplayer: fixed the enemy-turn speed-up button logging a NullReferenceException (from the game's GuiImageHighlighter) every time its colour changed, such as on hover or while waiting for the host. The copy deleted the button's hidden gamepad-hint object, whose image the button's highlighter colours; now only the gamepad binding itself is removed
 - Not tested in game: this fix (the button only shows during enemy turns in an online game with at least two players)
 
-1.7.4:
+## 1.7.4
+
 - Multiplayer: the enemy-turn speed-up button is now a copy of the battle screen's own menu button, with the game's look, highlight and click sound (its gamepad binding removed and its click replaced), placed in the battle screen so it scales with the game's UI. The "Enemy turns sped up" label above it is TextMeshPro text in the game's font with an outline
 - The mod no longer draws anything in game with IMGUI; only the mod menu (Unity Mod Manager) still does
 - Not tested in game: this change (the button only shows during enemy turns in an online game with at least two players)
 
-1.7.3:
+## 1.7.3
+
 - Multiplayer: the FPS and ping overlay is now TextMeshPro text on a canvas of its own, in the game's UI font with a built-in outline, instead of IMGUI labels drawn several times a frame (nine per value for the outline). It still rebuilds at most once a second, scales with the screen like the game's 1920x1080 layout, and never takes clicks
 - Not tested in game: this change (the overlay may look slightly larger and in the game's font)
 
-1.7.2:
+## 1.7.2
+
 - Multiplayer: the FPS and ping overlay builds its table at most once a second and draws it from that cache, instead of rebuilding strings and lists every frame. It made about 10 KB of garbage per frame (6 times the game's own at idle), which made the game's full memory clean-ups, each a 30-140 ms freeze, come much more often (measured in a lobby with the [MpPerf] lines)
 - The enemy-turn speed-up button and label look up their texts once and measure the label only when it changes
 - The temporary [MpPerf] lines stay in, to confirm the hitches drop in a real session
 - Not tested in game: these changes
 
-1.7.1:
+## 1.7.1
+
 - Multiplayer: joining a room no longer fails with "TypeLoadException ... System.Xml.DtdProcessing" on PCs whose System.Xml lacks that type; the host-settings check compares settings directly instead of parsing XML
 - Multiplayer: errors while joining, leaving or updating a room are logged instead of escaping into the game's network handling
 - Multiplayer: the room list shows the campaign's name with the build tag again ("Crown of the Magister [FB 1.7.1]"), instead of its raw translation key
 - Temporary diagnostics: every 30 seconds in an online room the mod log gets an [MpPerf] line (frame rate, worst frame, slow frames, garbage collections, heap, action delay, network time scale, longest wait, slowest ping, time in the mod's own hooks), to find the cause of animation lag that grows over a session
 - Not tested in game: these changes (need a multiplayer session, ideally with the player who saw the TypeLoadException)
 
-1.7.0:
+## 1.7.0
+
 - Versions are now plain MAJOR.MINOR.PATCH, starting at 1.7.0 after 1.6.17.3 (the numbers keep increasing, so the in-game updater offers it)
 - Releases are titled with the version and the Solasta version they're built for, e.g. "1.7.0 (Solasta 1.5.97)"
 - In-game check during a live multiplayer session: the enemy-turn speed-up button shows during enemy turns under the initiative bar and is hidden on party turns; the FPS and ping overlay covers the first initiative portrait and the map's CLOSE button
 - Not tested in game: this release changes no code; the speed-up itself hasn't been clicked in a multiplayer game yet
 
-1.6.17.3:
+## 1.6.17.3
+
 - Cutscenes with 5 or 6 heroes: back to the 1.6.17.1 positioning (the extra heroes stand one step behind, between spots 1-2 and 3-4); the 1.6.17.2 gap positioning is withdrawn
 - The temporary cutscene log lines from 1.6.17.1 are still in
 - Not tested in game: this release (same positioning as 1.6.17.1, which was tested)
 
-1.6.17.2:
+## 1.6.17.2
+
 - Cutscenes with 5 or 6 heroes: the extra heroes now stand in separate gaps of the front row, one step behind, facing the way the row faces. Scenes don't number their party spots left to right, so pairing spots by number put the 6th hero straight behind the widest hero in the middle (seen in the Antiquarians conversation in Caer Cyflen)
 - In-game test of 1.6.17.1: all 6 heroes are in that conversation; the 6th was hidden behind the 5th's neighbour, not missing
 - The temporary cutscene log lines from 1.6.17.1 stay in to confirm the new positions
 - Not tested in game: this placement change
 
-1.6.17.1:
+## 1.6.17.1
+
 - Temporary diagnostics: for the first 6 cutscene set-ups of each launch, the mod log lists the scene's player markers, each hero in the scene with their position, and any party member not in the scene, to find why a 6th hero was missing from a cutscene
 - In-game test: in a 6-hero party conversation (Halman Summer, Caer Cyflen) the 5th hero shows behind the front row, but the 6th appears in no frame; the alert in battle sits at y 93-173 of 1440 and fades in place, clear of the speed-up controls
 - Not tested in game: these diagnostics and the 1.6.17.0 update changes
 
-1.6.17.0:
+## 1.6.17.0
+
 - In-game update: versions are compared number by number (1.6.10.0 is newer than 1.6.9.0; before, they were compared as text, so some updates weren't offered)
-- In-game update: every file in the update replaces the installed one, changed or not; the replaced files are moved to Archive/<old version> inside the mod folder, with a list of the files the update added
+- In-game update: every file in the update replaces the installed one, changed or not; the replaced files are moved to Archive/\<old version> inside the mod folder, with a list of the files the update added
 - Rollback: only offered when an in-game update left an archive, and goes back to exactly that version; only the latest archive is kept (about the size of the mod)
 - Update popup: Changelog opens the changelog and keeps the popup open, and a new Later button closes it
 - Update can also be started from the game's Settings > GUI ("Update Finishing Business to the latest version", asks first) and from Mod UI > Gameplay > General; both only show when a newer version is out
 - Not tested in game: these update changes (an update can only be tried once a newer release than the installed one exists)
 
-1.6.16.2:
+## 1.6.16.2
+
 - Feats: in Chinese, the choices of Elemental Adept, Elemental Master, Spell Sniper and Magic Initiate no longer show up as separate feats. Their titles are built from a template when the mod loads, so the English-title check couldn't read them, and the Chinese templates use full-width 【】 brackets
 - In-game test of 1.6.15.13: Grappler stays enabled in German, Chinese and English; German sub-feats appear only inside their groups
 - Not tested in game: this fix, and the 1.6.16.x enemy-turn speed-up (needs a session with at least two players)
 
-1.6.16.1:
+## 1.6.16.1
+
 - Multiplayer: the enemy-turn speed-up button and its label sit at the top centre below the initiative bar area and below the game's alert messages, in the game's 1920x1080 layout scaled to the screen like its own UI
 - Not tested in game: the speed-up and its position (needs a session with at least two players)
 
-1.6.16.0:
+## 1.6.16.0
+
 - Multiplayer: any player can speed up enemy turns, with a button shown at the top of the screen during enemy turns or by tapping the game's "Play/Pause/Speed Up Battle Turn" key (space by default); doing it again sets them back to normal
 - The host picks a network tick and every computer switches speed on that same tick, at the host's game time modifier; it only runs in battle during non-party turns and ends when a party member's turn starts
 - A notice says who changed it, and "Enemy turns sped up (×1.5)" shows above the button while it's on; setting in Gameplay › Multiplayer, on by default, with texts in all languages
 - In-game test of 1.6.15.13: Grappler stays enabled through a German launch and quit, shows without "[Str]", and German sub-feats appear only inside their groups
 - Not tested in game: the speed-up needs a session with at least two players (a lone host can't start an adventure)
 
-1.6.15.13:
+## 1.6.15.13
+
 - Feats: playing in another language no longer removes Grappler from the enabled feats. Group sub-feats ("[Ability]" titles) were picked out by the translated title, and 8 translations had added "[Str]" to Grappler, so it was dropped from the feat list and then from the settings; the check now reads the English title
 - Feats: in Chinese, Japanese and German, sub-feats whose translated title uses full-width or no brackets no longer show up as separate feats
 - Translations: Grappler's title no longer has a "[Str]" suffix in de, es, fr, it, ja, ko, pt-BR and zh-CN
 - In-game test of 1.6.15.12: "Finishing Business" in settings headers and spell tags (English, German), "FB 1.6.15.12" with no hash; logs clean
 - Not tested in game: this fix
 
-1.6.15.12:
+## 1.6.15.12
+
 - README: Unity Mod Manager must be 0.24.0 to 0.27.10 (newer versions aren't compatible); it recommends 0.27.10 from Nexus Mods, plus the original mod's macOS build
 - Not tested in game: 1.6.15.8 and 1.6.15.9 (mod name from the display name, "FB" label, version without the hash); this release changes no code
 
-1.6.15.11:
+## 1.6.15.11
+
 - README: the install steps name the Unity Mod Manager version: 0.24.0 or later (the mod's declared minimum), built against 0.24.2 and tested in game with 0.27.10
 - Not tested in game: 1.6.15.8 and 1.6.15.9 (mod name from the display name, "FB" label, version without the hash); this release changes no code
 
-1.6.15.10:
+## 1.6.15.10
+
 - README: the mod is named Finishing Business, with install steps for this fork's releases; the mod ID, folder, DLL and repository stay SolastaUnfinishedBusiness
 - Not tested in game: 1.6.15.8 and 1.6.15.9 (mod name from the display name, "FB" label, version without the hash); this release changes no code
 
-1.6.15.9:
+## 1.6.15.9
+
 - Multiplayer: the build shown and compared between players is the version alone ("FB 1.6.15.9"), without the "#" hash of the DLL
 - Releases: the release workflow now refuses a version that was already released, so every numbered release is a unique build
 - Not tested in game: this change and 1.6.15.8 (mod name from the display name, "FB" label)
 
-1.6.15.8:
+## 1.6.15.8
+
 - The mod's name in texts (mod header, welcome message, content pack, feature tag, error and version warnings, version settings) now comes from Info.json's display name, "Finishing Business", in every language; translation texts write it as %ModName%
 - Multiplayer: the build label on player plates and in the room browser is the display name's abbreviation, made from each word's first capital letter ("FB"), instead of "UB"
 - In-game test of 1.6.15.7: the feature details panel opens on instant and held clicks; real screenshots of the overlay, the Multiplayer tab and the lobby tooltip; German and Chinese have no overlaps
 - Not tested in game: this change and the 1.6.15.6 overlay outline in a running adventure
 
-1.6.15.7:
+## 1.6.15.7
+
 - Character sheet: clicking a feature now opens its details. The inspection screen's main panel handles presses for its UI sounds, so Unity gave it the press and never sent the row a click; the row now takes the press and passes the press and release on, so the panel's sounds still play
 - Removed the temporary feature click diagnostics from 1.6.15.5
 - In-game test of 1.6.15.5: the diagnostics showed the press going to CharacterInspectionScreen/MainPanel on every click; wrapping still passes
 - Not tested in game: this fix, the 1.6.15.6 overlay outline, and the 1.6.15.0 translations after the wrapping fixes
 
-1.6.15.6:
+## 1.6.15.6
+
 - Multiplayer overlay: no background box any more; each value has a dark 1px outline so it stays readable over any scene
 - Not tested in game: this change, 1.6.15.2 to 1.6.15.5 (FPS and ping wording, overlay table, wrapping fixes, feature click diagnostics)
 
-1.6.15.5:
+## 1.6.15.5
+
 - Character sheet: the feature details panel uses the normal click event again instead of watching the mouse each frame; nothing found in the game's code or UI explains why clicks didn't arrive, so that workaround is withdrawn
 - Temporary diagnostics: for the first 8 presses on a feature row, the mod log lists what the click raycast hits, which object would take the press and the click, and after the release whether the click arrived and how far the pointer moved
 - Not tested in game: these changes, 1.6.15.2 to 1.6.15.4 (FPS and ping wording, overlay table, wrapping fixes)
 
-1.6.15.4:
+## 1.6.15.4
+
 - Mod menu: wrapped setting texts get the height of all their lines (a forced minimum height had replaced the measured one, so rows got a single line and overlapped the rows around them)
 - Mod menu: toggles with a fixed width, like "Add below to shops", stay on one line instead of wrapping into a narrow column
 - Character sheet: clicking a feature now opens its details (the rows don't receive the event system's clicks, so each row checks for a press and release inside it); the mod log notes the first bind and the first open
 - Not tested in game: these fixes, 1.6.15.2 and 1.6.15.3 (FPS and ping wording, overlay table)
 
-1.6.15.3:
+## 1.6.15.3
+
 - Multiplayer overlay: when you only see your own values, it shows just "FPS: 58" and "Ping: 18 ms" on separate lines, without your name
 - Not tested in game: this change and 1.6.15.2 (the overlay table only shows in a multiplayer session), the 1.6.15.1 wrapping fix and 1.6.15.0 (feature details panel, translations)
 
-1.6.15.2:
+## 1.6.15.2
+
 - Multiplayer: ping and frame rate now read "Ping: 85 ms" and "FPS: 58" in the overlay, on player plates and in the Multiplayer tab, in every language
 - The top-left overlay is now a borderless table: one row per player, with the name, FPS and ping in aligned columns
 - Not tested in game: this change, the 1.6.15.1 wrapping fix and 1.6.15.0 (feature details panel, translations); the overlay only shows in a multiplayer session
 
-1.6.15.1:
+## 1.6.15.1
+
 - Mod menu: a wrapped setting text no longer overlaps the row below it (its height is measured with the same padding it is drawn with)
 - In-game retest of 1.6.14.0 passed: search typing, section restore and the profile field; Change Infusions and Active Infusions Next; Active Infusions on old saves; the replace question at the infusion cap; FPS choices and the hit-reaction toggle
 - Not tested in game: this wrapping fix and 1.6.15.0 (feature details panel, translations)
 
-1.6.15.0:
+## 1.6.15.0
+
 - Character sheet: clicking a feature in the race, class or background list opens its full details in a panel that stays open until closed: the description, the option chosen, what a feature set includes, a power's uses left, and the level it needs
 - Translations: the 238 texts added by Finishing Business and the missing upstream ones (settings, multiplayer, infusions, level down, remake, crafting, rests, conditions and items) are now in German, Spanish, French, Italian, Japanese, Korean, Brazilian Portuguese, Russian and Simplified Chinese. They were machine-written by Claude and may need a native speaker's review
 - Not tested in game
 
-1.6.14.0:
+## 1.6.14.0
+
 - Fixes from the 1.6.12.0 in-game test:
   - Artificer: in the infusion list (Active Infusions, Change Infusions, the replace question), Next now shows the next infusion instead of closing
   - Artificer: infusing an item while every slot is taken now asks which infusion it replaces (the item picker didn't pass through the check)
@@ -368,52 +410,61 @@
 - Multiplayer FPS: amber below 45 FPS and red below 30, instead of red below 58. The default is now "Host sees everyone, others their own" (a saved choice is kept). The four choices show in two rows so none is cut off
 - Not tested in game or in a multiplayer session
 
-1.6.13.2:
+## 1.6.13.2
+
 - Mod menu: a setting whose text is wider than the mod window now wraps onto more lines instead of running off screen
 - Not tested in game
 
-1.6.13.1:
+## 1.6.13.1
+
 - Rebuild of 1.6.13.0, whose release build failed: the multiplayer hit-counting fix now finds its game method in a way the release build supports. Same changes as 1.6.13.0
 - Not tested in game or in a multiplayer session
 
-1.6.13.0:
+## 1.6.13.0
+
 - Multiplayer desync fix (Gameplay > Multiplayer, on by default): the game counted a target's hit reactions once per drawn frame. On a computer whose frame took longer than 50 ms (under 20 FPS or a stutter), two hits in a row counted as one there and as two elsewhere, so attacks and spells ended at different times. They are now counted once per game tick on every computer
 - Not tested in game or in a multiplayer session
 
-1.6.12.0:
+## 1.6.12.0
+
 - Multiplayer: every player's frame rate (FPS) is measured over 3 seconds and shared, like the ping (Gameplay > Multiplayer)
   - New setting for who sees it: only the host sees everyone; the host sees everyone and the others their own; everyone sees everyone (default); or each player sees only their own
   - Shown in the Multiplayer tab, on player plate tooltips, and in a new top-left overlay during a session (on by default), which also shows the pings you may see
   - Rates below 58 FPS show in red
 - Not tested in game or in a multiplayer session
 
-1.6.11.0:
+## 1.6.11.0
+
 - New setting (Gameplay > Items, Crafting & Merchants, on by default): a warning before crafting starts
   - It says the ingredients are used up at once, the check DC and the hours, and that failed rolls add no progress but never lose the ingredients (only aborting does)
   - It lists any plain weapons or armor used in place of Primed ones
 - Not tested in game
 
-1.6.10.0:
+## 1.6.10.0
+
 - New setting (Gameplay > Items, Crafting & Merchants, off by default): recipes that ask for a Primed weapon or armor also accept the plain one
   - Works for every recipe: the game's, this mod's and campaigns'
   - Primed items are used first. Plain ones only count when they are not equipped, so a hero's own gear is never used up
   - Ingredients are used up when crafting starts, as before; a failed crafting roll only loses that hour of progress
 - Not tested in game or in a multiplayer session
 
-1.6.9.0:
+## 1.6.9.0
+
 - When the party already had a long rest today, the Long Rest button on the rest screen stays usable: it waits until the party can rest again, then rests, as one action (Gameplay > Campaigns, on by default)
   - One confirmation shows the wait and the total in-game time
   - The button is only usable when every other rest rule passes (combat, enemies nearby, unsafe area, food, party spread)
 - Multiplayer: waiting until the party can rest and the long rest are approved together, with the total time, at the rest screen and at campfires
 - Not tested in game or in a multiplayer session
 
-1.6.8.0:
+## 1.6.8.0
+
 - Multiplayer: every player can now start a short or long rest from the rest screen, not only the host (Gameplay > Multiplayer, on by default)
   - The host still applies the rest for everyone, and the rest still asks for approval when that setting is on
   - Campfires and rests started by the story keep the game rules
 - Not tested in game or in a multiplayer session
 
-1.6.7.0:
+## 1.6.7.0
+
 - Multiplayer: actions that pass in-game time now wait until every other player approves them (Gameplay > Multiplayer, on by default)
   - Covers short and long rests, learning or scribing a spell from a scroll, Mark Deity, rituals, and spells or powers that take a minute or more (Heroes' Feast counts its feast hours)
   - The popup names who asks, what is being done and how long it takes. The asking player sees who is still to answer, and can cancel
@@ -422,7 +473,8 @@
 - New setting, off by default (Gameplay > Multiplayer and Gameplay > Campaigns): a short rest is allowed while the party is spread out, but not in combat, a conversation or a cutscene. The other rest rules still apply
 - Not tested in game or in a multiplayer session
 
-1.6.6.0:
+## 1.6.6.0
+
 - Artificer infusions are tracked by what is active:
   - Each active infusion takes one of your slots, and a long rest gives back only the free slots
   - Ending an infusion frees its slot at once
@@ -434,13 +486,15 @@
 - Existing Artificers: until their next long rest, extra uses left from before are still used as before
 - Not tested in game or in a multiplayer session
 
-1.6.5.2:
+## 1.6.5.2
+
 - Fixed the Artificer's magic weapon infusions (Enhance Weapon, Returning Weapon, Repeating Shot) being removed by temporary effects such as Sacred Weapon. This only happened in the same play session as the infusion, not after a reload. Infusions now use their own tag, so neither removes the other, and a new infusion still replaces an older one on the same item
 - Infusions can no longer be put on a weapon that a temporary effect such as Magic Weapon currently makes magical with a bonus, so the bonuses don't stack. Found or bought magic weapons can still be infused
 - Added Character > Classes > Artificer: "Artificer infusions can only be put on non-magical items" (tabletop rule, off by default). The Infusions feature text says which rule is active
 - Not tested in game: the infusion and Sacred Weapon interaction and both targeting rules
 
-1.6.5.1:
+## 1.6.5.1
+
 - Fixed 12 errors at every startup (and the crash report they sent) from the multiplayer check running before the networking service exists
 - Mod menu search:
   - Fixed the errors when pressing Clear, typing one letter at a time and closing the menu after a search
@@ -451,58 +505,69 @@
 - Fixed the spell tag name of the Aegis, Iridescent, Peregrination, Retinue and Verdant Touched feats showing as a raw term, in every language
 - Not tested in game: all of the above
 
-1.6.5.0:
+## 1.6.5.0
+
 - Multiplayer: characters sharing a cell are drawn slightly apart so each one can be pointed at and clicked: two side by side, three in a triangle, more in a ring that widens with their number. Visual only, so it cannot cause a desync. They ease back to the center when they move (toggle, on by default)
 - Not tested in game or in a multiplayer session
 
-1.6.4.0:
+## 1.6.4.0
+
 - Multiplayer: desync detection can also compare a game-state fingerprint every 5 seconds: each character's HP, temporary HP, position, conditions, spell slots, plus the dice sequence. It says which character and value differ, and only checks when nothing is moving or acting (toggle, on by default)
 - Multiplayer: out of combat the host can quick-correct small differences (HP, position, spell slots, dice) on every computer at the same tick, without reloading (toggle, on by default)
 - Multiplayer: when a desync can't be corrected, the host is offered a one-click resync that quick-saves and reloads, bringing every client back in (toggle, on by default)
 - Multiplayer: when a battle starts, a lone sneaker in a cell no enemy can see keeps that cell. Otherwise the character created first keeps it, as before
 - Not tested in game or in a multiplayer session
 
-1.6.3.0:
+## 1.6.3.0
+
 - Multiplayer: game actions are sent as soon as they are issued instead of at the next tick, saving up to 50 ms per action (toggle, on by default)
 - Multiplayer: the action delay is sized from every player's ping, raised before anyone waits when a connection is slow, and lowered for fast groups (toggle, on by default)
 - Multiplayer: each player's ping and the current action delay are shown in the Multiplayer tab and on player plates. A host setting can make them visible to the host only
 - Not tested in game or in a multiplayer session
 
-1.6.2.0:
+## 1.6.2.0
+
 - Added a search box above the mod menu tabs. While it has text, every tab and sub-page is searched at once, and only the matching settings are shown under a "Tab > Section" heading. Collapsed sections open while searching and close again when the search is cleared. Credits & Diagnostics, the Bestiary and the Characters Pool are not searched
 - Remake Old Character: the pre-selected background and race are scrolled into view, and the "Character Info" heading is hidden so the hero name no longer overlaps it
 - Not tested in game: the search box and the Remake scrolling
 
-1.6.1.5:
+## 1.6.1.5
+
 - Filled empty tooltips: all 121 conditions found without a description (spells, feats, races, subclasses and 2024 rules) now describe their effect, many reusing the mod's or the game's existing feature texts
 - Weapon Master and Way of Blade weapon choices, the Elemental Bane damage choices, the Militia Skills background feature, the Eldritch Cannons and the Create Bonfire, Faithful Hound and Sickening Radiance effects now have descriptions
 - Primed and +1/+2/+3 Katana, Halberd, Pike, Long Mace and Hand Crossbow use the game's own lore texts; the elemental variants and both gauntlets got new descriptions; their crafting manuals follow, and Prime manuals use the game's generic manual text
 - Not tested in game: none of the new tooltips have been viewed in game yet
 
-1.6.1.4:
+## 1.6.1.4
+
 - Fixed the Remake Old Character button being hidden exactly on top of New Character: it now has its own row below New Character, with its own label and tooltip
 - Characters Moved popup: Keep is now the main button and Delete uses the cancel style. Delete asks for confirmation before deleting, so pressing Escape never deletes. The folder path is shown with consistent slashes
 - Not tested in game: the Remake button position, Remake itself, the new popup buttons and Level Down
 
-1.6.1.3:
+## 1.6.1.3
+
 - The release workflow can also be re-run by hand on a version tag (no gameplay changes)
 - Not tested in game: same mod code as 1.6.1.2, which is also untested in game
 
-1.6.1.2:
+## 1.6.1.2
+
 - Level Down now shows for every hero above level 1. Without a recorded level it is disabled, and hovering over it explains why and that Respec is the only way to go lower
 - Not tested in game: the Level Down button, its tooltip and the level down itself
 
-1.6.1.1:
+## 1.6.1.1
+
 - Releases are now built and published by GitHub Actions when a version tag is pushed (no gameplay changes)
 - Not tested in game: same mod code as 1.6.1.0, which is also untested in game
 
-1.6.1.0:
+## 1.6.1.0
+
 - Added Level Down after rest action (Rules, on by default): undoes a hero's last level and everything chosen or gained for it, so the level can be taken again. Experience is kept. Only levels gained with 1.6.1.0 or later are recorded
 - Every level-up is now recorded in the hero (saves, character files and multiplayer); in multiplayer the level down runs on every computer at the same moment
 - Fixed invocations swapped out on level-up keeping the fighting styles, feats and other custom features they granted
 - Fixed subclass custom level-up features being registered under the class tag instead of the subclass tag
 
-1.6.0.0:
+## 1.6.0.0
+
 - Renamed the mod to Finishing Business (display name only; the mod id, folder and settings are unchanged)
 - Added Gameplay > Multiplayer settings: tick buffer tuning for less client lag, desync detection, synced Stand Against the Tide, cell overlap out of combat with safe-cell resolution at battle start, ally pass-through in combat
 - Fixed multiplayer desyncs from Wild Magic, the SHIFT slot choice and reaction timestamps
@@ -513,77 +578,93 @@
 - The startup error popup names its cause; unloadable characters are moved aside with Delete, Keep or Remake (pre-filled character creation)
 - Fixed Magic Initiate hiding higher-level spells from the spell bar
 
-1.5.97.127:
+## 1.5.97.127
+
 - Fixed subraces not getting names, build half-elf names dynamically, added many names (PR by Silvergriffon)
 - Added option to allows pickpocketing of allies (PR by Silvergriffon)
 - Added option for all magical thrown weapons to return to the thrower's hand (PR by Silvergriffon)
 - Added 2024 Background options - ASI moved from races to origins, origin feat (PR by Silvergriffon)
 - Fixed multiclass spell slot progression
 
-1.5.97.126:
+## 1.5.97.126
+
 - fixed generic Wisdom (Perception) ability check affinities from hero (like `Enhance Ability: Owl's Wisdom` or `Foresight` spells) applied to enemies when checking for stealth breaks
 
-1.5.97.125:
+## 1.5.97.125
+
 - reworked `Sculpt Spells` from Evocation Wizard to allow it to work with ongoing effect spells (like Sickening Radiance)
 - fixed Meteor Swarm school (Transmutation => Evocation) + small code cleanup
 - fixed casting time of `Ashardalon's Stride` (Action => Bonus Action)
 
-1.5.97.124:
+## 1.5.97.124
+
 - Add Widescreen Battle UI option (PR by Kiloku)
 - fixed crash when trying to attack spell effect proxies (like Dawn spell)
 - fixed crash when attacking gadgets with weapon mastery enabled
 
-1.5.97.123:
+## 1.5.97.123
+
 - added setting to prioritize pact slots usage by default (PR by FelipeRenault)
 - fixed potential MP crashes during level-up caused by ui and mechanics patches added by UB
 
-1.5.97.122:
+## 1.5.97.122
+
 - fixed `One with the Tree` from Warlock's Tree Patron giving your ranged attacks -2 to hit instead of granting permanent half-cover bonus to you
 - fixed `Light's Protection` from Barbarian's `Path of Light` healing triggering before level 6 of Barbarian and also mabe it round down, as most half-level features do
 - fixed `Baleful Scion` trying to apply to gadgets on AoE spells
 - made `Power Surge` from War Magic Wizard school to not trigger on gadgets or friendlies and waste the effect
 - updated description of `Power Surge` from War Magic Wizard to mention damage being negated if target saves against the spell
 
-1.5.97.121:
+## 1.5.97.121
+
 - add monster portraits from EoModeras's mod on Nexus (PR by Zappa)
 
-1.5.97.120:
+## 1.5.97.120
+
 - fixed interaction between Potent Spell Caster feat and blade cantrips (PR by Zappa)
 
-1.5.97.119:
+## 1.5.97.119
+
 - fixed Katanas receiving only attack bonus from `Blade Mastery` feat, but not AC bonus
 - fixed `Innate Sorcery` interaction with blade cantrips (PR by Zappa)
 
-1.5.97.118:
+## 1.5.97.118
+
 - buttons to loot gold, ingredients or scrolls would only be visible if there's at least one of the matching items in loot pile
 - added option for 2024 version `Draconic Resilience` from `Draconic Bloodline` Sorcerer subclass
 
-1.5.97.117:
+## 1.5.97.117
+
 - made `One with Blade` attack visible only during battle
 - fixed not being able to cast 2024 Smites for warlocks when Spell Points are enabled
 - re-added `Weapon Mastery` feat
 - `Enemy Spellcasters Drop Scribed Spellbooks` - now they have used pages and drop decided not on monster load, but on monster death
 - added buttons to loot gold, ingredients and scrolls to loot popup
 
-1.5.97.116:
+## 1.5.97.116
+
 - added option to make enemy spellcasters drop scribed spellbooks (Gameplay -> Campaigns) (PR by andragor)
 - added option to show targeting sight lines out of combat (Gameplay -> Campaigns) (PR by andragor)
 - improved several tooltips and log messages for `Eldritch Surge` Warlock patron
 
-1.5.97.115:
+## 1.5.97.115
+
 - fixed `Panache` from `Swashbuckler` having missing text in level progression
 - added option to enable `Way of Blade` having Weapon Mastery selection
 - added option to enable older way of requesting translations from Google API
 
-1.5.97.114:
+## 1.5.97.114
+
 - reworked `Nick` mastery to make off-hand attack a free action after main hand attack
 - added option to allow `Nick` weapon mastery to trigger extra attack from `Dual Flurry` feat
 
-1.5.97.113:
+## 1.5.97.113
+
 - fixed several crashes related to `Eldritch Surge` warlock patron
 - updated description of Nick mastery
 
-1.5.97.112:
+## 1.5.97.112
+
 - Improvements to Campaign Translator tool:
   - Limited max concurrency to 10
   - do not allow translation if service is not configured
@@ -593,32 +674,38 @@
 - Customized attack button name for Monk's `Flurry of Blows` and `One with the Blade` from `Way of B
 - reworked `Nick` mastery to auto-attack with off-hand when attacking with main hand instead of granting extra Bonus Action for attack
 
-1.5.97.111:
+## 1.5.97.111
+
 - fixed crash if `SourceRageStop` condition interruption is triggered during travel
 - Added option to learn all scroll crafting recipes (PR by andragor)
 - Reworked User Campaign translation tool (PR by magicskysword)
 
-1.5.97.110:
+## 1.5.97.110
+
 - merged nickabbey's PR with `Swashbuckler` Rogue subclass
 - added option for 2024 `Chill Touch` cantrip
 - added option for 2024 `Witch Bolt` spell
 - added option to disable requirement to perceive allies for `Sculpt Spells`
 - updated translations
 
-1.5.97.109:
+## 1.5.97.109
+
 - merged Andragor's PR with simplified crafting settings (Crafting & Items > Crafting, under "Add new weapons and recipes to shops")
 - fixed 2024 Smites not triggering if you don't have Bonus Action spell available to cast
 - fixed 2024 Paladin's `Restoring Touch` triggering before level 14
 
-1.5.97.108:
+## 1.5.97.108
+
 - tweaked description of `Oath of the Demon Hunter` to include ability to cast Smite spells through crossbow attacks
 - fixed crash when trying to start campaign with character that as created when `Bonus Action Potions/Poisons` enabled when this option is disabled
 - fixed crashes in auto-translated campaigns caused by translated monster id and other DB-related parameters - does not fix already broken campaigns
 
-1.5.97.107:
+## 1.5.97.107
+
 - fixed potential crash when switching weapon config to 'Lighting' with empty main hand and usable device in off-hand with no torch equipped
 
-1.5.97.106:
+## 1.5.97.106
+
 - fixed tags for Battle Smiths extra spells
 - fixed tooltip for `Momentum` from `Weapon Master` subclass in action-switching
 - fixed Smites 2024 getting triggered on Bonus Action attacks
@@ -626,195 +713,236 @@
 - merged PR with remaster of `Oath of the Demon Hunter` - old version is still present, but will be removed at later date
 - merged PR with added 2024 Fighting Style settings for Ranger and Paladin
 
-1.5.97.105:
+## 1.5.97.105
+
 - merged PR with updated zh-CN localization from MagicSkySword
 - fixed potential crash related to custom portraits and wild shape
 - fixed concentration spells not terminating properly when stopping concentration after wild-shaping
 - fixed Divine Smite 2024 using wrong slot level and having wrong number of dice
 
-1.5.97.104:
+## 1.5.97.104
+
 - fixed damage of Branding Smite being 1 dice bigger than intended
 - fixed smite spells 2024 slot level selection using wrong spell slots
 - fixed potential crash related to effect proxies
 
-1.5.97.103:
+## 1.5.97.103
+
 - fixed crash when opening spell selection panel 
 
-1.5.97.102:
+## 1.5.97.102
+
 - Merged several Pull Requests:
   - fixes for spell and cantrip tooltip translations (fix by Jack)
   - fixed default selected formation when using formation reset button (fix by Jack)
   - fixed Starry Wisp cantrip not preventing invisibility on target (fix by Zappa)
   - fixed crash when cancelling Weapon mastery re-learn (fix by Zappa)
 
-1.5.97.101:
+## 1.5.97.101
+
 - fixed patch for illusionary spells against creatures with True Sight should automatically save being broken by recent changes
 - fixed selected or disabled Fighting Styles not updating in Fighting Initiate feat on game startup, only on option change
 - fixed `Wild Surge` `Fly` condition
 
-1.5.97.100:
+## 1.5.97.100
+
 - fixed input handling for Feat selection modal for feat groups
 - fixed (again) being able to interact with the game world below Feat selection modal for feat groups
 
-1.5.97.99:
+## 1.5.97.99
+
 - fixed Grappler feat prompting grapple for creatures that are too big
 - fixed crash when casting Illusion spells/cantrips on gadgets with `Illusion spells automatically fail against targets with True Sight` enabled
 - fixed Feat selection modal for feat groups not blocking clicks on environment
 - fixed Feat selection modal for feat groups background size on some resolutions not fully covering screen
 
-1.5.97.98:
+## 1.5.97.98
+
 - fixed `Tides of Chaos` reaction to missed attack consuming 2 charges
 - fixed `Tides of Chaos` reaction triggering if you have less than 0 charges
 
-1.5.97.97:
+## 1.5.97.97
+
 - fixed crash when trying to hover over `Relentless Hex` invocation outside of level-up
 - fixed Tides of Chaos not spending its uses on reaction
 - fixed large creatures sometimes receiving AoO when moving without moving out of reach
 - made `Infectious Fury` from `Path of the Beast` barbarian trigger off unarmed attacks
 - updated description of `Infectious Fury` from `Path of the Beast` barbarian to state that it only works during your turn and elaborate on exact mechanics of marking and then using free actions to consume the mark
 
-1.5.97.96:
+## 1.5.97.96
+
 - fixed readied `True Strike` 2024 version triggering without any effect in some cases
 - fixed material component validation for blade cantrips to properly require melee weapon in currently active equipment slots
 - fixed cantrips from some custom sub-classes (like Druid cantrips from `Nature Domain` Clerics) not being learned if 2024 rules for sub-class on level 3 are enabled
 - hide smite spells from spell panel so you can't manually cast them outside of battle
 
-1.5.97.95:
+## 1.5.97.95
+
 - added option to make `Blade Ward` cantrip into 2024 version
 - fixed free version of `Step of the Wind` from 2024 Monk granting doubled jump distance
 
-1.5.97.94:
+## 1.5.97.94
+
 - fixed several instances where dice re-rolls from Lucky feat or similar sources were not respecting attributes and other modifiers
 - removed `Will apply attack modifier penalties for ranged attacks on non-perceived` setting as it has issues and is really redundant on top of disadvantage
 - fixed game breaking if several characters detect trap on location load
 
-1.5.97.93:
+## 1.5.97.93
+
 - Dungeon Maker: turn ConditionForms that add Prone condition into MovementForm of FallProne type. This fixes custom monsters that inflict Prone.
 - Dungeon Maker: if attack definition is not overriden - use raw base definition. This makes possible for custom monsters to reuse their base attacks that may have effects that are not damage or condition - like some wolves that have prone.
 
-1.5.97.92:
+## 1.5.97.92
+
 - again removed duplicate `Mire the Mind` invocation
 - fixed Attacks of Opportunity not working
 - fixed Attacks of Opportunity highlight not being accurate in case some tiles near enemy have different visibility
 - renamed `Enable no attacks of opportunity when Blinded or if target is Invisible` setting to `Prevent attacks of opportunity when target is not perceived`
 
-1.5.97.91:
+## 1.5.97.91
+
 - fixed Bardic Inspiration animation using weapon instead of instrument
 
-1.5.97.90:
+## 1.5.97.90
+
 - fixed rare cases when `Max Allowed Classes` on multiclass can be 0
 - fixed 2024 ritual casting for all casters not working on some subclasses
 - removed `Update stealth on hero after attack if perceived on surprise round [first hero only]` setting as it was completely breaking stealth
 - made tweaks to Attack of Opportunity checks to fix rare cases of moving within enemy reach provoking AoO
 
-1.5.97.89:
+## 1.5.97.89
+
 - fixed Divine Smite not dealing damage if cast with level 1 slot
 - fixed Oath of Demon Hunter not being able to use Divine Smite with crossbows
 
-1.5.97.88:
+## 1.5.97.88
+
 - Smite Spells 2024: allow only attacks with melee weapons or unarmed (can be thrown melee weapon)
 - Smite Spells 2024: do not show smite popup if character has no spell slots to cast spell
 
-1.5.97.87:
+## 1.5.97.87
+
 - fixed Divine Smite 2024 description and hide 2014 Divine Smite if 2024 Smite is enabled
 - fixed no Divine Smite prompts if 2024 rules enabled and you have no bonus action spells prepared
 - implemented 2024 Divine Smite free use once per long rest
 
-1.5.97.86:
+## 1.5.97.86
+
 - fixed `Gift of the Ever-Living Ones` and similar healing-maximization effects not applying to some forms of healing
 - fixed Sentinel's movement stopping triggering for readied attacks
 - removed duplicate Mire the Mind invocation
 
-1.5.97.85:
+## 1.5.97.85
+
 - changed `Evasive Footwork` maneuver to last until start of next turn, not end of current turn - as per PHB24
 - changed extra claw attack of `Path of the Beast` Barbarian to always add ability bonus and not consume Reaction
 
-1.5.97.84:
+## 1.5.97.84
+
 - fixed crash on Linux related to generated speech fix
 - fixed 2024 ritual casting for all casters not working on `Spellblade`, `Arcane Scoundrel`, `Shadowcaster` and `Eldritch Knight` subclasses
 
-1.5.97.83:
+## 1.5.97.83
+
 - merged Sheep-y's PR for smoother respec process
 - fixed audio disappearing or having wrong levels when using generated speech
 
-1.5.97.82:
+## 1.5.97.82
+
 - fixed Disengage sometimes re-triggering when another character acts if it was confirmed by movement, not Confirm button
 - made Wrathful Smite deal Psychic damage and be Evocation school if 2024 Smite Spell changes disabled, and deal Necrotic and be Necromancy school if enabled
 - fixed Sentinel reaction attack and Blizzard Conduit from Way of the Elements barbarian sometimes making enemy attack not consume action
 - fixed error when `Circle of Wildfire` druid summons it's spirit while wildshaped
 
-1.5.97.81:
+## 1.5.97.81
+
 - fixed potential crash with Spell Points system
 - show Spell Points and point cost on reactions that spend spell slots
 - changed 2024 Divine Smite Toggle to make it a spell, not just consume BA
 - added setting to turn Smite spells (Wrathful, Branding, Thunderous, Searing, Staggering, Banishing and Blinding) to 5e 2024 - no concentration, trigger on hit while still using Bonus Action
 
-1.5.97.80:
+## 1.5.97.80
+
 - fixed aura powers breaking on location change
 - fixed `Ensnaring Strike` and `Wrathful Smite` damage being negated by successful saving throw
 - made Cunning Action (Rogue) and Fast Hands (Thief) enable respective Bonus Action actions (Dash/Disengage/Hide/Use Item etc.) instead of adding actions that would grant new BA with those new actions enabled
 - fixed Nick weapon mastery interaction with Cunning Action
 
-1.5.97.79:
+## 1.5.97.79
+
 - fixed `Change magically obscured areas to be projectile blockers` not affecting Darkness from `Way of Shadows` monk and `Maddening Darkness` spell
 - fixed interaction between Darknesses from several `Way of Shadows` monks
 - allow `Way of Shadows` monk to shoot projectiles inside own darkness even if projectile blocking is enabled for magical darkness
 - Made Kobold's Draconic Cry distract for a full round + fixed area not extending up and down
 
-1.5.97.78:
+## 1.5.97.78
+
 - fixed `Pact of the Tome` granting extra cantrips if you go back after selecting it and re-select it
 - made `Way of Shadow` monk see anyone inside Darkness that is created by monk ability
 
-1.5.97.77:
+## 1.5.97.77
+
 - removed 13 DEX requirement from `Dual Wielder` feat as it is not present in 5e 2014
 - fixed `Sprite's Ability` from `Abilities of the Chain Master` invocation giving disadvantage to user, not to enemies and fixed its AC modifier being tied to Barkskin
 - Lighting and Obscurement - do not allow to see targets in the magical darkness without proper senses like blind sight, true sight or tremor sense
 
-1.5.97.76:
+## 1.5.97.76
+
 - fixed Dragon's Breath DC when cast not on players
 
-1.5.97.75:
+## 1.5.97.75
+
 - fixed displaying of Save Proficiency features in some cases (e.g. Iron Mind from Gloomstalker)
 - fixed `Honed Bear` of `Totem Warrior` applying its effect to barbarian, instead of enemies
 - fixed `Magic Counter` of `Hive Patron` warlock not working
 
-1.5.97.74:
+## 1.5.97.74
+
 - fixed Sanctuary rolling saving throw for each projectile in a spell, not once per target per spell
 - updated description of Sanctuary to better reflect recent changes
 - fixed Seeking Spell metamagic triggering for missed attacks
 - fixed Command: Grovel and Command: Approach not properly ending target's turn
 
-1.5.97.73:
+## 1.5.97.73
+
 - fixed crash when using some custom spell scrolls (like Sanctuary)
 - reworked how Sanctuary works - now it aborts attack action or makes target immune to magic effect in case of failed throw
 
-1.5.97.72:
+## 1.5.97.72
+
 - fixed and improved mod update
 
-1.5.97.71:
+## 1.5.97.71
+
 - fixed Moon Druid's primal Strike not working on unarmed beast attacks
 - fixed potential crash related to `Lighting and Obscurement` rules and effect proxies like Flaming Sphere
 - reworked Topple mastery to try and fix enemies continuing movement after being toppled
 
-1.5.97.70:
+## 1.5.97.70
+
 - fixed multiplayer crash related to powers with sub-powers
 
-1.5.97.69:
+## 1.5.97.69
+
 - re-fixed crash in cases when enemy with multi-attack loses ability to attack between chained attacks
 
-1.5.97.68:
+## 1.5.97.68
+
 - fixed crash in cases when enemy with multi-attack loses ability to attack between chained attacks
 
-1.5.97.67:
+## 1.5.97.67
+
 - Flexible Backgrounds: generate suggested skills description instead of relying on manually defined texts
 - tweaked skills for Militia background
 - tweaked how some of the weapon masteries are reported
 
-1.5.97.66:
+## 1.5.97.66
+
 - fixed perception of large and bigger creatures when Light and Obscurement rules are enabled
 - merged PR from Hierot with tweaks for Eldritch Versatilities
 
-1.5.97.65:
+## 1.5.97.65
+
 - removed `Deadly` weapon mastery as it was severely bugged
 - removed `alternative weapon masteries` setting
 - added ability to customize weapon masteries
@@ -823,13 +951,15 @@
 - show known Weapon Mastery when `Enable extended proficiencies panel display` is turned on
 - ModUI: generate list of stuff enabled by `Enable extended proficiencies panel display` dynamically
 
-1.5.97.64:
+## 1.5.97.64
+
 - added `Show Logs` button to `Mod Error Warning` popup
 - show full path to Player.log file in `Mod Error Warning` popup
 - fixed `Starry Form` from `Circle of Stars` not restoring 1 charge on short rest when 2024 Wild Shape changes are enabled
 - fixed Cast Bonus Spell button that shows no spells present if non-caster selects Fey Teleportation feat 
 
-1.5.97.63:
+## 1.5.97.63
+
 - fixed crash with 'Apply throwing penalties to range for lack of strength' setting enabled if creature had no main attack available
 - fixed Circle of Stars Starry Form having wrong amount of charges with 2024 Wild Shape changes
 - fixed 2024 Druid's Primal Strike triggers:
@@ -842,27 +972,32 @@
 - Mod UI: added folding to general item settings
 - added option to change weapon type of legendary weapons from Palace of Ice (ModUI -> Gameplay -> Crafting and Items)
 
-1.5.97.62:
+## 1.5.97.62
+
 - fixed Way of Storm's `Tempest Fury` AoE attack using wrong attack mode
 - fixed crash when using Scroll of Wither and Bloom
 - fixed formatting of UB scroll usage in the game log
 - show tooltip for used item and resulting spell in game log
 
-1.5.97.61:
+## 1.5.97.61
+
 - added option to show spell icon with spell tooltip on that scrolls (Game Settings->GUI, enabled by default)
 - added option to add scrolls for all UB spells to appropriate shops (ModUI->General->Items&Crafting and also ModUI->Character->Spells) 
 - added option to add scrolls for all UB spells to appropriate treasure packs (ModUI->General->Items&Crafting and also ModUI->Character->Spells)
 - fixed Martial Spellblade not having access to Enchantment spells 
 
-1.5.97.60:
+## 1.5.97.60
+
 - preview push from Tempest Domain's Thunderous Strike if motion preview is enabled
 - Grappling: do not allow to grapple immune creatures - prevents Grappling status from being stuck on the grappler
 
-1.5.97.59:
+## 1.5.97.59
+
 - merged PR from BShennette: `Change cast time from Action -> Bonus Action as per TT version of the "Guardian of Nature" spell.`
 - merged updated Russian localization from Kranay
 
-1.5.97.58:
+## 1.5.97.58
+
 - added space to comma list separator for better look
 - slightly improved check for target size for push mastery
 - preview push from weapon mastery if motion preview is enabled
@@ -870,51 +1005,60 @@
 - tweaked how Aasimar's `Angelic Flight` condition is reported for better looking log
 - reworked `Burst of Radiance` cantrip to be AoE in stead of 8 targets
 - several improvements to Spell Points optional rule:
- - Arcane Surge now works with it - gives 2 points per spell slot recovered
- - properly report Spell points recovery on rest
+  - Arcane Surge now works with it - gives 2 points per spell slot recovered
+  - properly report Spell points recovery on rest
 - fixed crash if character with replace attack by cantrip has no attack modes
 - fixed improper copying of usable device description in item builder 
 - hide Deadeye toggle if no appropriate weapon is equipped
 - reworked 2024 poison and potion used as Bonus Action:
- - when right-clicking in inventory it shows separate buttons for Main and Bonus action use
- - properly consumes Main action if Main action option is chosen
+  - when right-clicking in inventory it shows separate buttons for Main and Bonus action use
+  - properly consumes Main action if Main action option is chosen
 - Mod UI: added ability to search items by name
 - fixed interaction between Darkness and Daylight and Windwall and clouds
 - lighting, obscurement, and vision rules toggle: fixed Darkvision and Superior Darkvision being ignored for regular darkness and made Truesight allow seeing through invisibility
 
-1.5.97.57:
+## 1.5.97.57
+
 - improvements to auto-update
 
-1.5.97.56:
+## 1.5.97.56
+
 - work in progress on GitHub actions build 
 
-1.5.97.55:
+## 1.5.97.55
+
 - added feedback tooltip for shot in the dark
 - fixed nasty bug with "chance to perceive at close range" option
 
-1.5.97.54:
+## 1.5.97.54
+
 - added optional jump check fail 1d4 damage. 
 - added optional disadvantaged jump check roll for wearing armor
 - removed the armor wearing jump distance modification (bad idea)
 
-1.5.97.53:
+## 1.5.97.53
+
 - moved roleplay options in to its own display
 - updated the version control updater to point to the new repository
 
-1.5.97.52:
+## 1.5.97.52
+
 - added option to modify jumping rules for encumberance and armor category
 - added option to modify throwing rules for range vs strength
 
-1.5.97.51:
+## 1.5.97.51
+
 - added Deadly weapon mastery (From Pathfinder)
 - updated Longbow and LongMace types with deadly for alternate weapon mastery properties
 - added option for critical hits and misses to happen when attack result is 10 under or over the AC
 - fixed the cleave on ranged weapons to have a maximum effectiveness of 16
 
-1.5.97.50:
+## 1.5.97.50
+
 - fixed bad bug with shot in the dark
 
-1.5.97.49:
+## 1.5.97.49
+
 - changed Shine to be effective (DC 15 fixed save)
 - added Sorr-Akkath to have darkvision 
 - added a chance to perceive characters that are < 11 distance
@@ -922,7 +1066,7 @@
 - added zipping the mod on realease install build.
 - fixed monsters to have the right vision when it comes to UB light and obscurement rules
 
-1.5.97.46:
+## 1.5.97.46
 
 - added Domain Order subclass
 - added Katana to Blade Mastery, and Longsword Finesse
@@ -933,7 +1077,7 @@
 - fixed Lighting and Obscurement rules against huge targets
 - fixed Martial Arts 2024 interaction with grapple, and shove
 
-1.5.97.45:
+## 1.5.97.45
 
 - fixed Baleful Scion, and Fighting Initiate feats
 - fixed Cleric blessed strikes bleeding behaviors
@@ -942,7 +1086,7 @@
 - fixed Druid wildshape interaction with circles at 3rd
 - fixed narration voices volume slider on mod UI
 
-1.5.97.44:
+## 1.5.97.44
 
 - added Martial Champion 2024 setting
 - added Paladin level 20 subclasses power recharge from level 5 slot 2024 setting
@@ -968,7 +1112,7 @@
 - fixed context checks calculations
 - fixed enable no AoO if Blinded or Invisible setting to consider sense modes
 
-1.5.97.43:
+## 1.5.97.43
 
 RESPEC required on Acid Claws, Crossbow Mastery, Monk weapon specialization, Natural Fluidity, Spiritual Fluidity, Pugilist, Way of Shadow, and Way of Zen Archery
 
@@ -1002,12 +1146,12 @@ CHANGES:
 - removed Monk weapon specialization setting, Natural Fluidity, and Spiritual Fluidity feats [RESPEC]
 - removed backward compatibility support from Acid Claws, Crossbow Mastery, and Pugilist [RESPEC]
 
-1.5.97.42:
+## 1.5.97.42
 
 - added new Cleric, Paladin, Ranger, and Sorcerer tabletop 2024 settings
 - fixed custom models rendering on map, and katana models size / texture
 
-1.5.97.41:
+## 1.5.97.41
 
 ATTENTION: bootstrap feels much slower with custom blender models parsing. need feedback from user base.
 
@@ -1031,7 +1175,7 @@ ATTENTION: bootstrap feels much slower with custom blender models parsing. need 
 - fixed Pact of Chain bind chain usages when acquired as a 2024 invocation
 - fixed Thunder Gauntlet interaction with Cleaving Attack, and Power Attack feats
 
-1.5.97.40 - 3 Years CE/UB anniversary has a lot to say:
+## 1.5.97.40 - 3 Years CE/UB anniversary has a lot to say
 
 ATTENTION: Check "The Forsaken Isle" and "Morrows Deep" from Artyoan, updated with NPCs text-to-speech data
 
@@ -1060,7 +1204,7 @@ ATTENTION: Check "The Forsaken Isle" and "Morrows Deep" from Artyoan, updated wi
 - fixed True Strike 2024 version not allowing ranged or thrown, and enforcing concentration
 - fixed weapon attribute determination not enforcing the higher scored modifier [i.e.: Hexblade, precision feats, etc.]
 
-1.5.97.39:
+## 1.5.97.39
 
 - added 'Allow Potions and Scrolls to be carried and used in the ammunition slots' setting [by SilverGriffon]
 - added 'Allow Potions and Scrolls to be carried and used in the off-hand weapon slot' setting [by SilverGriffon]
@@ -1082,7 +1226,7 @@ ATTENTION: Check "The Forsaken Isle" and "Morrows Deep" from Artyoan, updated wi
 - fixed spend power action passing a null instance to mod custom behaviors leading to desyncs and soft locks
 - fixed Stealthy action from key bind not broadcasting status on multiplayer sessions
 
-1.5.97.38:
+## 1.5.97.38
 
 - added False Life to 'Enable healing spells 5e 2024 spells version'
 - fixed 'Enable all Casters to use new prepared spells tables' on Rangers
@@ -1095,7 +1239,7 @@ ATTENTION: Check "The Forsaken Isle" and "Morrows Deep" from Artyoan, updated wi
 - fixed Rogue stroke of luck missing foreign translations introduced on v37
 - improved Armor of Agathys, and Power Word Heal to 5e 2024 versions
 
-1.5.97.37:
+## 1.5.97.37
 
 - added 25+ new settings under tabletop 5e 2024 section
 - added Wizard Abjuration arcane ward recharge bonus action
@@ -1112,7 +1256,7 @@ ATTENTION: Check "The Forsaken Isle" and "Morrows Deep" from Artyoan, updated wi
 - fixed Wizard Abjuration projected ward crash on gadgets
 - fixed Wizard Graviturgist descriptions, SFX, and behaviors
 
-1.5.97.36:
+## 1.5.97.36
 
 - added behavior package choices on heroes controlled by AI [single player only]
 - added Character > Classes > 'Enable Lay on Hands as bonus action' [OneDnd]
@@ -1145,7 +1289,7 @@ KNOWN ISSUES:
 - Artillerist Force Ballista tiny cannon won't force disadvantage if defender is within 5 ft
 - Chaos Bolt spell damage won't deal the correct damage type if under multiplayer, twinned, and one bolt misses
 
-1.5.97.35:
+## 1.5.97.35
 
 - added final behaviors to Brawler, and Grappler feats [demoted Pugilist fighting style as redundant now]
 - added Gift of the Gem Dragon feat [bumped with prone in addition to push]
@@ -1168,7 +1312,7 @@ KNOWN ISSUES:
 - moved some mod settings to be offered under game official UI [check GUI, and keyboard sections]
 - reorg mod UI with more intuitive grouping [check general sections under backgrounds, spells, subclasses, etc.]
 
-1.5.97.34:
+## 1.5.97.34
 
 - fixed battles soft lock with reaction spells, and readied actions
 - fixed Circle of Nature level up instability when switching subclasses
@@ -1179,7 +1323,7 @@ KNOWN ISSUES:
 - fixed Spike Growth and similar 2x damage on last tile move
 - fixed Wizard War Magic power surge on successful save
 
-1.5.97.33:
+## 1.5.97.33
 
 - added homebrew Brawler feat
 - fixed Armor of Agathys spell condition removal, and damage determination logic
@@ -1188,7 +1332,7 @@ KNOWN ISSUES:
 - fixed RESPEC invalid save state introduced on v32 [doesn't fix broken saves]
 - improved Grapple behavior with larger targets pathfinding, and movement blockers
 
-1.5.97.32:
+## 1.5.97.32
 
 - added General > Character > 'Add grapple action to all playable races'
 - added homebrew Grappler feat [TT one is very low GPA]
@@ -1216,12 +1360,12 @@ KNOWN ISSUES:
 - improved slot type SHIFT key modifier to only require the key pressed on modals clicks, and also work on multiplayer
 - improved tooltips to be wider, and better fully render at 1080p or lower resolutions as one in Steam Deck
 
-1.5.97.31:
+## 1.5.97.31
 
 - added Interface > Game UI > 'Show preview of Push and Pull effects'
 - fixed mod initialization sequence introduced on previous version
 
-1.5.97.30:
+## 1.5.97.30
 
 - added Character > General 'Add the Fall Prone action to all playable races'
 - added Character > Rules > 'Allow allies to perceive Ranger GloomStalker when in natural darkness'
@@ -1259,7 +1403,7 @@ KNOWN ISSUES:
 - improved Sorcerer Wild Magic tides of chaos, Conversion Slots, and Shorthand versatilities to react on ability checks
 - improved victory modal export behavior to allow heroes not in pool to be exported [VANILLA]
 
-1.5.97.29:
+## 1.5.97.29
 
 - fixed cantrips **CRASH** if not a melee cantrip and hero has replace attack with cantrips
 - fixed Bait and Switch maneuver incorrectly changing AC with an add. +1
@@ -1285,7 +1429,8 @@ KNOWN ISSUES:
 - fixed Sorcerer Wild Magic tides of chaos double consumption
 - fixed Wizard Dead Master undead chains incorrectly changing AC with an add. +1
 
-1.5.97.28:
+## 1.5.97.28
+
  
 - added 'Allow Unarmed Attack with main action for character if a Monk or has Handwraps or Gauntlet equipped' setting
 - fixed Action Surge interaction with main spells
@@ -1313,7 +1458,7 @@ KNOWN ISSUES:
 - improved Path of the Wild Magic wild surge combat log, and drain description 
 - improved Patron Eldritch Surge behaviors and features [needs RESPEC]
 
-1.5.97.27:
+## 1.5.97.27
 
 - added Gameplay > Crafting, Items & Merchants > 'Enable Monk handwraps and gauntlets to work in gauntlet slot' setting
 - added Gameplay > Rules > 'Allow Blade Cantrips to use reach instead of 5 ft' setting
@@ -1333,7 +1478,7 @@ KNOWN ISSUES:
 - improved Quickened action to show spell selection panel, and cast main spell with quickened metamagic applied
 - improved Shadow Blade spell to name ADV as 'Shadow Blade', and show ADV feature on dagger and spell descriptions
 
-1.5.97.26:
+## 1.5.97.26
 
 - fixed Absorb Elements spell triggering behavior
 - fixed Bait and Switch maneuver greyed out on action bar
@@ -1351,7 +1496,7 @@ KNOWN ISSUES:
 - improved Chaos Bolt spell tooltip to present damage symbols, and correct 1d6 damage progression
 - improved Time Stop spell to behave as in tabletop, and grant 1d4+1 additional turns during combat
 
-1.5.97.25:
+## 1.5.97.25
 
 - added Gameplay > Character > 'Enable Sorcerer quickened action to allow cast leveled main in the end'
 - added triple camera range to Interface > Game UI > 'Enable elevation camera during battle to stay at position'
@@ -1372,7 +1517,7 @@ KNOWN ISSUES:
 - improved Roguish Umbral Stalker, now Roguish Shadowdancer, to also allow ranged builds
 - improved Way of Zen Archery flurry of arrows to replace one of your bonus unarmed strikes with a bow attack
 
-1.5.97.24:
+## 1.5.97.24
 
 - added Artificer soul of artifice at 20th
 - added General > Rules > 'Set Sorcerer Wild Magic chance die threshold' setting
@@ -1390,16 +1535,16 @@ KNOWN ISSUES:
 - fixed Warlock pact chain powers recharge rate to long rest [VANILLA]
 - removed Interface > Game UI > 'Increase elevation camera max height by' setting as causing a game soft lock
 
-1.5.97.23:
+## 1.5.97.23
 
 - fixed features interaction with non weapon attack modes causing a soft lock
 - fixed Sorcerous Wild Magic spell bombardment bleeding into other heroes
 
-1.5.97.22:
+## 1.5.97.22
 
 - fixed invalid condition checks leading to a soft lock on Master Duelist, Quivering Palm, and Taunter
 
-1.5.97.21:
+## 1.5.97.21
 
 - added new subclass sprites to ones still leveraging duplicates
 - fixed Booming Blade cantrip not removing the additional damage after an attack
@@ -1409,7 +1554,7 @@ KNOWN ISSUES:
 - fixed Shapechange spell interaction with shared metamagic
 - fixed Shared metamagic to enforce ally side when used
 
-1.5.97.20:
+## 1.5.97.20
 
 - added Interface > Game UI > 'Camera never moves during enemy turns'
 - added Interface > Game UI > 'Enable elevation camera to stay at position'
@@ -1422,7 +1567,7 @@ KNOWN ISSUES:
 - fixed Ring of Knifes spell follow up power to-hit modifier
 - fixed selection on Field Manipulator displacement, and Scatter spell
 
-1.5.97.19:
+## 1.5.97.19
 
 all fixes marked with * were introduced with the IsMelee change on v18
 
@@ -1448,8 +1593,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 * fixed Wendigo natural lunger increase weapon reach validator
 * fixed Wyrmkin reactive retribution attack mode validator
 
-
-1.5.97.18:
+## 1.5.97.18
 
 - added Circle of the Wildfire, and Vitriolic Sphere spell
 - added Ranger Wildmaster summons custom portraits [by Thaladar]
@@ -1475,7 +1619,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Rescue the Dying spell triggering logic
 - fixed Skill Empowerment spell suggested list
 
-1.5.97.17:
+## 1.5.97.17
 
 - fixed 'After was attacked' condition interruption also triggering on non attack roll magic effects
 - fixed 'After was attacked not by source' condition interruption also triggering on non attack roll magic effects
@@ -1485,7 +1629,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed powers with custom usages not recharging over short or long rests [i.e.: gambits, infusions, etc.]
 - improved Martial Warlord battlefield experience, coordinated assault, and battle plan features
 
-1.5.97.16:
+## 1.5.97.16
 
 - added Skill Empowerment, and Synaptic Static 5th level spells
 - added Scatter, and Shelter from Energy [dnd unleashed] 6th level spells
@@ -1510,7 +1654,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - improved translations on spider like models setting description to prevent people bear with consequences
 - improved Wizard Deadmaster summons to be 1 hour duration across all spell levels
 
-1.5.97.15:
+## 1.5.97.15
 
 - added a priority order to all features interacting with attack rolls trying to change result or buff/debuff contenders
 - added new dagger recipes [by magicskysword]
@@ -1536,7 +1680,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Psionic Blast spell duration, removed concentration, and improved SFX
 - fixed some custom items missing document descriptions
 
-1.5.97.14:
+## 1.5.97.14
 
 - added Ashardalon's Stride, and Elemental Bane spells
 - fixed Domain Tempest destructive wrath, and Transmuted interactions
@@ -1548,7 +1692,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Stunning Strike behavior to not trigger on stunned enemies and auto disable on a failed saving
 - moved Psionic Blast to spell level 4, and converted it into homebrew
 
-1.5.97.12:
+## 1.5.97.12
 
 - added Gameplay > Character > 'Enable Monk Heightened Metabolism at level 10' setting
 - added Gameplay > Character > 'Enable Monk Superior Defense to replace Empty Body at level 18' setting
@@ -1563,7 +1707,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Patron Riftwalker rift strike to banish enemy instead of self
 - fixed Way of Freedom displaying additional flurry of blow actions on levels 3 and 11 [VANILLA]
 
-1.5.97.11:
+## 1.5.97.11
 
 - fixed Chain Lighting to not consider allies on bounce damage
 - fixed Domain Forge blessed metal feature immunity and resistance logic
@@ -1581,7 +1725,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Thunderstep spell to only allow target allies within 5ft
 - fixed Wizard War Magic durable magic feature to add +2 on concentration checks
 
-1.5.97.10 - Os cães ladram e a caravana passa:
+## 1.5.97.10 - Os cães ladram e a caravana passa
 
 - added +X to hit and damage on Shield Bash feat on any wielded magical shield that adds +X to armor class
 - added Gameplay > Character > 'Enable Bard College of Hope healing ballad on long rest' setting
@@ -1598,7 +1742,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Witch Bolt spell to remove concentration on teleport scenarios when target becomes outside range
 - fixed Wither and Bloom spell doubling damage under multiplayer sessions
 
-1.5.97.9:
+## 1.5.97.9
 
 - converted Astral Reach feat to fighting style and removed +1 to WIS and opportunity attacks
 - converted Improved Critical, and Superior Critical feats to set a critical range instead of a decrement
@@ -1617,7 +1761,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - removed finesse requirement from Defensive Duelist feat
 - replaced STR damage bonus on Bow Mastery and Crossbow Mastery feats with DEX weapon bonus, all bows/cross get it
 
-1.5.97.8:
+## 1.5.97.8
 
 - added Stealthy feat
 - added Aganazzar's Scorcher, and Snilloc's Snowball Storm spells
@@ -1636,7 +1780,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Roguish Opportunist debilitating strike not subtracting D4/D6 on savings
 - fixed Way of Weal and Woe to not trigger "Your Woe" before level 17th
 
-1.5.97.7:
+## 1.5.97.7
 
 - added Acrobat, Arcanist and Theologian feats
 - fixed Baleful Scion feat to reset healing after triggered
@@ -1647,7 +1791,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed mod boot up for all non English users [blame Google]
 - fixed skill/tool or expertise granted from feats
 
-1.5.97.6:
+## 1.5.97.6
 
 - added additional custom portraits [by Artyoan]
 - added Athlete, Baleful Scion, Dungeon Delver, Lucky, and Menacing feats
@@ -1689,7 +1833,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - improved invocations that grant spells with balanced usage and standardized descriptions
 - improved Sorcerer spell list with Fire Shield spell [VANILLA]
 
-1.5.97.5:
+## 1.5.97.5
 
 - added Aura of Vitality, Mordenkainen's Faithful Hound, and Witch Bolt spells
 - added Bountiful Luck, Grudge Bearer, and Weapon Master feats
@@ -1715,7 +1859,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Patron Celestial healing light power missing from action bar
 - fixed Patron Mountain eternal guardian power not reducing damage from 6th level onwards
 
-1.5.97.4:
+## 1.5.97.4
 
 - added Burning Hex and Chilling Hex invocations
 - added Conjure Goblinoids spell [suggested to Druid and Ranger]
@@ -1733,7 +1877,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Wildmaster bear companion additional HPs [class level instead of char level]
 - fixed Wildmaster eagle and wolf companions not allowed in combat
 
-1.5.97.3:
+## 1.5.97.3
 
 - added 'Add Dexterity Modifier to enemies Initiative Roll'
 - added 'Enable the hero with best proficiency to roll dialogue choices'
@@ -1749,7 +1893,9 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Ranger Wildmaster bear and eagle 2nd attack to be different than 1st
 - fixed Reckless Attack not working with enemies, reach weapons, and unarmed
 - fixed Way of Dragon reaction hide and sub interaction with cantrip attacks
+
  
+
 1.5.97.2:
 
 - added 'Enable Barbarian brutal strike at levels 9, 13 and 17'
@@ -1761,7 +1907,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed Devastating Strikes feat as a better fit for Barbarians
 - fixed Inspired Leader feat temp HPs to endure until long rest
 
-1.5.97.1:
+## 1.5.97.1
 
 - added Gift of The Chromatic Dragon and Second Chance feats
 - added 'Select Tabletop' checkboxes under 'Mod UI > Character'
@@ -1770,7 +1916,7 @@ all fixes marked with * were introduced with the IsMelee change on v18
 - fixed flying on Path of Elements and Path of Totem Warrior
 - fixed mod boot under certain scenarios [UMM 0.27.11 or above not supported]
 
-1.5.97.0:
+## 1.5.97.0
 
 ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 
@@ -1798,7 +1944,7 @@ ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 - replaced Ranger Sky Warrior swift strike at 7th with ghostly howl
 - replaced Ranger Survivalist features at 15th with blessing of the wilderness
 
-1.5.94.56:
+## 1.5.94.56
 
 - added Martial Force Knight subclass
 - added Militia and Troublemaker backgrounds
@@ -1814,7 +1960,7 @@ ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 - fixed select positions cursor pointer validation
 - fixed terminating effects over circular relations graphs
 
-1.5.94.55:
+## 1.5.94.55
 
 - fixed all powers requiring 5ft range not triggering on diagonals
 - fixed Ardent Hate, Heart Seek Shot, and Shadow Flurry triggering on anyone's failed attack
@@ -1825,7 +1971,7 @@ ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 - fixed Telekinesis contest check, range, and SFX
 - fixed Umbral Stalker shadow stride not getting offered if you initiate surprise round with rogue
 
-1.5.94.54:
+## 1.5.94.54
 
 - added Telekinesis spell at 5th
 - added Interface > Game UI > 'Change AoE creatures highlight select color'
@@ -1840,7 +1986,7 @@ ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 - improved Gambit coordinated attack and Warlord strategic reposition to work under multiplayer
 - improved Umbral Stalker gloomblade and shadow stride features
 
-1.5.94.53:
+## 1.5.94.53
 
 - added Gameplay > Rules > 'Enable Rogue to use DEX or STR modifiers on Cunning/Devil Strike, Debilitated/Improved...'
 - fixed Booming Step modal staying open after selection
@@ -1852,9 +1998,10 @@ ATTENTION: latest UMM compatible version is 0.27.10. DON'T USE ANYTHING ABOVE
 - reviewed all conditions [hundreds of them] for correct duration and redundant interruptions
 - reviewed all subclasses, feats, FS, gambits, invocations and spells for performance improvement
 
-1.5.94.52:
+## 1.5.94.52
 
 RESPEC IS REQUIRED ON: Moonlit and Raven Uncut [previously deprecated in 2023]
+
 RESPEC MIGHT BE REQUIRED ON: Tactician and Silhouette [if heroes or saves created in 2023]
 
 - added Morning Stars enchanted items and respective recipes
@@ -1868,9 +2015,10 @@ RESPEC MIGHT BE REQUIRED ON: Tactician and Silhouette [if heroes or saves create
 - removed backward compatibility blueprints from Tactician and Silhouette
 - removed previously deprecated Moonlit and Raven Uncut
 
-1.5.94.51:
+## 1.5.94.51
 
 RESPEC IS REQUIRED ON: Harlequin, Defender, Marshal, and Distant Hand [previously deprecated in 2023]
+
 RESPEC MIGHT BE REQUIRED ON: Scoundrel, Defiler, Duelist, and Raven [if heroes or saves created in 2023]
 
 - added Circle of the Cosmos subclass [only difference compared with TT is it won't react on attribute checks]
@@ -1887,12 +2035,12 @@ RESPEC MIGHT BE REQUIRED ON: Scoundrel, Defiler, Duelist, and Raven [if heroes o
 - removed older 17h backward compatibility blueprints from Scoundrel, Duelist, and Raven
 - removed older 6th and 8th backward compatibility blueprints from Defiler
 
-1.5.94.50:
+## 1.5.94.50
 
 - fixed custom trigger AlterSavingThrowOutcome impacting Eldritch Ward, Flash of Genius, and Seize the Chance 
 - fixed lighting, obscurement, and vision rules to consider controller position and senses with proxy effects
 
-1.5.94.49:
+## 1.5.94.49
 
 - fixed Arcane Recovery and Flexible Casting modals getting presented to all players in a MP session
 - fixed Burning Blade spell causing an instability when attempting the 2nd target damage
@@ -1903,7 +2051,7 @@ RESPEC MIGHT BE REQUIRED ON: Scoundrel, Defiler, Duelist, and Raven [if heroes o
 - improved Patron Moonlit conditions icons, features SFX, and midnight blessing feature
 - improved Rogue Duelist master duelist feature to be closer to UA
 
-1.5.94.48:
+## 1.5.94.48
 
 - added revised Patron Moonlit subclass [design by HiddenHax]
 - fixed Circle of The Nights interaction with Arch Druid feature at level 20
@@ -1911,7 +2059,7 @@ RESPEC MIGHT BE REQUIRED ON: Scoundrel, Defiler, Duelist, and Raven [if heroes o
 - fixed vanilla powers and spells with range type touch and distance greater than zero
 - improved 'Cold Resistance also grants immunity to chilled condition and reduces frozen to chilled'
 
-1.5.94.47:
+## 1.5.94.47
 
 - added Gameplay > Rules > 'Cold Resistance also grants immunity to chilled condition'
 - added Gameplay > Rules > 'Cold Immunity also grants immunity to chilled and frozen conditions'
@@ -1919,27 +2067,28 @@ RESPEC MIGHT BE REQUIRED ON: Scoundrel, Defiler, Duelist, and Raven [if heroes o
 - fixed level up [crashing after remarkable technique fix]
 - fixed lighting and obscurement rules [still crashing with gadgets]
 
-1.5.94.46:
+## 1.5.94.46
 
 - fixed enemies flanking rules [triggering false positives on allies]
 - fixed Ethereal Step spell [offering no positions]
 - fixed lighting and obscurement rules [crashing with gadgets]
 - fixed Remarkable Technique fighting style [offering no gambits]
 
-1.5.94.45:
+## 1.5.94.45
 
 - fixed distance calculation logic affecting some feats, features, fighting styles, invocations, and spells
 - fixed lighting, obscurement, and vision under invisibility scenarios [allow blind sight and tremor sense]
 - fixed Path of The Spirits wolf leadership to grant advantage to all allies within 5 ft except raging self
 - fixed vanilla Raise Dead spell adding modifiers instead of subtracting them from ability and saving check
 
-1.5.94.44:
+## 1.5.94.44
 
 - fixed a crash introduced on v43 that developer's tremor sense wasn't able to detect
 
-1.5.94.43:
+## 1.5.94.43
 
 THIS VERSION IS A TRIBUTE TO SGT. PEPPER, THE BEST BOSTON TERRIER ANYONE COULD HAVE HAD AS A FRIEND!
+
 GO INTO THE LIGHT, STAY IN THE LIGHT, FIND YOUR BEST FRIEND HEY JUDE. ONE DAY, THE BAND WILL REUNITE
 
 - added Gameplay > Rules > 'Illusion spells automatically fail against targets with TrueSight in range'
@@ -1962,11 +2111,11 @@ GO INTO THE LIGHT, STAY IN THE LIGHT, FIND YOUR BEST FRIEND HEY JUDE. ONE DAY, T
 - fixed vanilla Cloud Kill and Incendiary Cloud spells not triggering heavy obscurement on activation
 - fixed vanilla Ray of Enfeeblement to be applied via attack roll instead of saving throw
 
-1.5.94.42:
+## 1.5.94.42
 
 - fixed to hit / to damage attribute affecting subclasses and feats offering another attribute
 
-1.5.94.41:
+## 1.5.94.41
 
 - added Interface > Game UI > grid color, animation movement, and width settings under new 'Combat' section
 - added Ice Blade (Ice Knife) spell at 1st and Mystical Cloak (Tasha's Otherworldly Guise) spell at 6th
@@ -1995,7 +2144,7 @@ GO INTO THE LIGHT, STAY IN THE LIGHT, FIND YOUR BEST FRIEND HEY JUDE. ONE DAY, T
 - swapped Path of The Savagery wrath and fury feature at 10th with unbridled ferocity feature at 14th
 - swapped Way of Dragon reactive skin feature at 3rd with elemental breath feature at 6th
 
-1.5.94.40:
+## 1.5.94.40
 
 - added Cloud of Blades spell at 2nd
 - changed Flash Freeze spell damage from 12d6 to 10d6
@@ -2014,7 +2163,7 @@ GO INTO THE LIGHT, STAY IN THE LIGHT, FIND YOUR BEST FRIEND HEY JUDE. ONE DAY, T
 - removed Raven perfect shot at 17th and moved killing spree at 9th to 17th
 - removed Zen Archer from fighting style list and made it a +1 WIS feat
 
-1.5.94.39:
+## 1.5.94.39
 
 - added Gameplay > Rules > 'Update stealth on hero after attack if perceived on surprise round [first hero only]'
 - added Martial Warlord subclass [our view on a balanced Martial Marshal]
@@ -2037,7 +2186,7 @@ GO INTO THE LIGHT, STAY IN THE LIGHT, FIND YOUR BEST FRIEND HEY JUDE. ONE DAY, T
 - removed recurrent temporary hit points from Innovation Armor defensive field feature
 - renamed some feats, features, fighting styles, spells, subclasses, etc. to respect copyright
 
-1.5.94.38:
+## 1.5.94.38
 
 MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invited a Battlemaster to the table
 
@@ -2051,7 +2200,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Sorcerer cannot cast Metamagic targeted spells
 - removed halo effect from Malakh race
 
-1.5.94.37:
+## 1.5.94.37
 
 - added additional sample portraits [by Artyoan]
 - added Gameplay > Rules > 'Only apply Entangle effect at casting time and also force a strength check to break free from the vines'
@@ -2067,19 +2216,19 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved Find Familiar and Steel Defender with vanish and teleport to caster powers [teleport works off combat only]
 - removed Gameplay > Rules > 'Only apply Entangle effect at casting time'
 
-1.5.94.36:
+## 1.5.94.36
 
 - fixed a null exception on gadgets saving throws
 
-1.5.94.35:
+## 1.5.94.35
 
 - SPECIAL THANKS to SpaceHamster, ImpPhil, ChrisJohnDigital, TPABOBAP, and HiddenHax as without them UB wouldn't exist
 
-	- SpaceHamster: Blueprints dumper and original code and ideas on former SolastaModApi
-	- ChrisJohnDigital: Wrote the best mods during Solasta kickstarter beta and game first year
-	- ImpPhil: QoL features, builders improvement, code standardization, code reviews and improvement
-	- TPABOBAP: QoL and UI features, custom features patterns, tons of content, code reviews and improvement
-	- HiddenHax: Designed a good 25% of mod content, spent countless hours on QA, SFX ideas, balancing
+  - SpaceHamster: Blueprints dumper and original code and ideas on former SolastaModApi
+  - ChrisJohnDigital: Wrote the best mods during Solasta kickstarter beta and game first year
+  - ImpPhil: QoL features, builders improvement, code standardization, code reviews and improvement
+  - TPABOBAP: QoL and UI features, custom features patterns, tons of content, code reviews and improvement
+  - HiddenHax: Designed a good 25% of mod content, spent countless hours on QA, SFX ideas, balancing
 
 - LET'S ALL CELEBRATE ONE YEAR UB ANNIVERSARY AND 3 YEARS SOLASTA MODDING!!! @Zappastuff, developer and maintainer.
 
@@ -2090,7 +2239,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed null exceptions on Irresistible Performance, Oath of Ancients, and Oath of Dread when dealing with gadgets
 - fixed Wyrmkin crystal defense interaction with Druid wildshape leading to a soft lock in game
 
-1.5.94.34:
+## 1.5.94.34
 
 - added an entry in settings.xml with a list of deprecated subclasses [not offered or supported anymore]
 - added College of Thespian and Martial Guardian subclasses [based of deprecated Harlequin and Defender]
@@ -2104,7 +2253,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Psychic Whip freezing combat when enemy tries to dash as very first action [spell won't trigger]
 - fixed Shield Techniques not displaying the saving bonus on combat log tooltip
 
-1.5.94.33:
+## 1.5.94.33
 
 - added additional sample portraits [by Artyoan, Thaladar]
 - added Way of Zen Archery subclass
@@ -2115,7 +2264,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved Circle of The Forest Guardian bark ward caster and impact effects
 - improved Forest Imp wrath with a toggle to enable/disable the reaction prompt
 
-1.5.94.32:
+## 1.5.94.32
 
 - added Battleborn, Oni, and Wildling races [by otearaisu]
 - added Gameplay > General > 'Add Darkness Perceptive to Darkelf, Dark Kobold, and Gray Dwarf [perception checks adv]'
@@ -2131,7 +2280,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed the alternate voting system causing a narrative sequence crash on official campaigns
 - improved the VTT camera with QE keys to rotate and forced top-down view
 
-1.5.94.31:
+## 1.5.94.31
 
 - added additional sample portraits [by Artyoan]
 - added Crystal Wyrmkin sub race [by otearaisu]
@@ -2140,27 +2289,27 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Earth Tremor spell proxy title and description
 - fixed Ranger Survivalist disabling strike to trigger once per turn
 
-1.5.94.30:
+## 1.5.94.30
 
 - new content development is halted until December [only fix releases if any are planned in between]
 - fixed Devastating Strike incorrectly doubling the bonus damage on hit
 - fixed IsMelee issuing false negatives under some scenarios with Power Attacks, Smites, Wildshape, etc.
 - fixed Sorcerous Psion not adding CHA modifier to damage when all original damage forms were Psychic
 
-1.5.94.29:
+## 1.5.94.29
 
 - added additional sample portraits under Portraits [Artyoan]
 - fixed gamepad support on extended load and save menus
 - fixed Stunning Strike not checking if toggle was enabled
 - improved Inexorable Hex and Steel Whirlwind filtering logic
 
-1.5.94.28:
+## 1.5.94.28
 
 - added initial gamepad support on extended Load / Save menus
 - fixed a bad refactoring that inverted a sign and unleashed hell on game behaviors
 - fixed stunning strike getting offered on range even if not a Distant Hand at 11th
 
-1.5.94.27:
+## 1.5.94.27
 
 - fixed an issue introduced on v25 allowing infinite attacks under certain scenarios
 - fixed an issue introduced on v25 locking game when casting under certain scenarios
@@ -2168,12 +2317,12 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - changed Opportunist debilitating strike saving debuff to trigger before cunning strike
 - changed Wendigo sucker punch to 1d6 damage with additional dice at 9th and 17th levels
 
-1.5.94.26:
+## 1.5.94.26
 
 - fixed Conjure Elementals, Summon Animals, etc. not able to select a location
 - fixed a vanilla issue with global active effects registration causing exceptions on load
 
-1.5.94.25:
+## 1.5.94.25
 
 - added additional sample portraits under Portraits/Personal [by Artyoan]
 - added Interface > Game UI > 'Enable alternate voting system' [weight = votes * hero CHA modifier]
@@ -2183,7 +2332,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed 2 very rare interactions between Burning Blade / Spell Shield and Duelist / Poisonous Skin
 - improved Chilling, Corrosive, Fiery, Fulminate, Necrotic, Poisonous, Psychic, Radiant, and Thunder invocations effects
 
-1.5.94.24:
+## 1.5.94.24
 
 - added Gameplay > General > 'Disable cast spell pre-requisites on feats provided by this mod'
 - added Interface > Game UI > 'Enable Extended Proficiencies display setting'
@@ -2194,7 +2343,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Poisonous Skin crashing power effect serialization on load and save
 - fixed remaining races cast spell cantrips and slots collections crashing level up above 16th
 
-1.5.94.23:
+## 1.5.94.23
 
 - RESPEC is suggested on Telekinesis to get full benefits of reworked feat
 - added Gameplay > Rules > 'Enable item usage not breaking invisibility'
@@ -2215,7 +2364,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Way of Discordance freezing game on Deflect Missiles
 - fixed Way of Discordance tides of chaos burning extra attacks on kill
 
-1.5.94.22:
+## 1.5.94.22
 
 - RESPEC is required on *** Patron Eldritch Surge *** and *** Roguish Raven ***
 
@@ -2230,11 +2379,11 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed IsMelee weapon validators incorrectly allowing throwing
 - fixed Merciless crashing battles on enemy reduced to 0 HP
 
-1.5.94.21:
+## 1.5.94.21
 
 - fixed crash introduced with support for custom reaction spells [i.e.: Elemental Infusion]
 
-1.5.94.20:
+## 1.5.94.20
 
 - added 1st level Elemental Infusion, Vile Brew, and Void's Grasp spells
 - added 2nd level Noxious Spray spell
@@ -2247,19 +2396,19 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed some features causing soft locks by not properly checking for battle status
 - fixed vanilla spells not upcasting recurrent damage dice [i.e.: Phantasmal Killer]
 
-1.5.94.19:
+## 1.5.94.19
 
 - added Divine Wrath and Magical Negation 5th level spells
 - added Poison Wave and Ring of Blades 6th level spells
 - fixed Burning Blade and Sunlit Blade behaviors and crashes
 
-1.5.94.18:
+## 1.5.94.18
 
 - fixed Action Switching soft locking battles under certain scenarios
 - fixed Burning Blade not removing 2nd enemy impact effect on a miss
 - fixed Mirror Image not triggering damage redirection to mirrors
 
-1.5.94.17:
+## 1.5.94.17
 
 - added Aura of Perseverance, Aura of Vivacity, Protector of the Wild, and Psychic Lance 4th level spells
 - added Booming Step, Flame Arrows, and Lightning Arrows 3rd level spells
@@ -2275,9 +2424,9 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved custom portraits with better files organization, and mod UI interface
 - improved French [Ermite_Crabe], Korean [akintos], and Russian [Dovel] translations
 
-1.5.94.16:
+## 1.5.94.16
 
-# UB:
+**UB:**
 
 - added Spike Barrage, Steel Whirlwind and Swift Strike spells
 - changed Oath of Thunder 3rd level smites damage progression
@@ -2288,18 +2437,18 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Shadow Arrow using Strength instead of Wisdom on save
 - fixed Shield Techniques reacting to anything instead of only DEX
 
-# VANILLA:
+**VANILLA:**
 
 - fixed interaction between spells that allow effects re-application and Druid wildshape
 
-1.5.94.15:
+## 1.5.94.15
 
-# ATTENTION:
+**ATTENTION:**
 
 - RESPEC is required on Way of Discordance before updating to this version
 - REINSTALL mod from ZIP to leverage new portraits as update only does DLL
 
-# UB:
+**UB:**
 
 - added SFX browser in mod UI to accelerate new homebrew content development
 - added Interception fighting style and Shield Techniques feat [by HiddenHax]
@@ -2311,17 +2460,17 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved mod code smells, performance, resilience, and inconsistent patterns
 - improved Way of Discordance descriptions, progression, and missing SFX
 
-# VANILLA:
+**VANILLA:**
 
 - fixed interaction between spells that emit or prevent light and Druid wildshape
 
-1.5.94.14:
+## 1.5.94.14
 
-# ATTENTION:
+**ATTENTION:**
 
 - RESPEC required on Patron Riftwalker and Roguish Opportunist
 
-# UB:
+**UB:**
 
 - added Booming Blade cantrip suggested to Bard, Inventor, Sorcerer, Warlock, and Wizard spell repertoires
 - added support for Custom Portraits with a new setting, and instructions under Mod UI > Interface
@@ -2334,14 +2483,15 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Way of Discordance stacking conditions logic to correctly trigger discordance damage whenever it's 3
 - fixed an exception on level up workflow, when going back and forth through the feature selection custom UI stage
 
-# VANILLA:
+**VANILLA:**
 
 - fixed vanilla Dragonborn breath weapon powers dice progression from level 16th onwards
 - fixed vanilla Sorcerous Mana Painter mana absorption incorrectly granting advantage on constitution savings
 - improved vanilla Oaths with missing progression feature at level 20th
 - improved vanilla Sorcerous with missing progression feature at level 18th
 
-1.5.94.13:
+## 1.5.94.13
+
  
 - RESPEC required on Domain Defiler, Domain Smith, Patron Soulblade, Sorcerous Forceblade, and Wizard Arcane Fighter
 
@@ -2360,14 +2510,14 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved Ensnaring Strike spell to be closer to tabletop by enforcing an ability check to negate the effect
 - improved Path of Savagery furious defense by enforcing advantage when DEX savings are replaced with STR
 
-1.5.94.12:
+## 1.5.94.12
 
 - fixed load save issues with active effects [STABILITY MUST UPDATE!]
 - fixed Roguish Blade Caller applying additional damage on non-blade attacks
 - improved Circle of the Night wildshape action interaction with concentration
 - improved Patron Soulblade descriptions, and added a condition on pact weapon
 
-1.5.94.11:
+## 1.5.94.11
 
 - changed Innovation Weapon steel defender model from arcane sword to golem iron
 - changed Path of the Elements elemental burst to increment dice from levels 15/20th to 13/17th
@@ -2382,7 +2532,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved Patron Soulblade soul hex, soul shield, and master hex descriptions
 - improved Way of the Silhouette with strike the vitals feature at level 6th
 
-1.5.94.10:
+## 1.5.94.10
 
 - fixed Rock Gnome getting both DEX and CON attributes
 - fixed vanilla Legendary armors AC determination [Studded Armor of Black Marsh, etc]
@@ -2390,22 +2540,22 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed vanilla Dragon Breath saving attributes [black, gold, spectral -> DEX, Young Green, Green Feral -> CON]
 - fixed vanilla Mummy dreadful glare saving attribute to be WIS instead of CON
 
-1.5.94.9:
+## 1.5.94.9
 
 - fixed Inventor Guardian Armor not triggering saving at 15th
 - fixed Skin of Retribution not scaling damage when upcast
 
-1.5.94.8:
+## 1.5.94.8
 
 - fixed wizard getting double ASI at 16th
 - removed pop up warning message on serialization
 
-1.5.94.7:
+## 1.5.94.7
 
 - added Necrotic, Poisonous, Psychic, Radiant, and Thunder Blast invocations
 - fixed instability warning when game auto save under certain scenarios
 
-1.5.94.6:
+## 1.5.94.6
 
 - changed Shadow Blade to use finesse on rolls, improved SFX
 - fixed Eldritch Smite interaction with larger creatures
@@ -2417,7 +2567,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - improved Subclasses selection [RESELECTION is required]
 - improved suspend flight feature options for winged boots
 
-1.5.94.5:
+## 1.5.94.5
 
 - fixed Circle of the Eternal Grove conditions on self
 - fixed Elemental Adept applying to other damage types
@@ -2428,7 +2578,7 @@ MERRY CHRISTMAS / FELIZ NATAL / FELIZ NAVIDAD! Santa heard your wishes and invit
 - fixed Thunderous Rebuke additional lightning damage
 - fixed Voracious Fury triggering on thrown attacks
 
-1.5.94.4:
+## 1.5.94.4
 
 ATTENTION: 
 
@@ -2442,7 +2592,7 @@ CHANGES:
 - fixed Oligath stone endurance
 - fixed Korean translations [by Team Waldo]
 
-1.5.94.3:
+## 1.5.94.3
 
 - added Hand XBows to Crossbow Mastery feat
 - added Verdant Armor invocation at 5th [Barkskin, no concentration, once per long rest]
@@ -2452,7 +2602,7 @@ CHANGES:
 - fixed Hand XBow to be a simple weapon instead of a martial one
 - fixed mod boot up under Korean language
 
-1.5.94.2:
+## 1.5.94.2
 
 - added Martial Defender subclass
 - added Monastic Shield Training and Zen Archer fighting styles [only Monks]
@@ -2461,7 +2611,7 @@ CHANGES:
 - fixed Old Tactics missing feat family allowing both versions to be chosen
 - fixed Sunlit Blade not allowing reach weapons to attack further than 5 ft
 
-1.5.94.1:
+## 1.5.94.1
 
 - added Imp race [by otearaisu]
 - added setting to calculate distance as tabletop would do [by TheRev]
@@ -2472,21 +2622,21 @@ CHANGES:
 - changed Innovation Alchemy with new refund charge power at 5th
 - fixed all races height data causing wrong targeting calculations [by TheRev]
 
-1.5.94.0:
+## 1.5.94.0
 
 - fixed Cave Wyrmkin powerful claws triggering on opportunity attacks / hitting multiple times
 - fixed Devoted missing spell repertoire assignment [RESPEC required to reacquire repertoire]
 - fixed modify effect behavior causing soft lock under certain scenarios [i.e.: Sunbeam]
 - fixed Wendigo sucker punch triggering on opportunity attacks
 
-1.5.92.18:
+## 1.5.92.18
 
 - added Arctic Adaptation feat [by @otearaisu]
 - fixed concentration related features not working under wildshape
 - fixed Innovation Vitriolist missing autoprepared spells tag
 - improved Oligath with immunity to cold weather [by @otearaisu]
 
-1.5.92.17:
+## 1.5.92.17
 
 - added Daggers to Blade Mastery feat
 - added Devoted background
@@ -2499,7 +2649,7 @@ CHANGES:
 - improved vanilla logic to allow all damage forms from weapon to reroll
 - improved French [by Ermite_Crabe], and Russian translations [by Kranay]
 
-1.5.92.16:
+## 1.5.92.16
 
 - added "Allow temporarily suspending flight from items and spells" setting [by Andargor]
 - added "Enable showing distance on tooltips when hovering over a character in combat" setting [by TheRev]
@@ -2507,7 +2657,7 @@ CHANGES:
 - fixed Cunning / Devious Strike interaction with Duelist
 - improved French [by Ermite_Crabe], and Russian translations [by Kranay]
 
-1.5.92.15:
+## 1.5.92.15
 
 - added Rogue Devious Strikes at 14th under same Cunning Strikes setting
 - fixed Close Quarters granting strength instead of intelligence
@@ -2516,7 +2666,7 @@ CHANGES:
 - improved Malakh with a permanent halo effect
 - improved Oath of Thunder additional damage description
 
-1.5.92.14:
+## 1.5.92.14
 
 SPECIAL THANKS to Gwizzz, Vesss and DemonicDuck for the SteamDeck offering
 
@@ -2540,7 +2690,7 @@ CHANGES:
 - refactored Malakh to select the angelic form on a level up stage
 - refactored power bundle reaction UI [Audacity, Arcane Archer]
 
-1.5.92.12:
+## 1.5.92.12
 
 CHANGES:
 
@@ -2562,11 +2712,11 @@ COMING NEXT:
 
 - Arcane Archer subclass
 
-1.5.92.11:
+## 1.5.92.11
 
 - fixed all spells requiring concentration [it's WoTC not FoTC ;-)]
 
-1.5.92.10:
+## 1.5.92.10
 
 ATTENTION: 
 
@@ -2586,7 +2736,7 @@ CHANGES:
 - improved mod performance on battles and locations
 - improved Patron Eldritch Surge's [@HIEROT]
 
-1.5.92.9:
+## 1.5.92.9
 
 - added Fencer feat
 - added Ironborn Dwarf subrace
@@ -2598,7 +2748,7 @@ CHANGES:
 - improved mod performance on battles and locations
 - improved Patron Eldritch Surge's effects
 
-1.5.92.8:
+## 1.5.92.8
 
 - added "Change Dragonborn elemental breath usages to constitution modifier per short rest" setting
 - changed Way of the Dragon's elemental breath to alternatively use 2 ki points when out of PB usages
@@ -2606,28 +2756,28 @@ CHANGES:
 - fixed College of Audacity's whirl powers to be once in my turn
 - fixed Wyrmkin race interaction with "Unlock skin colors" setting
 
-1.5.92.7:
+## 1.5.92.7
 
 - added Wyrmkin race [by @otearaisu]
 - tweaked Ability of the Chain Master [by @HIEROT]
 - tweaked College of Audacity
 - tweaked College of Life
 
-1.5.92.6:
+## 1.5.92.6
 
 - added College of Audacity
 - added Crossbow Mastery feat
 - fixed Old Tactics soft lock
 - fixed Lifebringer range type
 
-1.5.92.5:
+## 1.5.92.5
 
 - fixed Hammer the Point to stack modifiers
 - fixed incorrect feats under Old Tactics group
 - fixed messed up translations on last build
 - improved Way of the Weal and Woe combat log
 
-1.5.92.4:
+## 1.5.92.4
 
 - added setting "Grant Scimitar Weapon Specialization to Bards and Rogues"
 - added Obsidian Dwarf subrace
@@ -2636,7 +2786,7 @@ CHANGES:
 - fixed Spirit Shroud spell to trigger on magical or physical attack rolls
 - improved setting "Replace spider like models" to hide spider bitmap on game over screen
 
-1.5.92.3:
+## 1.5.92.3
 
 - added Hammer the Point, and Old Tactics feats [need QA]
 - fixed Fairy, and Feral Tiefling on equipment change notification
@@ -2648,7 +2798,7 @@ CHANGES:
 - fixed Wardancer free weapon switch interaction with multiplayer
 - fixed Wizard Dead Master and College of Life interaction on raise dead spells without concentration
 
-1.5.92.2:
+## 1.5.92.2
 
 TIP:
 
@@ -2671,7 +2821,7 @@ CHANGES:
 - reverted vanilla nerf on Dwarf Dagger critical threshold [back to 18 with proper stacking]
 - updated Korean unofficial translations to game version 1.5.92
 
-1.5.92.1:
+## 1.5.92.1
 
 - added half-attribute feat groups and sub groups by ability score
 - added Ranger Sky Warrior subclass [beta, design by @MarinerEarendil]
@@ -2684,14 +2834,14 @@ CHANGES:
 - fixed Way of the Dragon's reactive hide prompting on every damage
 - updated Japanese, Italian, and Spanish unofficial translations to game version 1.5.92
 
-1.5.92.0:
+## 1.5.92.0
 
 - added BETA setting "Interface > Game UI > Enable Action switching"
 - fixed Martial Champion's superior critical to set threshold to 18
 - changed Critical Virtuoso feat to be -1 additive to threshold
 - updated codebase to game version 1.5.92
 
-1.5.74.5:
+## 1.5.74.5
 
 - demoted setting "Use Elf face models on tieflings"
 - fixed action bar powers' getting disabled under certain scenarios
@@ -2699,14 +2849,14 @@ CHANGES:
 - fixed Fighter Weapon Specialization granting +1 strength
 - fixed Oath of Thunder causing a soft lock under certain scenarios
 
-1.5.74.4:
+## 1.5.74.4
 
 - added Medium Armor Master feat
 - added Patron Eldritch Surge subclass [by @HIEROT]
 - fixed Warlock class missing invocation learn step at 18th
 - fixed Tiefling subraces attributes selection with flexible races on
 
-1.5.74.3:
+## 1.5.74.3
 
 - added Feral Tiefling subrace [DEX+1, Burning Hands, Demonic Wings]
 - added Oath of Demon Hunter subclass [by @magicSkySword]
@@ -2721,7 +2871,7 @@ CHANGES:
 - improved Thorny Vines description to state it can attack at range
 - reworked Acrobat, Lunger, and Wendigo so they don't stack on reach bonus [Astral Reach and Wendigo still do]
 
-1.5.74.2:
+## 1.5.74.2
 
 - fixed critical rules options' calculations
 - fixed Helm of Awareness feature description
@@ -2731,7 +2881,7 @@ CHANGES:
 - fixed Way of Distant Hand weapon specialization [RESPEC required]
 - promoted Oath of Thunder subclass off beta
 
-1.5.74.1:
+## 1.5.74.1
 
 - continued work on Oath of Thunder [beta]
 - fixed Domain Smith missing artisan tool type proficiency
@@ -2739,7 +2889,7 @@ CHANGES:
 - fixed Oligath's stone endurance not triggering on magical attacks
 - fixed Way of the Dragon's reactive hide not triggering anymore
 
-1.5.74.0:
+## 1.5.74.0
 
 - added Wendigo race
 - added additional setting to tweak flanking rules
@@ -2747,7 +2897,7 @@ CHANGES:
 - updated to game code base 1.5.74
 - fixed almost all reported issues since previous version
 
-1.5.52.5 (re-release):
+## 1.5.52.5 (re-release)
 
 ATTENTION: 
 
@@ -2759,7 +2909,7 @@ CHANGES:
 - added hidden setting to enable experimental flanking rules [by @andargor]
 - fixed Paladin ranged attack soft locking the combat
 
-1.5.52.4:
+## 1.5.52.4
 
 ATTENTION: 
 
@@ -2771,7 +2921,7 @@ CHANGES:
 - added hidden setting to enable experimental flanking rules [by @andargor]
 - fixed Paladin ranged attack soft locking the combat
 
-1.5.52.3:
+## 1.5.52.3
 
 - added Oligath race [by Otearaisu]
 - changed Oath of Hammers to Oath of Thunders [still beta and incomplete]
@@ -2781,7 +2931,7 @@ CHANGES:
 - fixed War Dancer momentum extra attacks interactions
 - fixed Widen Spell increasing AoE size inconsistently
 
-1.5.52.2:
+## 1.5.52.2
 
 - added Oath of Hammer subclass [beta, only level 3 implemented so far]
 - added Oath of Hatred auto prepared spells at level 17th
@@ -2790,7 +2940,9 @@ CHANGES:
 - fixed formation settings templates to always have a hero at pos (1,3) to avoid odd looting behavior
 - refactored reduce damage feature to work in all damage scenarios [Bladedancer]
 - removed fix on Aura of Righteousness after TA changed power description
+
  
+
 1.5.52.1:
 
 - added Innovation Vivisectionist subclass [looking for feedback]
@@ -2809,7 +2961,7 @@ CHANGES:
 - removed grievous wound from Path of the Savagery wrath and fury feature
 - removed "Make all wildshape medium in size" setting now that TA coded it officially
 
-1.5.52.0:
+## 1.5.52.0
 
 - fixed Soul Hex applying bonus damage and critical threshold against any target instead of cursed creature only
 - fixed Spell Sniper feats to grant 2 cantrips as stated in description
@@ -2817,13 +2969,13 @@ CHANGES:
 - improved flanking rules to check for a line that crosses the front and back of the target for triggering
 - improved how Poisoner feat adds bonus action to use poisons
 
-1.5.49.7:
+## 1.5.49.7
 
 - added Gauntlet support to Dual Flurry triggering logic
 - added "Add all dice from base weapon damage" setting for weapons with 2+ dice
 - fixed minor issues on Fairy's flight, and campaigns' translator
 
-1.5.49.6:
+## 1.5.49.6
 
 - added a hidden setting, on by default, to allow a full level up process on POI as current one skips unlearn
 - fixed custom weapons not getting scale applied and also improved their models for something more magical
@@ -2839,20 +2991,20 @@ CHANGES:
 - updated Arcanist Mark's detonation text to include target and damage value
 - updated campaigns' translator to consider new collections added to DM on POI DLC [by MagicSkySword]
 
-1.5.49.5:
+## 1.5.49.5
 
 - added setting "Fix Asian languages' game UI text wrap" by @magicSword
 - changed major and minor elemental infusions to scale with character level
 - fixed war lists not upcasting summons [College of Life / Dead Master build]
 - fixed War Magic not hiding power on hero action panel
 
-1.5.49.4:
+## 1.5.49.4
 
 - fixed additional sources of null exceptions all over the code base [aksha fight, attacks of opportunity, etc.]
 - fixed remove on fire light source logic not considering extinguish action [didn't even know that was a thing]
 - fixed shallow copy issues not triggering the break free action [in other words, web spell is fine again]
 
-1.5.49.3:
+## 1.5.49.3
 
 - added setting "Enable logging invalid references in user campaigns"
 - added unofficial fix to Oath of Jugement's aura of righteousness context
@@ -2863,7 +3015,7 @@ CHANGES:
 - fixed Dual Flurry not checking for attack outcome
 - fixed Widen Spell not allowing spells with area effects
 
-1.5.49.2:
+## 1.5.49.2
 
 ATTENTION: RESPEC any Gnome or Tiefling created before May, 25th
 
@@ -2874,7 +3026,7 @@ ATTENTION: RESPEC any Gnome or Tiefling created before May, 25th
 - removed mod Gnome race in favor of vanilla ones
 - removed mod Tiefling race in favor of vanilla ones
 
-1.5.49.1:
+## 1.5.49.1
 
 ATTENTION: RESPEC required for Way of the Tempest on or above 11th
 
@@ -2887,7 +3039,7 @@ ATTENTION: RESPEC required for Way of the Tempest on or above 11th
 - improved Dual Flurry interaction with Flurry of Blows
 - improved Way of the Tempest overall damage output
 
-1.5.49.0:
+## 1.5.49.0
 
 ATTENTION: manually re-install if you're using unofficial Chinese or Japanese translations
 
@@ -2899,11 +3051,11 @@ ATTENTION: manually re-install if you're using unofficial Chinese or Japanese tr
 - fixed null exception when casting Greater Restoration and similar effects
 - fixed Thorny Vines to not enforce disadvantage within enemy melee reach
 
-1.5.48.1:
+## 1.5.48.1
 
 - fixed mod warning
 
-1.5.48.0:
+## 1.5.48.0
 
 - added Devil's Tongue Tiefling subrace
 - added "Gameplay > Tools > Disable unofficial translations" setting
@@ -2913,14 +3065,14 @@ ATTENTION: manually re-install if you're using unofficial Chinese or Japanese tr
 - fixed custom weapons added through crafting context not having proper scale [because size matters]
 - fixed Warlock Mystic Arcanum at level 17th not offering level 9th spells [who cares, you'll blast anyways]
 
-1.5.46.4:
+## 1.5.46.4
 
 - fixed Apothecary, Awaken the Beast, Blessed Soul, Close Quarters, Hardy, Medium Armor, Primal Rage, and Toxicologist not having family tags
 - fixed Alchemist Breath Bombs, Artillerist Flame Thrower, Bounden Ice, Pulse Wave, and Winter Breath not excluding caster
 - fixed RESPEC not finishing the process correctly which was leading to faceless heroes
 - fixed summoned creatures and items not getting preserved on location changes [might need a RESPEC on hero with summon to reset state]
 
-1.5.46.3:
+## 1.5.46.3
 
 - added additional Halberd, Hand Crossbow, Long Mace, and Pike recipes
 - added "Gameplay > General > Visuals > Use Elf face models on Tieflings" setting
@@ -2932,7 +3084,7 @@ ATTENTION: manually re-install if you're using unofficial Chinese or Japanese tr
 - fixed Palace of the Ice campaign not working with itsy bitsy teenie weenie parties
 - fixed Warlock pact slots and known cantrips on levels 17th and above
 
-1.5.46.2:
+## 1.5.46.2
 
 - added Halberd +3, Hand Crossbow +3, Long Mace +3, and Pike +3 weapons and recipes
 - fixed Call for Charge, Piercer, and Steady Aim feats setting incorrect Attacked interruption
@@ -2945,11 +3097,11 @@ ATTENTION: manually re-install if you're using unofficial Chinese or Japanese tr
 - fixed multiclass casters not allowing spells relearn when option is checked on mod UI
 - updated custom weapons costs, and recipes duration and DC to be on par with vanilla changes
 
-1.5.46.1:
+## 1.5.46.1
 
 - fix broken patch from DEBUG to PRODUCTION release
 
-1.5.46.0:
+## 1.5.46.0
 
 ATTENTION: only accept this after you update your base game to 1.5.x
 
@@ -2983,11 +3135,13 @@ PALACE OF ICE FAQ:
 5. Why I cannot find a hero or save file? You missed RESPEC alerts in the changelog... Changelog?!? Yea, I know.
 6. Why this mod sucks, it ruined my life, and you are heartless about it? Please reach out to wecare@shred.dept.hell.
 
-************************************************************************************************************************
-* MARK: GAME MINOR VERSION CHANGE FROM 1.4 to 1.5
-************************************************************************************************************************
+---
 
-1.4.33.91:
+**MARK: GAME MINOR VERSION CHANGE FROM 1.4 to 1.5**
+
+---
+
+## 1.4.33.91
 
 LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 
@@ -3002,7 +3156,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Bounden Ice forcing an ability check on break free action
 - fixed heroes getting DEX or STR choice on break free from web or bounded ice
 
-1.4.33.90:
+## 1.4.33.90
 
 - added Monsters documentation under Interfaces > Dungeon Maker
 - fixed Close Quarters and Devastating Strikes not ignoring ranged
@@ -3010,7 +3164,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed spells with incorrect assigned sprites and schools of magic
 - changed Duelist's master duelist to allow 2 usages per short rest
 
-1.4.33.89:
+## 1.4.33.89
 
 - added Close Quarters, Exploiter, and Devastating Strikes feats
 - changed Sorcerer Forceblade to grant mana shield at level 1
@@ -3018,7 +3172,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - changed Wizard Graviturgist powers and related condition effects
 - simplified feats and feat groups offering on mod UI [re-selection required]
 
-1.4.33.88:
+## 1.4.33.88
 
 - added "Characters on fire should emit light" house rules setting
 - added Celerity Boon and Gravity Sinkhole [from beta] spells
@@ -3027,7 +3181,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Inventor's quick wit feature displaying an incorrect combat log
 - fixed Merciless fighting style applying an endless fear condition
 
-1.4.33.87:
+## 1.4.33.87
 
 - added Binding Ice and Gravity Sinkhole spells [beta]
 - added Infernal Constitution feat [need Palace of Ice DLC]
@@ -3036,7 +3190,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed custom features level up panel registering invocations from other heroes
 - fixed Innovation Artillerist's eldritch cannons not offering respective powers
 
-1.4.33.86:
+## 1.4.33.86
 
 - fixed Shadow Blade spell not granting advantage when enemy not in bright light
 - fixed Way of the Tempest's gathering storm not applying lightning damage
@@ -3046,7 +3200,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - changed Weapon Master's momentum to not use a reaction and be once in my turn
 - changed Path of the Reaver for better multiplayer support [RESPEC is required]
 
-1.4.33.85:
+## 1.4.33.85
 
 - RESPEC REQUIRED: Arcane Scoundrel [>=13th]
 
@@ -3059,7 +3213,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - tweaked Monk subclasses perfection, purity of light, and quivering palm at 17th
 - ungrouped Ape, Black Bear, Brown Bear, Deep Spider and Giant Eagle WS attacks
 
-1.4.33.84:
+## 1.4.33.84
 
 - RESPEC REQUIRED: Way of Distant Hand [>=3rd] / Duelist [>=13th]
 
@@ -3073,7 +3227,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - changed Monk Ki Points toggle to Distant Hand Technique toggle
 - changed Monk subclasses so only Distant Hand gets above toggle
 
-1.4.33.83:
+## 1.4.33.83
 
 - added Find Familiar spell suggested to Wizards
 - added Retinue Touched feats [bless, heroism, enhance ability]
@@ -3082,7 +3236,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Web spell rolling strength check until success
 - fixed Way of Freedom hiding level 17 on level up GUI
 
-1.4.33.82:
+## 1.4.33.82
 
 - added Champion, Commander, Mountaineer, and Spellblade fighter features at 18th
 - added Darkweaver, Shadowcaster, and Thief rogue features at 17th
@@ -3094,7 +3248,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Rope it Up feat granting +1 to hit and damage with throw weapon on melee
 - fixed Wizard Bladedancer granting con ability check instead of saving
 
-1.4.33.81:
+## 1.4.33.81
 
 - fixed Druid's arch druid interaction with circle of the night
 - fixed Fairy interaction with flexible races setting
@@ -3106,7 +3260,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Sorcerous Field Manipulator's displacement MP desyncs
 - fixed Way of the Tempest's gathering storm damage and logic
 
-1.4.33.80:
+## 1.4.33.80
 
 - added Battleaxe magical items and recipes
 - added Bard's superior inspiration at 20th
@@ -3121,7 +3275,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Ranger Survivalist minor issues
 - improved Sorcerous Field Manipulator's displacement logic
 
-1.4.33.79:
+## 1.4.33.79
 
 - added Ranger Survivalist subclass
 - changed Caustic Zap progression to one additional enemy per slot level
@@ -3132,7 +3286,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - rebuilt Sorcerous Field Manipulator subclass - RESPEC IS REQUIRED
 - removed shape form / summons attacks swap action as causing MP desyncs
 
-1.4.33.78:
+## 1.4.33.78
 
 - fixed Always Ready, and Rope it Up feats not triggering
 - fixed Monk unarmed dice type to scale up with class level
@@ -3141,7 +3295,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - improved SFX on Oath of Dread, Roguish Slayer, and Way of Discordance
 - improved the UI so now only gameplay settings must be in sync on MP
 
-1.4.33.77:
+## 1.4.33.77
 
 - added a better random number generator option under Gameplay > Tools [https://www.pcg-random.org/]
 - added Caustic Zap spell at 1st, and Sonic Boom at 5th
@@ -3152,7 +3306,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Path of Reaver's corrupted blood
 - fixed Web spell break free DC calculation
 
-1.4.33.76:
+## 1.4.33.76
 
 - added Aegis Touched feats
 - added Circle of the Life subclass
@@ -3163,7 +3317,7 @@ LAST VERSION UNTIL POI RELEASE DATE. WHAT YOU SHOULD EXPECT:
 - fixed Fairy's flight
 - fixed Protection Threshold's proxy effect
 
-1.4.33.75:
+## 1.4.33.75
 
 Special thanks to [HiddenHax] for all support on this release
 
@@ -3183,7 +3337,7 @@ Special thanks to [HiddenHax] for all support on this release
 - fixed Slay the Enemy feat triggering hundreds of damage
 - improved Circle of the Night's shape forms at level 14
 
-1.4.33.74:
+## 1.4.33.74
 
 - added Always Ready and Steady Aim feats
 - added buttons to display UB and vanilla subclasses, feats, fighting styles, and invocation details
@@ -3197,7 +3351,7 @@ Special thanks to [HiddenHax] for all support on this release
 - fixed Sorcerous Sorr-Akkath's touch of darkness attack bonus
 - fixed Way of Distant Hand's Flurry of "Bows" and Stunning Strike
 
-1.4.33.73:
+## 1.4.33.73
 
 RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 
@@ -3210,7 +3364,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed the spell casting action panel broken with xbox controller support
 - fixed Way of Distant Hand integration with Monk weapon specialization
 
-1.4.33.72:
+## 1.4.33.72
 
 - added Infusions Adept feat
 - added Innovation Artillerist subclass
@@ -3218,7 +3372,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Elemental Adept and Elemental Master feats
 - fixed invincible Path of the Light subclass
 
-1.4.33.71:
+## 1.4.33.71
 
 - missing sprites or terms on Tundra Tiger and Water Elemental to be fixed after DLC
 - added Sorcerous Sorr-Akkath subclass [level 18 isn't implemented yet]
@@ -3227,7 +3381,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - changed Circle of the Night combat healing
 - changed Circle of the Night wildshape points requirements
 
-1.4.33.70:
+## 1.4.33.70
 
 - added Character > General > Progression > Monk weapon specialization setting
 - added Circle of the Night level 14 monstrous forms and superior healing
@@ -3238,7 +3392,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - improved rejoin party setting for parties of six in official campaigns
 - removed Gnome and Tiefling from mod UI offering in anticipation to the DLC
 
-1.4.33.69:
+## 1.4.33.69
 
 - RESPEC required for Circle of the Night druid older than v52
 - RESPEC required for fighter with Weapon Specialization older than v61
@@ -3248,7 +3402,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - improved Path of the Elements' elemental burst SFX
 - improved Resonating Strike to allow crit on first target
 
-1.4.33.68:
+## 1.4.33.68
 
 - added Path of the Elements subclass
 - added Verdant Touched feats
@@ -3260,11 +3414,11 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - improved Path of the Spirits' wolf leadership aura
 - improved recipes to use primed items
 
-1.4.33.67:
+## 1.4.33.67
 
 - SAME AS BELOW
 
-1.4.33.66:
+## 1.4.33.66
 
 - changed Slayer's fatal strike to trigger on surprised enemies instead of first round
 - fixed critical calculation option 1 to prevent a null exception under certain scenarios
@@ -3274,7 +3428,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - improved Crusher feat to have a toggle for pushes, and also fixed reaction consumption
 - improved Save by Location to have official campaigns in different folders
 
-1.4.33.65:
+## 1.4.33.65
 
 - added Duelist's master duelist, and Slayer's fatal strike at 17th
 - added Tactician's gambits custom sprites
@@ -3285,7 +3439,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Squat Nimbleness feat with wrong skills assignment on DEX and STR versions
 - fixed some stability issues in the targeting system
 
-1.4.33.64:
+## 1.4.33.64
 
 - added custom level up screen for Ancestries and Kindred Spirits
 - added Oath of Altruism level 15 and Way of the Dragon level 17 features
@@ -3297,13 +3451,13 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Polearm Expert, Spear Mastery and Two Weapon Fighting die type interaction
 - fixed Sanctuary to not exclude the caster on targeting
 
-1.4.33.63:
+## 1.4.33.63
 
 - fixed action use soft lock introduced with Poison Expert feat
 - fixed Hardy feat to use fighter class level instead of character level
 - added new sprites to Call for Charge, Inspiring Leader, and Dragon Wings
 
-1.4.33.62:
+## 1.4.33.62
 
 - added General > Character > Improve Ranger features selection setting
 - added Expand the Hunt, Longsword Finesse, Poison Expert and Slay thy Enemies feats
@@ -3314,7 +3468,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Ranger Wild Master beast eyebite DC saving throw calculation
 - improved Path of the Reaver and Weapon Master translations
 
-1.4.33.61:
+## 1.4.33.61
 
 - added Martial Weapon Master subclass
 - added Path of the Reaver subclass
@@ -3325,7 +3479,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Wolf Leadership not granting on self
 - updated Bolgrif, Gnome and Petal Storm sprites
 
-1.4.33.60:
+## 1.4.33.60
 
 - added feats, invocations and spell sprites
 - fixed Hand Crossbow and Two Weapon Fighting
@@ -3335,14 +3489,14 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Spear Mastery to allow benefits on offhand
 - fixed Distant Hand's flurry of blows in melee
 
-1.4.33.59:
+## 1.4.33.59
 
 - added Roguish Acrobat subclass
 - changed some modded spell sprites
 - fixed Bow Mastery soft locking on multiple attacks
 - improved attribute modifiers presentation
 
-1.4.33.58:
+## 1.4.33.58
 
 - added custom sprites to all fighting styles and all remaining subclasses
 - improved Party Editor with skills, feats and invocations browser and editor
@@ -3352,7 +3506,7 @@ RESPEC REQUIRED FOR ANY WAY OF DISTANT HAND
 - fixed Cleaving Attack allowing extra attack if first one was melee and hero switches to ranged
 - fixed Martial Marshal's encouragement granting the condition to allies outside the effect area
 
-1.4.33.57:
+## 1.4.33.57
 
 ATTENTION:
 
@@ -3367,7 +3521,7 @@ CHANGES:
 - fixed a null exception when exporting Inventors at campaign end
 - improved Royal Knight descriptions
 
-1.4.33.56:
+## 1.4.33.56
 
 ATTENTION:
 
@@ -3384,7 +3538,7 @@ CHANGES:
 - improved RESPEC to terminate effects as well as use standard TA code on guid swap
 - improved Piercer to allow damage dice reroll on any Piercing damage type
 
-1.4.33.55:
+## 1.4.33.55
 
 - added Cleaving Attack feat to behave like Great Weapon Master
 - changed Deadeye feat to behave like Sharpshooter
@@ -3393,7 +3547,7 @@ CHANGES:
 - fixed Blade Mastery granting more advantage than it should
 - fixed War Caster to only allow cantrips that target individuals
 
-1.4.33.54:
+## 1.4.33.54
 
 - changed Arcane Scoundrel's distracting ambush to interrupt on ability checks or saving throws
 - changed Gorilla wildshape to have unlimited rocks ammo
@@ -3402,7 +3556,7 @@ CHANGES:
 - fixed Inventor's quick wit to not prompt on enemies that were friendly recently
 - refactored Oath of Altruism's spiritual shielding
 
-1.4.33.53:
+## 1.4.33.53
 
 - added Interface > Game UI > Monsters setting to enable an info button on UI panel
 - added Royal Knight's rallying cry sprite
@@ -3412,14 +3566,14 @@ CHANGES:
 - fixed Slayer spamming sneak attacks without checking for context
 - fixed some wildshape forms wrongly showing the wildshape action button
 
-1.4.33.52:
+## 1.4.33.52
 
 - added setting to improve wildshape usage with mod custom features
 - changed Pugilist damage dice to always be of bludgeoning type
 - improved Circle of The Night's wildshape action
 - improved Roguish Slayer's elimination and chain of execution features
 
-1.4.33.51:
+## 1.4.33.51
 
 - added Interface > Game UI option to show remaining uses of Channel Divinity on portrait
 - added Slayer subclass [beta]
@@ -3433,7 +3587,7 @@ CHANGES:
 - improved Oath of Altruism's defensive strike behavior
 - improved Party Editor
 
-1.4.33.50:
+## 1.4.33.50
 
 - fixed effects termination when unconscious [Arcane Fighter, Inventor, Soul Blade]
 - improved Arcane Scoundrel levels 9th and 13th features interaction
@@ -3441,7 +3595,7 @@ CHANGES:
 - improved Duelist sure footed damage to not spam combat log and clearly show on inspection
 - improved Revenant Great Sword to be considered a finesse weapon and work well with Rogues
 
-1.4.33.49:
+## 1.4.33.49
 
 - added Crusader's Mantle spell
 - added Mantle of Thorns spell
@@ -3449,14 +3603,14 @@ CHANGES:
 - added Roguish Arcane Scoundrel subclass
 - added Party Editor [experimental preview] by Narria Toy Maker
 
-1.4.33.48:
+## 1.4.33.48
 
 - changed College of Life's healing pool to be offered as a power bundle
 - fixed Defensive Duelist to only keep additional AC until start of next turn
 - fixed Insidious Death Magic to apply on any effect as far as damage is Necrotic
 - fixed Level 20 experience threshold calculation on levels 19 and 20
 
-1.4.33.47:
+## 1.4.33.47
 
 - added Primal Rage feat
 - fixed Blessed Soul requirements and attribute score modifier
@@ -3464,7 +3618,7 @@ CHANGES:
 - improved Defiler Domain descriptions
 - improved College of War Dance descriptions
 
-1.4.33.46:
+## 1.4.33.46
 
 - added Defiler Domain subclass under Maraike deity
 - expanded Potent Spellcaster to Bards, Clerics, Druids, Sorcerers and Inventors
@@ -3475,7 +3629,7 @@ CHANGES:
 - fixed Soul Blade summon weapon not properly removing effects
 - fixed Warlock using wrong spell level if multiclass
 
-1.4.33.45:
+## 1.4.33.45
 
 - fixed Awaken The Beast not adding Druid class based additional hit points
 - fixed Barbarian to have ASI at level 16
@@ -3483,7 +3637,7 @@ CHANGES:
 - improved Roguish Duelist and Way of Discordance translations
 - improved Way of Discordance's discordance damage to also add PB/2 bonus
 
-1.4.33.44:
+## 1.4.33.44
 
 - added class bound Blessed Soul feat
 - added class bound Natural Fluidity feat
@@ -3491,14 +3645,14 @@ CHANGES:
 - added race bound Squat Nimbleness feat
 - improved Inventor infusions to endure on unconsciousness
 
-1.4.33.43:
+## 1.4.33.43
 
 - added support to Deity based subclasses on builders
 - fixed Duelist subclass description
 - fixed Grenadier bombs DC to always use INT when multicaster
 - fixed Spell Sniper offering spells as cantrips
 
-1.4.33.42:
+## 1.4.33.42
 
 - added Gameplay > Tools > Enable Character Checker setting
 - added Roguish Duelist subclass
@@ -3506,7 +3660,7 @@ CHANGES:
 - changed Way of Discordance's burst of disharmony to be offered as a bonus action
 - changed Way of Discordance's burst of disharmony to be limited by remaining Ki points only
 
-1.4.33.41:
+## 1.4.33.41
 
 - added additional funding links to Mod UI > Characters [Patreon, GitHub Sponsors]
 - added Awaken The Beast feat
@@ -3515,7 +3669,7 @@ CHANGES:
 - improved Astral Arms feat to work as Polearm Master one when enemy enters reach
 - improved Shared Spell metamagic description
 
-1.4.33.40:
+## 1.4.33.40
 
 - added Potent Spellcaster feat
 - fixed Sentinel reaction interactions amongst players
@@ -3524,48 +3678,48 @@ CHANGES:
 - improved Arcane Fighter to keep enchant weapon when unconscious
 - improved Soul Blade to keep empower weapon when unconscious
 
-1.4.33.39:
+## 1.4.33.39
 
 - fixed Spell Sniper to correctly apply no cover on range hit
 - improved Spells mod UI to fully integrate with Spell Sniper
 - tweaked max attuned items to be granted at 10th and 18th
 
-1.4.33.38:
+## 1.4.33.38
 
 - added Call for Charge feat
 - added house rule to increase max attuned items to 4 at 9th and 5 at 18th
 - fixed missing advantage on Wild Master eagle pack tactics
 - improved group descriptions to list feat names within them
 
-1.4.33.37:
+## 1.4.33.37
 
 - refactored Crusher to correctly trigger with shields and not with EB
 - refactored Altruistic metamagic spell to be on par with original [Commensal]
 - refactored Brace, Parry and Retaliate gambits to require and consume reaction
 
-1.4.33.36:
+## 1.4.33.36
 
 - added Altruistic metamagic
 - added rule to offer different critical damage calculation algorithms
 - fixed Crusher and respective interaction with other feats under multiplayer
 - improved long mace icons
 
-1.4.33.35:
+## 1.4.33.35
 
 - fixed auto update
 
-1.4.33.34:
+## 1.4.33.34
 
 - refactored Fell Handed feat
 - refactored Searing, Wrathful, Blinding and Staggering Smite spells
 - updated Oath of Altruism features descriptions
 - updated Oath of Ancients features descriptions
 
-1.4.33.33:
+## 1.4.33.33
 
 - fixed Warlocks getting incorrect invocations learn step if multiclass
 
-1.4.33.32:
+## 1.4.33.32
 
 - added Oath of Altruism subclass in BETA
 - fixed Blade Dancer not removing the beneficial condition on invalid armor or weapon sets
@@ -3575,7 +3729,7 @@ CHANGES:
 - improved Mod UI icons to make intentions more clear
 - refactored Fell Handed with better combat log and behavior
 
-1.4.33.31:
+## 1.4.33.31
 
 - added lore friendly Kobold names
 - added new mod content pack icon
@@ -3585,7 +3739,7 @@ CHANGES:
 - fixed Spear Mastery not changing to D10 dice on versatile
 - fixed Wizard spell scribing interaction with multiclass
 
-1.4.33.30:
+## 1.4.33.30
 
 - added new feat groups and refactored others a bit
 - fixed a very rare interaction between Warlock and Far Step spell
@@ -3594,29 +3748,29 @@ CHANGES:
 - fixed Revenant Blade feat not triggering with custom DM weapons
 - fixed UB tags bleeding into vanilla spells
 - improved Thunder Gauntlet to add a bonus action attack if:
-* main or off-hand is empty
-* main is one-handed melee and hero can dual-wield non-light
+  - main or off-hand is empty
+  - main is one-handed melee and hero can dual-wield non-light
 
-1.4.33.29:
+## 1.4.33.29
 
 - fixed summons issue introduced on previous release and Wild Master upcast
 - changed Wild Master beast extra hit points to increase with character level
 - changed Wild Master beast power DC to 8 + CON modifier + caster PB modifier
 - changed Wild Master beast power dice damage to increase at 5, 9, 13 and 17
 
-1.4.33.28:
+## 1.4.33.28
 
 - added new icons to pikes and hand crossbows from @taco
 - fixed issues with settings not saving upon exit
 - fixed summons upcast durations
 - reverted wrong change on metamagic feat
 
-1.4.33.27:
+## 1.4.33.27
 
 - added Gameplay > Tools > Settings to allow export/import settings files [easier MP session setup / switch easily across different configs]
 - fixed missing Metamagic feat charisma pre-requisite
 
-1.4.33.26:
+## 1.4.33.26
 
 - added Spear Mastery feat
 - fixed Agonizing Blast and Life Drinker interaction with Eldritch Adept
@@ -3625,16 +3779,16 @@ CHANGES:
 - fixed Dead Master upcasted summons duration
 - fixed Spell Sniper casting pre-requisites
 
-1.4.33.25:
+## 1.4.33.25
 
 - improved recipes displays with new options under Interface / Game UI
 
-1.4.33.24:
+## 1.4.33.24
 
 - fixed minor issues on recently added cantrips and feats
 - fixed slots display issue introduced on last version
 
-1.4.33.23:
+## 1.4.33.23
 
 - added after rest activity to stop all Inventor infusions
 - added Mind Spike cantrip
@@ -3647,7 +3801,7 @@ CHANGES:
 - improved Inventor infusions logic
 - refactored Skin of Retribution to allow choosing damage type
 
-1.4.33.22:
+## 1.4.33.22
 
 - added Fell Handed and Blade Mastery feats
 - fixed Chitinous Boon to correctly add a Warlock pact slot
@@ -3655,7 +3809,7 @@ CHANGES:
 - improved patches to allow readying non-standard ranged attacks [i.e.: Lightning Launcher]
 - removed Requires Restart from Allow Assigning Official Spells setting
 
-1.4.33.21:
+## 1.4.33.21
 
 - added Discretion of The Coedymwarth to the ranged combat group in addition to the armor one
 - fixed Oath of Ancients to correctly apply aura of warding power
@@ -3664,18 +3818,18 @@ CHANGES:
 - fixed Way of The Dragon dragon breath description to correctly say proficiency bonus usage
 - fixed wrong interaction between Level20 and Override Min Max Level settings
 
-1.4.33.20:
+## 1.4.33.20
 
 - added Skin of Retribution level 1 spell
 - fixed Bow Mastery missing +1 on damage rolls
 - fixed Crusher push allowing more than 1 use per turn
 - fixed Sorlocks not allowing pact slots to sorcery points
 
-1.4.33.19:
+## 1.4.33.19
 
 - fixed a crash on slots reaction modal
 
-1.4.33.18:
+## 1.4.33.18
 
 - added additional names suggestions to Gnomes and Tieflings
 - added Elemental Adept feats
@@ -3683,14 +3837,14 @@ CHANGES:
 - fixed pool points selection from feats at level 1
 - removed any minimum level requirement from all feats
 
-1.4.33.17:
+## 1.4.33.17
 
 - changed Magic Initiate and Spell Sniper feats to require level 2 [technical limitation]
 - fixed Soul Blade empower weapon
 - refactored Spell Sniper on 5 separate feats with its own repertoire and correct casting ability
 - removed Cantrips Adept feat in favor of Magic Initiate ones
 
-1.4.33.16:
+## 1.4.33.16
 
 - added Magic Initiate feats
 - changed College of War Dancer from regaining bardic inspiration on kill
@@ -3701,12 +3855,12 @@ CHANGES:
 - fixed Spell Sniper to only consider ranger hit type cantrips
 - reduced College of War Dancer maximum momentum to half-PB rounded up
 
-1.4.33.15:
+## 1.4.33.15
 
 - fixed some "Marty" McFly issues
 - tweaked Defensive Duelist feat
 
-1.4.33.14:
+## 1.4.33.14
 
 - added additional custom icons for Potions of Healing manuals
 - added Cantrips Adept feat
@@ -3714,7 +3868,7 @@ CHANGES:
 - added Spell Sniper feat
 - tweaked War Dancer momentum debuff checks to properly work with thrown melee weapons
 
-1.4.33.13:
+## 1.4.33.13
 
 - changed Way of The Dragon breath uses to proficiency bonus
 - enforced min level 2 to take Eldritch Adept feat
@@ -3724,17 +3878,17 @@ CHANGES:
 - fixed Way of The Dragon dragon fury duration
 - tweaked monsters / NPCs offering on DMP
 
-1.4.33.12:
+## 1.4.33.12
 
 - added Eldritch Initiate feat
 - refactored Metamagic feat to be on par with tabletop
 
-1.4.33.11:
+## 1.4.33.11
 
 - fixed missing Way of The Dragon ancestry powers
 - fixed narrative sequences to support party of 1
 
-1.4.33.10:
+## 1.4.33.10
 
 - added Way of The Dragon [BETA] subclass
 - changed SoulBlade Empower Weapon recharge rate to short rest
@@ -3745,45 +3899,45 @@ CHANGES:
 - set feat family for Slasher, Piercer and Crusher
 - set Tactical Surge as possessive for a better combat log
 
-1.4.33.9:
+## 1.4.33.9
 
 - fixed a crash to desktop when Moonlit tried to wildshape
 - fixed an original game issue when determining critical hit against opponents with very high AC [reported to TA with a fix]
 - fixed slots reaction UI interaction with caster races
 - made formation mod UI accessible for users who scale UMM
 
-1.4.33.8:
+## 1.4.33.8
 
 - fixed Dual Weapon Defense feat AC bonus
 - improved party formation feature with sets, templates and hotkeys
 - removed AC and damage bonus from College of Harlequin combat inspiration
 - removed Archery fighting style from College of Harlequin progression
 
-1.4.33.7:
+## 1.4.33.7
 
 - added an Interface > Game UI setting to change the party formation
 - added a Gameplay > Rules setting to make all large wildshape forms medium size
 - added a custom icon to Petal Storm spell
 
-1.4.33.6:
+## 1.4.33.6
 
 - added an Interface > Game UI setting for a Druid wildshape attack toggle [useful with a mix of melee and ranged ones]
 - changed Earth Tremor spell to be on par with tabletop
 - improved Wild Shape and Flurry of Blows integration
 - updated Monk Initiate feat incorrect +1d4 damage description
 
-1.4.33.5:
+## 1.4.33.5
 
 - changed Ape attack order to first offer ranged [rock]
 - changed Deep Spider attack order to first offer ranged [web]
 - improved Mobile feat to be on par with tabletop
 - updated War Caster feat somatic components description
 
-1.4.33.4:
+## 1.4.33.4
 
 - reverted caster feats interaction with non-prepared casters spells un-learning
 
-1.4.33.3:
+## 1.4.33.3
 
 - added Disable Sense Darkvision / Superior Darkvision settings
 - added Repeating Shot infusion
@@ -3792,13 +3946,13 @@ CHANGES:
 - fixed Raise Dead spells upcasting to 1 min, 10 min, 1 hour, 8 hours
 - fixed Sorcerer additional slots consideration under multiclass
 
-1.4.33.2:
+## 1.4.33.2
 
 - fixed Counter Spell slots offering
 - fixed multiclass Warlock slots consumption
 - fixed Piercer dice re-rolling
 
-1.4.33.1:
+## 1.4.33.1
 
 - added Shadow Blade custom sprite
 - fixed Arcane Fighter, enchant weapon, to set it as magical
@@ -3807,19 +3961,19 @@ CHANGES:
 - fixed Path of The Light, lights of protection, to receive healing after downed enemy
 - fixed Path of The Spirits, wolf leadership pack condition, to be removed on rage stop
 
-1.4.33.0:
+## 1.4.33.0
 
 - fixed a null exception on certain legendary actions
 - removed CHA+1 from metamagic feats
 - updated to game version 1.4.33
 
-1.4.32.20:
+## 1.4.32.20
 
 - added Abilities of The Chain Master invocation
 - changed Oath of Ancients aura warding to reduce damage from elements instead of spells and also apply to self
 - fixed Spirit Shroud damage slots progression
 
-1.4.32.19:
+## 1.4.32.19
 
 - fixed Mind Sharpener infusion to grant concentration advantage
 - fixed Mind Sharpener infusion to ignore concentration check on damage < 10
@@ -3827,7 +3981,7 @@ CHANGES:
 - fixed Reckless to work with any monster
 - fixed Soul Blade pact weapon to use Charisma modifier
 
-1.4.32.18:
+## 1.4.32.18
 
 - added an Interface > Game UI setting for a Paladin smite toggle
 - added an Interface > Game UI setting for a Monk ki points toggle
@@ -3835,37 +3989,37 @@ CHANGES:
 - fixed Poisonous Skin and Pugilist to not apply on range [i.e.: wildshape apes]
 - fixed replace attack with cantrip interaction with haste and action surge
 
-1.4.32.17:
+## 1.4.32.17
 
 - fixed a wrong change on action started event introduced on last version
 - fixed DC 0 on grenadier bombs under multiplayer
 - improved Arcane Fighter description
 - improved Long Mace sprites
 
-1.4.32.16:
+## 1.4.32.16
 
 - added Study your Enemy custom sprite
 - allowed bardic die use on War Dancer momentum
 - changed all Raise Dead spells to:
-* be one level up from 2 to 8
-* require concentration
-* have duration of 1 min, 10 min, 1 hour on levels 2, 3 and 4
-* have duration of 1 hour, 8 hours, 1 day on levels 5 and above
+  - be one level up from 2 to 8
+  - require concentration
+  - have duration of 1 min, 10 min, 1 hour on levels 2, 3 and 4
+  - have duration of 1 hour, 8 hours, 1 day on levels 5 and above
 - changed Dead Master subclass to:
-* have +1 save DC on any Necromancy spell at 2nd level
-* not require concentration on raise dead upcast
+  - have +1 save DC on any Necromancy spell at 2nd level
+  - not require concentration on raise dead upcast
 - changed Opportunist debilitated condition to -1D6 on all saving throws
 - improved Crusher to allow unarmed
 - improved Crusher, Piercer and Slasher translation terms
 - improved Druid Wildshape interaction with unarmed feats, monk flurry of blows, etc.
 
-1.4.32.14:
+## 1.4.32.14
 
 - fixed Chromatic Orb upcasting
 - fixed Hand-and-A-Half off hand check
 - improved Crusher push mechanism
 
-1.4.32.12:
+## 1.4.32.12
 
 - added Banishment, Ensnaring and Staggering Smite spells
 - added Oath of Ancient subclass
@@ -3875,19 +4029,19 @@ CHANGES:
 - improved translation terms
 - included Raise Skeleton spells on selection lists
 
-1.4.32.11:
+## 1.4.32.11
 
 - added missing attribute pre-reqs to Poisonous Skin and Monk Initiate
 - changed Tiefling Zariel to learn Searing Smite instead of Faerie Fire at 3rd
 - improved Circle of The Night subclass and Shape Changer spell integration
 - improved Crusher and Slasher feats
 
-1.4.32.10:
+## 1.4.32.10
 
 - added Crusher, Slasher and Monk Initiate feats
 - fixed Circle of The Night missing revert shape action if wildshape was taken off combat
 
-1.4.32.9:
+## 1.4.32.9
 
 - added setting to increase game time by 1hr, 6hrs, 12hrs or 24hrs
 - added Thunderous Smite and Shadow Dagger spells
@@ -3898,7 +4052,7 @@ CHANGES:
 - fixed spell DC calculation on heroes with more than one repertoire [original game bug]
 - removed Occultist class as causing too much headaches [RESPEC out before update!]
 
-1.4.32.8:
+## 1.4.32.8
 
 - added Chromatic Orb, Searing Smite, Wrathful Smite and Blinding Smite spells
 - added patch to expand exits' sensors if party greater than 4 [blue box still 4x4 but sensor is now 8x8]
@@ -3908,7 +4062,7 @@ CHANGES:
 - fixed multiclass level up spell selection when other class has full knowledge
 - reviewed some melee restriction scenarios to also allow unarmed attacks
 
-1.4.32.7:
+## 1.4.32.7
 
 CHANGES:
 
@@ -3916,7 +4070,7 @@ CHANGES:
 - improved Mobile feat and Monk features interaction
 - improved Occultist presentation
 
-1.4.32.6:
+## 1.4.32.6
 
 - fixed level up removing last assigned subclass under certain scenarios
 - fixed Smarlock, now Occultist, to work correctly with multiclass
@@ -3924,7 +4078,7 @@ CHANGES:
 - improved College of War Dancer integration with multiclass
 - reworked support for wildshape as a bonus action on Circle of The Night
 
-1.4.32.5:
+## 1.4.32.5
 
 - added College of War Dancer
 - added setting to improve icons on some magical bolts and recipes
@@ -3938,14 +4092,14 @@ CHANGES:
 - fixed Tiefling integration with flexible races
 - removed support for wildshape as a bonus action on Circle of The Night due to engine limitations
 
-1.4.32.4:
+## 1.4.32.4
 
 - added CTRL-SHIFT-R hotkey setting to allow party to rejoin [useful on parties of 5 or 6]
 - added Character > General setting to allow Warlocks to pick Charisma or Intelligence as their spell casting ability
 - fixed Tiefling lack of vision
 - improved DM Editor to allow loot packs export
 
-1.4.32.3:
+## 1.4.32.3
 
 - added Italian and Spanish unofficial game translations [check language dropdown on game settings]
 - added Oath of Hatred subclass
@@ -3956,7 +4110,7 @@ CHANGES:
 - fixed Way of the Distant Hand to correctly work with Martial Dice progression
 - updated Summon Eternal Comrade icon
 
-1.4.32.2:
+## 1.4.32.2
 
 - added Astral Arms feat
 - added Bow Mastery feat
@@ -3968,7 +4122,7 @@ CHANGES:
 - fixed Minor Lifesteal extra HP duration to 1 hour
 - updated Chinese, French, Portuguese and Russian translations
 
-1.4.32.1:
+## 1.4.32.1
 
 - added Chinese and Russian translations
 - added new icon to Dracronic Cry
@@ -3976,19 +4130,19 @@ CHANGES:
 - fixed Mobile feat to grant a disengage action only after a successful melee attack
 - improved Translations logging to simplify work from foreign languages contributors
 
-1.4.32.0:
+## 1.4.32.0
 
 - added new icons to Command Undead, Help and Study your Enemy by @balmz
 - fixed flexible races
 - updated to game version 1.4.32
 
-1.4.31.10:
+## 1.4.31.10
 
 - fixed level up allowing heritage spells to be unlearned
 - fixed Sunlit Blade spell and Twinned metamagic interaction
 - improved UI patches to support more than 4 players co-op
 
-1.4.31.9:
+## 1.4.31.9
 
 - added Interface > Game UI > setting to allow more real state on rest panel [useful when hero has too many actions]
 - added support for invocations that recharge on short rest [i.e.: Fey Teleportation]
@@ -3998,7 +4152,7 @@ CHANGES:
 - fixed plane magic button to display even if you can't cast any of the spells
 - fixed power use slots positioning for custom invocations on different screen resolutions
 
-1.4.31.8:
+## 1.4.31.8
 
 - added Gameplay > Rules > SRD setting to Change Eldritch Blast range from 16 to 24
 - added Protect Threshold icon by @balmz
@@ -4008,7 +4162,7 @@ CHANGES:
 - fixed Inspiring Leader and Soul Shield to correctly consider Charisma as their bonus to HP
 - fixed precision feats not set to magical
 
-1.4.31.7:
+## 1.4.31.7
 
 - fixed Heavy Armor Master and Dance of Defense to correctly apply damage reduction
 - fixed Raise Shield not triggering
@@ -4016,7 +4170,7 @@ CHANGES:
 - fixed Path of The Spirit Bear Resistance to include missing damage types
 - removed most limitations on infusions applications
 
-1.4.31.6:
+## 1.4.31.6
 
 - fixed any official spell or power set to melee hit that were allowed range hit by one of our patches
 - fixed broken Empress Garb re-skins
@@ -4028,14 +4182,14 @@ CHANGES:
 - fixed some crafted armors not having a model assigned
 - fixed translation typos on recently added feats
 
-1.4.31.5:
+## 1.4.31.5
 
 - added Chilling Blast, Corrosive Blast, Fiery Blast and Fulminate Blast invocations at 2nd
 - added Discerning Gaze, Gift of The Hunter and Spectral Shield invocations at 5th
 - added Breaker and Banisher at 9th
 - fixed Wildshape bonus action bleeding into other classes
 
-1.4.31.4:
+## 1.4.31.4
 
 - added Brazilian Portuguese translation fixes by @Itomon
 - added custom sprites from @Balmz to all 3 powers in Healer feat
@@ -4051,7 +4205,7 @@ CHANGES:
 - fixed spell registration to ensure mod spells are correctly offered during level up
 - improved Patron Rift Walker to keep spells concentration when using it's powers
 
-1.4.31.3:
+## 1.4.31.3
 
 - added "Random encounters percentage chances" setting under gameplay > tools [Zappa]
 - added remind pop up to pick up your items after RESPEC [Zappa]
@@ -4064,7 +4218,7 @@ CHANGES:
 - fixed Warlock getting offered double invocation pools when MC [Zappa]
 - improved "Identify on rest" to work with pre-existing heroes, identify all at once and only be offered to characters with unidentified items [TPA]
 
-1.4.31.2:
+## 1.4.31.2
 
 - added Dragon Wings, Fade Away and Revenant Great Sword feats
 - added setting to disable pre-requisites on race bound feats
@@ -4075,7 +4229,7 @@ CHANGES:
 - fixed Heavy Armor Master feat triggering more often than expected
 - fixed Study Your Enemy feature causing a mod warning if enemy fully known
 
-1.4.31.1:
+## 1.4.31.1
 
 - added Blade Ward and Enduring Sting cantrips
 - added icons to Foresight, Meteor Swarm, Mind Blank, Resurrection, Reverse Gravity and Time Stop
@@ -4086,7 +4240,7 @@ CHANGES:
 - fixed Way of Distant Hand prompting their zen arrow technique on melee attacks
 - fixed Way of Distant Hand not getting a bonus unarmed attack after shooting a bow
 
-1.4.31.0:
+## 1.4.31.0
 
 - updated to game version 1.4.31
 - fixed not being able to switch bombs to fire element sometimes
@@ -4095,7 +4249,7 @@ CHANGES:
 - changed Mobile to only trigger disengage on attack hits
 - changed Mobile to only grant affinity to difficult terrains and immunity to restrained
 
-1.4.30.11:
+## 1.4.30.11
 
 - fixed AoO to use Thunder Gauntlet if main hand is free
 - fixed Bard Magical secrets at 14 and 18
@@ -4103,13 +4257,13 @@ CHANGES:
 - fixed Path of The Spirits' Animal Friendship saving thrown DC
 - updated French translations
 
-1.4.30.10:
+## 1.4.30.10
 
 - added Heavy Armor Master, Mobile and Piercer feats
 - fixed missing damage dice on Resonating Strike at 5
 - fixed Circle of The Forest Night Bark Ward max pool
 
-1.4.30.9:
+## 1.4.30.9
 
 - added Eldritch Blast as pre-req for Hindering and Grasping blast invocations
 - added unofficial Spanish support to the game
@@ -4122,7 +4276,7 @@ CHANGES:
 - improved Inspiring Leader to grant temp HP in AoE
 - removed broken Magical Secrets from Bard at 14 and 18
 
-1.4.30.8:
+## 1.4.30.8
 
 - added Ranger Scout, Rogue Scout, Bard Armor and Warlock armor appearances to Empress Garb
 - changed all Gambits' effects to last until the start of your next turn
@@ -4139,14 +4293,14 @@ CHANGES:
 - reverted removal of Allow All Players on Narrative Sequences feature
 - updated Strategy: Overcome description
 
-1.4.30.7:
+## 1.4.30.7
 
 - added initial support for French
 - fixed custom campaigns initial recipes
 - fixed reaction gambits to not trigger when knocked prone
 - fixed warning on level 1 spells selection
 
-1.4.30.6:
+## 1.4.30.6
 
 - enabled cancel action with right mouse click
 - changed Inventor to ignore Somatic component of spells when holding any infused item in hands
@@ -4156,7 +4310,7 @@ CHANGES:
 - fixed recipes not getting offered on crafting screen
 - reworked Distant Hand's Flurry of Arrows to trigger off Flurry of Blows activation
 
-1.4.30.5:
+## 1.4.30.5
 
 - added Strategy: Overcome gambit
 - changed Blind, Feint, Threaten and Urgent Orders to require level 7
@@ -4164,7 +4318,7 @@ CHANGES:
 - changed gambit learning progression to 4 at 3, 1 at 5, 1 at 7, 2 at 15
 - changed Strategy Plan to be an exclusive choice between Tactical, Adaptive and Overcoming
 
-1.4.30.4:
+## 1.4.30.4
 
 - added new Debilitate, Parry and Precise gambits to Tactician
 - changed Tactician to learn 4 gambits at 3
@@ -4174,7 +4328,7 @@ CHANGES:
 - improved College of Harlequin to show dice rolls on combat inspiration
 - tweaked Gambit titles a bit
 
-1.4.30.3:
+## 1.4.30.3
 
 - added Enable Beta toggle under Gameplay > Tools
 - added Return Fire gambit to Tactician
@@ -4183,7 +4337,7 @@ CHANGES:
 - marked Counter Attack and Return Fire gambits non-AoO
 - tagged College of Harlequin and Martial Tactician beta
 
-1.4.30.2:
+## 1.4.30.2
 
 - fixed Dual Flurry to only work if one handed
 - fixed Level 20 to be future-proof resilient
@@ -4191,7 +4345,7 @@ CHANGES:
 - fixed Wild Master beast to-hit and to-damage bonuses
 - fixed wrong Particle Params in about 250+ blueprints
 
-1.4.30.1:
+## 1.4.30.1
 
 - fixed a null exception in wild shaping
 - fixed a copy issue on Effect Parameters causing undesired changes in other blueprints
@@ -4202,7 +4356,7 @@ CHANGES:
 - reworked how Thunder Gauntlet is added with an empty main hand
 - updated defense feats to mention they don't work with shields
 
-1.4.30.0:
+## 1.4.30.0
 
 - added fighting style selection to College of Harlequin at level 3
 - changed Bond of Talisman, Combat Inspiration and Far Step casting animation
@@ -4211,11 +4365,11 @@ CHANGES:
 - refactored Bond of Talisman and renamed to Eldritch Step
 - updated to support game version 1.4.30
 
-1.4.28.R:
+## 1.4.28.R
 
 - fixed quick wit reaction getting offered more than once on same action
 
-1.4.28.Q:
+## 1.4.28.Q
 
 - fixed a null exception with legendary actions
 - fixed bonus cantrips not getting offered in battle
@@ -4225,43 +4379,43 @@ CHANGES:
 - improved gambit selection buttons display when out of dice
 - refactored Bond Of The Talisman to behave like One With Shadows, UI wise
 
-1.4.28.N:
+## 1.4.28.N
 
 - fixed an interaction issue between PARTYSIZE and DEFAULT_PARTY features
 - fixed targeting of custom invocations cast spell (mainly from Plane Magic feats)
 - fixed Dragonborn breath powers interaction with Multiclass
 
-1.4.28.M:
+## 1.4.28.M
 
 - added non-magical instruments to Gorin's stock
 - fixed Fighter extra attack at level 20
 - fixed issues on Tactician caused by a sloop maintainer
 - renamed Armament Adroitness to Weapon Training to keep developer mental health
 
-1.4.28.L:
+## 1.4.28.L
 
 - added an icon to livewood club
 
-1.4.28.K:
+## 1.4.28.K
 
 - fixed original game issue with activators requiring double press after first use
 - fixed Patron Elementalist elemental form enhanced icon
 - fixed group feats enumerating non selected ones
 - made Far Step spell have dedicated action for repeated teleports
 
-1.4.28.J:
+## 1.4.28.J
 
 - added Armament Adroitness progression option to Fighters
 - fixed weapon modifiers using internal name instead of translation term
 - made Torch Bearer a fighting style in addition to a feat
 
-1.4.28.I:
+## 1.4.28.I
 
 - fixed beast duplicates when they get upgraded from 6 to 7, 10 to 11, 14 to 15
 - fixed IAfterAttackEffect not triggering which broke Dual Flurry and others
 - promoted Royal Knight as requested on Discord
 
-1.4.28.H:
+## 1.4.28.H
 
 - fixed Path of The Spirits minor issues
 - improved Path of The Spirits wolf friendship
@@ -4272,32 +4426,32 @@ CHANGES:
 - refactored how Terrific Performance is applied to allow proper DC calculations
 - used condition amount instead of global storage for die rolls and modifying base values of features
 
-1.4.28.G:
+## 1.4.28.G
 
 - added Path of The Spirits
 - added SRD rule option to identify items over rest activities
 - improved behind the scenes code
 
-1.4.28.F:
+## 1.4.28.F
 
 - added Water Elemental to Circle of The Night WS forms (based of Air)
 - improved conditions tooltip
 - shrunk shapes offering panel when too many shapes are offered
 
-1.4.28.E:
+## 1.4.28.E
 
 - changed Silhouette Step recharge rate to PB over long rest
 - fixed Circle of The Night loosing Wildshape condition
 - updated suggested spells to include Bard
 - restated level 9 spells
 
-1.4.28.D:
+## 1.4.28.D
 
 - improved College of Life level 14 with Command Undead from Dead Master
 - improved Way of The Silhouette progression to be on par with Moonlit
 - promoted Gnomes after better QA
 
-1.4.28.C:
+## 1.4.28.C
 
 - allowed up to 22 first level feats if set directly on XML (for QA)
 - fixed Circle of The Nights Druid Combat power
@@ -4307,7 +4461,7 @@ CHANGES:
 - tweaked some condition descriptions on UI and ALT key behavior on them
 - tweaked Stark Harvest to grant temp HP if caster is at full health
 
-1.4.28.B:
+## 1.4.28.B
 
 - added an UI 10th level feature description on Circle of The Nights
 - added eye styles to Dragonborn
@@ -4316,7 +4470,7 @@ CHANGES:
 - fixed Circle of The Night combat healing to only work under WS
 - fixed Warlock slots display issues on inspection under MC
 
-1.4.28.A:
+## 1.4.28.A
 
 - added Circle of The Night (beta)
 - demoted Gnome
@@ -4326,7 +4480,7 @@ CHANGES:
 - fixed Wild Master summon powers display
 - moved IOnAttackEffects handling to delegates
 
-1.4.28.9:
+## 1.4.28.9
 
 - added Blind gambit
 - added College of The Harlequin
@@ -4338,7 +4492,7 @@ CHANGES:
 - set require spell casting and +13 CHA for Metamagic feat group
 - set require spell casting for Spell Combat feat group
 
-1.4.28.8:
+## 1.4.28.8
 
 - changed Elementalist auto learned spells to 2 per level
 - changed Executioner and Dual Flurry to trigger on IBeforeAttackEffect
@@ -4352,7 +4506,7 @@ CHANGES:
 - rebalanced College of Life
 - rebalanced Way of The Silhouette
 
-1.4.28.7:
+## 1.4.28.7
 
 - promoted Circle of The Ancient Forest
 - promoted Circle of The Forest Guardian
@@ -4361,7 +4515,7 @@ CHANGES:
 - removed extra gambit pool increases at 5 and 10
 - tweak Gnome scale
 
-1.4.28.6:
+## 1.4.28.6
 
 - consolidated common subclasses features
 - fixed executioner damage
@@ -4371,7 +4525,7 @@ CHANGES:
 - rebalanced Field Manipulator
 - tweaked subclasses gui presentation
 
-1.4.28.5:
+## 1.4.28.5
 
 - fixed default party on DM
 - fixed reported translations typos
@@ -4384,14 +4538,14 @@ CHANGES:
 - added level 10 Tactical Surge feature (TACTICIAN)
 - fixed error when using Switching gambit (TACTICIAN)
 
-1.4.28.4:
+## 1.4.28.4
 
 - Add a sprite to Torchbearer
 - Fix Shared Vigilance using target INT instead of self
 - Fix Wild Master offering multiple summons
 - Improve Wild Master beast powers
 
-1.4.28.3:
+## 1.4.28.3
 
 - Fix dual-flurry triggering on misses
 - Fix IncreaseMeleeAttackReach on thrown melee weapons
@@ -4401,13 +4555,13 @@ CHANGES:
 - Rename Debilitate to Provoke
 - Rename Feint to Precision
 
-1.4.28.2:
+## 1.4.28.2
 
 - Add College of Guts
 - Fix inverted sign on Deadeye and Power Attack
 - Fix Wild Master empty powers display
 
-1.4.28.1:
+## 1.4.28.1
 
 - Bring back default party feature
 - Change Deadeye to use same base modifier as Power Attack
@@ -4417,56 +4571,56 @@ CHANGES:
 - Fix Winter Breath duration
 - Promote some subclasses back per requests
 
-1.4.28.0:
+## 1.4.28.0
 
 - Add Beast Master [beta]
 - Improve Tactician
 - Fix all reported translation issues
 - Remove Light Footed FS as too similar to an official feat
 
-1.4.26.4:
+## 1.4.26.4
 
 - Fix Arcanist Mark tooltip
 - Fix Arcane Pulse number of uses
 - Refactor common code in Moonlit and Way of Silhouette
 
-1.4.26.3:
+## 1.4.26.3
 
 - Refactor Way of Shadow into Way of The Silhouette
 
-1.4.26.2:
+## 1.4.26.2
 
 - Add 2 WIP gambits (Brace and Switch)
 - Add rubble proxy to Earth Tremor spell
 - Add Way of Shadow subclass
 - Fix Adaptive Strategy restoring wrong amount of dice
 
-1.4.26.1:
+## 1.4.26.1
 
 - Add unlock skin colors option
 - Fix Divine Heart Empowered Healing
 
-1.4.26.0:
+## 1.4.26.0
 
 - Fix distant hand technique (Way of Distant Hand)
 - Fix warning sign over bows (Way of Distant Hand)
 - Fix EN terms (Inventor)
 
-1.4.25.3:
+## 1.4.25.3
 
 - Fix Tactician level up
 
-1.4.25.2:
+## 1.4.25.2
 
 - Fix Tactician translations
 - Fix Unlearn Invocations patch
 
-1.4.25.1:
+## 1.4.25.1
 
 - Add Kobold sprite
 - Fix feats selection
 
-1.4.25.0:
+## 1.4.25.0
 
 - Rebrand to Unfinished Business
 - Add Inventor
