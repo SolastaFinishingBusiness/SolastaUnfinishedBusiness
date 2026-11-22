@@ -120,11 +120,11 @@ jobs:
           if grep -q ' SolastaUnfinishedBusiness/ChangelogHistory.txt$' <<< "$listing"; then
             echo "::error::The zip still has ChangelogHistory.txt"; exit 1
           fi
-          newest=$(sed -n 's/^## //p' Documentation/ChangelogHistory.md | tr -d '\r' | sed -n '1p')
+          newest=$(sed -n 's/^### //p' Documentation/ChangelogHistory.md | tr -d '\r' | sed -n '1p')
           # its own assignment, so a failing extractor fails the step
           notes=$(.github/scripts/release-notes.sh "$newest" Documentation/ChangelogHistory.md)
           if [ -z "$notes" ]; then
-            echo "::error::The section '## $newest' of the changelog came out empty"; exit 1
+            echo "::error::The section '### $newest' of the changelog came out empty"; exit 1
           fi
           echo "Newest changelog section: $newest"
       - name: Name the test build
@@ -169,7 +169,7 @@ jobs:
         run: |
           .github/scripts/release-notes.sh "$GITHUB_REF_NAME" Documentation/ChangelogHistory.md > release-notes.md
           if [ ! -s release-notes.md ]; then
-            echo "::error::No '## $GITHUB_REF_NAME' section in Documentation/ChangelogHistory.md"
+            echo "::error::No '### $GITHUB_REF_NAME' section in Documentation/ChangelogHistory.md"
             exit 1
           fi
       - name: Publish Release
