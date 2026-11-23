@@ -223,6 +223,17 @@ Releases of Finishing Business come first, newest at the top, then the releases 
 - Temporary diagnostics: the mod log gets [Perception] lines (at most 128 per launch) for each shared Perception check, its roll and the AI's waits, so the players' logs can be compared to confirm every computer rolls the same. They will be removed once a multiplayer session confirms it
 - Tested in game in single player: the Perception roll for non-perceived targets (with disadvantage when blinded), a blinded creature rolling again, the two Perception settings' texts, and the update check (at launch and with the Check for updates button) reporting the installed version as the latest. Not tested in game: anything in a multiplayer session (the Perception sync between players, the AI's wait, the speed-up wait, corrections, recovery saves and resync), the checks a creature makes again once its blindness ends, the update option in the game's Settings > GUI, a real update, download, install or rollback, and the character sheet and translation fixes. The backend checks (Tests/RecoveryChecks and Tests/PerceptionChecks) cover the barrier's state, the install transaction, the helper's install, rollback and failed install on test folders, and the shared Perception results and the AI's wait, not the game's UI, a real update or a real network
 
+### 1.9.0
+
+- Campaigns: new setting "Speed up enemy turns by default", off by default. With it on, every run of enemy turns starts sped up as if the speed-up button had been clicked; clicking the button sets them back to normal until a party member's turn. It needs the speed-up button shown; in multiplayer the host's setting counts and the automatic start shows no alert
+- Enemy-turn speed-up button: it now widens to fit its text on one line. It kept the size of the game's MENU button it is copied from (70 wide), so its texts wrapped word by word over the box and the "Enemy turns sped up" label above it
+- Enemy-turn speed-up button: its tooltip now says what it does, instead of the menu button's "Opens the game menu."
+- Enemy-turn speed-up button: it now hides with the initiative bar, e.g. in the close-up camera of a spell, instead of staying on screen when the rest of the battle UI is hidden
+- Enemy-turn speed-up button: it now sits just under the initiative bar, with the "Enemy turns sped up" label below it
+- Lore-friendly names ("Unlock additional lore friendly names"): the extra names load again in builds from GitHub. The list was split on Windows line endings only, but the release workflow builds from a Linux checkout, whose copy has Unix line endings, so the whole list was read as one line and its names were lost
+- Lore-friendly names: fixed the High Elf surname "Frostbloom", whose line had a space instead of a tab and didn't load
+- Not tested in game: multiplayer (the button changes and the host's speed-up by default), and holding space while the button is shown
+
 ### 1.8.1
 
 - Campaigns: the enemy-turn speed-up button in single player is now on by default (it can still be turned off in the Campaigns settings)
