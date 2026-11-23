@@ -326,6 +326,7 @@ internal static class WeaponDamageDisplay
     //      Equipment/&ItemType...Title) or "Poison" (Tooltip/&TagPoisonTitle);
     //   7. an item worn on a finger: "Ring" (Equipment/&ItemTypeRingTitle), the game's own word, though it records
     //      rings by their slot alone;
+    //      (a type from steps 1 to 7 that is named like the item itself is skipped, as it would give the name away);
     //   8. the type line the game's own tooltip shows under the name of an unidentified item
     //      (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity, which the
     //      mod writes in GuiItemTweaks.SubTitleWithoutRarity): "Spell Focus (Arcane)", "Wondrous Item" for items the
@@ -342,13 +343,30 @@ internal static class WeaponDamageDisplay
         }
 
         var typeTitle = TypeDefinitionTitleOf(definition);
+        var type = string.IsNullOrEmpty(typeTitle) ? null : Gui.Localize(typeTitle);
 
-        if (!string.IsNullOrEmpty(typeTitle))
+        // A type named like the item itself would give the item's real name away: some types exist for one item
+        // only (the tool type of the Abyssal Agitator is titled "Abyssal Agitator"). The next step's broader type
+        // ("Tool") is used instead.
+        if (!string.IsNullOrEmpty(type) && type != Gui.Localize(definition.GuiPresentation?.Title))
         {
-            return Gui.Localize(typeTitle);
+            return type;
         }
 
-        var typeLine = new GuiItemDefinition(definition).SubtitleWithoutRarity;
+        string typeLine;
+
+        // The type line's formatter (GuiItemTweaks.SubTitleWithoutRarity) reads the item's presentation and the
+        // descriptions of its kinds without checks, so a definition missing one of them throws there. Such an item
+        // gets no type line, and the breakdown entry is still written.
+        try
+        {
+            typeLine = new GuiItemDefinition(definition).SubtitleWithoutRarity;
+        }
+        catch (Exception e)
+        {
+            Main.Error($"No type line for item {definition.Name}: {e.Message}");
+            typeLine = null;
+        }
 
         if (!string.IsNullOrEmpty(typeLine))
         {
