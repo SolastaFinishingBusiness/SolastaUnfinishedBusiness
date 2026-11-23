@@ -291,8 +291,10 @@ internal static class WeaponDamageDisplay
     // what the item is nor which item it is ("+4: ???"); the same in every language
     internal const string UnidentifiedName = "???";
 
-    // the character whose stat box is being refreshed (CharacterStatBox.Refresh), while it is; null elsewhere
-    internal static RulesetCharacter StatCharacter;
+    // The character whose worn items an entry being formatted comes from, while it is known: the owner of the stat
+    // box being refreshed (CharacterStatBox.Refresh), or the attacker of a roll the combat log is writing
+    // (GameConsole.AttackRolled). Null elsewhere.
+    internal static RulesetCharacter Carrier;
 
     // which character each attribute shown in a stat panel belongs to: a stat box knows only its attribute, and
     // refreshes itself whenever the attribute changes, not only when its panel binds it
@@ -324,7 +326,8 @@ internal static class WeaponDamageDisplay
 
     // Whether a breakdown entry names an item the player hasn't identified, and which definition it names. The
     // game's own entries name the item by its definition's real title (Gui.FormatTrendInfo looks the definition up
-    // by name), on to-hit, damage and stat breakdowns (armour class) alike, so this is checked for every entry.
+    // by name), on to-hit, damage and stat breakdowns (armour class) and the combat log's rolls alike, so this is
+    // checked for every entry.
     //
     // An item counts as unidentified by the test the game uses to show its unidentified title ("Magnificent
     // Longsword"): the definition is magical, requires identification, and the item instance isn't identified
@@ -333,9 +336,10 @@ internal static class WeaponDamageDisplay
     // hand out a copy already identified), so the instance that gave the bonus is looked for:
     //   - the entry's own source, when it is an item;
     //   - the item of the attack whose box is being filled (AttackItem), when it is of that definition;
-    //   - the copies of that definition carried by the character whose stat box is refreshed (StatCharacter), not
-    //     counting containers: RefreshArmorClass lists worn items only, by definition name with no source;
-    //   - with no character known (such as a roll in the combat log), the copies the party carries.
+    //   - the copies of that definition the Carrier wears: its inventory slots without containers and without the
+    //     stored weapon sets (EnumerateAllItems with ignoreConfigSlots, IL_002a to IL_0053), as RefreshArmorClass
+    //     counts only worn items, and an attack uses the weapon in hand;
+    //   - with no character known, the copies the party carries, containers included.
     // From the copies found, the name stays only when every one is identified; with none found, the item counts as
     // unidentified, so nothing reveals an item the player hasn't identified.
     internal static bool NamesUnidentifiedItem(RuleDefinitions.TrendInfo trend, out ItemDefinition definition)
@@ -353,7 +357,7 @@ internal static class WeaponDamageDisplay
                     : null;
         }
 
-        if (!definition || !definition.Magical || !definition.RequiresIdentification)
+        if (!NeedsIdentification(definition))
         {
             return false;
         }
@@ -368,8 +372,9 @@ internal static class WeaponDamageDisplay
             return !item.Identified;
         }
 
-        IEnumerable<RulesetCharacter> carriers = StatCharacter != null
-            ? [StatCharacter]
+        var worn = Carrier != null;
+        IEnumerable<RulesetCharacter> carriers = worn
+            ? [Carrier]
             : Gui.GameCampaign
                 ? Gui.GameCampaign.Party?.CharactersList?.Select(x => (RulesetCharacter)x.RulesetCharacter) ?? []
                 : [];
@@ -380,7 +385,7 @@ internal static class WeaponDamageDisplay
         foreach (var carrier in carriers.Where(x => x?.CharacterInventory != null))
         {
             ItemsScratch.Clear();
-            carrier.CharacterInventory.EnumerateAllItems(ItemsScratch, StatCharacter == null);
+            carrier.CharacterInventory.EnumerateAllItems(ItemsScratch, !worn, worn);
 
             foreach (var copy in ItemsScratch.Where(x => x.ItemDefinition == wanted))
             {
@@ -400,21 +405,72 @@ internal static class WeaponDamageDisplay
         return !found;
     }
 
-    // The entry's printed text with the item's name replaced by UnidentifiedName. Only the name is replaced, so a
-    // line such as "Hero uses <item>" (Tooltip/&SourceUsesItemFormat, for an entry whose source is a character)
-    // keeps the rest; the name is the definition's localized title, or the raw name Gui.FormatTrendInfo prints when
-    // it finds no title. Text that holds neither is replaced whole.
-    internal static string WithoutItemName(string text, ItemDefinition definition, string sourceName)
+    // a definition whose items can be unidentified (the first part of the game's test)
+    private static bool NeedsIdentification(ItemDefinition definition)
     {
-        foreach (var name in new[] { TitleOf(definition), sourceName })
+        return definition && definition.Magical && definition.RequiresIdentification;
+    }
+
+    // Whether a stat box's list names an item that can be unidentified. Its tooltip is then formatted again on every
+    // refresh: CharacterStatBox.Refresh only formats it when the value or the number of entries changed
+    // (IL_00e8 to IL_011b), and identifying an item changes neither, so the tooltip would keep "???".
+    internal static bool NamesItemNeedingIdentification(RulesetAttribute attribute)
+    {
+        var trends = attribute?.ValueTrends;
+
+        if (trends == null)
         {
-            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(text) && text.Contains(name))
-            {
-                return text.Replace(name, UnidentifiedName);
-            }
+            return false;
         }
 
-        return UnidentifiedName;
+        var items = DatabaseRepository.GetDatabase<ItemDefinition>();
+
+        return trends.Any(x =>
+            x.source is RulesetItem item
+                ? NeedsIdentification(item.ItemDefinition)
+                : x.sourceType == RuleDefinitions.FeatureSourceType.Equipment &&
+                  !string.IsNullOrEmpty(x.sourceName) &&
+                  items.TryGetElement(x.sourceName, out var definition) && NeedsIdentification(definition));
+    }
+
+    // Gui.FormatTrendInfo's text for an entry naming an unidentified item, built as the game builds it with the
+    // item's name left out (IL_0000 to IL_0083 for the character's name, IL_02bd to IL_02e8 for the item branch,
+    // IL_05bc to IL_05e4 for the details): an entry whose source is a character reads "<character> uses ???"
+    // (Tooltip/&SourceUsesItemFormat), any other "???", and the entry's details follow as they would.
+    internal static string UnidentifiedEntryText(RuleDefinitions.TrendInfo trend)
+    {
+        var text = UnidentifiedName;
+        var actor = trend.source is RulesetCharacter character ? NameOf(character) : null;
+
+        if (!string.IsNullOrEmpty(actor))
+        {
+            text = Gui.Format("Tooltip/&SourceUsesItemFormat", actor, UnidentifiedName);
+        }
+
+        if (!string.IsNullOrEmpty(trend.additionalDetails))
+        {
+            text += " " + Gui.Localize(trend.additionalDetails);
+        }
+
+        return text;
+    }
+
+    // a character's name as Gui.FormatTrendInfo prints it (IL_000d to IL_0083)
+    private static string NameOf(RulesetCharacter character)
+    {
+        if (character is not RulesetCharacterMonster monster)
+        {
+            return character.Name;
+        }
+
+        if (monster.OriginalFormCharacter != null)
+        {
+            return monster.OriginalFormCharacter.Name;
+        }
+
+        return ServiceRepository.GetService<IGuiWrapperService>()
+            .GetGuiMonsterDefinition(monster.MonsterDefinition.Name)
+            .GetDisplayName(monster.HumanoidMonsterPresentationDefinition, false);
     }
 
     private static string TitleOf(BaseDefinition definition)
@@ -610,6 +666,30 @@ public static class WeaponDamageDisplayPatcher
         }
     }
 
+    //PATCH: while the combat log writes an attack roll (and formats its breakdown), the attacker, whose worn items
+    //the roll's item entries come from; the method of an attack made with a weapon is that weapon's definition
+    [HarmonyPatch(typeof(GameConsole), nameof(GameConsole.AttackRolled))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameConsole_AttackRolled
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetActor attacker, BaseDefinition attackMethodDefinition)
+        {
+            WeaponDamageDisplay.Carrier = attacker as RulesetCharacter;
+            WeaponDamageDisplay.AttackWeapon = attackMethodDefinition as ItemDefinition;
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception)
+        {
+            WeaponDamageDisplay.Carrier = null;
+            WeaponDamageDisplay.AttackWeapon = null;
+
+            return __exception;
+        }
+    }
+
     //PATCH: while a stat box refreshes (and formats its breakdown tooltip), the character it belongs to
     [HarmonyPatch(typeof(CharacterStatBox), nameof(CharacterStatBox.Refresh))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
@@ -619,13 +699,18 @@ public static class WeaponDamageDisplayPatcher
         [UsedImplicitly]
         public static void Prefix(CharacterStatBox __instance)
         {
-            WeaponDamageDisplay.StatCharacter = WeaponDamageDisplay.OwnerOf(__instance.smartAttribute);
+            WeaponDamageDisplay.Carrier = WeaponDamageDisplay.OwnerOf(__instance.smartAttribute);
+
+            if (WeaponDamageDisplay.NamesItemNeedingIdentification(__instance.smartAttribute))
+            {
+                __instance.previousTrendListCount = -1;
+            }
         }
 
         [UsedImplicitly]
         public static Exception Finalizer(Exception __exception)
         {
-            WeaponDamageDisplay.StatCharacter = null;
+            WeaponDamageDisplay.Carrier = null;
 
             return __exception;
         }
@@ -670,26 +755,35 @@ public static class WeaponDamageDisplayPatcher
     }
 
     //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
-    //the attack shown, or the kind of source. In an entry naming an item that isn't identified yet, the item's name
-    //is replaced by "???". Every breakdown goes through Gui.FormatTrendInfo, so this covers
-    //all of them, not only damage.
+    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet prints "???" for the
+    //item (the prefix). Every breakdown goes through Gui.FormatTrendInfo, so this covers all of them, not only
+    //damage.
     [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class Gui_FormatTrendInfo
     {
+        // an entry naming an unidentified item gets the game's text with "???" for the item, and the game's
+        // formatter, which would print the item's real title, doesn't run
+        [UsedImplicitly]
+        public static bool Prefix(RuleDefinitions.TrendInfo trend, ref string __result)
+        {
+            if (!WeaponDamageDisplay.NamesUnidentifiedItem(trend, out _))
+            {
+                return true;
+            }
+
+            __result = WeaponDamageDisplay.UnidentifiedEntryText(trend);
+
+            return false;
+        }
+
         [UsedImplicitly]
         public static void Postfix(RuleDefinitions.TrendInfo trend, ref string __result)
         {
             if (string.IsNullOrEmpty(__result))
             {
                 __result = WeaponDamageDisplay.NameOfUnnamed(trend);
-            }
-
-            // after naming an unnamed entry, which may have used the item's real title
-            if (WeaponDamageDisplay.NamesUnidentifiedItem(trend, out var definition))
-            {
-                __result = WeaponDamageDisplay.WithoutItemName(__result, definition, trend.sourceName);
             }
         }
     }
