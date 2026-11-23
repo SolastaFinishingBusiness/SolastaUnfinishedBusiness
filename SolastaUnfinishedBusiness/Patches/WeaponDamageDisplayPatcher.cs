@@ -299,11 +299,7 @@ internal static class WeaponDamageDisplay
     // ("Magnificent Longsword"), localized as GuiEquipmentItem.get_Title localizes it (IL_0037 to IL_004f), so the
     // breakdown names the item as the inventory and the attack box do.
     // A definition with no unidentified title is named by its item type instead, "Unidentified <type>"
-    // (UI/&UnidentifiedItemFormat): the type line the game's own item tooltip shows under the name of an
-    // unidentified item (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity;
-    // the mod writes that line in GuiItemTweaks.SubTitleWithoutRarity), such as "Martial Weapon" or "Ring", so it
-    // reveals nothing the tooltip doesn't. "???" only when that line is empty too: an item with no override subtype
-    // and none of the kinds the type line knows (such as a kind of item added by other code).
+    // (UI/&UnidentifiedItemFormat; ItemTypeOf).
     internal static string UnidentifiedNameOf(ItemDefinition definition)
     {
         var title = definition?.ItemPresentation?.UnidentifiedTitle;
@@ -313,9 +309,35 @@ internal static class WeaponDamageDisplay
             return Gui.Localize(title);
         }
 
-        var type = definition ? new GuiItemDefinition(definition).SubtitleWithoutRarity : null;
+        var type = ItemTypeOf(definition);
 
         return string.IsNullOrEmpty(type) ? "???" : Gui.Format("UI/&UnidentifiedItemFormat", type);
+    }
+
+    // An item's type, as the player can tell it without identifying the item:
+    //   - a weapon: its weapon type ("Longsword"), the WeaponTypeDefinition's title;
+    //   - armour, shields included: its armour type ("Chain Mail", "Shield"), the ArmorTypeDefinition's title;
+    //   - anything else: the type line the game's own tooltip shows under the name of an unidentified item
+    //     (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity, which the
+    //     mod writes in GuiItemTweaks.SubTitleWithoutRarity), such as "Ring" or "Tool".
+    // Empty when none of these gives a name: an item with no override subtype and none of the kinds the type line
+    // knows (such as a kind of item added by other code); its entry then prints "???".
+    private static string ItemTypeOf(ItemDefinition definition)
+    {
+        if (!definition)
+        {
+            return null;
+        }
+
+        var typeTitle = definition.IsWeapon
+            ? definition.WeaponDescription?.WeaponTypeDefinition?.GuiPresentation?.Title
+            : definition.IsArmor
+                ? definition.ArmorDescription?.ArmorTypeDefinition?.GuiPresentation?.Title
+                : null;
+
+        return string.IsNullOrEmpty(typeTitle)
+            ? new GuiItemDefinition(definition).SubtitleWithoutRarity
+            : Gui.Localize(typeTitle);
     }
 
     // The character whose worn items an entry being formatted comes from, while it is known: the owner of the stat
