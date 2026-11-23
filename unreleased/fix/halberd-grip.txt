@@ -1,0 +1,2 @@
+- Halberds: a hero now holds a halberd around the middle of its shaft, instead of near the end with the head reaching far out. The halberd still uses the stretched battleaxe model; only where it sits in the hand changes
+- Not tested in game: multiplayer, and every hero size and attack animation beyond those shown in the PR

@@ -271,7 +271,8 @@ internal static class CustomWeaponsContext
             .Create(GreataxeType, "CEHalberdType")
             .SetGuiPresentation(Category.Item, GuiPresentationBuilder.EmptyString)
             .SetWeaponCategory(WeaponCategoryDefinitions.MartialWeaponCategory)
-            .AddCustomSubFeatures(new CustomScale(z: 3.5f))
+            // the Battleaxe model stretched 3.5 times along its length, held around the middle instead of near the butt
+            .AddCustomSubFeatures(new CustomScale(z: 3.5f, gripAlongLength: 0.5f))
             .AddToDB();
 
         var baseItem = ItemDefinitions.Greataxe;
@@ -1119,18 +1120,31 @@ internal sealed class AddThrowProducedFlameAttack : AddExtraAttackBase
     }
 }
 
+/// <summary>
+///     Scale applied to an item's model when a character wields it (see
+///     <c>GraphicsCharacterFactoryManagerPatcher</c>), on an item or on its weapon type.
+/// </summary>
 internal sealed class CustomScale
 {
     internal readonly float X, Y, Z;
+
+    /// <summary>
+    ///     Where the hand holds the scaled model along its length (its local z axis), as a fraction of that length
+    ///     measured from the end nearest the model's own grip point (0) to the far end (1). Null keeps the model's own
+    ///     grip point. A model stretched along z around a grip point near one end (a battleaxe stretched into a
+    ///     halberd) otherwise keeps the hand near that end, with the rest of the model reaching far out.
+    /// </summary>
+    internal readonly float? GripAlongLength;
 
     internal CustomScale(float s) : this(s, s, s)
     {
     }
 
-    internal CustomScale(float x = 1f, float y = 1f, float z = 1f)
+    internal CustomScale(float x = 1f, float y = 1f, float z = 1f, float? gripAlongLength = null)
     {
         X = x;
         Y = y;
         Z = z;
+        GripAlongLength = gripAlongLength;
     }
 }
