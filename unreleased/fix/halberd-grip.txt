@@ -1,2 +1,2 @@
-- Halberds: a hero now holds a halberd around the middle of its shaft, instead of near the end with the head reaching far out. The halberd still uses the stretched battleaxe model; only where it sits in the hand changes
-- Not tested in game: multiplayer, and every hero size and attack animation beyond those shown in the PR
+- Halberds: a hero now holds a halberd around the middle of its shaft, instead of near the end with the head reaching far out. The halberd still uses the stretched battleaxe model; only where it sits in the hand changes. The same goes for the legendary Skullcleaver and Imperator when their weapon type is set to Halberd, and for the Guardian morningstar when its weapon type is set to Pike
+- Not tested in game: attacks, multiplayer, the magic and primed halberds, and the Skullcleaver, Imperator and Guardian with their weapon type changed
