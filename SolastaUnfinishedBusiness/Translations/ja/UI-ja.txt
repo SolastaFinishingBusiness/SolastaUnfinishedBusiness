@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=照明
 UI/&TrendSourceCover=遮蔽
 UI/&TrendSourceFeature=特徴
 UI/&TrendSourceOther=その他
+UI/&UnidentifiedItemFormat=未鑑定の{0}

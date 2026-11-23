@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=光照
 UI/&TrendSourceCover=掩护
 UI/&TrendSourceFeature=特性
 UI/&TrendSourceOther=其他
+UI/&UnidentifiedItemFormat=未鉴定的{0}

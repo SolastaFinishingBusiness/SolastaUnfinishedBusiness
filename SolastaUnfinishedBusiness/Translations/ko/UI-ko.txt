@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=조명
 UI/&TrendSourceCover=엄폐
 UI/&TrendSourceFeature=특성
 UI/&TrendSourceOther=기타
+UI/&UnidentifiedItemFormat=미감정 {0}

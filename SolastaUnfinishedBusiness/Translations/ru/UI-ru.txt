@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=Освещение
 UI/&TrendSourceCover=Укрытие
 UI/&TrendSourceFeature=Умение
 UI/&TrendSourceOther=Прочее
+UI/&UnidentifiedItemFormat={0} (не опознано)

@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=Beleuchtung
 UI/&TrendSourceCover=Deckung
 UI/&TrendSourceFeature=Merkmal
 UI/&TrendSourceOther=Sonstiges
+UI/&UnidentifiedItemFormat={0} (nicht identifiziert)

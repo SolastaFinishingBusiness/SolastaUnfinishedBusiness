@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=Iluminación
 UI/&TrendSourceCover=Cobertura
 UI/&TrendSourceFeature=Rasgo
 UI/&TrendSourceOther=Otro
+UI/&UnidentifiedItemFormat={0} (sin identificar)

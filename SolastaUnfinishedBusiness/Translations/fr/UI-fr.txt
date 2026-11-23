@@ -35,3 +35,4 @@ UI/&TrendSourceLighting=Éclairage
 UI/&TrendSourceCover=Abri
 UI/&TrendSourceFeature=Aptitude
 UI/&TrendSourceOther=Autre
+UI/&UnidentifiedItemFormat={0} (non identifié)

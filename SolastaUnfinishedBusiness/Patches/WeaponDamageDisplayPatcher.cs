@@ -297,12 +297,25 @@ internal static class WeaponDamageDisplay
 
     // The name a breakdown entry prints for an item that isn't identified yet: the definition's unidentified title
     // ("Magnificent Longsword"), localized as GuiEquipmentItem.get_Title localizes it (IL_0037 to IL_004f), so the
-    // breakdown names the item as the inventory and the attack box do. "???" only for a definition without one.
+    // breakdown names the item as the inventory and the attack box do.
+    // A definition with no unidentified title is named by its item type instead, "Unidentified <type>"
+    // (UI/&UnidentifiedItemFormat): the type line the game's own item tooltip shows under the name of an
+    // unidentified item (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity;
+    // the mod writes that line in GuiItemTweaks.SubTitleWithoutRarity), such as "Martial Weapon" or "Ring", so it
+    // reveals nothing the tooltip doesn't. "???" only when that line is empty too: an item with no override subtype
+    // and none of the kinds the type line knows (such as a kind of item added by other code).
     internal static string UnidentifiedNameOf(ItemDefinition definition)
     {
         var title = definition?.ItemPresentation?.UnidentifiedTitle;
 
-        return string.IsNullOrEmpty(title) ? "???" : Gui.Localize(title);
+        if (!string.IsNullOrEmpty(title))
+        {
+            return Gui.Localize(title);
+        }
+
+        var type = definition ? new GuiItemDefinition(definition).SubtitleWithoutRarity : null;
+
+        return string.IsNullOrEmpty(type) ? "???" : Gui.Format("UI/&UnidentifiedItemFormat", type);
     }
 
     // The character whose worn items an entry being formatted comes from, while it is known: the owner of the stat
