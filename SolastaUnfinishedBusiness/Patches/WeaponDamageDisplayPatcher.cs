@@ -49,6 +49,10 @@ internal static class WeaponDamageDisplay
     // enhancement entry doesn't always name its weapon, so this is how the entry is tied to it. Null elsewhere.
     internal static ItemDefinition AttackWeapon;
 
+    // The item instance of that attack, while its box is filled: whether an item is identified belongs to the
+    // instance (RulesetItem.Identified), not to its definition. Null elsewhere.
+    internal static RulesetItem AttackItem;
+
     // A breakdown just changed by WithWeaponBonusCombined, and the full one, until the effect line that shows it
     // takes them (FeatureElementEffectLine.Bind, right after the formatter returned).
     private static string _pendingShort;
@@ -283,6 +287,81 @@ internal static class WeaponDamageDisplay
         });
     }
 
+    // An item's name in a breakdown, kept to what the player knows: for an item that isn't identified yet, its
+    // unidentified title ("Magnificent Longsword"), the name GuiEquipmentItem.Title shows for it everywhere else.
+    // The game's own entries name the item by its definition's real title (Gui.FormatTrendInfo looks the
+    // definition up by name), on the to-hit breakdown as well as the damage one, so this applies to every entry
+    // that names an item. Returns null when the name the entry prints may stay.
+    //
+    // The game shows the unidentified title when the definition is magical, requires identification, and the item
+    // instance isn't identified (GuiEquipmentItem.get_Title, IL_0007 to IL_0054; RulesetItemExtensions
+    // .NeedsIdentification is the same test). The instance is taken from the entry's source, or the attack whose box
+    // is being filled (AttackItem) when it is of that definition. Otherwise (an entry naming an item that isn't the
+    // attack's, such as armour on a stat box) the party's items of that definition are looked at: the name stays
+    // only when one of them is identified. With no instance found, the unidentified title is shown, so nothing
+    // reveals an item the player hasn't identified.
+    internal static string UnidentifiedNameOf(RuleDefinitions.TrendInfo trend)
+    {
+        var item = trend.source as RulesetItem;
+        var definition = item?.ItemDefinition;
+
+        if (!definition && trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment)
+        {
+            definition = string.IsNullOrEmpty(trend.sourceName)
+                ? AttackWeapon
+                : DatabaseRepository.GetDatabase<ItemDefinition>().TryGetElement(trend.sourceName, out var named)
+                    ? named
+                    : null;
+        }
+
+        if (!definition || !definition.Magical || !definition.RequiresIdentification)
+        {
+            return null;
+        }
+
+        if (item == null && AttackItem != null && AttackItem.ItemDefinition == definition)
+        {
+            item = AttackItem;
+        }
+
+        var identified = item?.Identified ?? PartyHasIdentified(definition);
+
+        if (identified)
+        {
+            return null;
+        }
+
+        var title = definition.ItemPresentation?.UnidentifiedTitle;
+
+        return string.IsNullOrEmpty(title) ? null : Gui.Localize(title);
+    }
+
+    // whether any party member carries an identified item of this definition
+    private static bool PartyHasIdentified(ItemDefinition definition)
+    {
+        var party = Gui.GameCampaign?.Party?.CharactersList;
+
+        if (party == null)
+        {
+            return false;
+        }
+
+        var items = new List<RulesetItem>();
+
+        foreach (var hero in party.Select(x => x.RulesetCharacter).Where(x => x != null))
+        {
+            items.Clear();
+            hero.CharacterInventory?.EnumerateAllItems(items);
+
+            if (items.Any(x => x.ItemDefinition == definition && x.Identified))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static string TitleOf(BaseDefinition definition)
     {
         var title = definition?.GuiPresentation?.Title;
@@ -435,14 +514,16 @@ public static class WeaponDamageDisplayPatcher
         [UsedImplicitly]
         public static void Prefix(RulesetAttackMode attackMode)
         {
+            WeaponDamageDisplay.AttackItem = attackMode?.SourceObject as RulesetItem;
             WeaponDamageDisplay.AttackWeapon = attackMode?.SourceDefinition as ItemDefinition ??
-                                               (attackMode?.SourceObject as RulesetItem)?.ItemDefinition;
+                                               WeaponDamageDisplay.AttackItem?.ItemDefinition;
         }
 
         [UsedImplicitly]
         public static Exception Finalizer(Exception __exception)
         {
             WeaponDamageDisplay.AttackWeapon = null;
+            WeaponDamageDisplay.AttackItem = null;
 
             return __exception;
         }
@@ -487,8 +568,9 @@ public static class WeaponDamageDisplayPatcher
     }
 
     //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
-    //the attack shown, or the kind of source. Every breakdown goes through Gui.FormatTrendInfo, so this covers all
-    //of them, not only damage.
+    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet shows the item's
+    //unidentified title instead of its real one. Every breakdown goes through Gui.FormatTrendInfo, so this covers
+    //all of them, not only damage.
     [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
@@ -500,6 +582,14 @@ public static class WeaponDamageDisplayPatcher
             if (string.IsNullOrEmpty(__result))
             {
                 __result = WeaponDamageDisplay.NameOfUnnamed(trend);
+            }
+
+            // after naming an unnamed entry, which may have used the item's real title
+            var unidentified = WeaponDamageDisplay.UnidentifiedNameOf(trend);
+
+            if (unidentified != null)
+            {
+                __result = unidentified;
             }
         }
     }
