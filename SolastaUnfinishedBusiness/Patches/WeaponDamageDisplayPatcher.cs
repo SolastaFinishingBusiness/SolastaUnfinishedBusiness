@@ -85,8 +85,13 @@ internal static class WeaponDamageDisplay
     //
     // Only that first Equipment entry is taken as the weapon's, and only when it is the weapon's own (WeaponOf): its
     // name finds the weapon of the attack being shown (AttackWeapon) in the ItemDefinition database, or any weapon
-    // when that is unknown; with no name, it is AttackWeapon's. The Base entry is folded in only when that weapon's own damage bonus is
-    // exactly the Base value, so a Base entry from anything else stays as it is.
+    // when that is unknown; with no name, it is AttackWeapon's. The Base entry is folded in only when that weapon's
+    // own damage bonus is exactly the Base value.
+    //
+    // With AttackWeapon known, that ties both entries to the attack's weapon. Without it (a breakdown shown outside
+    // AttackModeBox.Bind), the pairing rests on the list's order and the matching value: a Base entry from something
+    // else, followed by a weapon entry whose weapon happens to have the same own bonus, would be folded too. No
+    // list the game builds is known to have that shape.
     //   - Both there: one entry where the enhancement was, worth the sum, under the weapon's name ("+3: Base" and
     //     "+1: Excalibur" become "+4: Excalibur"); none when the sum is 0 (+1 with -1 typed in).
     //   - No weapon entry, but the attack's weapon is known and its own bonus is the Base value: the Base entry is
