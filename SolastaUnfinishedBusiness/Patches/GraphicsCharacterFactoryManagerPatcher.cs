@@ -156,7 +156,7 @@ public static class GraphicsCharacterFactoryManagerPatcher
         }
 
         /// <summary>
-        ///     Development builds only: a number in <c>WieldedGripOverride.txt</c> in the mod's folder replaces every
+        ///     Development builds only: a number from 0 to 1 in <c>WieldedGripOverride.txt</c> in the mod's folder replaces every
         ///     grip fraction, read each time a model is put in a hand, so the grip can be tuned in game by editing the
         ///     file and re-equipping the weapon. Release builds always use the item's own value.
         /// </summary>
@@ -169,7 +169,8 @@ public static class GraphicsCharacterFactoryManagerPatcher
 
                 if (File.Exists(path) &&
                     float.TryParse(File.ReadAllText(path).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture,
-                        out var tuned))
+                        out var tuned) &&
+                    tuned is >= 0f and <= 1f) // NaN and fractions outside the model fail this and are ignored
                 {
                     return tuned;
                 }
