@@ -347,7 +347,9 @@ internal static class WeaponDamageDisplay
     //     counts only worn items, and an attack uses the weapon in hand;
     //   - with no character known, the copies the party carries, containers included.
     // From the copies found, the name stays only when every one is identified; with none found, the item counts as
-    // unidentified, so nothing reveals an item the player hasn't identified.
+    // unidentified, so nothing reveals an item the player hasn't identified. The cost is on the cautious side: where
+    // only the definition is known (the combat log's roll entry names the weapon, not the copy), a character wearing
+    // two copies, one identified and one not, sees the unidentified name for both.
     internal static bool NamesUnidentifiedItem(RuleDefinitions.TrendInfo trend, out ItemDefinition definition)
     {
         var item = trend.source as RulesetItem;
@@ -420,7 +422,8 @@ internal static class WeaponDamageDisplay
     // Whether a stat box's list names an item that can be unidentified. Its tooltip is then formatted again on every
     // refresh: CharacterStatBox.Refresh only formats it when the value or the number of entries changed
     // (IL_00e8 to IL_011b), and identifying an item changes neither, so the tooltip would keep the unidentified
-    // name.
+    // name. A tooltip already on screen keeps its text until it is shown again: GuiTooltip.Content only stores it,
+    // and the tooltip panel copies it when bound, which GuiManager.UpdateTooltip skips while the hover is unchanged.
     internal static bool NamesItemNeedingIdentification(RulesetAttribute attribute)
     {
         var trends = attribute?.ValueTrends;
