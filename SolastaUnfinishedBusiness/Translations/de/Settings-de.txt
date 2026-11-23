@@ -705,7 +705,6 @@ ModUi/&SearchClear=Leeren
 ModUi/&SearchNoResults=Keine Einstellungen passen zu "{0}".
 ModUi/&SearchSettings=Einstellungen suchen:
 ModUi/&WarnBeforeCrafting=Vor dem Herstellen warnen, dass die Zutaten sofort verbraucht werden und Herstellungswürfe misslingen können <i><color=#F0DAA0>[listet auch einfache Waffen oder Rüstungen auf, die anstelle präparierter verwendet werden]</color></i>
-ModUi/&CombineWeaponDamageBonuses=Eigenen Schadensbonus einer Waffe und ihre Verbesserung als eine Zeile anzeigen
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Such- und Sortierwerkzeuge in den Dungeon-Maker-Bildschirmen:</color>
 ModUi/&DungeonMakerListToolsEditor=Kampagneneditor
 ModUi/&DungeonMakerListToolsPicker=Variablenauswahl

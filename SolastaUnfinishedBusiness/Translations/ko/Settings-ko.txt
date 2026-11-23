@@ -705,7 +705,6 @@ ModUi/&SearchClear=지우기
 ModUi/&SearchNoResults="{0}"와(과) 일치하는 설정이 없습니다.
 ModUi/&SearchSettings=설정 검색:
 ModUi/&WarnBeforeCrafting=제작 시작 시 재료가 즉시 소모되고 제작 판정이 실패할 수 있음을 경고 <i><color=#F0DAA0>[준비된 아이템 대신 쓰이는 일반 무기나 방어구도 표시]</color></i>
-ModUi/&CombineWeaponDamageBonuses=무기 자체의 피해 보너스와 강화 보너스를 한 줄로 표시
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>던전 메이커 화면의 검색 및 정렬 도구:</color>
 ModUi/&DungeonMakerListToolsEditor=캠페인 편집기
 ModUi/&DungeonMakerListToolsPicker=변수 선택기

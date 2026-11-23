@@ -121,7 +121,7 @@ internal static class WeaponDamageDisplay
     // when nothing changes, which is how the caller knows whether to offer the full one on Alt.
     internal static List<RuleDefinitions.TrendInfo> WithWeaponBonusCombined(List<RuleDefinitions.TrendInfo> trends)
     {
-        if (!Main.Settings.CombineWeaponDamageBonuses || trends == null || trends.Count == 0)
+        if (trends == null || trends.Count == 0)
         {
             return trends;
         }

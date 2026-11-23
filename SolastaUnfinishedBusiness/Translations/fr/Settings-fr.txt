@@ -705,7 +705,6 @@ ModUi/&SearchClear=Effacer
 ModUi/&SearchNoResults=Aucun paramètre ne correspond à "{0}".
 ModUi/&SearchSettings=Rechercher des paramètres :
 ModUi/&WarnBeforeCrafting=Avertir au début de la fabrication que les ingrédients sont consommés aussitôt et que les jets de fabrication peuvent échouer <i><color=#F0DAA0>[liste aussi les armes ou armures ordinaires utilisées à la place des apprêtées]</color></i>
-ModUi/&CombineWeaponDamageBonuses=Afficher le bonus de dégâts propre d'une arme et son amélioration sur une seule ligne
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Outils de recherche et de tri des écrans du Dungeon Maker :</color>
 ModUi/&DungeonMakerListToolsEditor=Éditeur de campagne
 ModUi/&DungeonMakerListToolsPicker=Sélecteur de variables
