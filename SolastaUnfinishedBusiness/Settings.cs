@@ -436,8 +436,8 @@ public class Settings : UnityModManager.ModSettings
 
     // A weapon's own damage bonus (in practice the number typed into a Dungeon Maker custom weapon) is shown in its
     // damage breakdown as one line with the enhancement of its item, named after the weapon, and left out when the
-    // two add up to 0; the full breakdown is shown while Alt is held (issue #42;
-    // Patches/WeaponDamageDisplayPatcher.cs). Off: always the game's full breakdown.
+    // two add up to 0; the full breakdown is shown while Alt is held (Patches/WeaponDamageDisplayPatcher.cs). Off:
+    // always the game's full breakdown.
     public bool CombineWeaponDamageBonuses { get; set; } = true;
     public bool AllowGadgetsAndPropsToBePlacedAnywhere { get; set; }
     public bool UnleashEnemyAsNpc { get; set; }

@@ -415,7 +415,7 @@ internal static class CampaignsDisplay
             Main.Settings.EnableDistanceOnTooltip = toggle;
         }
 
-        // any weapon's damage breakdown (issue #42), so here with the other tooltip settings rather than under
+        // any weapon's damage breakdown, so here with the other tooltip settings rather than under
         // Dungeon Maker, although in practice only Dungeon Maker weapons have a damage bonus of their own
         toggle = Main.Settings.CombineWeaponDamageBonuses;
         if (UI.Toggle(Gui.Localize("ModUi/&CombineWeaponDamageBonuses"), ref toggle))

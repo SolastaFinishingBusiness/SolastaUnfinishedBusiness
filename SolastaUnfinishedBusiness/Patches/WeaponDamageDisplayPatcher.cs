@@ -11,8 +11,7 @@ using UnityEngine.UI;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
-// Weapon damage display for Dungeon Maker custom weapons (issue #42, adapted from BlackguardRogue's Dungeon Maker
-// tools). Display only: nothing here is used when damage is rolled.
+// Weapon damage display for Dungeon Maker custom weapons. Display only: nothing here is used when damage is rolled.
 //
 // A custom weapon has two flat damage bonuses: the enhancement of the item it was made from (a "+1 Mace" keeps +1
 // to hit and +1 damage), and the number its author typed in the Weapon Effects damage box, which is stored in the
@@ -78,20 +77,23 @@ internal static class WeaponDamageDisplay
             .DamageForm.BonusDamage ?? 0;
     }
 
-    // The breakdown with a weapon's own damage bonus folded into the weapon's line. RefreshAttackMode adds the
-    // form's own bonus (the number typed into a custom weapon) as (value, Base, "", null), and the enhancement of
-    // the weapon's item as (value, Equipment, item name, null) after the ability score entry (IL_0973 to IL_09d9).
+    // The breakdown with a weapon's own damage bonus folded into the weapon's line. RulesetCharacterHero's
+    // RefreshAttackMode adds the form's own bonus (the number typed into a custom weapon) as (value, Base, "", null)
+    // (IL_0535 to IL_0550), then the enhancement of the weapon's item as (value, Equipment, item name, null), also
+    // when the enhancement is 0 (IL_0583 to IL_05da). That is the list's first Equipment entry: the entries of
+    // features and ammunition come after it.
     //
-    // The Base entry belongs to a weapon whose own damage bonus is exactly its value. The enhancement entry of that
-    // weapon is found by its name or, when it has none, as the weapon of the attack being shown (AttackWeapon); an
-    // Equipment entry of anything else (ammunition, another item) never matches, as its item's own bonus differs or
-    // it is named for another item.
+    // Only that first Equipment entry is taken as the weapon's, and only when it is the weapon's own (WeaponOf): its
+    // name finds the weapon of the attack being shown (AttackWeapon) in the ItemDefinition database, or any weapon
+    // when that is unknown; with no name, it is AttackWeapon's. The Base entry is folded in only when that weapon's own damage bonus is
+    // exactly the Base value, so a Base entry from anything else stays as it is.
     //   - Both there: one entry where the enhancement was, worth the sum, under the weapon's name ("+3: Base" and
     //     "+1: Excalibur" become "+4: Excalibur"); none when the sum is 0 (+1 with -1 typed in).
-    //   - No enhancement entry (a weapon made from an item without one), but the attack's weapon is known: the Base
-    //     entry is shown under the weapon's name instead ("+2: Base" becomes "+2: <weapon>"). Its sourceName is
-    //     the weapon's definition name, which Gui.FormatTrendInfo looks up to print the weapon's title, as it does
-    //     for the enhancement entry.
+    //   - No weapon entry, but the attack's weapon is known and its own bonus is the Base value: the Base entry is
+    //     shown under the weapon's name instead ("+2: Base" becomes "+2: <weapon>"). Its sourceName is the
+    //     weapon's definition name, which Gui.FormatTrendInfo looks up in the ItemDefinition database (where a
+    //     campaign's custom items are registered when it loads) to print the weapon's title, as it does for the
+    //     enhancement entry.
     //   - Otherwise the Base entry can't be tied to a weapon and stays.
     // The game's own list is not changed (the attack mode keeps it); a changed copy is returned, or the same list
     // when nothing changes, which is how the caller knows whether to offer the full one on Alt.
@@ -113,13 +115,9 @@ internal static class WeaponDamageDisplay
                 continue;
             }
 
-            var j = trends.FindIndex(x =>
-                x.sourceType == RuleDefinitions.FeatureSourceType.Equipment &&
-                (string.IsNullOrEmpty(x.sourceName)
-                    ? OwnFlatDamage(AttackWeapon) == own.value
-                    : items.TryGetElement(x.sourceName, out var weapon) && OwnFlatDamage(weapon) == own.value));
+            var j = trends.FindIndex(x => x.sourceType == RuleDefinitions.FeatureSourceType.Equipment);
 
-            if (j >= 0)
+            if (j >= 0 && OwnFlatDamage(WeaponOf(trends[j], items)) == own.value)
             {
                 var result = new List<RuleDefinitions.TrendInfo>(trends);
                 // TrendInfo is a struct: this is a copy, and the game's entry keeps its value
@@ -158,6 +156,24 @@ internal static class WeaponDamageDisplay
         return trends;
     }
 
+    // The weapon an Equipment entry is for: with a name, the item the ItemDefinition database has under it (the same
+    // lookup Gui.FormatTrendInfo makes), and only if it is the weapon of the attack being shown when that is known;
+    // without a name, the weapon of the attack being shown. Null otherwise.
+    private static ItemDefinition WeaponOf(RuleDefinitions.TrendInfo trend, Database<ItemDefinition> items)
+    {
+        if (string.IsNullOrEmpty(trend.sourceName))
+        {
+            return AttackWeapon;
+        }
+
+        if (!items.TryGetElement(trend.sourceName, out var weapon))
+        {
+            return null;
+        }
+
+        return !AttackWeapon || weapon == AttackWeapon ? weapon : null;
+    }
+
     // the formatter changed a breakdown: keep both texts for the effect line that is about to show it
     internal static void NoteCombinedBreakdown(string shortText, string fullText)
     {
@@ -166,7 +182,8 @@ internal static class WeaponDamageDisplay
     }
 
     // FeatureElementEffectLine.Bind has put a breakdown in its tooltip. If it is the one just combined, the
-    // tooltip keeps both texts; a tooltip reused for another breakdown forgets what it had.
+    // tooltip keeps both texts (it already shows the combined one); a tooltip reused for another breakdown forgets
+    // what it had.
     internal static void NoteEffectLineBound(GuiTooltip tooltip, string damageBreakdown)
     {
         if (!tooltip)
@@ -179,7 +196,6 @@ internal static class WeaponDamageDisplay
         if (_pendingShort != null && damageBreakdown == _pendingShort)
         {
             Breakdowns.Add(tooltip, new Breakdown { Short = _pendingShort, Full = _pendingFull });
-            tooltip.Content = WithHint(_pendingShort);
         }
 
         _pendingShort = null;
@@ -188,7 +204,8 @@ internal static class WeaponDamageDisplay
 
     // TooltipScreen.ShowTooltip is about to show a tooltip. For a combined breakdown, the full one is shown when
     // the game would show a detailed tooltip: with Alt held (or the controller's hold button), turned round by the
-    // mod's "invert tooltip behaviour" setting, the same rule TooltipScreen and TooltipPanelPatcher apply.
+    // mod's "invert tooltip behaviour" setting, the same rule TooltipScreen and TooltipPanelPatcher apply. Nothing
+    // in the tooltip says so, as the game's own detailed tooltips don't either.
     internal static void BeforeShowTooltip(ITooltip tooltip)
     {
         if (tooltip is not GuiTooltip guiTooltip || !Breakdowns.TryGetValue(guiTooltip, out var breakdown))
@@ -204,17 +221,7 @@ internal static class WeaponDamageDisplay
             detailed = !detailed;
         }
 
-        guiTooltip.Content = detailed ? breakdown.Full : WithHint(breakdown.Short);
-    }
-
-    // the short breakdown, with a line saying how to see the rest
-    private static string WithHint(string shortText)
-    {
-        var hint = Gui.Localize(SettingsContext.GuiModManagerInstance.InvertTooltipBehavior
-            ? "UI/&BreakdownFullHintInverted"
-            : "UI/&BreakdownFullHint");
-
-        return $"{shortText}\n{hint}";
+        guiTooltip.Content = detailed ? breakdown.Full : breakdown.Short;
     }
 
     // Gui.FormatTrendInfo printed nothing for an entry: what to print instead. In order: the object the entry was
