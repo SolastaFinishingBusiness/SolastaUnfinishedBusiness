@@ -53,6 +53,12 @@ internal static class WeaponDamageDisplay
     // instance (RulesetItem.Identified), not to its definition. Null elsewhere.
     internal static RulesetItem AttackItem;
 
+    // The item instance of the attack being rolled (RulesetCharacter.RollAttackMode), while it is. The combat log
+    // writes the roll from inside it (RollAttack raises AttackRolled, which GameConsole.AttackRolled handles), and
+    // the log's entry names only the weapon's definition, so this is how the entry is tied to the copy that
+    // attacked. Null elsewhere.
+    internal static RulesetItem RollItem;
+
     // A breakdown just changed by WithWeaponBonusCombined, and the full one, until the effect line that shows it
     // takes them (FeatureElementEffectLine.Bind, right after the formatter returned).
     private static string _pendingShort;
@@ -341,15 +347,16 @@ internal static class WeaponDamageDisplay
     // Identification belongs to the instance, and two copies of one definition can differ (a campaign's loot can
     // hand out a copy already identified), so the instance that gave the bonus is looked for:
     //   - the entry's own source, when it is an item;
-    //   - the item of the attack whose box is being filled (AttackItem), when it is of that definition;
+    //   - the item of the attack whose box is being filled (AttackItem), or of the attack being rolled (RollItem),
+    //     when it is of that definition: an attack's entries are about that one copy;
     //   - the copies of that definition the Carrier wears: its inventory slots without containers and without the
     //     stored weapon sets (EnumerateAllItems with ignoreConfigSlots, IL_002a to IL_0053), as RefreshArmorClass
-    //     counts only worn items, and an attack uses the weapon in hand;
+    //     counts only worn items;
     //   - with no character known, the copies the party carries, containers included.
     // From the copies found, the name stays only when every one is identified; with none found, the item counts as
-    // unidentified, so nothing reveals an item the player hasn't identified. The cost is on the cautious side: where
-    // only the definition is known (the combat log's roll entry names the weapon, not the copy), a character wearing
-    // two copies, one identified and one not, sees the unidentified name for both.
+    // unidentified, so nothing reveals an item the player hasn't identified. A stat entry can stand for more than one
+    // copy: RefreshArmorClass adds one entry per definition (IL_0434 to IL_0455), so two worn copies (two rings)
+    // share it, and it shows the real name only when both are identified.
     internal static bool NamesUnidentifiedItem(RuleDefinitions.TrendInfo trend, out ItemDefinition definition)
     {
         var item = trend.source as RulesetItem;
@@ -373,6 +380,11 @@ internal static class WeaponDamageDisplay
         if (item == null && AttackItem != null && AttackItem.ItemDefinition == definition)
         {
             item = AttackItem;
+        }
+
+        if (item == null && RollItem != null && RollItem.ItemDefinition == definition)
+        {
+            item = RollItem;
         }
 
         if (item != null)
@@ -675,6 +687,28 @@ public static class WeaponDamageDisplayPatcher
         public static void Prefix(GuiCharacter guiCharacter)
         {
             WeaponDamageDisplay.NoteAttributeOwner(guiCharacter?.RulesetCharacter);
+        }
+    }
+
+    //PATCH: the item of the attack being rolled, for the combat log's entry of that roll (written while it runs).
+    //A separate patch from RulesetCharacterPatcher.RollAttackMode_Patch, which serves other features.
+    [HarmonyPatch(typeof(RulesetCharacter), nameof(RulesetCharacter.RollAttackMode))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class RulesetCharacter_RollAttackMode
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetAttackMode attackMode)
+        {
+            WeaponDamageDisplay.RollItem = attackMode?.SourceObject as RulesetItem;
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception)
+        {
+            WeaponDamageDisplay.RollItem = null;
+
+            return __exception;
         }
     }
 
