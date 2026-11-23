@@ -416,11 +416,11 @@ internal static class CampaignsDisplay
         }
 
         // any weapon's damage breakdown (issue #42), so here with the other tooltip settings rather than under
-        // Dungeon Maker, although in practice only Dungeon Maker weapons have such a pair
-        toggle = Main.Settings.HideCancellingWeaponDamageBonuses;
-        if (UI.Toggle(Gui.Localize("ModUi/&HideCancellingWeaponDamageBonuses"), ref toggle))
+        // Dungeon Maker, although in practice only Dungeon Maker weapons have a damage bonus of their own
+        toggle = Main.Settings.CombineWeaponDamageBonuses;
+        if (UI.Toggle(Gui.Localize("ModUi/&CombineWeaponDamageBonuses"), ref toggle))
         {
-            Main.Settings.HideCancellingWeaponDamageBonuses = toggle;
+            Main.Settings.CombineWeaponDamageBonuses = toggle;
         }
 
         toggle = Main.Settings.ShowMotionFormPreview;

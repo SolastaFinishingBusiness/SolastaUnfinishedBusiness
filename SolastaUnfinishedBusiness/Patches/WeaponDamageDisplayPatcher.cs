@@ -22,15 +22,18 @@ namespace SolastaUnfinishedBusiness.Patches;
 //      from the ATTACK bonus (TooltipFeatureWeaponParameters.Bind uses the wrong variable; the two only agree on
 //      ordinary +N weapons). So a +1 mace with -1 typed in showed +1 instead of nothing, and a plain mace with +2
 //      typed in showed no row at all.
-//   2. The damage breakdown (hovering the damage of an attack) lists both as "-1: Base" and "+1: <weapon>".
+//   2. The damage breakdown (hovering the damage of an attack) lists both as separate entries, the typed number as
+//      "Base" and the enhancement under the weapon's name: "+3: Base" and "+1: Excalibur" for a +1 sword with +3
+//      typed in, or "-1: Base" and "+1: <weapon>" for a +1 mace with -1 typed in.
 //
 // The dice line of the tooltip is right already (the game adds the enhancement to the form's bonus there), and it
 // reads the same DamageRollModifier value, so that value is not touched.
 //
-// The breakdown (2) is shortened only while "Hide weapon damage bonuses that cancel each other out" is on (Gameplay >
-// Campaigns, Combat section, on by default). It applies to any weapon whose own damage bonus cancels the enhancement of
-// its item, although in practice only Dungeon Maker weapons have such a pair. The full list is then still there while
-// Alt is held, the way the game shows a detailed tooltip (see ShowTooltip below).
+// The breakdown (2) is changed only while "Show a weapon's own damage bonus and its enhancement as one line" is on
+// (Gameplay > Campaigns, Combat section, on by default): the two entries become one, under the weapon's name, and
+// none when they add up to 0 ("+4: Excalibur"; nothing for the mace). It applies to any weapon with a damage bonus of
+// its own, although in practice only Dungeon Maker weapons have one. The full list is then still there while Alt is
+// held, the way the game shows a detailed tooltip (see ShowTooltip below).
 //
 // Entries with no name: Gui.FormatTrendInfo prints an entry's source name, or the title it finds for it, and some
 // entries carry an empty name, which shows as "+1:" with nothing after it (such as the Main Attack tooltip of a
@@ -47,12 +50,12 @@ internal static class WeaponDamageDisplay
     // enhancement entry doesn't always name its weapon, so this is how the entry is tied to it. Null elsewhere.
     internal static ItemDefinition AttackWeapon;
 
-    // A breakdown just shortened by WithoutCancellingPair, and the full one, until the effect line that shows it
+    // A breakdown just changed by WithWeaponBonusCombined, and the full one, until the effect line that shows it
     // takes them (FeatureElementEffectLine.Bind, right after the formatter returned).
     private static string _pendingShort;
     private static string _pendingFull;
 
-    // the effect lines' tooltips showing a shortened breakdown, with both texts
+    // the effect lines' tooltips showing a combined breakdown, with both texts
     private static readonly ConditionalWeakTable<GuiTooltip, Breakdown> Breakdowns = new();
 
     // the flat damage a custom weapon's own effect adds (what the Dungeon Maker's Weapon Effects damage box writes);
@@ -75,18 +78,26 @@ internal static class WeaponDamageDisplay
             .DamageForm.BonusDamage ?? 0;
     }
 
-    // The breakdown without a weapon's two bonuses when they cancel each other. RefreshAttackMode adds the
-    // form's own bonus as (value, Base, "", null) and the weapon's enhancement as an Equipment entry. The
-    // enhancement entry is matched to a weapon whose own damage bonus is exactly the Base entry, either by its
-    // name or, when it has none, as the weapon of the attack being shown (AttackWeapon): an opposite modifier from
-    // the ammunition or from anything else that is named stays. The game's own list is not changed; a filtered
-    // copy is returned, or the same list when nothing is dropped.
+    // The breakdown with a weapon's own damage bonus folded into the weapon's line. RefreshAttackMode adds the
+    // form's own bonus (the number typed into a custom weapon) as (value, Base, "", null), and the enhancement of
+    // the weapon's item as (value, Equipment, item name, null) after the ability score entry (IL_0973 to IL_09d9).
     //
-    // Before, only the name was used, and the enhancement entry of the original author's weapon had none, so the
-    // pair was never dropped ("-1: Base", "+1:" in his screenshot).
-    internal static List<RuleDefinitions.TrendInfo> WithoutCancellingPair(List<RuleDefinitions.TrendInfo> trends)
+    // The Base entry belongs to a weapon whose own damage bonus is exactly its value. The enhancement entry of that
+    // weapon is found by its name or, when it has none, as the weapon of the attack being shown (AttackWeapon); an
+    // Equipment entry of anything else (ammunition, another item) never matches, as its item's own bonus differs or
+    // it is named for another item.
+    //   - Both there: one entry where the enhancement was, worth the sum, under the weapon's name ("+3: Base" and
+    //     "+1: Excalibur" become "+4: Excalibur"); none when the sum is 0 (+1 with -1 typed in).
+    //   - No enhancement entry (a weapon made from an item without one), but the attack's weapon is known: the Base
+    //     entry is shown under the weapon's name instead ("+2: Base" becomes "+2: <weapon>"). Its sourceName is
+    //     the weapon's definition name, which Gui.FormatTrendInfo looks up to print the weapon's title, as it does
+    //     for the enhancement entry.
+    //   - Otherwise the Base entry can't be tied to a weapon and stays.
+    // The game's own list is not changed (the attack mode keeps it); a changed copy is returned, or the same list
+    // when nothing changes, which is how the caller knows whether to offer the full one on Alt.
+    internal static List<RuleDefinitions.TrendInfo> WithWeaponBonusCombined(List<RuleDefinitions.TrendInfo> trends)
     {
-        if (!Main.Settings.HideCancellingWeaponDamageBonuses || trends == null || trends.Count < 2)
+        if (!Main.Settings.CombineWeaponDamageBonuses || trends == null || trends.Count == 0)
         {
             return trends;
         }
@@ -103,36 +114,58 @@ internal static class WeaponDamageDisplay
             }
 
             var j = trends.FindIndex(x =>
-                x.sourceType == RuleDefinitions.FeatureSourceType.Equipment && x.value == -own.value &&
+                x.sourceType == RuleDefinitions.FeatureSourceType.Equipment &&
                 (string.IsNullOrEmpty(x.sourceName)
                     ? OwnFlatDamage(AttackWeapon) == own.value
                     : items.TryGetElement(x.sourceName, out var weapon) && OwnFlatDamage(weapon) == own.value));
 
-            if (j < 0)
+            if (j >= 0)
             {
-                continue;
+                var result = new List<RuleDefinitions.TrendInfo>(trends);
+                // TrendInfo is a struct: this is a copy, and the game's entry keeps its value
+                var combined = trends[j];
+
+                combined.value += own.value;
+
+                if (combined.value == 0)
+                {
+                    result.RemoveAt(Math.Max(i, j));
+                    result.RemoveAt(Math.Min(i, j));
+                }
+                else
+                {
+                    result[j] = combined;
+                    result.RemoveAt(i);
+                }
+
+                // one weapon, one own bonus: nothing else to look for
+                return result;
             }
 
-            var result = new List<RuleDefinitions.TrendInfo>(trends);
+            if (AttackWeapon && OwnFlatDamage(AttackWeapon) == own.value)
+            {
+                var result = new List<RuleDefinitions.TrendInfo>(trends);
+                var renamed = own;
 
-            result.RemoveAt(Math.Max(i, j));
-            result.RemoveAt(Math.Min(i, j));
+                renamed.sourceType = RuleDefinitions.FeatureSourceType.Equipment;
+                renamed.sourceName = AttackWeapon.Name;
+                result[i] = renamed;
 
-            // one weapon, one pair: nothing else to look for
-            return result;
+                return result;
+            }
         }
 
         return trends;
     }
 
-    // the formatter shortened a breakdown: keep both texts for the effect line that is about to show it
-    internal static void NoteHiddenPair(string shortText, string fullText)
+    // the formatter changed a breakdown: keep both texts for the effect line that is about to show it
+    internal static void NoteCombinedBreakdown(string shortText, string fullText)
     {
         _pendingShort = shortText;
         _pendingFull = fullText;
     }
 
-    // FeatureElementEffectLine.Bind has put a breakdown in its tooltip. If it is the one just shortened, the
+    // FeatureElementEffectLine.Bind has put a breakdown in its tooltip. If it is the one just combined, the
     // tooltip keeps both texts; a tooltip reused for another breakdown forgets what it had.
     internal static void NoteEffectLineBound(GuiTooltip tooltip, string damageBreakdown)
     {
@@ -153,7 +186,7 @@ internal static class WeaponDamageDisplay
         _pendingFull = null;
     }
 
-    // TooltipScreen.ShowTooltip is about to show a tooltip. For a shortened breakdown, the full one is shown when
+    // TooltipScreen.ShowTooltip is about to show a tooltip. For a combined breakdown, the full one is shown when
     // the game would show a detailed tooltip: with Alt held (or the controller's hold button), turned round by the
     // mod's "invert tooltip behaviour" setting, the same rule TooltipScreen and TooltipPanelPatcher apply.
     internal static void BeforeShowTooltip(ITooltip tooltip)
@@ -399,10 +432,10 @@ public static class WeaponDamageDisplayPatcher
         }
     }
 
-    //PATCH: the effect line has put a damage breakdown in its tooltip: a shortened one keeps the full text too.
+    //PATCH: the effect line has put a damage breakdown in its tooltip: a combined one keeps the full text too.
     //Bind has two overloads (this one, and Bind(string specialFormsDescription)), so the arguments are named:
     //without them Harmony can't tell which is meant, and the mod's loader skips a patch it can't resolve, which
-    //would leave the pair hidden with no way to see it.
+    //would leave the full breakdown with no way to see it.
     [HarmonyPatch(typeof(FeatureElementEffectLine), nameof(FeatureElementEffectLine.Bind),
         [
             typeof(EffectForm), typeof(bool), typeof(int), typeof(bool), typeof(bool), typeof(Gui.VersatilityDisplay),
@@ -423,7 +456,7 @@ public static class WeaponDamageDisplayPatcher
         }
     }
 
-    //PATCH: a shortened damage breakdown shows in full when the tooltip opens with Alt held (the game's detailed
+    //PATCH: a combined damage breakdown shows in full when the tooltip opens with Alt held (the game's detailed
     //tooltip rule)
     [HarmonyPatch(typeof(TooltipScreen), nameof(TooltipScreen.ShowTooltip))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

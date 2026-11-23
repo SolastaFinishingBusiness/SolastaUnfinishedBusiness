@@ -700,7 +700,7 @@ ModUi/&SearchClear=Очистить
 ModUi/&SearchNoResults=Нет настроек, подходящих под "{0}".
 ModUi/&SearchSettings=Поиск настроек:
 ModUi/&WarnBeforeCrafting=Предупреждать в начале изготовления, что ингредиенты расходуются сразу и что броски изготовления могут провалиться <i><color=#F0DAA0>[также перечисляет обычное оружие или доспехи, использованные вместо подготовленных]</color></i>
-ModUi/&HideCancellingWeaponDamageBonuses=Скрывать взаимно компенсирующиеся бонусы урона оружия <i><color=#F0DAA0>[удерживайте Alt, чтобы увидеть их]</color></i>
+ModUi/&CombineWeaponDamageBonuses=Показывать собственный бонус урона оружия и его улучшение одной строкой <i><color=#F0DAA0>[удерживайте Alt, чтобы увидеть их по отдельности]</color></i>
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Инструменты поиска и сортировки на экранах Dungeon Maker:</color>
 ModUi/&DungeonMakerListToolsEditor=Редактор кампании
 ModUi/&DungeonMakerListToolsPicker=Выбор переменной

@@ -700,7 +700,7 @@ ModUi/&MultiplayerTurnSpeedUpTooltip=Plays the enemy turns faster until clicked 
 ModUi/&MultiplayerTurnSpeedUpPending=Waiting for the host…
 ModUi/&MultiplayerTurnSpeedUpWaiting=Waiting for {0}; the speed stays as it is until the host confirms the change
 ModUi/&MultiplayerTurnSpeedUpWaitingOthers=Waiting for the other players; the speed stays as it is until the host confirms the change
-ModUi/&HideCancellingWeaponDamageBonuses=Hide weapon damage bonuses that cancel each other out <i><color=#F0DAA0>[hold Alt to see them]</color></i>
+ModUi/&CombineWeaponDamageBonuses=Show a weapon's own damage bonus and its enhancement as one line <i><color=#F0DAA0>[hold Alt to see them apart]</color></i>
 ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>Search and sort tools on the Dungeon Maker screens:</color>
 ModUi/&DungeonMakerListToolsEditor=Campaign editor
 ModUi/&DungeonMakerListToolsPicker=Variable picker

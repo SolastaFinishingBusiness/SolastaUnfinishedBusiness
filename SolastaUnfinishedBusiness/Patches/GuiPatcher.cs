@@ -100,19 +100,20 @@ public static class GuiPatcher
             bool ignoreZero)
         {
             //PATCH: a Dungeon Maker custom weapon's typed-in damage bonus and the enhancement of the item it was
-            //made from are not listed when they cancel each other (issue #42), unless the player turned that off.
+            //made from are listed as one line under the weapon's name, or not at all when they add up to 0
+            //(issue #42), unless the player turned that off.
             //It is done here because this prefix writes the list instead of the game's formatter, so a second
-            //prefix on the same method would only run by the luck of patch order. When a pair is hidden, the full
+            //prefix on the same method would only run by the luck of patch order. When they are combined, the full
             //list is formatted too and handed to WeaponDamageDisplay, which shows it in the tooltip while Alt is
             //held, as the game's detailed tooltips are.
             if (WeaponDamageDisplay.InDamageFormatter)
             {
-                var filtered = WeaponDamageDisplay.WithoutCancellingPair(trends);
+                var filtered = WeaponDamageDisplay.WithWeaponBonusCombined(trends);
 
                 if (!ReferenceEquals(filtered, trends))
                 {
                     __result = Format(output, filtered, ignoreZero);
-                    WeaponDamageDisplay.NoteHiddenPair(__result, Format(output, trends, ignoreZero));
+                    WeaponDamageDisplay.NoteCombinedBreakdown(__result, Format(output, trends, ignoreZero));
 
                     return false;
                 }
