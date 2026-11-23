@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=すべての <color=#D89555>キャスタ�
 ModUi/&EnableProneAction=<color=#D89555>うつ伏せになる</color>アクションを有効にする <i><color=#F0DAA0>[コストをかけずにうつ伏せになることができます]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=プッシュとプルのモーション効果を上下軸でも有効にします
 ModUi/&PushOrPullOncePerHit=クリーチャーを動かす呪文やパワーが命中するたびに、1回ずつ押し出す・引き寄せる <i><color=#F0DAA0>[Repelling Blast は命中した Eldritch Blast の光線ごとに1回押し出し、ハダルの掌握は光線ごとに1回引き寄せる。オフの場合、1回の発動で最初の押し出し・引き寄せだけがクリーチャーを動かす]</color></i>
+ModUi/&CombineConcentrationChecks=ダメージ 1 回ごとに、その合計ダメージに対して精神集中セーヴィング スローを 1 回行う <i><color=#F0DAA0>[追加ダメージを含む 1 回の武器の命中、呪文やパワーの 1 回の命中、またはターンごとの継続ダメージ。マジック・ミサイルの各ダーツ、Radiant Motes の各光球、エルドリッチ・ブラストの各光線はそれぞれ別に数える]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=ワイルド・シェイプ中の姿へのダメージでは精神集中セーヴィング スローを行わない <i><color=#F0DAA0>[姿のヒット・ポイントが 0 になったときにドルイドに持ち越されたダメージのみ]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=一時的ヒット・ポイントが吸収したダメージは精神集中セーヴィング スローに数えない <i><color=#F0DAA0>[それを超えたダメージのみ。ちょうど吸収された攻撃ではセーヴィング スローを行わない]</color></i>
+ModUi/&CapConcentrationSaveDc30=精神集中セーヴィング スローの DC の上限を 30 にする <i><color=#F0DAA0>[2024 ルール]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=<color=#D89555>レンジャー</color>が任意の戦闘スタイルを選択できるようにする <i><color=#F0DAA0>[大型武器戦闘と防護を追加]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=レベル 2 で <color=#D89555>Deft Explorer</color> を有効にする <i><color=#F0DAA0>[レンジャー スキルの専門知識を 1 つ取得し、言語を 2 つ習得します]</color></i>
 ModUi/&EnableRangerExpertise2024=レベル 9 で <color=#D89555>専門知識</color> を有効にする <i><color=#F0DAA0>[レンジャー スキルに関する専門知識を 2 つ取得]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>2024 ルールを有効にする</color></
 ModUi/&TableTopButton=<b><color=#D89555>テーブルトップコンテンツを選択</color></b>
 ModUi/&TableTopHelp1=• 以下のセクションでは、利便性のために、mod 全体に散らばっている <color=#D89555>5e 2014 および 2024</color> 設定を再グループ化して複製します。
 ModUi/&TableTopHelp2=• ボタンを押して、<b>キャラクタータブでテーブルトップコンテンツのみを選択</b>し、<b>2014 ルールと/または 2024 ルールを有効に</b>して、真の TT 体験を実現します。
+ModUi/&TableTopHelp3=• QoL・2014・2024 のボタンは各オプションを有効にします。ほとんどは再起動後に反映されます <b><i><color=#C04040E0>[再起動が必要]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>テーブルトップ <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=対象言語
 ModUi/&TotalCraftingTimeModifier=<color=white>クラフト時間を短縮</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>遅延を下げる�
 ModUi/&MultiplayerShowFpsOverlay=マルチプレイ中、左上に見られるフレームレートとpingを表示する小さなオーバーレイを出す
 ModUi/&MultiplayerSpreadOverlappedCharacters=同じマスにいるキャラクターを少し離して描き、それぞれを指せるようにする <i><color=#F0DAA0>[見た目のみ：2人は横並び、3人は三角形、それ以上はより広い輪。移動すると中央に戻る]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>時間と休憩：</color>
-ModUi/&PickPocketNonHostiles=多くの非敵対NPCにもスリ用の戦利品を追加 <i><color=#F0DAA0>[失敗すると評判に影響する]</color></i>
+ModUi/&PickPocketNonHostiles=多くの非敵対NPCにもスリ用の戦利品を追加 <i><color=#F0DAA0>[失敗すると評判に影響する]</color></i> <b><i><color=#C04040E0>[再起動が必要]</color></i></b>
 ModUi/&SearchClear=クリア
 ModUi/&SearchNoResults=「{0}」に一致する設定はありません。
 ModUi/&SearchSettings=設定を検索：

@@ -890,6 +890,9 @@ public static class CharacterActionMagicEffectPatcher
 
             // BEGIN PATCH
 
+            //PATCH: support for `EffectFinishedCleanup`: clean-ups registered on this effect while it ran
+            EffectFinishedCleanup.Run(actionParams.RulesetEffect);
+
             //PATCH: support for `IMagicEffectFinishedOnMe`
             foreach (var target in targets)
             {
@@ -1142,7 +1145,7 @@ public static class CharacterActionMagicEffectPatcher
                         out successDelta,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = outcome;
+                    __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, outcome);
                     __instance.AttackSuccessDelta = successDelta;
 
                     // Is this still a success?
@@ -1176,7 +1179,7 @@ public static class CharacterActionMagicEffectPatcher
                         out successDelta,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = outcome;
+                    __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, outcome);
                     __instance.AttackSuccessDelta = successDelta;
                 }
 

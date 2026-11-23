@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
@@ -93,6 +94,7 @@ public static partial class Tabletop2024Context
         SwitchBarbarianBrutalStrike();
         SwitchBarbarianInstinctivePounce();
         SwitchBarbarianPersistentRage();
+        SwitchBarbarianPrimalKnowledge();
         SwitchBarbarianReckless();
         SwitchBarbarianRage();
         SwitchBarbarianRelentlessRage();
@@ -152,6 +154,7 @@ public static partial class Tabletop2024Context
         SwitchPaladinAbjureFoes();
         SwitchPaladinChannelDivinity();
         SwitchPaladinLayOnHand();
+        SwitchPaladinRechargeLv20Power();
         SwitchPaladinRestoringTouch();
         SwitchPaladinSpellCastingAtOne();
         SwitchPaladinDivineSmite();
@@ -191,7 +194,7 @@ public static partial class Tabletop2024Context
         SwitchWizardSchoolOfMagicLearningLevel();
         SwitchWeaponMastery();
         SwitchMartialChampion();
-        HomeBrewSomeSpells();
+        SwitchShineCantripDC();
         SmiteSpells2024Context.LateLoad();
     }
 
@@ -370,7 +373,7 @@ public static partial class Tabletop2024Context
 
                 if (action.AttackSuccessDelta >= 0)
                 {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
+                    action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
                 }
 
                 rulesetHelper.LogCharacterActivatesAbility(

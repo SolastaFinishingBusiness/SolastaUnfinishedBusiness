@@ -223,7 +223,8 @@ internal static class MetamagicBuilders
         var metamagic = MetamagicOptionDefinitionBuilder
             .Create(MetamagicPowerful)
             .SetGuiPresentation(Category.Feature)
-            .SetCost()
+            // 1 sorcery point per spell level
+            .SetCost(MetamagicCostMethod.SpellLevel)
             .AddToDB();
 
         metamagic.AddCustomSubFeatures(new ModifyEffectDescriptionMetamagicPowerful(metamagic), validator);
@@ -557,14 +558,7 @@ internal static class MetamagicBuilders
                 action.AttackSuccessDelta += dieRoll - previousRoll;
                 action.AttackRoll = dieRoll;
 
-                if (action.AttackSuccessDelta >= 0)
-                {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
-                }
-                else
-                {
-                    action.AttackRollOutcome = dieRoll == 1 ? RollOutcome.CriticalFailure : RollOutcome.Failure;
-                }
+                action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
 
                 rulesetHelper.LogCharacterActivatesAbility(
                     "Feature/&MetamagicSeekingSpellTitle",

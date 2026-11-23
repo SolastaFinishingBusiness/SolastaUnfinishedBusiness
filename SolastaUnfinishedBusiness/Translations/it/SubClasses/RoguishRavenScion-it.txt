@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=Come azione gratuita, puoi f
 Feature/&PowerRavenScionHeartSeekingShotTitle=Colpo alla ricerca del cuore
 Feedback/&AdditionalDamageSniperAimFormat=Mira del cecchino
 Feedback/&AdditionalDamageSniperAimLine=La mira del cecchino infligge +{2} danni extra!
-Feedback/&TriggerRavenScionRerollLine={0} tira {1} = {2}. Deadly Focus forzerà un colpo critico.
+Feedback/&TriggerRavenScionRerollLine={0} tira {1} = {2}. Deadly Focus ti permette di ripetere l'attacco con vantaggio.
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=Usa la tua concentrazione mortale per riprovare l'attacco.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=Usa la tua concentrazione mortale per riprovare l'attacco.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=Riprova l'attacco

@@ -474,11 +474,15 @@ public static class CharacterActionAttackPatcher
                         out var successDelta2,
                         __instance.AttackRoll,
                         false);
-                    __instance.AttackRollOutcome = attackRollOutcome2;
+                    __instance.AttackRollOutcome =
+                        AttackOutcomeRules.KeepCancelledCritical(__instance, attackRollOutcome2);
                     __instance.AttackSuccessDelta = successDelta2;
                 }
                 else
                 {
+                    // an automatic hit has no recompute; the cancel mark is still used up here
+                    __instance.AttackRollOutcome =
+                        AttackOutcomeRules.KeepCancelledCritical(__instance, __instance.AttackRollOutcome);
                     rulesetCharacter.AttackAutomaticHit?.Invoke(
                         rulesetCharacter, rulesetDefender, attackMode.SourceDefinition);
                 }
@@ -627,14 +631,19 @@ public static class CharacterActionAttackPatcher
                         attackModifier,
                         __instance.RolledSaveThrow,
                         saveOutcomeSuccess);
-                    damageReceived = implementationService.ApplyEffectForms(
+                    //PATCH: supports `CombineConcentrationChecks`: one hit with the damage riders added to its forms is
+                    //one damage instance; its combined checks roll as the application ends, before the finished
+                    //handlers below (powers those handlers start are instances of their own)
+                    var damageAbsorbedByTemporaryHitPoints = false;
+
+                    damageReceived = Models.ConcentrationDamageContext.Apply(() => implementationService.ApplyEffectForms(
                         __instance.actualEffectForms,
                         formParams,
                         __instance.effectiveDamageTypes,
                         effectApplication: attackMode.EffectDescription.EffectApplication,
                         filters: attackMode.EffectDescription.EffectFormFilters,
-                        damageAbsorbedByTemporaryHitPoints: out var damageAbsorbedByTemporaryHitPoints,
-                        terminateEffectOnTarget: out _);
+                        damageAbsorbedByTemporaryHitPoints: out damageAbsorbedByTemporaryHitPoints,
+                        terminateEffectOnTarget: out _));
 
                     actingCharacter.AttackImpactOn(
                         target, __instance.AttackRollOutcome, actionParams, attackMode, attackModifier);
@@ -678,7 +687,9 @@ public static class CharacterActionAttackPatcher
                     out var successDelta2,
                     __instance.AttackRoll,
                     false);
-                __instance.AttackRollOutcome = attackRollOutcome2;
+                // the final recompute of a miss: a hit whose critical was cancelled can still have been turned into a
+                // miss by a later handler, and the cancel mark is used up here too
+                __instance.AttackRollOutcome = AttackOutcomeRules.KeepCancelledCritical(__instance, attackRollOutcome2);
                 __instance.AttackSuccessDelta = successDelta2;
 
                 actingCharacter.AttackImpactOn(

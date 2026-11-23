@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=作为一个自由动作，�
 Feature/&PowerRavenScionHeartSeekingShotTitle=觅心射击
 Feedback/&AdditionalDamageSniperAimFormat=狙击手瞄准
 Feedback/&AdditionalDamageSniperAimLine=狙击手瞄准造成额外 +{2} 伤害！
-Feedback/&TriggerRavenScionRerollLine={0} 卷 {1} = {2}。致命专攻会造成致命一击。
+Feedback/&TriggerRavenScionRerollLine={0} 卷 {1} = {2}。致命专攻让你以优势重掷这次攻击。
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=使用你的致命专攻重试攻击。
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=使用你的致命专攻重试攻击。
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=重试攻击

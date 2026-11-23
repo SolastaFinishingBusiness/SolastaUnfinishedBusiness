@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.LanguageExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
@@ -426,17 +427,42 @@ public static partial class Tabletop2024Context
         Rogue.FeatureUnlocks.Sort(Sorting.CompareFeatureUnlock);
     }
 
+    private static readonly string[] SneakAttackDamageNames =
+    [
+        "AdditionalDamageRogueSneakAttack",
+        "AdditionalDamageRoguishHoodlumNonFinesseSneakAttack",
+        "AdditionalDamageRoguishDuelistDaringDuel",
+        "AdditionalDamageRoguishSwashbucklerRakishAudacity1v1",
+        "AdditionalDamageRoguishUmbralStalkerDeadlyShadows"
+    ];
+
     internal static bool IsSneakAttackValid(
         ActionModifier attackModifier,
         GameLocationCharacter attacker,
-        GameLocationCharacter defender)
+        GameLocationCharacter defender,
+        RulesetAttackMode attackMode)
     {
         // only trigger if it hasn't used sneak attack yet
-        if (!attacker.OncePerTurnIsValid("AdditionalDamageRogueSneakAttack") ||
-            !attacker.OncePerTurnIsValid("AdditionalDamageRoguishHoodlumNonFinesseSneakAttack") ||
-            !attacker.OncePerTurnIsValid("AdditionalDamageRoguishDuelistDaringDuel") ||
-            !attacker.OncePerTurnIsValid("AdditionalDamageRoguishSwashbucklerRakishAudacity1v1") ||
-            !attacker.OncePerTurnIsValid("AdditionalDamageRoguishUmbralStalkerDeadlyShadows"))
+        if (SneakAttackDamageNames.Any(x => !attacker.OncePerTurnIsValid(x)))
+        {
+            return false;
+        }
+
+        // the weapon must be one the character's sneak attack damage accepts (finesse or ranged, or any melee weapon
+        // for the Hoodlum), checked the way the damage itself is (IsValidContextForRestrictedContextProvider)
+        var rulesetAttacker = attacker.RulesetCharacter;
+        var implementationService = ServiceRepository.GetService<IRulesetImplementationService>();
+        var features = new List<FeatureDefinition>();
+
+        rulesetAttacker.EnumerateFeaturesToBrowse<FeatureDefinitionAdditionalDamage>(features, null);
+
+        if (attackMode == null ||
+            !features
+                .OfType<FeatureDefinitionAdditionalDamage>()
+                .Where(x => SneakAttackDamageNames.Contains(x.Name))
+                .Any(x => implementationService.IsValidContextForRestrictedContextProvider(
+                    x, rulesetAttacker, attackMode.SourceDefinition as ItemDefinition, attackMode.Ranged, attackMode,
+                    null)))
         {
             return false;
         }
@@ -504,7 +530,7 @@ public static partial class Tabletop2024Context
             var rulesetAttacker = attacker.RulesetCharacter;
 
             if (!rulesetAttacker.IsToggleEnabled((Id)ExtraActionId.CunningStrikeToggle) ||
-                !IsSneakAttackValid(actionModifier, attacker, defender))
+                !IsSneakAttackValid(actionModifier, attacker, defender, attackMode))
             {
                 yield break;
             }

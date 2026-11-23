@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Api;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Api.Helpers;
@@ -490,7 +491,8 @@ internal static class RaceFeats
             var combatAffinity = FeatureDefinitionCombatAffinityBuilder
                 .Create($"CombatAffinity{Name}{familyName}")
                 .SetGuiPresentation("FeatGroupGrudgeBearer", Category.Feat, Gui.NoLocalization)
-                .SetAttackOnMeAdvantage(AdvantageType.Disadvantage)
+                // only the chosen foes' opportunity attacks on the hero have disadvantage
+                .SetAttackOfOpportunityOnMeAdvantage(AdvantageType.Disadvantage)
                 .SetOtherCharacterFamilyRestrictions(familyName)
                 .AddToDB();
 
@@ -517,6 +519,8 @@ internal static class RaceFeats
         var featGrudgeBearerStr = FeatDefinitionWithPrerequisitesBuilder
             .Create($"{Name}Str")
             .SetGuiPresentation(Category.Feat)
+            // the three ability variants are one feat: a hero takes only one of them
+            .SetFeatFamily(Name)
             .SetValidators(ValidatorsFeat.IsDwarf)
             .SetFeatures(AttributeModifierCreed_Of_Einar, invocationPool)
             .AddToDB();
@@ -524,6 +528,8 @@ internal static class RaceFeats
         var featGrudgeBearerCon = FeatDefinitionWithPrerequisitesBuilder
             .Create($"{Name}Con")
             .SetGuiPresentation(Category.Feat)
+            // the three ability variants are one feat: a hero takes only one of them
+            .SetFeatFamily(Name)
             .SetValidators(ValidatorsFeat.IsDwarf)
             .SetFeatures(AttributeModifierCreed_Of_Arun, invocationPool)
             .AddToDB();
@@ -531,6 +537,8 @@ internal static class RaceFeats
         var featGrudgeBearerWis = FeatDefinitionWithPrerequisitesBuilder
             .Create($"{Name}Wis")
             .SetGuiPresentation(Category.Feat)
+            // the three ability variants are one feat: a hero takes only one of them
+            .SetFeatFamily(Name)
             .SetValidators(ValidatorsFeat.IsDwarf)
             .SetFeatures(AttributeModifierCreed_Of_Maraike, invocationPool)
             .AddToDB();
@@ -662,7 +670,7 @@ internal static class RaceFeats
                 if (dieRoll <= action.AttackRoll)
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
-                        "Feat/&FeatBountifulLuckyTitle",
+                        "Feat/&FeatBountifulLuckTitle",
                         "Feedback/&IsNotLuckyLower",
                         extra:
                         [
@@ -678,7 +686,7 @@ internal static class RaceFeats
 
                 if (action.AttackSuccessDelta >= 0)
                 {
-                    action.AttackRollOutcome = dieRoll == 20 ? RollOutcome.CriticalSuccess : RollOutcome.Success;
+                    action.AttackRollOutcome = AttackOutcomeRules.FromRoll(dieRoll, action.AttackSuccessDelta);
                 }
 
                 rulesetHelper.InflictCondition(
@@ -746,7 +754,7 @@ internal static class RaceFeats
                 if (dieRoll <= rawRoll)
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
-                        "Feat/&FeatBountifulLuckyTitle",
+                        "Feat/&FeatBountifulLuckTitle",
                         "Feedback/&IsNotLuckyLower",
                         extra:
                         [
@@ -847,7 +855,7 @@ internal static class RaceFeats
                 if (dieRoll <= savingRoll)
                 {
                     rulesetHelper.LogCharacterActivatesAbility(
-                        "Feat/&FeatBountifulLuckyTitle",
+                        "Feat/&FeatBountifulLuckTitle",
                         "Feedback/&IsNotLuckyLower",
                         extra:
                         [
@@ -2005,8 +2013,9 @@ internal static class RaceFeats
                 yield break;
             }
 
-            // any reaction within an attack flow must use the attacker as waiter
-            yield return attacker.MyReactToDoNothing(
+            // the halfling (helper == defender) reacts; any reaction within an attack flow must use the attacker as
+            // waiter
+            yield return helper.MyReactToDoNothing(
                 ExtraActionId.DoNothingReaction,
                 attacker,
                 "SecondChance",

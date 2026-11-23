@@ -112,9 +112,10 @@ public class PatronCelestial : AbstractSubclass
                         .SetParticleEffectParameters(PowerDomainLifePreserveLife)
                         .Build())
                 .AddCustomSubFeatures(
+                    // dice per use up to the Charisma modifier, minimum one
                     new ValidatorsValidatePowerUse(c =>
-                        AttributeDefinitions.ComputeAbilityScoreModifier(
-                            c.TryGetAttributeValue(AttributeDefinitions.Charisma)) >= j))
+                        System.Math.Max(1, AttributeDefinitions.ComputeAbilityScoreModifier(
+                            c.TryGetAttributeValue(AttributeDefinitions.Charisma))) >= j))
                 .AddToDB();
 
             power.GuiPresentation.hidden = true;
@@ -347,7 +348,8 @@ public class PatronCelestial : AbstractSubclass
                 yield break;
             }
 
-            var targets = Gui.Battle.GetContenders(defender, withinRange: 5);
+            // creatures within 30 feet
+            var targets = Gui.Battle.GetContenders(defender, withinRange: 6);
 
             yield return defender.MyReactToUsePower(
                 ActionDefinitions.Id.PowerNoCost,

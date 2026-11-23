@@ -29,6 +29,8 @@ internal static class ToolsDisplay
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&TableTopHelp1"));
         UI.Label(Gui.Localize("ModUi/&TableTopHelp2"));
+        // The preset buttons only store the settings; their switch functions run at the next start.
+        UI.Label(Gui.Localize("ModUi/&TableTopHelp3"));
         UI.Label();
 
         var width = UI.Width(195f);
@@ -64,6 +66,11 @@ internal static class ToolsDisplay
         {
             property.SetValue(Main.Settings, true);
         }
+
+        // setting the properties directly skips their switch functions; run the ones a client also runs when it
+        // takes these settings from a host, so both computers build the same definitions from them. The preset's
+        // other options still take effect after a restart.
+        MultiplayerSessionContext.ReapplyDefinitionSwitches();
     }
 
     private static void SelectTabletopSet()

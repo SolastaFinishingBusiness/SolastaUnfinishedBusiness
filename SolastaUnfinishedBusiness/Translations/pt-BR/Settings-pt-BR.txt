@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=Permitir que todos os <color=#D89555>Conju
 ModUi/&EnableProneAction=Habilite a ação <color=#D89555>Cair de bruços</color> <i><color=#F0DAA0>[você pode cair de bruços sem nenhum custo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Habilitar efeitos de movimento de empurrar e puxar para também funcionarem no eixo para cima/baixo
 ModUi/&PushOrPullOncePerHit=Empurrar ou puxar uma criatura uma vez para cada acerto de uma magia ou poder que a mova <i><color=#F0DAA0>[Explosão Repulsiva empurra uma vez para cada raio de Raio Místico que acerta, e Domínio de Hadar puxa uma vez para cada um; desativado, apenas o primeiro empurrão ou puxão de uma conjuração move a criatura]</color></i>
+ModUi/&CombineConcentrationChecks=Fazer um único teste de resistência de concentração por instância de dano, contra o dano total <i><color=#F0DAA0>[um acerto de arma com o dano somado a ele, um acerto de magia ou poder, ou o dano recorrente de um turno; cada dardo de Mísseis Mágicos, partícula de Radiant Motes e raio de Rajada Mística conta separadamente]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=O dano a uma forma selvagem não exige testes de resistência de concentração <i><color=#F0DAA0>[apenas o dano repassado ao druida quando a forma chega a 0 pontos de vida]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=O dano absorvido por pontos de vida temporários não conta para testes de resistência de concentração <i><color=#F0DAA0>[apenas o dano além deles conta; um golpe absorvido exatamente não exige nenhum]</color></i>
+ModUi/&CapConcentrationSaveDc30=Limitar a CD dos testes de resistência de concentração a 30 <i><color=#F0DAA0>[regras de 2024]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Permitir que <color=#D89555>Patrulheiro</color> escolha qualquer estilo de luta <i><color=#F0DAA0>[adiciona Luta com Arma Grande e Proteção]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Habilite <color=#D89555>Explorador Hábil</color> no nível 2 <i><color=#F0DAA0>[obtenha uma especialização em habilidades de Patrulheiro e aprenda 2 idiomas]</color></i>
 ModUi/&EnableRangerExpertise2024=Habilite <color=#D89555>Expertise</color> no nível 9 <i><color=#F0DAA0>[obtenha duas expertises em habilidades de Ranger]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Habilitar regras 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Selecionar conteúdo de mesa</color></b>
 ModUi/&TableTopHelp1=• As seções a seguir reagrupam e duplicam as configurações <color=#D89555>5e 2014 e 2024</color> espalhadas pelo mod para sua conveniência
 ModUi/&TableTopHelp2=• Pressione os botões para <b>selecionar apenas o conteúdo da mesa na aba Personagem</b> e <b>habilitar as regras de 2014 e/ou 2024</b>, para uma verdadeira experiência TT
+ModUi/&TableTopHelp3=• Os botões de qualidade de vida, 2014 e 2024 ativam suas opções; a maioria só tem efeito após reiniciar <b><i><color=#C04040E0>[Requer reinicialização]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Mesa <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Língua alvo
 ModUi/&TotalCraftingTimeModifier=<color=white>Reduza o tempo de criação em</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Segundos sem espera 
 ModUi/&MultiplayerShowFpsOverlay=Mostrar no canto superior esquerdo, durante uma sessão multijogador, uma pequena sobreposição com as taxas de quadros e pings que você pode ver
 ModUi/&MultiplayerSpreadOverlappedCharacters=Desenhar levemente afastados os personagens que dividem uma casa para poder apontar cada um <i><color=#F0DAA0>[só visual: dois lado a lado, três em triângulo, mais em um anel maior; eles voltam ao centro quando se movem]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tempo e descansos:</color>
-ModUi/&PickPocketNonHostiles=Também adicionar saque para furtar a muitos NPCs não hostis <i><color=#F0DAA0>[falhar afeta a reputação]</color></i>
+ModUi/&PickPocketNonHostiles=Também adicionar saque para furtar a muitos NPCs não hostis <i><color=#F0DAA0>[falhar afeta a reputação]</color></i> <b><i><color=#C04040E0>[Requer reinicialização]</color></i></b>
 ModUi/&SearchClear=Limpar
 ModUi/&SearchNoResults=Nenhuma configuração corresponde a "{0}".
 ModUi/&SearchSettings=Buscar configurações:

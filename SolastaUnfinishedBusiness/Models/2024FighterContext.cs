@@ -274,6 +274,8 @@ public static partial class Tabletop2024Context
 
                 abilityCheckModifier.AbilityCheckModifier += dieRoll;
                 abilityCheckData.AbilityCheckSuccessDelta += dieRoll;
+                // the running total includes the bonus (read by the reactions' log lines)
+                abilityCheckData.AbilityCheckRoll += dieRoll;
 
                 if (abilityCheckData.AbilityCheckSuccessDelta >= 0)
                 {

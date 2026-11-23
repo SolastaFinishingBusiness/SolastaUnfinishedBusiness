@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=Permettre à tous les <color=#D89555>lance
 ModUi/&EnableProneAction=Activer l'action <color=#D89555>Tomber à plat ventre</color> <i><color=#F0DAA0>[vous pouvez tomber à plat ventre sans frais]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Activez les effets de mouvement de poussée et de traction pour qu'ils fonctionnent également sur l'axe haut/bas
 ModUi/&PushOrPullOncePerHit=Pousser ou tirer une créature une fois pour chaque coup d'un sort ou pouvoir qui la déplace <i><color=#F0DAA0>[Décharge répulsive pousse une fois pour chaque rayon de Décharge occulte qui touche, et Saisie de Hadar tire une fois pour chacun ; désactivé, seule la première poussée ou traction d'un lancement déplace la créature]</color></i>
+ModUi/&CombineConcentrationChecks=Faire un seul jet de sauvegarde de concentration par instance de dégâts, contre leur total <i><color=#F0DAA0>[un coup d'arme avec les dégâts qui s'y ajoutent, un coup d'un sort ou d'un pouvoir, ou les dégâts récurrents d'un tour ; chaque fléchette de Projectile magique, chaque particule de Radiant Motes et chaque rayon de Décharge occulte compte séparément]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=Les dégâts subis par une forme sauvage n'imposent pas de jet de sauvegarde de concentration <i><color=#F0DAA0>[seuls les dégâts reportés sur le druide quand la forme tombe à 0 point de vie le font]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=Les dégâts absorbés par les points de vie temporaires ne comptent pas pour les jets de sauvegarde de concentration <i><color=#F0DAA0>[seuls les dégâts au-delà comptent ; un coup qu'ils absorbent exactement n'en impose aucun]</color></i>
+ModUi/&CapConcentrationSaveDc30=Limiter le DD des jets de sauvegarde de concentration à 30 <i><color=#F0DAA0>[règles 2024]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Permettre au <color=#D89555>Rôdeur</color> de choisir n'importe quel style de combat <i><color=#F0DAA0>[ajoute Combat à l'arme à deux mains et Protection]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Activez <color=#D89555>Deft Explorer</color> au niveau 2 <i><color=#F0DAA0>[obtenez une expertise sur les compétences de Ranger et apprenez 2 langues]</color></i>
 ModUi/&EnableRangerExpertise2024=Activer <color=#D89555>Expertise</color> au niveau 9 <i><color=#F0DAA0>[obtenir deux expertises sur les compétences de Ranger]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Activer les règles 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Sélectionnez le contenu de la table</color></b>
 ModUi/&TableTopHelp1=• Les sections suivantes regroupent et dupliquent les paramètres <color=#D89555>5e 2014 et 2024</color> dispersés dans le mod pour votre commodité
 ModUi/&TableTopHelp2=• Appuyez sur les boutons pour <b>sélectionner uniquement le contenu de table sous l'onglet Personnage</b> et <b>activer les règles 2014 et/ou 2024</b>, pour une véritable expérience TT
+ModUi/&TableTopHelp3=• Les boutons QoL, 2014 et 2024 activent leurs options ; la plupart prennent effet après un redémarrage <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Jeux de société <i>[5e 2014]</i> :</color>
 ModUi/&TargetLanguage=Langue cible
 ModUi/&TotalCraftingTimeModifier=<color=white>Réduisez le temps de fabrication de</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Secondes sans attent
 ModUi/&MultiplayerShowFpsOverlay=Afficher en haut à gauche, pendant une session multijoueur, une petite superposition avec les fréquences d'images et pings que vous pouvez voir
 ModUi/&MultiplayerSpreadOverlappedCharacters=Dessiner légèrement écartés les personnages qui partagent une case pour pouvoir pointer chacun <i><color=#F0DAA0>[visuel uniquement : deux côte à côte, trois en triangle, plus en anneau plus large ; ils reviennent au centre quand ils se déplacent]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Temps et repos :</color>
-ModUi/&PickPocketNonHostiles=Ajouter aussi du butin à voler à de nombreux PNJ non hostiles <i><color=#F0DAA0>[un échec affecte la réputation]</color></i>
+ModUi/&PickPocketNonHostiles=Ajouter aussi du butin à voler à de nombreux PNJ non hostiles <i><color=#F0DAA0>[un échec affecte la réputation]</color></i> <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&SearchClear=Effacer
 ModUi/&SearchNoResults=Aucun paramètre ne correspond à "{0}".
 ModUi/&SearchSettings=Rechercher des paramètres :

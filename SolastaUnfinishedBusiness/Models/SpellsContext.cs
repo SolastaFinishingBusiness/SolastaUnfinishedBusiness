@@ -786,29 +786,41 @@ internal static class SpellsContext
     }
 
 
+    // Each spell's own advancement before the option first changed it, so turning the option off restores it.
+    // Conjure Minor Elementals already advances per slot level in the game, so the values differ per spell.
+    private static readonly Dictionary<SpellDefinition, (EffectIncrementMethod method, int spellLevelPerIncrement)>
+        ConjureOriginalAdvancement = [];
+
     internal static void SwitchEnableUpcastConjureElementalAndFey()
     {
-        if (!Main.Settings.EnableUpcastConjureElementalAndFey)
-        {
-            ConjureElemental.SubspellsList.Remove(ConjureElementalInvisibleStalker);
-
-            return;
-        }
-
-        ConfigureAdvancement(ConjureFey);
-        ConfigureAdvancement(ConjureElemental);
-        ConfigureAdvancement(ConjureMinorElementals);
-        ConjureElemental.SubspellsList.Add(ConjureElementalInvisibleStalker);
-
-        return;
-
-        // Set advancement at spell level, not sub-spell
-        static void ConfigureAdvancement([NotNull] IMagicEffect spell)
+        foreach (var spell in new[] { ConjureFey, ConjureElemental, ConjureMinorElementals })
         {
             var advancement = spell.EffectDescription.EffectAdvancement;
 
-            advancement.effectIncrementMethod = EffectIncrementMethod.PerAdditionalSlotLevel;
-            advancement.additionalSpellLevelPerIncrement = 1;
+            if (!ConjureOriginalAdvancement.TryGetValue(spell, out var original))
+            {
+                original = (advancement.effectIncrementMethod, advancement.additionalSpellLevelPerIncrement);
+                ConjureOriginalAdvancement.Add(spell, original);
+            }
+
+            if (Main.Settings.EnableUpcastConjureElementalAndFey)
+            {
+                // Set advancement at spell level, not sub-spell
+                advancement.effectIncrementMethod = EffectIncrementMethod.PerAdditionalSlotLevel;
+                advancement.additionalSpellLevelPerIncrement = 1;
+            }
+            else
+            {
+                advancement.effectIncrementMethod = original.method;
+                advancement.additionalSpellLevelPerIncrement = original.spellLevelPerIncrement;
+            }
+        }
+
+        ConjureElemental.SubspellsList.Remove(ConjureElementalInvisibleStalker);
+
+        if (Main.Settings.EnableUpcastConjureElementalAndFey)
+        {
+            ConjureElemental.SubspellsList.Add(ConjureElementalInvisibleStalker);
         }
     }
 
@@ -970,7 +982,11 @@ internal static class SpellsContext
                 return;
             }
 
-            InventorClass.SwitchSpellStoringItemSubPower(spellDefinition, active);
+            // only the Inventor's own spell list decides which spells its Spell-Storing Item can hold
+            if (SpellList == InventorClass.SpellList)
+            {
+                InventorClass.SwitchSpellStoringItemSubPower(spellDefinition, active);
+            }
 
             if (!Main.Settings.AllowDisplayingOfficialSpells &&
                 spellDefinition.ContentPack != CeContentPackContext.CeContentPack)

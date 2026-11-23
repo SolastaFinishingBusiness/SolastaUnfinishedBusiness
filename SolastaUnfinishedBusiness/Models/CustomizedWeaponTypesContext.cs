@@ -99,7 +99,9 @@ internal static class CustomizedWeaponTypesContext
             {
                 DLC3_Magic_Morningstar_Guardian_Complete, [
                     TransformData.Base(DLC3_Magic_Morningstar_Guardian_Complete),
-                    TransformData.From(CustomWeaponsContext.Pike, new CustomScale(0.8f, 0.8f, 2.6f))
+                    // the morningstar's own model stretched into a pike, held around the middle of its length
+                    TransformData.From(CustomWeaponsContext.Pike,
+                        new CustomScale(0.8f, 0.8f, 2.6f, gripAlongLength: 0.5f))
                 ]
             },
             {

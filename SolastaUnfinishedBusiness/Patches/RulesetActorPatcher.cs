@@ -81,11 +81,8 @@ public static class RulesetActorPatcher
             damageTypes.AddRange(damageTypesFromProxyAttackPowers);
         }
 
-        if (damageTypes.Count == 0)
-        {
-            return;
-        }
-
+        // Validators run for every roll, damage or not: a roll with no damage types (an attack roll, a save, a check)
+        // still has to pass them, e.g. Bountiful Luck's once-per check, and a damage-type reroll is then left out.
         __instance.featuresToBrowse.RemoveAll(x =>
             x.GetAllSubFeaturesOfType<IValidateDieRollModifier>().Any(y =>
                 !y.CanModifyRoll(__instance, __instance.featuresToBrowse, damageTypes)));
@@ -430,9 +427,10 @@ public static class RulesetActorPatcher
                                                                          SpellDefinition spellDefinition
                                                                          ? spellDefinition.SpellLevel
                                                                          : 0)),
+                // scales on the level of the condition's source (the caster), not of the creature taking the damage
                 EffectIncrementMethod.CasterLevelTable => trackingCondition.EffectDescription.EffectAdvancement
                     .ComputeAdditionalDiceByCasterLevel(
-                        __instance.TryGetAttributeValue(AttributeDefinitions.CharacterLevel)),
+                        entity.TryGetAttributeValue(AttributeDefinitions.CharacterLevel)),
                 _ => formsParams.addDice
             };
             //END PATCH

@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=Permitir que todos los <color=#D89555>lanz
 ModUi/&EnableProneAction=Habilita la acción <color=#D89555>Caer boca abajo</color> <i><color=#F0DAA0>[puedes caer boca abajo sin costo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Habilite los efectos de movimiento de empujar y tirar para que funcionen también en el eje arriba/abajo
 ModUi/&PushOrPullOncePerHit=Empujar o arrastrar a una criatura una vez por cada impacto de un conjuro o poder que la mueva <i><color=#F0DAA0>[Repelling Blast empuja una vez por cada rayo de Eldritch Blast que impacta, y Agarre de Hadar arrastra una vez por cada uno; desactivado, solo el primer empujón o arrastre de un lanzamiento mueve a la criatura]</color></i>
+ModUi/&CombineConcentrationChecks=Hacer una sola tirada de salvación de concentración por cada instancia de daño, contra su daño total <i><color=#F0DAA0>[un impacto de arma con el daño que se le añade, un impacto de un conjuro o poder, o el daño recurrente de un turno; cada dardo de Proyectil mágico, mota de Radiant Motes y rayo de Descarga sobrenatural cuenta por separado]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=El daño a una forma salvaje no exige tiradas de salvación de concentración <i><color=#F0DAA0>[solo el daño que pasa al druida cuando la forma queda a 0 puntos de golpe]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=El daño absorbido por los puntos de golpe temporales no cuenta para las tiradas de salvación de concentración <i><color=#F0DAA0>[solo el daño que los supera; un impacto que absorben exactamente no exige ninguna]</color></i>
+ModUi/&CapConcentrationSaveDc30=Limitar la CD de las tiradas de salvación de concentración a 30 <i><color=#F0DAA0>[reglas de 2024]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Permitir que <color=#D89555>Explorador</color> elija cualquier estilo de lucha <i><color=#F0DAA0>[añade Lucha con arma grande y Protección]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Habilita <color=#D89555>Explorador hábil</color> en el nivel 2 <i><color=#F0DAA0>[obtén una experiencia en habilidades de explorador y aprende 2 idiomas]</color></i>
 ModUi/&EnableRangerExpertise2024=Habilita la <color=#D89555>Experiencia</color> en el nivel 9 <i><color=#F0DAA0>[obtén dos especializaciones en habilidades de Explorador]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Habilitar reglas 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Seleccionar contenido de Tabletop</color></b>
 ModUi/&TableTopHelp1=• Las siguientes secciones reagrupan y duplican las configuraciones de <color=#D89555>5e 2014 y 2024</color> esparcidas por el mod para tu conveniencia.
 ModUi/&TableTopHelp2=• Presiona los botones para <b>seleccionar solo contenido de mesa en la pestaña Personaje</b> y <b>habilitar las reglas 2014 y/o 2024</b>, para una verdadera experiencia TT
+ModUi/&TableTopHelp3=• Los botones de calidad de vida, 2014 y 2024 activan sus opciones; la mayoría surten efecto tras reiniciar <b><i><color=#C04040E0>[Requiere reinicio]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Mesa de trabajo <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Lengua de llegada
 ModUi/&TotalCraftingTimeModifier=<color=white>Reducir el tiempo de elaboración</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Segundos sin esperas
 ModUi/&MultiplayerShowFpsOverlay=Mostrar arriba a la izquierda, durante una sesión multijugador, una pequeña superposición con los fotogramas por segundo y los pings que puedes ver
 ModUi/&MultiplayerSpreadOverlappedCharacters=Dibujar un poco separados a los personajes que comparten casilla para poder señalar a cada uno <i><color=#F0DAA0>[solo visual: dos lado a lado, tres en triángulo, más en un anillo más amplio; vuelven al centro cuando se mueven]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tiempo y descansos:</color>
-ModUi/&PickPocketNonHostiles=Añadir también botín para robar a muchos PNJ no hostiles <i><color=#F0DAA0>[fallar afecta a la reputación]</color></i>
+ModUi/&PickPocketNonHostiles=Añadir también botín para robar a muchos PNJ no hostiles <i><color=#F0DAA0>[fallar afecta a la reputación]</color></i> <b><i><color=#C04040E0>[Requiere reinicio]</color></i></b>
 ModUi/&SearchClear=Borrar
 ModUi/&SearchNoResults=Ningún ajuste coincide con "{0}".
 ModUi/&SearchSettings=Buscar ajustes:

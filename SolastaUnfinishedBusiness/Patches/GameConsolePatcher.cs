@@ -6,8 +6,10 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.CustomUI;
 using static ConsoleStyleDuplet;
+using static RuleDefinitions;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -19,6 +21,32 @@ public static class GameConsolePatcher
     [UsedImplicitly]
     public static class AttackRolled_Patch
     {
+        // the total of a critical hit made by the +10 margin rule, while GameConsole.AttackRolled builds its line
+        private static int? _marginCriticalTotal;
+
+        //PATCH: a critical hit made only by the "critical hits and misses at a difference of 10" rule is logged like a
+        //hit, so the line keeps the roll, its modifier and the modifier breakdown on hover (the game formats critical
+        //outcomes with the raw d20 only), and its outcome then reads "(CRITICAL HIT, +10)" with the total
+        [UsedImplicitly]
+        public static void Prefix(ref RollOutcome outcome, int attackRoll)
+        {
+            if (!AttackOutcomeRules.MarginCriticalHit || outcome != RollOutcome.CriticalSuccess)
+            {
+                return;
+            }
+
+            outcome = RollOutcome.Success;
+            _marginCriticalTotal = attackRoll;
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception)
+        {
+            _marginCriticalTotal = null;
+
+            return __exception;
+        }
+
         [NotNull]
         [UsedImplicitly]
         public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
@@ -33,6 +61,19 @@ public static class GameConsolePatcher
         private static void AddEntry(GameRecordTable console, GameRecordEntry entry, int insertionIndex,
             BaseDefinition definition)
         {
+            if (_marginCriticalTotal is { } total)
+            {
+                // the outcome is the last SuccessfulRoll parameter: "{total} (Hit)" from AttackSuccessOutcome
+                var outcomeParameter =
+                    entry.Parameters.LastOrDefault(x => x.parameterType == (int)ParameterType.SuccessfulRoll);
+
+                if (outcomeParameter != null)
+                {
+                    outcomeParameter.contentValue =
+                        Gui.Format("Feedback/&AttackMarginCriticalOutcome", total.ToString());
+                }
+            }
+
             if (definition is FeatureDefinitionPower)
             {
                 foreach (var parameter in entry.Parameters

@@ -12,7 +12,7 @@ Feature/&PowerRavenScionHeartSeekingShotDescription=Mit einer freien Aktion kann
 Feature/&PowerRavenScionHeartSeekingShotTitle=Herzsuchender Schuss
 Feedback/&AdditionalDamageSniperAimFormat=Ziel des Scharfschützen
 Feedback/&AdditionalDamageSniperAimLine=Sniper's Aim verursacht zusätzlichen +{2} Schaden!
-Feedback/&TriggerRavenScionRerollLine={0} würfelt {1} = {2}. Deadly Focus erzwingt einen kritischen Treffer.
+Feedback/&TriggerRavenScionRerollLine={0} würfelt {1} = {2}. Mit Deadly Focus wiederholst du den Angriff mit Vorteil.
 Reaction/&SpendPowerRavenScionDeadlyFocusDescription=Nutzen Sie Ihre tödliche Konzentration, um den Angriff zu wiederholen.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactDescription=Nutzen Sie Ihre tödliche Konzentration, um den Angriff zu wiederholen.
 Reaction/&SpendPowerRavenScionDeadlyFocusReactTitle=Angriff wiederholen

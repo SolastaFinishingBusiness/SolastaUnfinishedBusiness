@@ -955,7 +955,7 @@ internal static class Level20SubclassesContext
             .SetEffectDescription(
                 EffectDescriptionBuilder
                     .Create()
-                    .SetEffectForms(EffectFormBuilder.DamageForm(DamageTypePiercing, 0, DieType.D1, 10))
+                    .SetEffectForms(EffectFormBuilder.DamageForm(DamageTypeFire, 0, DieType.D1, 10))
                     .SetParticleEffectParameters(FireBolt)
                     .Build())
             .AddToDB();
@@ -1583,22 +1583,20 @@ internal static class Level20SubclassesContext
             RulesetAttackMode attackMode,
             RulesetEffect activeEffect)
         {
-            if (!ally.OncePerTurnIsValid(featureKeeperOfOblivion.Name))
+            // an enemy the cleric can see, dying within 30 feet; the once-per-turn use is spent only then
+            if (!ally.OncePerTurnIsValid(featureKeeperOfOblivion.Name) ||
+                !downedCreature.IsOppositeSide(ally.Side) ||
+                !ally.CanPerceiveTarget(downedCreature) ||
+                !downedCreature.IsWithinRange(ally, 6))
             {
                 yield break;
             }
 
-            ally.UsedSpecialFeatures.TryAdd(featureKeeperOfOblivion.Name, 1);
+            ally.SetSpecialFeatureUses(featureKeeperOfOblivion.Name, 1);
 
             var rulesetAlly = ally.RulesetCharacter;
             var clericLevel = rulesetAlly.GetClassLevel(CharacterClassDefinitions.Cleric);
             var healingPool = clericLevel;
-
-            // haven't died within 30 ft of Cleric
-            if (!downedCreature.IsWithinRange(ally, 6))
-            {
-                yield break;
-            }
 
             var locationCharacterService = ServiceRepository.GetService<IGameLocationCharacterService>();
             var contenders =
@@ -1682,7 +1680,8 @@ internal static class Level20SubclassesContext
             int outcomeDelta,
             List<EffectForm> effectForms)
         {
-            if (abilityScoreName == AttributeDefinitions.Wisdom &&
+            // advantage on any saving throw against a spell cast by a fiend or an undead
+            if (sourceDefinition is SpellDefinition &&
                 rulesetActorCaster is RulesetCharacterMonster { CharacterFamily: "Fiend" or "Undead" })
             {
                 advantageTrends.Add(
@@ -1846,7 +1845,8 @@ internal static class Level20SubclassesContext
                 return;
             }
 
-            if (rulesetCharacter.CurrentHitPoints >= rulesetCharacter.MissingHitPoints)
+            // heals at no more than half the hit points
+            if (rulesetCharacter.CurrentHitPoints > rulesetCharacter.MissingHitPoints)
             {
                 return;
             }
@@ -1907,6 +1907,12 @@ internal static class Level20SubclassesContext
         {
             var rulesetCharacter = defender.RulesetCharacter;
             var usablePower = PowerProvider.Get(powerPhysicalPerfection, rulesetCharacter);
+
+            // standing up costs 1 ki: no offer without one
+            if (rulesetCharacter.RemainingKiPoints < 1)
+            {
+                yield break;
+            }
 
             yield return defender.MyReactToSpendPower(
                 usablePower,
@@ -1977,7 +1983,8 @@ internal static class Level20SubclassesContext
                 yield break;
             }
 
-            attacker.RulesetCharacter.ReceiveHealing(2, true, attacker.Guid);
+            // the monk restores 4 hit points, allies within 20 feet half that
+            attacker.RulesetCharacter.ReceiveHealing(4, true, attacker.Guid);
 
             foreach (var ally in battleManager.Battle
                          .GetContenders(attacker, isOppositeSide: false, hasToPerceiveTarget: false, withinRange: 4))

@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=Abilita tutti i <color=#D89555>incantatori
 ModUi/&EnableProneAction=Abilita l'azione <color=#D89555>Cadi prono</color> <i><color=#F0DAA0>[puoi cadere prono senza alcun costo]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Abilita gli effetti di movimento push e pull per funzionare anche sull'asse su/giù
 ModUi/&PushOrPullOncePerHit=Spingere o tirare una creatura una volta per ogni colpo di un incantesimo o potere che la muove <i><color=#F0DAA0>[Repelling Blast spinge una volta per ogni raggio di Eldritch Blast che colpisce, e Presa di Hadar tira una volta per ciascuno; se disattivato, solo la prima spinta o trazione di un lancio muove la creatura]</color></i>
+ModUi/&CombineConcentrationChecks=Effettua un solo tiro salvezza di concentrazione per ogni istanza di danno, contro il danno totale <i><color=#F0DAA0>[un colpo d'arma con i danni che vi si aggiungono, un colpo di un incantesimo o potere, o il danno ricorrente di un turno; ogni dardo di Dardo Incantato, particella di Radiant Motes e raggio di Deflagrazione Occulta conta a sé]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=I danni a una forma selvatica non richiedono tiri salvezza di concentrazione <i><color=#F0DAA0>[solo i danni che passano al druido quando la forma scende a 0 punti ferita]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=I danni assorbiti dai punti ferita temporanei non contano per i tiri salvezza di concentrazione <i><color=#F0DAA0>[contano solo i danni oltre a essi; un colpo assorbito esattamente non ne richiede]</color></i>
+ModUi/&CapConcentrationSaveDc30=Limita la CD dei tiri salvezza di concentrazione a 30 <i><color=#F0DAA0>[regole 2024]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Consenti al <color=#D89555>Ranger</color> di scegliere qualsiasi stile di combattimento <i><color=#F0DAA0>[aggiunge Combattimento con Arma Grande e Protezione]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Abilita <color=#D89555>Esploratore esperto</color> al livello 2 <i><color=#F0DAA0>[ottieni una competenza nelle abilità Ranger e impara 2 lingue]</color></i>
 ModUi/&EnableRangerExpertise2024=Abilita <color=#D89555>Competenza</color> al livello 9 <i><color=#F0DAA0>[ottieni due competenze sulle abilità Ranger]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>Abilita le regole del 2024</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Seleziona contenuto Tabletop</color></b>
 ModUi/&TableTopHelp1=• Le sezioni seguenti raggruppano e duplicano le impostazioni <color=#D89555>5e 2014 e 2024</color> sparse nella mod per la tua comodità
 ModUi/&TableTopHelp2=• Premi i pulsanti per <b>selezionare solo i contenuti del tavolo nella scheda Personaggio</b> e <b>abilitare le regole del 2014 e/o del 2024</b>, per una vera esperienza TT
+ModUi/&TableTopHelp3=• I pulsanti QoL, 2014 e 2024 attivano le loro opzioni; la maggior parte ha effetto dopo il riavvio <b><i><color=#C04040E0>[Richiede il riavvio]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Da tavolo <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Lingua di destinazione
 ModUi/&TotalCraftingTimeModifier=<color=white>Riduci il tempo di creazione di</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Secondi senza attese
 ModUi/&MultiplayerShowFpsOverlay=Mostra in alto a sinistra, durante una sessione multigiocatore, una piccola sovrapposizione con i fotogrammi al secondo e i ping che puoi vedere
 ModUi/&MultiplayerSpreadOverlappedCharacters=Disegna leggermente distanziati i personaggi che condividono una casella così da poter indicare ciascuno <i><color=#F0DAA0>[solo visivo: due affiancati, tre a triangolo, di più in un anello più ampio; tornano al centro quando si muovono]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Tempo e riposi:</color>
-ModUi/&PickPocketNonHostiles=Aggiungi bottino da borseggiare anche a molti PNG non ostili <i><color=#F0DAA0>[un fallimento influisce sulla reputazione]</color></i>
+ModUi/&PickPocketNonHostiles=Aggiungi bottino da borseggiare anche a molti PNG non ostili <i><color=#F0DAA0>[un fallimento influisce sulla reputazione]</color></i> <b><i><color=#C04040E0>[Richiede il riavvio]</color></i></b>
 ModUi/&SearchClear=Cancella
 ModUi/&SearchNoResults=Nessuna impostazione corrisponde a "{0}".
 ModUi/&SearchSettings=Cerca impostazioni:

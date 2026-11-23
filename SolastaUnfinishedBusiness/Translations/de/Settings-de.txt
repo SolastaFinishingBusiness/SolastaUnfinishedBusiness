@@ -326,6 +326,10 @@ ModUi/&EnablePreparedSpellsTables2024=Ermöglichen Sie allen <color=#D89555>Zaub
 ModUi/&EnableProneAction=Aktivieren Sie die Aktion <color=#D89555>In die Hocke gehen</color> <i><color=#F0DAA0>[Sie können kostenlos in die Hocke gehen]</color></i>
 ModUi/&EnablePullPushOnVerticalDirection=Aktivieren Sie Push- und Pull-Bewegungseffekte, damit diese auch auf der Auf-/Ab-Achse funktionieren
 ModUi/&PushOrPullOncePerHit=Eine Kreatur für jeden Treffer eines Zaubers oder einer Kraft, die sie bewegt, einmal stoßen oder ziehen <i><color=#F0DAA0>[Zurückdrängender Strahl stößt für jeden treffenden Strahl von Schauriger Strahl einmal, und Griff von Hadar zieht für jeden einmal; wenn aus, bewegt nur der erste Stoß oder Zug eines Zaubers die Kreatur]</color></i>
+ModUi/&CombineConcentrationChecks=Einen Konzentrationsrettungswurf pro Schadensereignis gegen dessen Gesamtschaden ablegen <i><color=#F0DAA0>[ein Waffentreffer samt dem Schaden, der ihm hinzugefügt wird, ein Treffer eines Zaubers oder einer Kraft oder der wiederkehrende Schaden eines Zuges; jeder Pfeil von Magisches Geschoss, jeder Funke von Radiant Motes und jeder Strahl von Schauerlicher Strahl zählt einzeln]</color></i>
+ModUi/&NoConcentrationChecksFromWildShapeDamage=Schaden an einer Tiergestalt erfordert keine Konzentrationsrettungswürfe <i><color=#F0DAA0>[nur der Schaden, der auf den Druiden übergeht, wenn die Gestalt auf 0 Trefferpunkte sinkt]</color></i>
+ModUi/&NoConcentrationChecksFromTemporaryHitPoints=Von temporären Trefferpunkten aufgefangener Schaden zählt nicht für Konzentrationsrettungswürfe <i><color=#F0DAA0>[nur Schaden darüber hinaus; ein genau aufgefangener Treffer erfordert keinen]</color></i>
+ModUi/&CapConcentrationSaveDc30=Den SG von Konzentrationsrettungswürfen auf 30 begrenzen <i><color=#F0DAA0>[Regeln von 2024]</color></i>
 ModUi/&EnableRangerAnyFightingStyle2024=Erlaube <color=#D89555>Waldläufer</color> jeden Kampfstil zu wählen <i><color=#F0DAA0>[fügt Kampf mit großen Waffen und Schutz hinzu]</color></i>
 ModUi/&EnableRangerDeftExplorer2024=Aktiviere <color=#D89555>Geschickter Entdecker</color> auf Level 2 <i><color=#F0DAA0>[erwerbe eine Expertise in Ranger-Fähigkeiten und lerne 2 Sprachen]</color></i>
 ModUi/&EnableRangerExpertise2024=Aktiviere <color=#D89555>Expertise</color> auf Level 9 <i><color=#F0DAA0>[erhalte zwei Expertisen für Ranger-Fertigkeiten]</color></i>
@@ -552,6 +556,7 @@ ModUi/&TableTop2024=<b><color=#D89555>2024-Regeln aktivieren</color></b>
 ModUi/&TableTopButton=<b><color=#D89555>Tabletop-Inhalt auswählen</color></b>
 ModUi/&TableTopHelp1=• In den folgenden Abschnitten werden die im Mod verstreuten Einstellungen für <color=#D89555>5e 2014 und 2024</color> neu gruppiert und dupliziert, damit Sie es einfacher haben.
 ModUi/&TableTopHelp2=• Drücken Sie die Tasten, um <b>unter der Registerkarte „Charakter“ nur Tabletop-Inhalte auszuwählen</b> und <b>die Regeln für 2014 und/oder 2024 zu aktivieren</b>, für ein echtes TT-Erlebnis
+ModUi/&TableTopHelp3=• Die Schaltflächen QoL, 2014 und 2024 schalten ihre Optionen ein; die meisten wirken erst nach einem Neustart <b><i><color=#C04040E0>[Neustart erforderlich]</color></i></b>
 ModUi/&Tabletop=<color=#F0DAA0>Tabletop <i>[5e 2014]</i>:</color>
 ModUi/&TargetLanguage=Zielsprache
 ModUi/&TotalCraftingTimeModifier=<color=white>Reduzieren Sie die Herstellungszeit um</color>
@@ -695,7 +700,7 @@ ModUi/&MultiplayerSecondsBeforeLowerTickBuffer=<color=white>Sekunden ohne Warten
 ModUi/&MultiplayerShowFpsOverlay=Während einer Mehrspielersitzung oben links ein kleines Overlay mit den Bildraten und Pings anzeigen, die Sie sehen dürfen
 ModUi/&MultiplayerSpreadOverlappedCharacters=Charaktere, die sich ein Feld teilen, leicht auseinander zeichnen, damit jeder angezeigt werden kann <i><color=#F0DAA0>[nur optisch: zwei nebeneinander, drei im Dreieck, mehr in einem weiteren Ring; sie kehren in die Mitte zurück, wenn sie sich bewegen]</color></i>
 ModUi/&MultiplayerTimeTitle=<color=#F0DAA0>Zeit und Rasten:</color>
-ModUi/&PickPocketNonHostiles=Auch vielen nicht feindseligen NSCs Beute zum Taschendiebstahl hinzufügen <i><color=#F0DAA0>[ein Fehlschlag wirkt sich auf den Ruf aus]</color></i>
+ModUi/&PickPocketNonHostiles=Auch vielen nicht feindseligen NSCs Beute zum Taschendiebstahl hinzufügen <i><color=#F0DAA0>[ein Fehlschlag wirkt sich auf den Ruf aus]</color></i> <b><i><color=#C04040E0>[Neustart erforderlich]</color></i></b>
 ModUi/&SearchClear=Leeren
 ModUi/&SearchNoResults=Keine Einstellungen passen zu "{0}".
 ModUi/&SearchSettings=Einstellungen suchen:

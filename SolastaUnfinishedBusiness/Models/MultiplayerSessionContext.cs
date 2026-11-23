@@ -449,6 +449,7 @@ internal static class MultiplayerSessionContext
         _localSettings = localSettings;
         _appliedSettingsHash = hash;
         Main.UseSettings(hostSettings);
+        ReapplyDefinitionSwitches();
         Main.Info($"using the host's settings ({hash}) while in this room");
 
         if (restartOnlyDifferences.Count == 0 || IsUsingHostSettingsForThisLaunch)
@@ -475,7 +476,23 @@ internal static class MultiplayerSessionContext
         Main.UseSettings(_localSettings);
         _localSettings = null;
         _appliedSettingsHash = null;
+        ReapplyDefinitionSwitches();
         Main.Info("using this computer's own settings again");
+    }
+
+    // Main.UseSettings only swaps the settings object; settings whose switch functions change game definitions keep
+    // the definitions built from the previous settings. These switches are idempotent, so they are run again whenever
+    // the settings object changes, and after the mod menu's preset buttons set settings in bulk (so a host's own
+    // definitions match the settings it publishes to the room, which clients apply with these same switches). Other
+    // definition-changing settings still apply only at startup.
+    internal static void ReapplyDefinitionSwitches()
+    {
+        Tabletop2024Context.SwitchShineCantripDC();
+        Tabletop2014Context.SwitchColdResistanceAndImmunityAlsoGrantsWeatherImmunity();
+        SpellsContext.SwitchEnableUpcastConjureElementalAndFey();
+        Tabletop2024Context.SwitchPaladinRechargeLv20Power();
+        Tabletop2024Context.SwitchBarbarianPrimalKnowledge();
+        Tabletop2024Context.SwitchRangerSpellCastingAtOne();
     }
 
     // what to save when the mod menu closes: never the host's copy

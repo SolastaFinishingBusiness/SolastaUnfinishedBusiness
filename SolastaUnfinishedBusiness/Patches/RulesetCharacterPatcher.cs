@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api;
@@ -1332,6 +1333,8 @@ public static class RulesetCharacterPatcher
 
             var service = ServiceRepository.GetService<IGameSettingsService>();
             var disableEnemyCrits = __instance.Side == Side.Enemy && service is { DisableEnemyCrits: true };
+            var marginCriticalHit = false;
+            var automaticCriticalBeforeMargin = false;
             int attackRoll;
 
             if (rawRoll == DiceMaxValue[8] && !disableEnemyCrits)
@@ -1370,9 +1373,30 @@ public static class RulesetCharacterPatcher
                 {
                     outcome = RollOutcome.Failure;
                 }
+
+                // a total that beats the target's AC by 10 or more is a critical hit, one that falls 10 or more short
+                // is a critical miss
+                if (Main.Settings.EnableCriticalHitsMissesAt10)
+                {
+                    if (successDelta >= 10 && !disableEnemyCrits)
+                    {
+                        // only a plain hit turned critical by the margin is marked for the combat log; a hit that
+                        // is critical anyway on this target (a paralyzed creature attacked from next to it) isn't,
+                        // and keeps the game's automatic critical line below
+                        automaticCriticalBeforeMargin = outcome == RollOutcome.Success &&
+                                                        target is RulesetCharacter automaticTarget &&
+                                                        automaticTarget.IsCriticalAutomaticOnMe(__instance);
+                        marginCriticalHit = outcome == RollOutcome.Success && !automaticCriticalBeforeMargin;
+                        outcome = RollOutcome.CriticalSuccess;
+                    }
+                    else if (successDelta <= -10)
+                    {
+                        outcome = RollOutcome.CriticalFailure;
+                    }
+                }
             }
 
-            var isCriticalAutomaticOnMe = false;
+            var isCriticalAutomaticOnMe = automaticCriticalBeforeMargin;
 
             if (target is RulesetCharacter character
                 && outcome == RollOutcome.Success
@@ -1412,9 +1436,15 @@ public static class RulesetCharacterPatcher
                         additionalAttackDieRolled?.Invoke(__instance, toHitTrend);
                     }
 
-                    __instance.AttackRolled(
-                        __instance, target, attackMethod, outcome, attackRoll, rawRoll, toHitBonus + rollModifier,
-                        toHitTrends, advantageTrends, opportunity, reactionCounterAttackType);
+                    // a hit that is no longer critical (a target immune to critical hits) isn't marked
+                    var rolledOutcome = outcome;
+
+                    AttackOutcomeRules.InvokeAttackRolled(
+                        marginCriticalHit && outcome == RollOutcome.CriticalSuccess,
+                        () => __instance.AttackRolled(
+                            __instance, target, attackMethod, rolledOutcome, attackRoll, rawRoll,
+                            toHitBonus + rollModifier, toHitTrends, advantageTrends, opportunity,
+                            reactionCounterAttackType));
                     __instance.AccountAttack(outcome);
 
                     if (isCriticalAutomaticOnMe)
@@ -1803,36 +1833,12 @@ public static class RulesetCharacterPatcher
     [UsedImplicitly]
     public static class ApplyRest_Patch
     {
-        //BUGFIX: chain of the master is a long rest power. only allow bindChain in there if long rest
-        private static void SwitchBindChainPowers(RestType restType, RechargeRate rechargeRate)
-        {
-            FeatureDefinitionPower[] bindChainPowers =
-            [
-                PowerPactChainImp, PowerPactChainPseudodragon, PowerPactChainPseudodragon, PowerPactChainQuasit
-            ];
-
-            if (restType != RestType.ShortRest)
-            {
-                return;
-            }
-
-            foreach (var power in bindChainPowers)
-            {
-                power.rechargeRate = rechargeRate;
-            }
-        }
-
-        [UsedImplicitly]
-        public static void Prefix(RulesetCharacter __instance, RestType restType)
-        {
-            SwitchBindChainPowers(restType, RechargeRate.LongRest);
-        }
-
+        // Binding a Pact of the Chain familiar recovers on a short or long rest: the game's ApplyRest resets the
+        // shared Bind Chain count on every rest (IL_0155-0171), and the recharge label
+        // (Rules/&RateBindChainFormatTitle in the translations) says so.
         [UsedImplicitly]
         public static void Postfix(RulesetCharacter __instance, RestType restType, bool simulate)
         {
-            SwitchBindChainPowers(restType, RechargeRate.BindChain);
-
             //PATCH: update usage for power pools
             if (!simulate)
             {
@@ -2402,19 +2408,26 @@ public static class RulesetCharacterPatcher
         {
             var setCurrentHitPointsMethod = typeof(RulesetActor).GetProperty("CurrentHitPoints")!.SetMethod;
             var mySetCurrentHitPointsMethod =
-                new Action<RulesetActor, int, bool>(MySetCurrentHitPoints).Method;
+                new Action<RulesetActor, int, bool, IDamageAffinityProvider>(MySetCurrentHitPoints).Method;
 
+            // In the game's SustainDamage, local 8 is "a knockout was prevented" and local 9 the damage affinity
+            // that prevented it (any knockout-preventing feature, not only Relentless Rage).
             return instructions
                 .ReplaceCalls(setCurrentHitPointsMethod,
                     "RulesetCharacter.SustainDamage.set_CurrentHitPoints",
-                    new CodeInstruction(OpCodes.Ldloc, 8), // success
+                    new CodeInstruction(OpCodes.Ldloc, 8), // knockout prevented
+                    new CodeInstruction(OpCodes.Ldloc, 9), // the affinity that prevented it
                     new CodeInstruction(OpCodes.Call, mySetCurrentHitPointsMethod));
         }
 
-        //TODO: review this as I believe it'll bleed into other scenarios. if so should get outcome from RollSaving with another transpiler
-        private static void MySetCurrentHitPoints(RulesetActor actor, int currentHitPoints, bool success)
+        // 2024 Relentless Rage: when Relentless Rage (the Barbarian's level 11 feature) keeps the Barbarian up, they
+        // drop to twice their Barbarian level in hit points instead of 1. Other knockout preventions keep the game's 1.
+        private static void MySetCurrentHitPoints(
+            RulesetActor actor, int currentHitPoints, bool success, IDamageAffinityProvider preventedBy)
         {
-            if (!Main.Settings.EnableBarbarianRelentlessRage2024 || actor is not RulesetCharacter rulesetCharacter)
+            if (!Main.Settings.EnableBarbarianRelentlessRage2024 || actor is not RulesetCharacter rulesetCharacter ||
+                !success || !ReferenceEquals(preventedBy,
+                    Api.DatabaseHelper.FeatureDefinitionDamageAffinitys.DamageAffinityBarbarianRelentlessRage))
             {
                 actor.CurrentHitPoints = currentHitPoints;
 
@@ -2677,7 +2690,17 @@ public static class RulesetCharacterPatcher
             string damageType,
             out RollOutcome outcome)
         {
-            RollConcentrationCheck(__instance, saveDC, damageType, out outcome);
+            // A concentration save keeps concentration after the damage is settled; it isn't a save against that
+            // damage, so bonuses tied to a damage type (Dwarven Resilience against poison, for one) don't apply to it.
+            // Concentration-specific bonuses (magic affinities' concentration advantage, IRollSavingCheckInitiated)
+            // still do.
+            //PATCH: supports `CapConcentrationSaveDc30`: the 2024 rules cap a concentration save's DC at 30
+            if (Main.Settings.CapConcentrationSaveDc30)
+            {
+                saveDC = Math.Min(saveDC, 30);
+            }
+
+            RollConcentrationCheck(__instance, saveDC, string.Empty, out outcome);
 
             return false;
         }
@@ -2858,9 +2881,19 @@ public static class RulesetCharacterPatcher
     [UsedImplicitly]
     public static class SpendSpellSlot_Patch
     {
+        // spell casts that use a repertoire (for its save DC and attack bonus) but spend no slot from it
+        internal static readonly ConditionalWeakTable<RulesetEffectSpell, object> CastsWithoutSlot = new();
+
         [UsedImplicitly]
         public static bool Prefix(RulesetCharacter __instance, RulesetEffectSpell activeSpell)
         {
+            if (CastsWithoutSlot.TryGetValue(activeSpell, out _))
+            {
+                __instance.AccountUsedMagicAndPower(activeSpell.SlotLevel);
+
+                return false;
+            }
+
             FeatureDefinition preserveSlotThresholdFeature = null;
             var preserveSlotThreshold = int.MaxValue;
 

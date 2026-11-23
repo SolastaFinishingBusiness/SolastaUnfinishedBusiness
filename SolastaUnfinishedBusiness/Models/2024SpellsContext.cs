@@ -24,21 +24,19 @@ namespace SolastaUnfinishedBusiness.Models;
 
 public static partial class Tabletop2024Context
 {
-    private static void HomeBrewSomeSpells()
+    // Shine's own definition uses the caster's spell save DC (SpellCastingFeature, Wisdom save). The setting
+    // switches it to a fixed DC of 15 and back.
+    internal static void SwitchShineCantripDC()
     {
-        //    .SetSavingThrowData(true, AttributeDefinitions.Wisdom, true,
-        //EffectDifficultyClassComputation.SpellCastingFeature, "Wisdom", 15)
-        Shine.EffectDescription.DifficultyClassComputation = EffectDifficultyClassComputation.FixedValue;
-        Shine.EffectDescription.FixedSavingThrowDifficultyClass = 15;        
-        
-
-        //not to brew
-            //Barkskin.requiresConcentration = true;
-            //Barkskin.castingTime = ActivationTime.Action;
-            //AttributeModifierBarkskin.modifierValue = 16;
-            //Barkskin.GuiPresentation.description = "Spell/&BarkskinDescription";
-            //ConditionBarkskin.GuiPresentation.description = "Rules/&ConditionBarkskinDescription";
-
+        if (Main.Settings.SwapShineCantrip)
+        {
+            Shine.EffectDescription.DifficultyClassComputation = EffectDifficultyClassComputation.FixedValue;
+            Shine.EffectDescription.FixedSavingThrowDifficultyClass = 15;
+        }
+        else
+        {
+            Shine.EffectDescription.DifficultyClassComputation = EffectDifficultyClassComputation.SpellCastingFeature;
+        }
     }
 
     private static readonly List<(string, string)> GuidanceProficiencyPairs =
