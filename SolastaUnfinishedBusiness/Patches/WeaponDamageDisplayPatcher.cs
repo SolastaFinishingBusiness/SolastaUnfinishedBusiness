@@ -314,14 +314,26 @@ internal static class WeaponDamageDisplay
         return string.IsNullOrEmpty(type) ? "???" : Gui.Format("UI/&UnidentifiedItemFormat", type);
     }
 
-    // An item's type, as the player can tell it without identifying the item:
-    //   - a weapon: its weapon type ("Longsword"), the WeaponTypeDefinition's title;
-    //   - armour, shields included: its armour type ("Chain Mail", "Shield"), the ArmorTypeDefinition's title;
-    //   - anything else: the type line the game's own tooltip shows under the name of an unidentified item
-    //     (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity, which the
-    //     mod writes in GuiItemTweaks.SubTitleWithoutRarity), such as "Ring" or "Tool".
-    // Empty when none of these gives a name: an item with no override subtype and none of the kinds the type line
-    // knows (such as a kind of item added by other code); its entry then prints "???".
+    // An item's type, as the player can tell it without identifying the item: the most specific name its definition
+    // records, in this order (the first that gives one wins):
+    //   1. a weapon: its weapon type ("Longsword"), the WeaponTypeDefinition's title;
+    //   2. armour, shields included: its armour type ("Chain Mail", "Shield"), the ArmorTypeDefinition's title;
+    //   3. ammunition: its ammunition type ("Arrow"), the AmmunitionTypeDefinition's title;
+    //   4. a tool: its tool type ("Thieves' Tools"), the ToolTypeDefinition's title;
+    //   5. a musical instrument: "Musical Instrument" (Tooltip/&TagMusicalInstrumentTitle). Not the instrument type:
+    //      most of the game's instrument types have no text of their own (only the Lyre's title is translated);
+    //   6. a usable device tagged as a scroll, potion or poison: "Scroll", "Potion" (the game's
+    //      Equipment/&ItemType...Title) or "Poison" (Tooltip/&TagPoisonTitle);
+    //   7. an item worn on a finger: "Ring" (Equipment/&ItemTypeRingTitle), the game's own word, though it records
+    //      rings by their slot alone;
+    //   8. the type line the game's own tooltip shows under the name of an unidentified item
+    //      (GuiEquipmentItem.get_Subtitle, IL_0007 to IL_0034, GuiItemDefinition.SubtitleWithoutRarity, which the
+    //      mod writes in GuiItemTweaks.SubTitleWithoutRarity): "Spell Focus (Arcane)", "Wondrous Item" for items the
+    //      game marks so, "Container", "Starter Pack", "Light Source", "Spellbook";
+    //   9. any other item that can be worn or held (a slot besides the container slot), not a document: "Wondrous
+    //      Item" (Equipment/&ItemTypeWondrousTitle), as amulets, cloaks, belts, bracers and the like record no type.
+    // Empty otherwise (documents, gems, wealth, food and items of a kind added by other code); the entry then
+    // prints "???".
     private static string ItemTypeOf(ItemDefinition definition)
     {
         if (!definition)
@@ -329,15 +341,86 @@ internal static class WeaponDamageDisplay
             return null;
         }
 
-        var typeTitle = definition.IsWeapon
-            ? definition.WeaponDescription?.WeaponTypeDefinition?.GuiPresentation?.Title
-            : definition.IsArmor
-                ? definition.ArmorDescription?.ArmorTypeDefinition?.GuiPresentation?.Title
-                : null;
+        var typeTitle = TypeDefinitionTitleOf(definition);
 
-        return string.IsNullOrEmpty(typeTitle)
-            ? new GuiItemDefinition(definition).SubtitleWithoutRarity
-            : Gui.Localize(typeTitle);
+        if (!string.IsNullOrEmpty(typeTitle))
+        {
+            return Gui.Localize(typeTitle);
+        }
+
+        var typeLine = new GuiItemDefinition(definition).SubtitleWithoutRarity;
+
+        if (!string.IsNullOrEmpty(typeLine))
+        {
+            return typeLine;
+        }
+
+        var worn = !definition.IsDocument &&
+                   definition.SlotTypes != null &&
+                   definition.SlotTypes.Any(x => x != EquipmentDefinitions.SlotTypeContainer);
+
+        return worn ? Gui.Localize("Equipment/&ItemTypeWondrousTitle") : null;
+    }
+
+    // the title key of steps 1 to 7 of ItemTypeOf, or null when none applies
+    private static string TypeDefinitionTitleOf(ItemDefinition definition)
+    {
+        if (definition.IsWeapon)
+        {
+            return definition.WeaponDescription?.WeaponTypeDefinition?.GuiPresentation?.Title;
+        }
+
+        if (definition.IsArmor)
+        {
+            return definition.ArmorDescription?.ArmorTypeDefinition?.GuiPresentation?.Title;
+        }
+
+        if (definition.IsAmmunition)
+        {
+            return TypeTitleOf<AmmunitionTypeDefinition>(definition.AmmunitionDescription?.AmmunitionType);
+        }
+
+        if (definition.IsTool)
+        {
+            return TypeTitleOf<ToolTypeDefinition>(definition.ToolDescription?.ToolType);
+        }
+
+        if (definition.IsMusicalInstrument)
+        {
+            return "Tooltip/&TagMusicalInstrumentTitle";
+        }
+
+        var tags = definition.IsUsableDevice ? definition.UsableDeviceDescription?.UsableDeviceTags : null;
+
+        if (tags != null)
+        {
+            if (tags.Contains(TagsDefinitions.UsableDeviceTagScroll))
+            {
+                return "Equipment/&ItemTypeScrollTitle";
+            }
+
+            if (tags.Contains(GameConstants.TagPotion))
+            {
+                return "Equipment/&ItemTypePotionTitle";
+            }
+
+            if (tags.Contains(GameConstants.TagPoison))
+            {
+                return "Tooltip/&TagPoisonTitle";
+            }
+        }
+
+        return definition.SlotTypes != null && definition.SlotTypes.Contains(EquipmentDefinitions.SlotTypeFinger)
+            ? "Equipment/&ItemTypeRingTitle"
+            : null;
+    }
+
+    // the title key of a type definition found by name, or null
+    private static string TypeTitleOf<T>(string name) where T : BaseDefinition
+    {
+        return !string.IsNullOrEmpty(name) && DatabaseRepository.GetDatabase<T>().TryGetElement(name, out var type)
+            ? type.GuiPresentation?.Title
+            : null;
     }
 
     // The character whose worn items an entry being formatted comes from, while it is known: the owner of the stat
