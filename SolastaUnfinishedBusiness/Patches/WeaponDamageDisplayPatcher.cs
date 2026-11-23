@@ -88,10 +88,11 @@ internal static class WeaponDamageDisplay
     // when that is unknown; with no name, it is AttackWeapon's. The Base entry is folded in only when that weapon's
     // own damage bonus is exactly the Base value.
     //
-    // With AttackWeapon known, that ties the Equipment entry to the attack's weapon (without it, a breakdown shown
-    // outside AttackModeBox.Bind, the first named weapon entry is taken). The Base entry itself is only recognised
-    // by its type and value in either case: a Base entry from something else, anywhere in the list, with the same
-    // value as the weapon's own bonus would be folded or renamed too. No list the game builds is known to have that
+    // With AttackWeapon known, that ties the Equipment entry to the attack's weapon. Without it (a breakdown shown
+    // outside AttackModeBox.Bind), the first Equipment entry counts only when its name resolves to a weapon; an
+    // unnamed or unresolved first entry means no fold, and later Equipment entries are not looked at. The Base
+    // entry itself is only recognised by its type and value in either case: a Base entry from something else,
+    // anywhere in the list, with the same value as the weapon's own bonus would be folded or renamed too. No list the game builds is known to have that
     // shape: RefreshAttackMode writes FeatureSourceType.Base only for the weapon's own bonus (IL_0543); its other
     // entries take the ability score, the item, or each feature's origin as their source type.
     //   - Both there: one entry where the enhancement was, worth the sum, under the weapon's name ("+3: Base" and
