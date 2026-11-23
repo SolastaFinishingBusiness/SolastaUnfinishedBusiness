@@ -287,18 +287,21 @@ internal static class WeaponDamageDisplay
         });
     }
 
-    // An item's name in a breakdown, kept to what the player knows: for an item that isn't identified yet, its
-    // unidentified title ("Magnificent Longsword"), the name GuiEquipmentItem.Title shows for it everywhere else.
-    // The game's own entries name the item by its definition's real title (Gui.FormatTrendInfo looks the
-    // definition up by name), on the to-hit breakdown as well as the damage one, so this applies to every entry
-    // that names an item. Returns null when the name the entry prints may stay.
+    // what a breakdown entry prints for an item that isn't identified yet: no name at all, so the line says neither
+    // what the item is nor which item it is ("+4: ???"); the same in every language
+    private const string UnidentifiedName = "???";
+
+    // An item's name in a breakdown, kept to what the player knows: for an item that isn't identified yet,
+    // UnidentifiedName. The game's own entries name the item by its definition's real title (Gui.FormatTrendInfo
+    // looks the definition up by name), on the to-hit breakdown as well as the damage one, so this applies to every
+    // entry that names an item. Returns null when the name the entry prints may stay.
     //
-    // The game shows the unidentified title when the definition is magical, requires identification, and the item
-    // instance isn't identified (GuiEquipmentItem.get_Title, IL_0007 to IL_0054; RulesetItemExtensions
-    // .NeedsIdentification is the same test). The instance is taken from the entry's source, or the attack whose box
+    // An item counts as unidentified by the test the game uses to show its unidentified title ("Magnificent
+    // Longsword"): the definition is magical, requires identification, and the item instance isn't identified
+    // (GuiEquipmentItem.get_Title, IL_0007 to IL_0054; RulesetItemExtensions.NeedsIdentification is the same test). The instance is taken from the entry's source, or the attack whose box
     // is being filled (AttackItem) when it is of that definition. Otherwise (an entry naming an item that isn't the
     // attack's, such as armour on a stat box) the party's items of that definition are looked at: the name stays
-    // only when one of them is identified. With no instance found, the unidentified title is shown, so nothing
+    // only when one of them is identified. With no instance found, the item counts as unidentified, so nothing
     // reveals an item the player hasn't identified.
     internal static string UnidentifiedNameOf(RuleDefinitions.TrendInfo trend)
     {
@@ -326,14 +329,7 @@ internal static class WeaponDamageDisplay
 
         var identified = item?.Identified ?? PartyHasIdentified(definition);
 
-        if (identified)
-        {
-            return null;
-        }
-
-        var title = definition.ItemPresentation?.UnidentifiedTitle;
-
-        return string.IsNullOrEmpty(title) ? null : Gui.Localize(title);
+        return identified ? null : UnidentifiedName;
     }
 
     // whether any party member carries an identified item of this definition
@@ -568,8 +564,8 @@ public static class WeaponDamageDisplayPatcher
     }
 
     //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
-    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet shows the item's
-    //unidentified title instead of its real one. Every breakdown goes through Gui.FormatTrendInfo, so this covers
+    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet shows "???" instead
+    //of the item's name. Every breakdown goes through Gui.FormatTrendInfo, so this covers
     //all of them, not only damage.
     [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
