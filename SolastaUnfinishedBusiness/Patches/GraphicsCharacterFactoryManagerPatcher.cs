@@ -1,8 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-#if FB_DEVELOPMENT
-using System.Globalization;
-using System.IO;
-#endif
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
@@ -88,7 +84,7 @@ public static class GraphicsCharacterFactoryManagerPatcher
 
             if (feature.GripAlongLength is { } grip)
             {
-                MoveGripAlongLength(transform, GripForTuning(grip));
+                MoveGripAlongLength(transform, grip);
             }
         }
 
@@ -153,34 +149,6 @@ public static class GraphicsCharacterFactoryManagerPatcher
                 min = Mathf.Min(min, z);
                 max = Mathf.Max(max, z);
             }
-        }
-
-        /// <summary>
-        ///     Development builds only: a number from 0 to 1 in <c>WieldedGripOverride.txt</c> in the mod's folder replaces every
-        ///     grip fraction, read each time a model is put in a hand, so the grip can be tuned in game by editing the
-        ///     file and re-equipping the weapon. Release builds always use the item's own value.
-        /// </summary>
-        private static float GripForTuning(float grip)
-        {
-#if FB_DEVELOPMENT
-            try
-            {
-                var path = Path.Combine(Main.ModFolder, "WieldedGripOverride.txt");
-
-                if (File.Exists(path) &&
-                    float.TryParse(File.ReadAllText(path).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture,
-                        out var tuned) &&
-                    tuned is >= 0f and <= 1f) // NaN and fractions outside the model fail this and are ignored
-                {
-                    return tuned;
-                }
-            }
-            catch (IOException)
-            {
-                // a file being written while read: keep the item's value
-            }
-#endif
-            return grip;
         }
     }
 
