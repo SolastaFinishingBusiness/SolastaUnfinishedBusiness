@@ -287,9 +287,15 @@ internal static class WeaponDamageDisplay
         });
     }
 
-    // what a breakdown entry prints for an item that isn't identified yet: no name at all, so the line says neither
-    // what the item is nor which item it is ("+4: ???"); the same in every language
-    internal const string UnidentifiedName = "???";
+    // The name a breakdown entry prints for an item that isn't identified yet: the definition's unidentified title
+    // ("Magnificent Longsword"), localized as GuiEquipmentItem.get_Title localizes it (IL_0037 to IL_004f), so the
+    // breakdown names the item as the inventory and the attack box do. "???" only for a definition without one.
+    internal static string UnidentifiedNameOf(ItemDefinition definition)
+    {
+        var title = definition?.ItemPresentation?.UnidentifiedTitle;
+
+        return string.IsNullOrEmpty(title) ? "???" : Gui.Localize(title);
+    }
 
     // The character whose worn items an entry being formatted comes from, while it is known: the owner of the stat
     // box being refreshed (CharacterStatBox.Refresh), or the attacker of a roll the combat log is writing
@@ -413,7 +419,8 @@ internal static class WeaponDamageDisplay
 
     // Whether a stat box's list names an item that can be unidentified. Its tooltip is then formatted again on every
     // refresh: CharacterStatBox.Refresh only formats it when the value or the number of entries changed
-    // (IL_00e8 to IL_011b), and identifying an item changes neither, so the tooltip would keep "???".
+    // (IL_00e8 to IL_011b), and identifying an item changes neither, so the tooltip would keep the unidentified
+    // name.
     internal static bool NamesItemNeedingIdentification(RulesetAttribute attribute)
     {
         var trends = attribute?.ValueTrends;
@@ -434,17 +441,19 @@ internal static class WeaponDamageDisplay
     }
 
     // Gui.FormatTrendInfo's text for an entry naming an unidentified item, built as the game builds it with the
-    // item's name left out (IL_0000 to IL_0083 for the character's name, IL_02bd to IL_02e8 for the item branch,
-    // IL_05bc to IL_05e4 for the details): an entry whose source is a character reads "<character> uses ???"
-    // (Tooltip/&SourceUsesItemFormat), any other "???", and the entry's details follow as they would.
-    internal static string UnidentifiedEntryText(RuleDefinitions.TrendInfo trend)
+    // item's unidentified name in place of its real title (IL_0000 to IL_0083 for the character's name, IL_02bd to
+    // IL_02e8 for the item branch, IL_05bc to IL_05e4 for the details): an entry whose source is a character reads
+    // "<character> uses <unidentified name>" (Tooltip/&SourceUsesItemFormat), any other the unidentified name alone,
+    // and the entry's details follow as they would.
+    internal static string UnidentifiedEntryText(RuleDefinitions.TrendInfo trend, ItemDefinition definition)
     {
-        var text = UnidentifiedName;
+        var name = UnidentifiedNameOf(definition);
+        var text = name;
         var actor = trend.source is RulesetCharacter character ? NameOf(character) : null;
 
         if (!string.IsNullOrEmpty(actor))
         {
-            text = Gui.Format("Tooltip/&SourceUsesItemFormat", actor, UnidentifiedName);
+            text = Gui.Format("Tooltip/&SourceUsesItemFormat", actor, name);
         }
 
         if (!string.IsNullOrEmpty(trend.additionalDetails))
@@ -755,25 +764,25 @@ public static class WeaponDamageDisplayPatcher
     }
 
     //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
-    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet prints "???" for the
-    //item (the prefix). Every breakdown goes through Gui.FormatTrendInfo, so this covers all of them, not only
-    //damage.
+    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet prints the item's
+    //unidentified name (the prefix). Every breakdown goes through Gui.FormatTrendInfo, so this covers all of them,
+    //not only damage.
     [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
     [UsedImplicitly]
     public static class Gui_FormatTrendInfo
     {
-        // an entry naming an unidentified item gets the game's text with "???" for the item, and the game's
-        // formatter, which would print the item's real title, doesn't run
+        // an entry naming an unidentified item gets the game's text with the item's unidentified name, and the
+        // game's formatter, which would print the item's real title, doesn't run
         [UsedImplicitly]
         public static bool Prefix(RuleDefinitions.TrendInfo trend, ref string __result)
         {
-            if (!WeaponDamageDisplay.NamesUnidentifiedItem(trend, out _))
+            if (!WeaponDamageDisplay.NamesUnidentifiedItem(trend, out var definition))
             {
                 return true;
             }
 
-            __result = WeaponDamageDisplay.UnidentifiedEntryText(trend);
+            __result = WeaponDamageDisplay.UnidentifiedEntryText(trend, definition);
 
             return false;
         }
