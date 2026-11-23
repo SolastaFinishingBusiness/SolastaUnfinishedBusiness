@@ -342,7 +342,8 @@ internal static class WeaponDamageDisplay
         }
 
         // A type that exists for one item only is named like that item (the Abyssal Agitator's tool type is titled
-        // "Abyssal Agitator"), so for such an item this gives its name; no item of that kind needs identification.
+        // "Abyssal Agitator"), so for such an item this gives its name. Of those that need identification (the mod's
+        // Thunder Gauntlet and Lightning Launcher), none comes here: they have an unidentified title.
         var typeTitle = TypeDefinitionTitleOf(definition);
 
         if (!string.IsNullOrEmpty(typeTitle))
