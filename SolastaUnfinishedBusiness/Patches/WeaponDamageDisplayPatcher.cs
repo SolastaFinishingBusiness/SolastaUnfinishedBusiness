@@ -59,6 +59,9 @@ internal static class WeaponDamageDisplay
     // attacked. Null elsewhere.
     internal static RulesetItem RollItem;
 
+    // the weapon of the attack being shown or rolled, for an entry that doesn't name its item
+    private static ItemDefinition WeaponOfAttack => AttackWeapon ? AttackWeapon : RollItem?.ItemDefinition;
+
     // A breakdown just changed by WithWeaponBonusCombined, and the full one, until the effect line that shows it
     // takes them (FeatureElementEffectLine.Bind, right after the formatter returned).
     private static string _pendingShort;
@@ -261,9 +264,9 @@ internal static class WeaponDamageDisplay
             return fromSource;
         }
 
-        if (trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment && AttackWeapon)
+        if (trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment && WeaponOfAttack)
         {
-            var weapon = TitleOf(AttackWeapon);
+            var weapon = TitleOf(WeaponOfAttack);
 
             if (!string.IsNullOrEmpty(weapon))
             {
@@ -354,9 +357,10 @@ internal static class WeaponDamageDisplay
     //     counts only worn items;
     //   - with no character known, the copies the party carries, containers included.
     // From the copies found, the name stays only when every one is identified; with none found, the item counts as
-    // unidentified, so nothing reveals an item the player hasn't identified. A stat entry can stand for more than one
-    // copy: RefreshArmorClass adds one entry per definition (IL_0434 to IL_0455), so two worn copies (two rings)
-    // share it, and it shows the real name only when both are identified.
+    // unidentified, so nothing reveals an item the player hasn't identified. An armour class entry has no copy of its
+    // own: RefreshArmorClass keeps one entry per definition (bonusByItem, IL_041b to IL_0461), by name with no
+    // source, so every worn copy of that definition (two rings) is checked, and the real name shows only when all of
+    // them are identified.
     internal static bool NamesUnidentifiedItem(RuleDefinitions.TrendInfo trend, out ItemDefinition definition)
     {
         var item = trend.source as RulesetItem;
@@ -366,7 +370,7 @@ internal static class WeaponDamageDisplay
         if (!definition && trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment)
         {
             definition = string.IsNullOrEmpty(trend.sourceName)
-                ? AttackWeapon
+                ? WeaponOfAttack
                 : DatabaseRepository.GetDatabase<ItemDefinition>().TryGetElement(trend.sourceName, out var named)
                     ? named
                     : null;
