@@ -289,24 +289,60 @@ internal static class WeaponDamageDisplay
 
     // what a breakdown entry prints for an item that isn't identified yet: no name at all, so the line says neither
     // what the item is nor which item it is ("+4: ???"); the same in every language
-    private const string UnidentifiedName = "???";
+    internal const string UnidentifiedName = "???";
 
-    // An item's name in a breakdown, kept to what the player knows: for an item that isn't identified yet,
-    // UnidentifiedName. The game's own entries name the item by its definition's real title (Gui.FormatTrendInfo
-    // looks the definition up by name), on the to-hit breakdown as well as the damage one, so this applies to every
-    // entry that names an item. Returns null when the name the entry prints may stay.
+    // the character whose stat box is being refreshed (CharacterStatBox.Refresh), while it is; null elsewhere
+    internal static RulesetCharacter StatCharacter;
+
+    // which character each attribute shown in a stat panel belongs to: a stat box knows only its attribute, and
+    // refreshes itself whenever the attribute changes, not only when its panel binds it
+    private static readonly ConditionalWeakTable<RulesetAttribute, RulesetCharacter> AttributeOwners = new();
+
+    // reused for inventory lookups, which only run while a tooltip text is built (main thread)
+    private static readonly List<RulesetItem> ItemsScratch = [];
+
+    // a stat panel (CharacterStatsPanel, ActiveCharacterPanel) is about to bind this character's attributes
+    internal static void NoteAttributeOwner(RulesetCharacter character)
+    {
+        if (character?.Attributes == null)
+        {
+            return;
+        }
+
+        foreach (var attribute in character.Attributes.Values.Where(x => x != null))
+        {
+            AttributeOwners.Remove(attribute);
+            AttributeOwners.Add(attribute, character);
+        }
+    }
+
+    // the character a stat box's attribute belongs to, if a stat panel bound it
+    internal static RulesetCharacter OwnerOf(RulesetAttribute attribute)
+    {
+        return attribute != null && AttributeOwners.TryGetValue(attribute, out var owner) ? owner : null;
+    }
+
+    // Whether a breakdown entry names an item the player hasn't identified, and which definition it names. The
+    // game's own entries name the item by its definition's real title (Gui.FormatTrendInfo looks the definition up
+    // by name), on to-hit, damage and stat breakdowns (armour class) alike, so this is checked for every entry.
     //
     // An item counts as unidentified by the test the game uses to show its unidentified title ("Magnificent
     // Longsword"): the definition is magical, requires identification, and the item instance isn't identified
-    // (GuiEquipmentItem.get_Title, IL_0007 to IL_0054; RulesetItemExtensions.NeedsIdentification is the same test). The instance is taken from the entry's source, or the attack whose box
-    // is being filled (AttackItem) when it is of that definition. Otherwise (an entry naming an item that isn't the
-    // attack's, such as armour on a stat box) the party's items of that definition are looked at: the name stays
-    // only when one of them is identified. With no instance found, the item counts as unidentified, so nothing
-    // reveals an item the player hasn't identified.
-    internal static string UnidentifiedNameOf(RuleDefinitions.TrendInfo trend)
+    // (GuiEquipmentItem.get_Title, IL_0007 to IL_0054; RulesetItemExtensions.NeedsIdentification is the same test).
+    // Identification belongs to the instance, and two copies of one definition can differ (a campaign's loot can
+    // hand out a copy already identified), so the instance that gave the bonus is looked for:
+    //   - the entry's own source, when it is an item;
+    //   - the item of the attack whose box is being filled (AttackItem), when it is of that definition;
+    //   - the copies of that definition carried by the character whose stat box is refreshed (StatCharacter), not
+    //     counting containers: RefreshArmorClass lists worn items only, by definition name with no source;
+    //   - with no character known (such as a roll in the combat log), the copies the party carries.
+    // From the copies found, the name stays only when every one is identified; with none found, the item counts as
+    // unidentified, so nothing reveals an item the player hasn't identified.
+    internal static bool NamesUnidentifiedItem(RuleDefinitions.TrendInfo trend, out ItemDefinition definition)
     {
         var item = trend.source as RulesetItem;
-        var definition = item?.ItemDefinition;
+
+        definition = item?.ItemDefinition;
 
         if (!definition && trend.sourceType == RuleDefinitions.FeatureSourceType.Equipment)
         {
@@ -319,7 +355,7 @@ internal static class WeaponDamageDisplay
 
         if (!definition || !definition.Magical || !definition.RequiresIdentification)
         {
-            return null;
+            return false;
         }
 
         if (item == null && AttackItem != null && AttackItem.ItemDefinition == definition)
@@ -327,35 +363,58 @@ internal static class WeaponDamageDisplay
             item = AttackItem;
         }
 
-        var identified = item?.Identified ?? PartyHasIdentified(definition);
-
-        return identified ? null : UnidentifiedName;
-    }
-
-    // whether any party member carries an identified item of this definition
-    private static bool PartyHasIdentified(ItemDefinition definition)
-    {
-        var party = Gui.GameCampaign?.Party?.CharactersList;
-
-        if (party == null)
+        if (item != null)
         {
-            return false;
+            return !item.Identified;
         }
 
-        var items = new List<RulesetItem>();
+        IEnumerable<RulesetCharacter> carriers = StatCharacter != null
+            ? [StatCharacter]
+            : Gui.GameCampaign
+                ? Gui.GameCampaign.Party?.CharactersList?.Select(x => (RulesetCharacter)x.RulesetCharacter) ?? []
+                : [];
+        var found = false;
+        // an out parameter can't be used inside the lambda below
+        var wanted = definition;
 
-        foreach (var hero in party.Select(x => x.RulesetCharacter).Where(x => x != null))
+        foreach (var carrier in carriers.Where(x => x?.CharacterInventory != null))
         {
-            items.Clear();
-            hero.CharacterInventory?.EnumerateAllItems(items);
+            ItemsScratch.Clear();
+            carrier.CharacterInventory.EnumerateAllItems(ItemsScratch, StatCharacter == null);
 
-            if (items.Any(x => x.ItemDefinition == definition && x.Identified))
+            foreach (var copy in ItemsScratch.Where(x => x.ItemDefinition == wanted))
             {
-                return true;
+                if (!copy.Identified)
+                {
+                    ItemsScratch.Clear();
+
+                    return true;
+                }
+
+                found = true;
             }
         }
 
-        return false;
+        ItemsScratch.Clear();
+
+        return !found;
+    }
+
+    // The entry's printed text with the item's name replaced by UnidentifiedName. Only the name is replaced, so a
+    // line such as "Hero uses <item>" (Tooltip/&SourceUsesItemFormat, for an entry whose source is a character)
+    // keeps the rest; the name is the definition's localized title, or the raw name Gui.FormatTrendInfo prints when
+    // it finds no title. Text that holds neither is replaced whole.
+    internal static string WithoutItemName(string text, ItemDefinition definition, string sourceName)
+    {
+        foreach (var name in new[] { TitleOf(definition), sourceName })
+        {
+            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(text) && text.Contains(name))
+            {
+                return text.Replace(name, UnidentifiedName);
+            }
+        }
+
+        return UnidentifiedName;
     }
 
     private static string TitleOf(BaseDefinition definition)
@@ -525,6 +584,53 @@ public static class WeaponDamageDisplayPatcher
         }
     }
 
+    //PATCH: the stat panels name the character whose attributes their stat boxes show, so an armour class entry
+    //naming an item can be checked against that character's own copies of it
+    [HarmonyPatch(typeof(CharacterStatsPanel), nameof(CharacterStatsPanel.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CharacterStatsPanel_Bind
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetCharacterHero hero)
+        {
+            WeaponDamageDisplay.NoteAttributeOwner(hero);
+        }
+    }
+
+    [HarmonyPatch(typeof(ActiveCharacterPanel), nameof(ActiveCharacterPanel.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class ActiveCharacterPanel_Bind
+    {
+        [UsedImplicitly]
+        public static void Prefix(GuiCharacter guiCharacter)
+        {
+            WeaponDamageDisplay.NoteAttributeOwner(guiCharacter?.RulesetCharacter);
+        }
+    }
+
+    //PATCH: while a stat box refreshes (and formats its breakdown tooltip), the character it belongs to
+    [HarmonyPatch(typeof(CharacterStatBox), nameof(CharacterStatBox.Refresh))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CharacterStatBox_Refresh
+    {
+        [UsedImplicitly]
+        public static void Prefix(CharacterStatBox __instance)
+        {
+            WeaponDamageDisplay.StatCharacter = WeaponDamageDisplay.OwnerOf(__instance.smartAttribute);
+        }
+
+        [UsedImplicitly]
+        public static Exception Finalizer(Exception __exception)
+        {
+            WeaponDamageDisplay.StatCharacter = null;
+
+            return __exception;
+        }
+    }
+
     //PATCH: the effect line has put a damage breakdown in its tooltip: a combined one keeps the full text too.
     //Bind has two overloads (this one, and Bind(string specialFormsDescription)), so the arguments are named:
     //without them Harmony can't tell which is meant, and the mod's loader skips a patch it can't resolve, which
@@ -564,8 +670,8 @@ public static class WeaponDamageDisplayPatcher
     }
 
     //PATCH: a breakdown entry that would print no source (as "+1:") names it: the object it came from, the weapon of
-    //the attack shown, or the kind of source. An entry naming an item that isn't identified yet shows "???" instead
-    //of the item's name. Every breakdown goes through Gui.FormatTrendInfo, so this covers
+    //the attack shown, or the kind of source. In an entry naming an item that isn't identified yet, the item's name
+    //is replaced by "???". Every breakdown goes through Gui.FormatTrendInfo, so this covers
     //all of them, not only damage.
     [HarmonyPatch(typeof(Gui), nameof(Gui.FormatTrendInfo))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
@@ -581,11 +687,9 @@ public static class WeaponDamageDisplayPatcher
             }
 
             // after naming an unnamed entry, which may have used the item's real title
-            var unidentified = WeaponDamageDisplay.UnidentifiedNameOf(trend);
-
-            if (unidentified != null)
+            if (WeaponDamageDisplay.NamesUnidentifiedItem(trend, out var definition))
             {
-                __result = unidentified;
+                __result = WeaponDamageDisplay.WithoutItemName(__result, definition, trend.sourceName);
             }
         }
     }
