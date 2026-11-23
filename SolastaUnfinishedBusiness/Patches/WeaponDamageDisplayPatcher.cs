@@ -28,8 +28,7 @@ namespace SolastaUnfinishedBusiness.Patches;
 // The dice line of the tooltip is right already (the game adds the enhancement to the form's bonus there), and it
 // reads the same DamageRollModifier value, so that value is not touched.
 //
-// The breakdown (2) is changed only while "Show a weapon's own damage bonus and its enhancement as one line" is on
-// (Gameplay > Campaigns, Combat section, on by default): the two entries become one, under the weapon's name, and
+// The breakdown (2) is changed so that the two entries become one, under the weapon's name, and
 // none when they add up to 0 ("+4: Excalibur"; nothing for the mace). It applies to any weapon with a damage bonus of
 // its own, although in practice only Dungeon Maker weapons have one. The full list is then still there while Alt is
 // held, the way the game shows a detailed tooltip (see ShowTooltip below).
