@@ -1,2 +1,3 @@
 - Dragon's Breath: the breath it grants no longer depends on what other rules last left in the caster's feature list when it works out the save DC, and no longer throws an error if its condition can't be found. This is hardening against the instability warning reported when a familiar uses the breath; the cause of that report wasn't confirmed.
-- Not tested in game: Dragon's Breath on a familiar or any other creature, its save DC and damage, and multiplayer.
+- Dragon's Breath: the breath's tooltip now shows the damage dice the breath will roll (3d6, plus 1d6 for each slot level above 2nd) instead of always 3d6.
+- Not tested in game: the breath's tooltip after a higher-level cast, Dragon's Breath cast by a Sorcerer or from a scroll, a hero's breath hitting a creature, and multiplayer.
