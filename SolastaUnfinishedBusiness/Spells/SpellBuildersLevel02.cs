@@ -1324,8 +1324,8 @@ internal static partial class SpellBuilders
         }
 
         /// <summary>
-        ///     The caster's spell save DC for the breath granted by this cast. A repertoire's SaveDC is the DC the game
-        ///     calculated at its last RefreshSpellRepertoires, where it fills the caster's FeaturesToBrowse with
+        ///     The caster's spell save DC for the breath granted by this cast. For a repertoire that RefreshSpellRepertoires
+        ///     refreshes, SaveDC is the DC the game calculated there at the last refresh; that method fills the caster's FeaturesToBrowse with
         ///     spellcasting affinities right before calling ComputeSaveDC. For an ability-based repertoire,
         ///     ComputeSaveDC reads that shared list and casts each entry to ISpellCastingAffinityProvider without a
         ///     null check, so calling it directly here, with whatever another rule left in the list, would throw a
