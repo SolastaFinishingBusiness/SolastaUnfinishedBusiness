@@ -1324,12 +1324,12 @@ internal static partial class SpellBuilders
         }
 
         /// <summary>
-        ///     The caster's spell save DC for the breath granted by this cast. A repertoire's SaveDC is the value the
-        ///     game keeps up to date in RefreshSpellRepertoires, where it fills the caster's FeaturesToBrowse with
-        ///     spellcasting affinities right before calling ComputeSaveDC. Calling ComputeSaveDC directly here would
-        ///     read whatever another rule left in that shared list, and the game's method casts each entry to
-        ///     ISpellCastingAffinityProvider without a null check, so any other feature type there throws a
-        ///     NullReferenceException. Without a repertoire (e.g. a scroll), the result matches the mod's
+        ///     The caster's spell save DC for the breath granted by this cast. A repertoire's SaveDC is the DC the game
+        ///     calculated at its last RefreshSpellRepertoires, where it fills the caster's FeaturesToBrowse with
+        ///     spellcasting affinities right before calling ComputeSaveDC. For an ability-based repertoire,
+        ///     ComputeSaveDC reads that shared list and casts each entry to ISpellCastingAffinityProvider without a
+        ///     null check, so calling it directly here, with whatever another rule left in the list, would throw a
+        ///     NullReferenceException on any other feature type. Without a repertoire (e.g. a scroll), the result matches the mod's
         ///     ComputeSaveDC prefix for that case: 8 + proficiency bonus.
         /// </summary>
         private static int CasterSaveDC(RulesetCharacter caster, [CanBeNull] RulesetSpellRepertoire repertoire)
