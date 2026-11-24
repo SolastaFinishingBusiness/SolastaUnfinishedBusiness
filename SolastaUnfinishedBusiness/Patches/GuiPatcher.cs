@@ -99,6 +99,32 @@ public static class GuiPatcher
             List<TrendInfo> trends,
             bool ignoreZero)
         {
+            //PATCH: a Dungeon Maker custom weapon's typed-in damage bonus and the enhancement of the item it was
+            //made from are listed as one line under the weapon's name, or not at all when they add up to 0.
+            //It is done here because this prefix writes the list instead of the game's formatter, so a second
+            //prefix on the same method would only run by the luck of patch order. When they are combined, the full
+            //list is formatted too and handed to WeaponDamageDisplay, which shows it in the tooltip while Alt is
+            //held, as the game's detailed tooltips are.
+            if (WeaponDamageDisplay.InDamageFormatter)
+            {
+                var filtered = WeaponDamageDisplay.WithWeaponBonusCombined(trends);
+
+                if (!ReferenceEquals(filtered, trends))
+                {
+                    __result = Format(output, filtered, ignoreZero);
+                    WeaponDamageDisplay.NoteCombinedBreakdown(__result, Format(output, trends, ignoreZero));
+
+                    return false;
+                }
+            }
+
+            __result = Format(output, trends, ignoreZero);
+
+            return false;
+        }
+
+        private static string Format(string output, List<TrendInfo> trends, bool ignoreZero)
+        {
             foreach (var trend in trends
                          .Where(trend => trend.value != 0 || !ignoreZero))
             {
@@ -120,9 +146,7 @@ public static class GuiPatcher
                 output += Gui.Format("{0}: {1}", value, Gui.FormatTrendInfo(trend));
             }
 
-            __result = output;
-
-            return false;
+            return output;
         }
     }
 }

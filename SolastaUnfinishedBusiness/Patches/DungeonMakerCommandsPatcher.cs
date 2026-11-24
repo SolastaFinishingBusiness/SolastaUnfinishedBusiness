@@ -1,0 +1,853 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Reflection.Emit;
+using HarmonyLib;
+using JetBrains.Annotations;
+using SolastaUnfinishedBusiness.CustomUI;
+using SolastaUnfinishedBusiness.Models;
+
+namespace SolastaUnfinishedBusiness.Patches;
+
+// The hooks of the Dungeon Maker campaign commands (issue #42). What each one is for is explained in
+// DungeonMakerCommandsContext; every patch here only passes what the game is doing on to it.
+[UsedImplicitly]
+public static class DungeonMakerCommandsPatcher
+{
+    //PATCH: work on the campaign's variable commands right after the game updated its gadgets, which is where the
+    //game itself starts and continues gadget flows. Before the first gadget update of a location that is still
+    //loading, the commands' state for that location is set up (DungeonMakerCommandsContext.BeforeGadgetUpdate):
+    //GameLocationManager.LoadLocationAsync updates the gadgets twice before it calls ReadyLocation, and flows kept
+    //in a save can start there.
+    [HarmonyPatch(typeof(GameLocation), nameof(GameLocation.UpdateGadgets))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameLocation_UpdateGadgets
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameLocation __instance)
+        {
+            DungeonMakerCommandsContext.BeforeGadgetUpdate(__instance);
+        }
+
+        [UsedImplicitly]
+        public static void Postfix()
+        {
+            DungeonMakerCommandsContext.Tick();
+        }
+    }
+
+    //PATCH: know which gadget flow is writing a variable while a Variable Operation runs. Execute only builds the
+    //coroutine, so the returned enumerator is wrapped and each of its steps is bracketed.
+    [HarmonyPatch(typeof(FunctorVariableOperation), nameof(FunctorVariableOperation.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FunctorVariableOperation_Execute
+    {
+        [UsedImplicitly]
+        public static IEnumerator Postfix(IEnumerator values, FunctorParametersDescription functorParameters)
+        {
+            try
+            {
+                while (true)
+                {
+                    var token = DungeonMakerCommandsContext.BeginVariableOperation(functorParameters);
+                    bool more;
+
+                    try
+                    {
+                        more = values.MoveNext();
+                    }
+                    finally
+                    {
+                        DungeonMakerCommandsContext.EndVariableOperation(token);
+                    }
+
+                    if (!more)
+                    {
+                        yield break;
+                    }
+
+                    yield return values.Current;
+                }
+            }
+            finally
+            {
+                (values as IDisposable)?.Dispose();
+            }
+        }
+    }
+
+    //PATCH: know which gadget the game is updating. GameGadget.Update is where the game starts a gadget's
+    //triggered flows and runs their steps, so while it lasts the gadget says which flow is running
+    //(DungeonMakerCommandsContext.RunningFlow). That is what lets a flow switched on by another flow act for the
+    //character who set the first one off, whatever functor did the switching. Nothing of the game is changed: the
+    //prefix and the finalizer only note the gadget and put the earlier note back, however the update ends.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.Update))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_Update
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadget __instance, out GameGadget __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginGadgetUpdate(__instance);
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer(GameGadget __state)
+        {
+            DungeonMakerCommandsContext.EndGadgetUpdate(__state);
+        }
+    }
+
+    //PATCH: know which flow the game is running when it runs one in a single go (a flow that is not asynchronous,
+    //every flow during the fast travel simulation, the "location entered" flows forced after a load). The other
+    //way of running a flow, as a coroutine, is read from the gadget (see the patch above).
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.ExecuteFunctorSequenceSync))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_ExecuteFunctorSequenceSync
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadget __instance, int listenerIndex, out GameGadgetListener __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginSyncFlow(__instance, listenerIndex);
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer(GameGadgetListener __state)
+        {
+            DungeonMakerCommandsContext.EndSyncFlow(__state);
+        }
+    }
+
+    //PATCH: a flow of a gadget became triggered: it gets the record of whoever is behind that (the flow that
+    //switched it on, the dialogue step, the character who set its timer going or who damaged the gadget). Every
+    //kind of flow reports its trigger to the gadget through this one method (the gadget gives it to each of its
+    //listeners as their handler), so one patch covers conditions, gadget events, variables, quest steps, timers and
+    //the rest, where a patch per kind would need some twenty methods and miss the next kind.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.ListenerStatusChanged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_ListenerStatusChanged
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameGadgetListener listener)
+        {
+            DungeonMakerCommandsContext.NoteListenerStatusChanged(listener);
+        }
+    }
+
+    //PATCH: the game starts the flow of a trigger it noted: from here on the flow acts for whoever is behind that
+    //trigger. Each kind of flow overrides AcknowledgeTrigger itself (the base method is empty), so every override
+    //in the game is patched; they are looked up, so a kind is not left out by a list going stale.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListener_AcknowledgeTrigger
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (var type in AccessTools.GetTypesFromAssembly(typeof(GameGadgetListener).Assembly))
+            {
+                if (!type.IsSubclassOf(typeof(GameGadgetListener)))
+                {
+                    continue;
+                }
+
+                var method = AccessTools.DeclaredMethod(type, nameof(GameGadgetListener.AcknowledgeTrigger),
+                    Type.EmptyTypes);
+
+                if (method != null && !method.IsAbstract)
+                {
+                    yield return method;
+                }
+            }
+        }
+
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListener __instance)
+        {
+            DungeonMakerCommandsContext.NoteFlowStarted(__instance);
+        }
+    }
+
+    //PATCH: a condition of a gadget changed: if that completes, or breaks, the conditions one of the gadget's
+    //timers waits for, the timer is set going, or stopped, by whoever's flow did it. The state is the condition's
+    //value before the call (null when the gadget did not have it yet). Nothing is changed.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.SetCondition))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_SetCondition
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadget __instance, int conditionIndex, out bool? __state)
+        {
+            __state = __instance.currentConditionStates != null &&
+                      __instance.currentConditionStates.TryGetValue(conditionIndex, out var before)
+                ? before
+                : null;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GameGadget __instance, int conditionIndex, bool state, bool? __state)
+        {
+            DungeonMakerCommandsContext.NoteConditionSet(__instance, conditionIndex, __state, state);
+        }
+    }
+
+    //PATCH: a flow resets its gadget's timers (the "reset time lapse" step): whoever's flow that is sets them going
+    [HarmonyPatch(typeof(FunctorResetTimeLapse), nameof(FunctorResetTimeLapse.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FunctorResetTimeLapse_Execute
+    {
+        [UsedImplicitly]
+        public static void Prefix(FunctorParametersDescription functorParameters)
+        {
+            DungeonMakerCommandsContext.NoteTimersReset(functorParameters);
+        }
+    }
+
+    //PATCH: know who did something to the character bound to a gadget (a button or lever that can be attacked)
+    //while the game tells the gadget about it. The game hands these four methods the character, but passes only
+    //the amount, the kind or the tag on to the gadget's flows. The state goes back when the method ends.
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterDamaged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterDamaged
+    {
+        [UsedImplicitly]
+        public static void Prefix(ulong sourceGuid, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(sourceGuid, "damaged by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterAlterationInflicted))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterAlterationInflicted
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetActor source, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(source?.Guid ?? 0, "a spell or effect of");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterTagRevealed))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterTagRevealed
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameLocationCharacter revealedBy, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(revealedBy, "revealed by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.OnBoundCharacterCharacterWasStolenItems))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_OnBoundCharacterCharacterWasStolenItems
+    {
+        [UsedImplicitly]
+        public static void Prefix(RulesetCharacter thief, out (bool, GameLocationCharacter, string) __state)
+        {
+            __state = DungeonMakerCommandsContext.BeginCauser(thief?.Guid ?? 0, "stolen from by");
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer((bool, GameLocationCharacter, string) __state)
+        {
+            DungeonMakerCommandsContext.EndCauser(__state);
+        }
+    }
+
+    //PATCH: a gadget flow's "start dialogue" step built its dialogue (or observation): the dialogue belongs to
+    //whoever set that flow off. Both of the game's start-dialogue functors build it through these methods.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class NarrativeDirectionManager_PrepareSequence
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(NarrativeDirectionManager),
+                nameof(NarrativeDirectionManager.PrepareDialogSequence));
+            yield return AccessTools.Method(typeof(NarrativeDirectionManager),
+                nameof(NarrativeDirectionManager.PrepareObservationSequence));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(NarrativeSequence __result)
+        {
+            DungeonMakerCommandsContext.NoteSequencePrepared(__result);
+        }
+    }
+
+    //PATCH: know when the game carries out the actions of a dialogue step, and for which dialogue: what they set
+    //off (a variable, a quest step, a condition) acts for whoever the dialogue belongs to. This is the only place
+    //a dialogue runs functors (NarrativeState.End calls it).
+    [HarmonyPatch(typeof(NarrativeState), nameof(NarrativeState.ExecuteFunctors))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class NarrativeState_ExecuteFunctors
+    {
+        [UsedImplicitly]
+        public static void Prefix(NarrativeState __instance, out bool __state)
+        {
+            DungeonMakerCommandsContext.BeginNarrativeActions(__instance);
+            __state = true;
+        }
+
+        // the state says the prefix ran, so each end has its beginning
+        [UsedImplicitly]
+        public static void Finalizer(bool __state)
+        {
+            if (__state)
+            {
+                DungeonMakerCommandsContext.EndNarrativeActions();
+            }
+        }
+    }
+
+    //PATCH: know when the game's Teleport functor is moving characters: an area several of them land in was
+    //activated by a group arriving together, not by one character walking in
+    [HarmonyPatch(typeof(FunctorTeleport), nameof(FunctorTeleport.Execute))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FunctorTeleport_Execute
+    {
+        [UsedImplicitly]
+        public static IEnumerator Postfix(IEnumerator values)
+        {
+            try
+            {
+                while (true)
+                {
+                    bool more;
+
+                    DungeonMakerCommandsContext.BeginGroupMove();
+
+                    try
+                    {
+                        more = values.MoveNext();
+                    }
+                    finally
+                    {
+                        DungeonMakerCommandsContext.EndGroupMove();
+                    }
+
+                    if (!more)
+                    {
+                        yield break;
+                    }
+
+                    yield return values.Current;
+                }
+            }
+            finally
+            {
+                (values as IDisposable)?.Dispose();
+            }
+        }
+    }
+
+    //PATCH: see which characters the game places, and where, while a party teleport's functor runs: that is how
+    //the command knows that every traveller arrived
+    [HarmonyPatch(typeof(GameLocationPositioningManager), nameof(GameLocationPositioningManager.TeleportCharacter))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameLocationPositioningManager_TeleportCharacter
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameLocationCharacter character, TA.int3 newPosition)
+        {
+            DungeonMakerCommandsContext.NoteCharacterTeleported(character, newPosition);
+        }
+    }
+
+    //PATCH: a character used a gadget: who it was is noted for the flow this starts, and if the flow will ask for
+    //a one-character teleport, its place in the queue is kept from this moment, as for areas and plates
+    [HarmonyPatch(typeof(GameGadget), nameof(GameGadget.Interact))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadget_Interact
+    {
+        [UsedImplicitly]
+        public static void Postfix(GameGadget __instance, int listenerIndex, GameLocationCharacter actingCharacter)
+        {
+            DungeonMakerCommandsContext.NoteInteracted(__instance, listenerIndex, actingCharacter);
+        }
+    }
+
+    //PATCH: remember whose move made an Area Activator fire (the game passes the character that moved)
+    [HarmonyPatch(typeof(GameGadgetListenerVolumetricTrigger),
+        nameof(GameGadgetListenerVolumetricTrigger.OccupationChanged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerVolumetricTrigger_OccupationChanged
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListenerVolumetricTrigger __instance, out bool __state)
+        {
+            __state = __instance.occupationTriggered;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(
+            GameGadgetListenerVolumetricTrigger __instance, GameLocationCharacter character, bool __state)
+        {
+            DungeonMakerCommandsContext.NoteOccupationChanged(
+                __instance, character, __state, __instance.occupationTriggered);
+        }
+    }
+
+    //PATCH: the same for pressure plates
+    [HarmonyPatch(typeof(GameGadgetListenerPressurePlate), nameof(GameGadgetListenerPressurePlate.OccupationChanged))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListenerPressurePlate_OccupationChanged
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameGadgetListenerPressurePlate __instance, out bool __state)
+        {
+            __state = __instance.occupationTriggered;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(
+            GameGadgetListenerPressurePlate __instance, GameLocationCharacter character, bool __state)
+        {
+            DungeonMakerCommandsContext.NoteOccupationChanged(
+                __instance, character, __state, __instance.occupationTriggered);
+        }
+    }
+
+    //PATCH: the location is going away: end what is waiting. A prefix, so it runs when the unload is asked for.
+    [HarmonyPatch(typeof(GameLocationManager), nameof(GameLocationManager.UnloadLocationAsync))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameLocationManager_UnloadLocationAsync
+    {
+        [UsedImplicitly]
+        public static void Prefix()
+        {
+            DungeonMakerCommandsContext.OnLocationUnloading();
+        }
+    }
+
+    //PATCH: keep who is behind the waiting commands and chains in the save. The game writes the campaign's
+    //variables here; right before, the mod puts its own variable among them, and right after it takes it out
+    //again, so the variable exists in the save only (DungeonMakerCommandsContext, "SAVES"). The state says the mod
+    //put it in. Reading a save is not touched here: PrepareLocation reads the variable before the loading location's
+    //first gadget update.
+    [HarmonyPatch(typeof(GameVariableManager), nameof(GameVariableManager.SerializeElements))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameVariableManager_SerializeElements
+    {
+        [UsedImplicitly]
+        public static void Prefix(IElementsSerializer serializer, out bool __state)
+        {
+            __state = serializer is { Mode: Serializer.SerializationMode.Write } &&
+                      DungeonMakerCommandsContext.BeforeVariablesSaved();
+        }
+
+        [UsedImplicitly]
+        public static void Finalizer(bool __state)
+        {
+            if (__state)
+            {
+                DungeonMakerCommandsContext.AfterVariablesSaved();
+            }
+        }
+    }
+
+    //PATCH: Dungeon Maker editor: hints above the text fields where a variable's name, or the gadget name a
+    //command variable is given, is typed (DungeonMakerNameHints says what and where). Each of these three methods
+    //is where the game ties one of those fields to what it edits; the postfix only puts a listener on the field.
+    [HarmonyPatch(typeof(UserContentEditionModal), nameof(UserContentEditionModal.Show))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserContentEditionModal_Show
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserContentEditionModal __instance)
+        {
+            DungeonMakerNameHints.ForContentModal(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(GadgetParameterLine), nameof(GadgetParameterLine.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GadgetParameterLine_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(GadgetParameterLine __instance)
+        {
+            DungeonMakerNameHints.ForGadgetLine(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(UserParameterItem), nameof(UserParameterItem.CommondBind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserParameterItem_CommondBind
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserParameterItem __instance)
+        {
+            DungeonMakerNameHints.ForParameterItem(__instance);
+        }
+    }
+
+    //PATCH: a row of the campaign editor's variable list or of the variable picker was given its variable: its name
+    //is coloured when the mod uses it (DungeonMakerNameHints, "COLOURED NAMES")
+    [HarmonyPatch(typeof(UserVariableLine), nameof(UserVariableLine.BindSpecific))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserVariableLine_BindSpecific
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserVariableLine __instance)
+        {
+            DungeonMakerNameHints.ForVariableLine(__instance);
+        }
+    }
+
+    //PATCH: the same rows say what the mod does with their variable's name while the pointer is over them
+    //(DungeonMakerNameHints.ForVariableLineHover). Bind is UserContentLine's, shared by every list of the editor;
+    //only the variable rows are given the hover. Bind is where the row learns its campaign, which the hint reads.
+    [HarmonyPatch(typeof(UserContentLine), nameof(UserContentLine.Bind))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserContentLine_Bind
+    {
+        [UsedImplicitly]
+        public static void Postfix(UserContentLine __instance, UserCampaign userCampaign)
+        {
+            if (__instance is UserVariableLine line)
+            {
+                DungeonMakerNameHints.ForVariableLineHover(line, userCampaign);
+            }
+        }
+    }
+
+    //PATCH: Dungeon Maker editors where a command can be written (location, dialogue, quest): a "?" button beside
+    //their CLOSE button opens the list of the mod's commands, and the list opens by itself the first time one of
+    //them is shown (DungeonMakerCommandsPopup). OnBeginShow is where each of these screens starts being shown.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_OnBeginShow
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.OnBeginShow));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.OnBeginShow));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.OnBeginShow));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GuiScreen __instance)
+        {
+            DungeonMakerCommandsPopup.OnEditorShown(__instance);
+        }
+    }
+
+    //PATCH: while the commands list is open over one of these editors, it takes the editor's keyboard commands
+    //(Escape closes it, the rest do nothing), and it closes when the editor is hidden (DungeonMakerCommandsPopup).
+    //While the gadget-name suggestions are open, the editor's Cancel (Escape) is theirs too
+    //(DungeonMakerNameSuggestions.TakesCancel): it only closes the list, not the selected gadget.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_HandleInput
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.HandleInput));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.HandleInput));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.HandleInput));
+        }
+
+        [UsedImplicitly]
+        public static bool Prefix(InputCommands.Id command, ref bool __result)
+        {
+            var listTakesEscape = command == InputCommands.Id.Cancel && DungeonMakerNameSuggestions.TakesCancel();
+
+            if (!listTakesEscape && DungeonMakerCommandsPopup.LetEditorHandle(command))
+            {
+                return true;
+            }
+
+            // handled: the game's input service stops looking for another handler
+            __result = true;
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CommandEditors_OnEndHide
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.DeclaredMethod(typeof(UserLocationEditorScreen),
+                nameof(UserLocationEditorScreen.OnEndHide));
+            yield return AccessTools.DeclaredMethod(typeof(UserDialogEditorScreen),
+                nameof(UserDialogEditorScreen.OnEndHide));
+            yield return AccessTools.DeclaredMethod(typeof(UserQuestEditorScreen),
+                nameof(UserQuestEditorScreen.OnEndHide));
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GuiScreen __instance)
+        {
+            DungeonMakerCommandsPopup.OnEditorHidden(__instance);
+        }
+    }
+
+    //PATCH: Dungeon Maker editor: the keys of the gadget-name suggestions list (DungeonMakerNameSuggestions,
+    //"CHOOSING WITH THE KEYS"). KeyPressed is where a TMP text field handles one key-down event. For the one field
+    //whose list is open, Up, Down, Escape, and Enter or Tab on a highlighted row are used for the list, and the
+    //event is emptied: no key code, which none of KeyPressed's key branches acts on, and character 0, which
+    //Append drops (it returns on a 0 character; no field of the game sets a validator that could change it). So
+    //neither a single-line nor a multi-line field ends its editing, moves its caret or types anything. For every
+    //other field, and every other key, the prefix does nothing at all.
+    [HarmonyPatch(typeof(TMPro.TMP_InputField), "KeyPressed")]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class TMP_InputField_KeyPressed
+    {
+        [UsedImplicitly]
+        public static void Prefix(TMPro.TMP_InputField __instance, UnityEngine.Event evt)
+        {
+            if (!DungeonMakerNameSuggestions.HandleKey(__instance, evt))
+            {
+                return;
+            }
+
+            evt.keyCode = UnityEngine.KeyCode.None;
+            evt.character = '\0';
+        }
+    }
+
+    //PATCH: Dungeon Maker editor: a press on the gadget-name suggestions list doesn't take the focus from the text
+    //field the list belongs to (DungeonMakerNameSuggestions, "CHOOSING WITH THE MOUSE"). For any other press the
+    //game's own deselect runs as always.
+    [HarmonyPatch(typeof(UnityEngine.EventSystems.PointerInputModule), "DeselectIfSelectionChanged")]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class PointerInputModule_DeselectIfSelectionChanged
+    {
+        [UsedImplicitly]
+        public static bool Prefix(UnityEngine.GameObject currentOverGo)
+        {
+            return DungeonMakerNameSuggestions.KeepsFocus(currentOverGo);
+        }
+    }
+
+    //PATCH: Dungeon Maker editors: the mouse wheel and clicks over the commands list, or over the open gadget-name
+    //suggestions, are the list's alone. Cause, from the game's code: the editors' map and graph (View.HandleInputs)
+    //read the wheel straight from Input and zoom, and take mouse presses, unless the cursor says the pointer is on
+    //the interface (Cursor.HoveredGUI). The cursors decide that in RefreshHover: the base one for an object on the
+    //game's GUI layer (Cursor.RefreshHoverBase), where the mod's panels are put (DungeonMakerNameHints
+    //.PutOnGuiLayer), but overrides that don't use the base check decide from their own lists of panels and
+    //modals, which don't hold the mod's. So, after every cursor's RefreshHover (each override; the outermost ends
+    //last), the pointer is said to be on the interface while one of these panels is under it. Nothing changes when
+    //none is open. The location editor's own check is patched as well (CursorLocationEditor_RefreshHover below).
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class Cursor_RefreshHover
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (var type in typeof(Cursor).Assembly.GetTypes())
+            {
+                if (!typeof(Cursor).IsAssignableFrom(type))
+                {
+                    continue;
+                }
+
+                var method = AccessTools.DeclaredMethod(type, nameof(Cursor.RefreshHover), Type.EmptyTypes);
+
+                if (method is { IsAbstract: false })
+                {
+                    yield return method;
+                }
+            }
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(Cursor __instance)
+        {
+            if (PointerOnModPanel())
+            {
+                __instance.HoveredGUI = true;
+            }
+        }
+
+        // the commands list is open (its dimmed layer covers the whole screen), or the pointer is on the open
+        // gadget-name suggestions
+        internal static bool PointerOnModPanel()
+        {
+            return DungeonMakerCommandsPopup.IsOpen || DungeonMakerNameSuggestions.PointerOverOpenList();
+        }
+    }
+
+    //PATCH: the location editor counts the pointer over the commands list or the open suggestions as on the
+    //interface in its own hover check. That check then stops before it looks for a room, prop or gadget under the
+    //pointer, as it does for the game's own windows, so nothing on the map behind is shown as hovered. The postfix
+    //above is too late for this cursor: by the time it runs, the check has already marked the gadget under the
+    //pointer as hovered.
+    [HarmonyPatch(typeof(CursorLocationEditor), nameof(CursorLocationEditor.RefreshHover))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class CursorLocationEditor_RefreshHover
+    {
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var setter = AccessTools.PropertySetter(typeof(Cursor), nameof(Cursor.HoveredGUI));
+            var custom = new Action<Cursor, bool>(SetHoveredGui).Method;
+
+            var found = false;
+
+            foreach (var instruction in instructions)
+            {
+                // the method's one write of HoveredGUI, right before it returns when the pointer is on the
+                // interface. The call is changed in place: a branch of the method jumps straight to it, so its
+                // labels must stay on it.
+                if (!found && instruction.Calls(setter))
+                {
+                    instruction.opcode = OpCodes.Call;
+                    instruction.operand = custom;
+                    found = true;
+                }
+
+                yield return instruction;
+            }
+
+            if (!found)
+            {
+                Main.Error("Failed to apply transpiler patch [CursorLocationEditor.RefreshHover]!");
+            }
+        }
+
+        // the editor's own answer, or true while one of the mod's panels is under the pointer
+        private static void SetHoveredGui(Cursor cursor, bool hovered)
+        {
+            cursor.HoveredGUI = hovered || Cursor_RefreshHover.PointerOnModPanel();
+        }
+    }
+
+    //PATCH: the location editor's map doesn't pan with the keyboard behind the commands list. The editor's
+    //HandleInput is held back while the list is open (CommandEditors_HandleInput), but the pan keys don't go
+    //through it: CursorLocationEditor.RefreshHover calls UserLocationViewPanel.CheckControls on every hover
+    //refresh, and CheckControls reads the four pan commands straight from the input service (IsCommandActive) and
+    //moves the map (DragLocationGround). CheckControls does nothing else, so it is skipped while the list is open
+    //and runs as always otherwise.
+    [HarmonyPatch(typeof(UserLocationViewPanel), nameof(UserLocationViewPanel.CheckControls))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class UserLocationViewPanel_CheckControls
+    {
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !DungeonMakerCommandsPopup.IsOpen;
+        }
+    }
+
+    //PATCH: keep the campaign's clock variables up to date. The state is the clock in minutes before the update.
+    [HarmonyPatch(typeof(GameTime), nameof(GameTime.UpdateTime))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameTime_UpdateTime
+    {
+        [UsedImplicitly]
+        public static void Prefix(GameTime __instance, out int __state)
+        {
+            __state = __instance.TimeInfo?.ComputeMinutes() ?? 0;
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(GameTime __instance, int __state)
+        {
+            DungeonMakerClockContext.OnTimeUpdated(__instance, __state);
+        }
+    }
+
+    //PATCH: a clock skip is one wait for an object's timers, as a long rest is (issue #42's Clock Skip
+    //specification): its "every N hours" (GameGadgetListenerHourUpdate) and "after a time"
+    //(GameGadgetListenerElapsedTime) listeners don't check themselves while a skip runs, or while a skip saved
+    //with the game waits to go on, and check once when it ends (DungeonMakerClockContext.HoldTimers, CheckTimers).
+    //The checks themselves are held, not the clock's ticks, because the game also checks from other places: its
+    //ordinary per-frame clock updates between the skip's batches, and each listener's PostLoad when a save is
+    //loaded (read in the game's IL). The ticks still run, so the elapsed-time listener
+    //keeps adding up the seconds (only while its conditions match, as the game does), and the hour listener's
+    //check compares the total hours with its last activation: the one check at the end gives a due timer one
+    //activation and restarts an hour timer's interval from the arrival hour.
+    [HarmonyPatch]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class GameGadgetListener_CheckTimer
+    {
+        [UsedImplicitly]
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(GameGadgetListenerHourUpdate),
+                nameof(GameGadgetListenerHourUpdate.CheckHoursElapsed));
+            yield return AccessTools.Method(typeof(GameGadgetListenerElapsedTime),
+                nameof(GameGadgetListenerElapsedTime.CheckSecondsElapsed));
+        }
+
+        [UsedImplicitly]
+        public static bool Prefix()
+        {
+            return !DungeonMakerClockContext.HoldTimers;
+        }
+    }
+}

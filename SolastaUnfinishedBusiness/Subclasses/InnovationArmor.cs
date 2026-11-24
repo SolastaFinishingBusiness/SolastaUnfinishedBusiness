@@ -359,11 +359,14 @@ public sealed class InnovationArmor : AbstractSubclass
             attackMode.AddAttackTagAsNeeded(TagsDefinitions.MagicalWeapon);
         }
 
+        // The armour's entries name it by its definition, with the armour itself as the source, as the game's own
+        // item entries are named: Gui.FormatTrendInfo prints the definition's title, and the breakdown can tell
+        // whether this armour is identified (WeaponDamageDisplay.NamesUnidentifiedItem). A trend's source is only
+        // serialized when it is a character (TrendInfo.SerializeAttributes), so an item there is display only.
         TrendInfo trendInfo;
         if (hitBonus != 0)
         {
-            trendInfo = new TrendInfo(hitBonus, FeatureSourceType.Equipment, armor.ItemDefinition.GuiPresentation.Title,
-                null);
+            trendInfo = new TrendInfo(hitBonus, FeatureSourceType.Equipment, armor.ItemDefinition.Name, armor);
 
             attackMode.ToHitBonus += hitBonus;
             attackMode.ToHitBonusTrends.Add(trendInfo);
@@ -377,8 +380,7 @@ public sealed class InnovationArmor : AbstractSubclass
             return;
         }
 
-        trendInfo = new TrendInfo(damageBonus, FeatureSourceType.Equipment, armor.ItemDefinition.GuiPresentation.Title,
-            null);
+        trendInfo = new TrendInfo(damageBonus, FeatureSourceType.Equipment, armor.ItemDefinition.Name, armor);
         damage.BonusDamage += damageBonus;
         damage.DamageBonusTrends.Add(trendInfo);
     }

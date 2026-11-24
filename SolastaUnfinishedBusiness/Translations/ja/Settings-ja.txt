@@ -1,4 +1,106 @@
 ModUI/&EnableChanceToPerceiveCloseRange=<i>+ 知覚されていない10マス以内の対象に気付くため、知覚判定を行う</i>
+ModUi/&DungeonMakerCategories=カテゴリー
+ModUi/&DungeonMakerCategoryArmorClass=アーマークラス
+ModUi/&DungeonMakerCategoryAuthor=作者
+ModUi/&DungeonMakerCategoryAutoStart=自動開始
+ModUi/&DungeonMakerCategoryBaseCreature=基本クリーチャー
+ModUi/&DungeonMakerCategoryBaseItem=基本アイテム
+ModUi/&DungeonMakerCategoryBuyback=買取率 %
+ModUi/&DungeonMakerCategoryCampaignStart=キャンペーン開始地点
+ModUi/&DungeonMakerCategoryChallengeRating=脅威度
+ModUi/&DungeonMakerCategoryCharisma=魅力
+ModUi/&DungeonMakerCategoryConstitution=耐久力
+ModUi/&DungeonMakerCategoryCost=価格
+ModUi/&DungeonMakerCategoryCurrentValue=現在の値
+ModUi/&DungeonMakerCategoryDexterity=敏捷力
+ModUi/&DungeonMakerCategoryDialogStates=ステート数
+ModUi/&DungeonMakerCategoryEncounterTable=遭遇表
+ModUi/&DungeonMakerCategoryEntries=項目数
+ModUi/&DungeonMakerCategoryEnvironment=環境
+ModUi/&DungeonMakerCategoryHitPoints=ヒット・ポイント
+ModUi/&DungeonMakerCategoryIdentifyFee=鑑定料
+ModUi/&DungeonMakerCategoryIntelligence=知力
+ModUi/&DungeonMakerCategoryLabel={0}：
+ModUi/&DungeonMakerCategoryLanguage=言語
+ModUi/&DungeonMakerCategoryMapSize=マップサイズ
+ModUi/&DungeonMakerCategoryMarkup=上乗せ率 %
+ModUi/&DungeonMakerCategoryMaxStartLevel=最大開始レベル
+ModUi/&DungeonMakerCategoryMinStartLevel=最小開始レベル
+ModUi/&DungeonMakerCategoryMonsterCount=モンスター項目数
+ModUi/&DungeonMakerCategoryNo=いいえ
+ModUi/&DungeonMakerCategoryNoList=開いているリストなし
+ModUi/&DungeonMakerCategoryOrderAlphabetical=A-Z
+ModUi/&DungeonMakerCategoryQuestCategory=カテゴリー
+ModUi/&DungeonMakerCategoryScope=スコープ
+ModUi/&DungeonMakerCategoryStartingValue=初期値
+ModUi/&DungeonMakerCategoryStepCount=ステップ数
+ModUi/&DungeonMakerCategoryStockEntries=在庫項目数
+ModUi/&DungeonMakerCategoryStrength=筋力
+ModUi/&DungeonMakerCategoryTerrain=地形
+ModUi/&DungeonMakerCategoryVariableType=種類
+ModUi/&DungeonMakerCategoryVariables=変数
+ModUi/&DungeonMakerCategoryVisualMood=ビジュアルムード
+ModUi/&DungeonMakerCategoryWisdom=判断力
+ModUi/&DungeonMakerCategoryYes=はい
+ModUi/&DungeonMakerNameValue={0}：{1}
+ModUi/&DungeonMakerCommandsPopupTitle=%ModName% のキャンペーンコマンド
+ModUi/&DungeonMakerCommandsPopupIntro=これらの名前のキャンペーン変数には機能があります。変数を作成し、ガジェット・会話・クエストから書き込みまたは読み取りを行ってください。
+ModUi/&DungeonMakerCommandsLegendBlue=青：キャンペーンが書き込むと機能します。
+ModUi/&DungeonMakerCommandsLegendRed=赤：MOD が書き込みます。そこに保存した値は上書きされます。
+ModUi/&DungeonMakerCommandsGroupCommands=コマンド
+ModUi/&DungeonMakerCommandsGroupRequests=リクエストとスイッチ
+ModUi/&DungeonMakerCommandsGroupReadouts=表示とカウンター
+ModUi/&DungeonMakerCommandsGroupStatuses=ステータス
+ModUi/&DungeonMakerCommandsGroupOwn=MOD 自身の変数
+ModUi/&DungeonMakerCommandsPopupGuide=完全なガイド：Mod UI > Dungeon Maker > キャンペーンコマンド（MOD フォルダー内の Documentation/DungeonMakerCommands.md）。
+ModUi/&DungeonMakerCommandsPopupClose=閉じる
+ModUi/&DungeonMakerCommandsPopupHide=今後は表示しない
+ModUi/&DungeonMakerCommandsMenuButton=キャンペーンコマンド
+ModUi/&DungeonMakerCommandsMenuShowPopup=ロケーション・会話・クエストのエディターを初めて開いたときにキャンペーンコマンドの一覧を表示する <i><color=#F0DAA0>[ゲームを起動するたびに一度。エディターの ? ボタンでいつでも開けます]</color></i>
+ModUi/&ShowDungeonMakerCommandHints=キャンペーンコマンドのヒントを表示する <i><color=#F0DAA0>[コマンド変数の働き。変数名の入力中や、一覧で変数にポインターを合わせたときに表示]</color></i>
+ModUi/&ShowDungeonMakerErrorHints=キャンペーンコマンドのエラーヒントを表示する <i><color=#F0DAA0>[コマンドの値がキャンペーン内の何も指しておらず、コマンドが何もしないときの警告]</color></i>
+ModUi/&ShowDungeonMakerNameSuggestions=コマンドの値を入力するときに候補のガジェット名一覧を表示する
+ModUi/&DungeonMakerHintDialogTrigger=%ModName% のコマンド。String：NPC またはオブジェクトの名前を書き込むと、パーティーメンバーがクリックしたときと同じようにその会話が始まります。その後 MOD が空にします。
+ModUi/&DungeonMakerHintRollTrigger=%ModName% のコマンド。String：ロールアクティベーターの名前を書き込むと、このフローを起動したキャラクターが、それを使ったときと同じようにその判定を行います。その後 MOD が空にします。
+ModUi/&DungeonMakerHintTeleportNode=%ModName% のコマンド。String：ガジェット（通常は Node）の名前を書き込むと、このフローを起動したキャラクターがその隣にテレポートします。その後 MOD が空にします。
+ModUi/&DungeonMakerHintTeleportPartyNode=%ModName% のコマンド。String：ガジェット（通常は Node）の名前を書き込むと、ゲストを含むパーティー全員がその隣にテレポートします。その後 MOD が空にします。
+ModUi/&DungeonMakerHintListGadgets=%ModName% のツール。Int：1 でこのロケーションの操作できるガジェットを、2 で全ガジェットを条件付きで MOD のログに一覧表示します（Node や松明の名前を探すため）。MOD が 0 に戻します。
+ModUi/&DungeonMakerHintTorchesLit=%ModName% の松明制御。Int：1 でこのロケーションの松明をすべて点け、2 ですべて消します。0 は何もしません。
+ModUi/&DungeonMakerHintTorchesAuto=%ModName% の松明制御。Int または Bool：オン（1）の間、屋外マップの松明は 18:00 から 08:00 まで点き、日中は消えます。
+ModUi/&DungeonMakerHintTorchOne=%ModName% の松明制御。Torch_ に松明のガジェット名を続けた名前の Int：1 でその松明を点け、2 で消します。Torches_Lit と Torches_Auto より優先されます。
+ModUi/&DungeonMakerHintClockSkipBy=%ModName% の時計コマンド。Int：1 から {0} までの数を書き込むと、ゲーム内時計をその数の{1}だけ一度に進めます。MOD が 0 に戻します。戦闘中は不可。
+ModUi/&DungeonMakerHintClockSkipToDay=%ModName% の時計コマンド。Int：日の番号（Clock_CampaignDay と同じ数え方で、1〜180 日先）を書き込むと、時計をその日の 00:00 に、Clock_SkipToHour も書き込めばその時刻に進めます。戦闘中は不可。
+ModUi/&DungeonMakerHintClockSkipToHour=%ModName% の時計コマンド。Int：1〜23 の時刻を書き込むと、時計をその時刻（今日、過ぎていれば明日）に進めます。24 は次の真夜中です。戦闘中は不可。
+ModUi/&DungeonMakerHintClockCount=%ModName% の時計スイッチ。Int：1 にすると、ゲーム内時間が 1 {1} 過ぎるごとに MOD が {0} に 1 を足します。0 にするとカウントを止めます。
+ModUi/&DungeonMakerHintClockCounter=%ModName% の時計カウンター。Int：{0} が 1 の間、時間の過ぎ方にかかわらず、ゲーム内時間が 1 {1} 過ぎるごとに MOD がここに 1 を足します。数え直すには自分で 0 に戻してください。
+ModUi/&DungeonMakerHintClockReadout=%ModName% の時計の読み取り値。Int：MOD が常に{0}にしておきます。読み取り専用で、書き込まないでください。
+ModUi/&DungeonMakerClockHoldsHour=現在の時（0〜23）
+ModUi/&DungeonMakerClockHoldsMinute=現在の分（0〜59）
+ModUi/&DungeonMakerClockHoldsDay=日誌に表示される日の番号（最初の日が 1 日目）
+ModUi/&DungeonMakerClockHoldsDayOfMonth=月の日（0〜29）
+ModUi/&DungeonMakerClockHoldsMonth=月（0〜11）
+ModUi/&DungeonMakerClockHoldsYear=年
+ModUi/&DungeonMakerClockHoldsCampaignDay=キャンペーン開始からの日数（最初の日が 1）
+ModUi/&DungeonMakerClockUnitMinute=分
+ModUi/&DungeonMakerClockUnitHour=時間
+ModUi/&DungeonMakerClockUnitDay=日
+ModUi/&DungeonMakerClockUnitHours=時間
+ModUi/&DungeonMakerClockUnitDays=日
+ModUi/&DungeonMakerHintStatus={0} のステータス。%ModName% が書き込みます（String）：Pending（待機中）、Running、Succeeded、Failed、Cancelled。読み取り専用で、書き込まないでください。
+ModUi/&DungeonMakerHintInternal=%ModName% はこの名前で独自のデータ（進行中の時間スキップや保存されたコマンド）を保持します。作成も書き込みもせず、別の名前を選んでください。
+ModUi/&DungeonMakerHintWrittenAs=このキャンペーンは {0} に自分で書き込んでいるため、MOD はそれに触れず、代わりに {1} に書き込みます。
+ModUi/&DungeonMakerHintNoGadgetLocation=このロケーションに '{0}' という名前のものはありません。{1} は何も起こしません。
+ModUi/&DungeonMakerHintNoGadgetCampaign=このキャンペーンに '{0}' という名前のものはありません。{1} は何も起こしません。
+ModUi/&DungeonMakerHintClosest=近い名前：{0}
+ModUi/&DungeonMakerSearch=検索...
+ModUi/&DungeonMakerSearchClear=クリア
+ModUi/&DungeonMakerSortAscending=昇順
+ModUi/&DungeonMakerSortDefault=既定
+ModUi/&DungeonMakerSortDescending=降順
+ModUi/&DungeonMakerSortLabel=並び順：
+ModUi/&DungeonMakerSortName=名前
+ModUi/&DungeonMakerSortTitle=タイトル
+ModUi/&DungeonMakerSortType=種類
 ModUi/&SyncAiPerceptionChecks=AIは行動を決める前に、共有された知覚判定を最大3秒待ち、それでも届かない判定はAIを動かしているコンピューターで振る <i><color=#F0DAA0>[知覚されていない対象に知覚判定を行うルールのオプションが有効な場合；オフ：従来どおりAIを実行しているコンピューターで判定し、全プレイヤーがゲーム本体の「ゲーム > ゲームプレイ > ランダムシードを保存する」を同じ設定にしていない限り、非同期が起きる可能性が非常に高い（同じでも起こり得る）；マルチプレイのみ]</color></i>
 ModUI/&EnableCriticalHitsMissesAt10=ACと変更された攻撃ロール結果の違いが10以上の場合、クリティカルヒットとミスを有効にします
 ModUI/&EnableDamageOnFailedJumpCheck=失敗したジャンプチェックに1D4ダメージを適用します
@@ -261,7 +363,6 @@ ModUi/&EnableSorcererMetamagic2024=<color=#D89555>メタマジック</color>を�
 ModUi/&EnableSorcererOrigin2024=<color=#D89555>オリジン</color>をレベル1ではなくレベル3で有効にする
 ModUi/&EnableSorcererQuickenedAction=<color=#D89555>クイック呪文</color>アクションを有効にすると、クイック呪文メタマジックを適用したメインアクション呪文をキャストできるようになります。
 ModUi/&EnableSorcererSorcerousRestoration2024=レベル5で<color=#D89555>魔法による回復</color>を有効にする
-ModUi/&EnableSortingDungeonMakerAssets=ダンジョンメーカーエディタでアセットの並べ替えを有効にする
 ModUi/&EnableSpeech=カスタム キャンペーンでスピーチを有効にする <i><color=#F0DAA0>[ナレーションとヒーローのみ]</color></i>
 ModUi/&EnableSpeechActorHelp=• 俳優を選択
 ModUi/&EnableSpeechOnNpcs=<i>+ NPC のスピーチを有効にする <color=#F0DAA0>[キャンペーン マッピングまたは自動割り当てから]</color></i>
@@ -604,3 +705,13 @@ ModUi/&SearchClear=クリア
 ModUi/&SearchNoResults=「{0}」に一致する設定はありません。
 ModUi/&SearchSettings=設定を検索：
 ModUi/&WarnBeforeCrafting=製作開始時に、素材がすぐに消費されることと製作の判定が失敗しうることを警告する <i><color=#F0DAA0>[プライムド品の代わりに使われる通常の武器や防具も一覧表示]</color></i>
+ModUi/&DungeonMakerListToolsHeader=<color=#F0DAA0>ダンジョンメーカー画面の検索・並べ替えツール：</color>
+ModUi/&DungeonMakerListToolsEditor=キャンペーンエディター
+ModUi/&DungeonMakerListToolsPicker=変数の選択
+ModUi/&DungeonMakerListToolsCheats=チート > キャンペーン変数
+ModUi/&DungeonMakerListToolsPalettes=ロケーションエディターのパレット（ガジェット、小道具、部屋）
+ModUi/&DungeonMakerListToolsSearch=検索
+ModUi/&DungeonMakerListToolsPageSort=ページの並べ替え（並べ替え：と方向の矢印）
+ModUi/&DungeonMakerListToolsCategoryOrder=カテゴリの並べ替え（カテゴリの順序：デフォルトまたは A-Z）
+ModUi/&DungeonMakerListToolsListSort=カテゴリ別の並べ替え（各リストに独自の並べ替えがあり、行に元々表示されていない値はポップアップで表示）
+ModUi/&DungeonMakerListToolsSort=並べ替え（並べ替え：にリスト独自の項目を含む、と方向の矢印。行に元々表示されていない値はポップアップで表示）

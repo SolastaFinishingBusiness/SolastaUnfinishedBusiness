@@ -13,6 +13,7 @@ using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.CustomUI;
 using SolastaUnfinishedBusiness.Interfaces;
 using SolastaUnfinishedBusiness.Models;
+using SolastaUnfinishedBusiness.Patches;
 using SolastaUnfinishedBusiness.Properties;
 using SolastaUnfinishedBusiness.Validators;
 using TA;
@@ -1502,16 +1503,28 @@ internal static class MeleeCombatFeats
 
             var outcome = GLBM.GetAttackResult(attackRoll, modifier, rulesetDefender);
 
-            Gui.Game.GameConsole.AttackRolled(
-                rulesetAttacker,
-                rulesetDefender,
-                powerAdvantage,
-                outcome,
-                attackRoll + modifier,
-                attackRoll,
-                modifier,
-                attackModifier.AttacktoHitTrends,
-                []);
+            // The log line is written outside RulesetCharacter.RollAttackMode, so the weapon of this attack is
+            // given to the breakdown here: its entries then name the weapon as identified or not by this copy
+            // (WeaponDamageDisplay.RollItem).
+            WeaponDamageDisplay.RollItem = attackMode.SourceObject as RulesetItem;
+
+            try
+            {
+                Gui.Game.GameConsole.AttackRolled(
+                    rulesetAttacker,
+                    rulesetDefender,
+                    powerAdvantage,
+                    outcome,
+                    attackRoll + modifier,
+                    attackRoll,
+                    modifier,
+                    attackModifier.AttacktoHitTrends,
+                    []);
+            }
+            finally
+            {
+                WeaponDamageDisplay.RollItem = null;
+            }
 
             if (outcome is not (RollOutcome.Success or RollOutcome.CriticalSuccess))
             {
