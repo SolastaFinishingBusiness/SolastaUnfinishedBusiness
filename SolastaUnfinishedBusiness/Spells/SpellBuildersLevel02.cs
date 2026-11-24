@@ -1319,8 +1319,22 @@ internal static partial class SpellBuilders
                 // store info from spell Level
                 activeCondition.effectLevel = actionCastSpell.ActiveSpell.SlotLevel;
                 // store info for caster Spell Save DC
-                activeCondition.Amount = rulesetCaster.ComputeSaveDC(actionCastSpell.activeSpell.SpellRepertoire);
+                activeCondition.Amount = CasterSaveDC(rulesetCaster, actionCastSpell.ActiveSpell.SpellRepertoire);
             }
+        }
+
+        /// <summary>
+        ///     The caster's spell save DC for the breath granted by this cast. A repertoire's SaveDC is the value the
+        ///     game keeps up to date in RefreshSpellRepertoires, where it fills the caster's FeaturesToBrowse with
+        ///     spellcasting affinities right before calling ComputeSaveDC. Calling ComputeSaveDC directly here would
+        ///     read whatever another rule left in that shared list, and the game's method casts each entry to
+        ///     ISpellCastingAffinityProvider without a null check, so any other feature type there throws a
+        ///     NullReferenceException. Without a repertoire (e.g. a scroll), the result matches the mod's
+        ///     ComputeSaveDC prefix for that case: 8 + proficiency bonus.
+        /// </summary>
+        private static int CasterSaveDC(RulesetCharacter caster, [CanBeNull] RulesetSpellRepertoire repertoire)
+        {
+            return repertoire?.SaveDC ?? 8 + caster.TryGetProficiencyBonus();
         }
     }
 
@@ -1335,10 +1349,12 @@ internal static partial class SpellBuilders
             RulesetCharacter character,
             RulesetEffect rulesetEffect)
         {
-            character.TryGetConditionOfCategoryAndType(
-                AttributeDefinitions.TagEffect,
-                conditionDragonsBreath.Name,
-                out var activeCondition);
+            // the condition holds the slot level and the caster's DC; IsValid uses the same lookup, so this only
+            // fails if the condition was removed in between, and then the breath keeps its built-in values
+            if (!TryGetBreathCondition(character, out var activeCondition))
+            {
+                return effectDescription;
+            }
 
             //set upcast damage dice: 3 + ( slot Lv - base spell Lv(2) )
             effectDescription.FindFirstDamageForm().diceNumber = 1 + activeCondition.effectLevel;
@@ -1358,8 +1374,18 @@ internal static partial class SpellBuilders
             RulesetCharacter character,
             EffectDescription effectDescription)
         {
-            return character.HasConditionOfType(conditionDragonsBreath) &&
-                   definition == powerDragonsBreath;
+            // checks the condition in the same category GetEffectDescription reads it from (the one the spell's
+            // condition form applies it in); HasConditionOfType would also accept it in any other category
+            return definition == powerDragonsBreath &&
+                   TryGetBreathCondition(character, out _);
+        }
+
+        private bool TryGetBreathCondition(RulesetCharacter character, out RulesetCondition activeCondition)
+        {
+            return character.TryGetConditionOfCategoryAndType(
+                AttributeDefinitions.TagEffect,
+                conditionDragonsBreath.Name,
+                out activeCondition);
         }
     }
 

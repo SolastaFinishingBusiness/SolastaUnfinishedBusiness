@@ -1,0 +1,2 @@
+- Dragon's Breath: the breath it grants no longer depends on what other rules last left in the caster's feature list when it works out the save DC, and no longer throws an error if its condition can't be found. This is hardening against the instability warning reported when a familiar uses the breath; the cause of that report wasn't confirmed.
+- Not tested in game: Dragon's Breath on a familiar or any other creature, its save DC and damage, and multiplayer.
