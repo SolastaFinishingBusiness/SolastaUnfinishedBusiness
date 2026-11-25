@@ -1346,7 +1346,8 @@ internal static partial class SpellBuilders
     /// <summary>
     ///     Sets the breath's damage dice and save DC from the Dragon's Breath condition on the creature using it, and
     ///     writes the breath's tooltip text with those dice. The tooltip's effect (GuiPowerDefinition.EffectDescription)
-    ///     already went through GetEffectDescription for the selected character, so its first damage form holds the
+    ///     already went through GetEffectDescription for the creature the tooltip belongs to (the power box's owner), so
+    ///     its first damage form holds the
     ///     dice the breath will roll: 3d6 plus 1d6 per slot level above 2nd, or the built-in 3d6 without the condition.
     /// </summary>
     private sealed class ModifySaveDCDragonsBreath(

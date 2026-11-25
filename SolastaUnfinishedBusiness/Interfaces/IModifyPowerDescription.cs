@@ -3,7 +3,8 @@
 /// <summary>
 ///     Lets a power's tooltip text follow the effect the tooltip shows. GuiPowerDefinition.Description otherwise returns
 ///     the text fixed when the power was built, while the effect it shows (GuiPowerDefinition.EffectDescription) already
-///     has the selected character's IModifyEffectDescription changes applied.
+///     has the IModifyEffectDescription changes of the character the tooltip belongs to (its Context while a tooltip is
+///     filled in, otherwise the selected or inspected character).
 /// </summary>
 public interface IModifyPowerDescription
 {
