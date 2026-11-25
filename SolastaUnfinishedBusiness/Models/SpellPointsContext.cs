@@ -159,7 +159,13 @@ internal static class SpellPointsContext
             mode.Points = binary.persistentContext && !LevelDownContext.IsNextElement(binary, ModeElement)
                 ? Main.Settings.UseAlternateSpellPointsSystem
                 : serializer.SerializeElement(ModeElement, false);
-            ApplyMode(hero, mode.Points);
+
+            // Only drop the pool here. A points-mode hero missing its pool gets one in PostLoad
+            // (InitializeMode), once the hero is complete enough to compute the pool's size.
+            if (!mode.Points)
+            {
+                ApplyMode(hero, false);
+            }
         }
         else
         {
