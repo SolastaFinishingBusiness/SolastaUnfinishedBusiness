@@ -18,6 +18,27 @@ internal static class Tooltips
     private static GameObject _distanceTextObject;
     private static TextMeshProUGUI _tmpUGui;
 
+    /// <summary>
+    ///     The character whose tooltip is being filled in, or null outside a tooltip feature's Bind. A tooltip's
+    ///     Context holds its owner (the mod sets it on power boxes, invocation and spell boxes, reaction prompts and the
+    ///     character sheet), but its data provider is a wrapper shared by every tooltip of that definition, so getters on
+    ///     the wrapper can't see whose tooltip asked. TooltipFeatureBindPatcher sets this for the duration of each Bind.
+    /// </summary>
+    internal static RulesetCharacter BindingCharacter { get; set; }
+
+    /// <summary>
+    ///     The character a tooltip belongs to: its Context, as a ruleset character or a location character.
+    /// </summary>
+    internal static RulesetCharacter GetTooltipCharacter(ITooltip tooltip)
+    {
+        return tooltip?.Context switch
+        {
+            RulesetCharacter character => character,
+            GameLocationCharacter locationCharacter => locationCharacter.RulesetCharacter,
+            _ => null
+        };
+    }
+
     internal static void AddContextToRecoveredFeature(RecoveredFeatureItem item, RulesetCharacterHero character)
     {
         item.GuiTooltip.Context = character;

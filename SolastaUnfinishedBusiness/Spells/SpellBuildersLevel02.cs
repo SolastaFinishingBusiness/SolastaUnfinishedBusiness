@@ -1205,7 +1205,10 @@ internal static partial class SpellBuilders
                 x => x.EffectDescription.FindFirstDamageFormOfType([damageType]) != null);
             var dmgStr = Gui.Localize($"Tooltip/&Tag{damageType}Title");
             var title = Gui.Format($"Feature/&Power{NAME}Title", dmgStr);
-            var description = Gui.Format($"Feature/&Power{NAME}Description", dmgStr);
+            // {1} is the damage dice; this is the text for the built-in 3d6, and ModifySaveDCDragonsBreath writes the
+            // tooltip's text again with the dice the breath will roll
+            var description = Gui.Format(
+                $"Feature/&Power{NAME}Description", dmgStr, $"3{Gui.FormatDieTitle(DieType.D6)}");
             var powerBreathAttack = FeatureDefinitionPowerBuilder
                 .Create($"Power{NAME}{damageType}")
                 .SetGuiPresentation(title, description, dragonbornBreathPower.GuiPresentation.SpriteReference)
@@ -1240,7 +1243,8 @@ internal static partial class SpellBuilders
                 .AddToDB();
 
             powerBreathAttack.AddCustomSubFeatures(
-                new ModifySaveDCDragonsBreath(conditionDragonsBreath, powerBreathAttack));
+                new ModifySaveDCDragonsBreath(
+                    conditionDragonsBreath, powerBreathAttack, $"Feature/&Power{NAME}Description", dmgStr));
 
             title = Gui.Localize($"Tooltip/&Tag{damageType}Title");
             description = Gui.Format($"Spell/&SubSpell{NAME}Description", title);
@@ -1319,26 +1323,70 @@ internal static partial class SpellBuilders
                 // store info from spell Level
                 activeCondition.effectLevel = actionCastSpell.ActiveSpell.SlotLevel;
                 // store info for caster Spell Save DC
-                activeCondition.Amount = rulesetCaster.ComputeSaveDC(actionCastSpell.activeSpell.SpellRepertoire);
+                activeCondition.Amount = CasterSaveDC(rulesetCaster, actionCastSpell.ActiveSpell.SpellRepertoire);
             }
+        }
+
+        /// <summary>
+        ///     The caster's spell save DC for the breath granted by this cast. For a repertoire that
+        ///     RefreshSpellRepertoires refreshes, SaveDC is the DC the game calculated there at the last refresh; that
+        ///     method fills the caster's FeaturesToBrowse with spellcasting affinities right before calling
+        ///     ComputeSaveDC. For an ability-based repertoire, ComputeSaveDC reads that shared list and casts each
+        ///     entry to ISpellCastingAffinityProvider without a null check, so calling it directly here, with whatever
+        ///     another rule left in the list, would throw a NullReferenceException on any other feature type.
+        ///     Without a repertoire (e.g. a scroll), the result matches the mod's ComputeSaveDC prefix for that case:
+        ///     8 + proficiency bonus.
+        /// </summary>
+        private static int CasterSaveDC(RulesetCharacter caster, [CanBeNull] RulesetSpellRepertoire repertoire)
+        {
+            return repertoire?.SaveDC ?? 8 + caster.TryGetProficiencyBonus();
         }
     }
 
+    /// <summary>
+    ///     Sets the breath's damage dice and save DC from the Dragon's Breath condition on the creature using it, and
+    ///     writes the breath's tooltip text with those dice. The tooltip's effect (GuiPowerDefinition.EffectDescription)
+    ///     already went through GetEffectDescription for the creature the tooltip belongs to (the power box's owner), so
+    ///     its first damage form holds the
+    ///     dice the breath will roll: 3d6 plus 1d6 per slot level above 2nd, or the built-in 3d6 without the condition.
+    /// </summary>
     private sealed class ModifySaveDCDragonsBreath(
         ConditionDefinition conditionDragonsBreath,
-        FeatureDefinitionPower powerDragonsBreath)
-        : IModifyEffectDescription
+        FeatureDefinitionPower powerDragonsBreath,
+        string descriptionTerm,
+        string damageTypeTitle)
+        : IModifyEffectDescription, IModifyPowerDescription
     {
+        public string GetDescription(
+            FeatureDefinitionPower power,
+            EffectDescription effectDescription,
+            string description)
+        {
+            var damageForm = effectDescription.FindFirstDamageForm();
+
+            if (damageForm == null)
+            {
+                return description;
+            }
+
+            return Gui.Format(
+                descriptionTerm,
+                damageTypeTitle,
+                $"{damageForm.DiceNumber}{Gui.FormatDieTitle(damageForm.DieType)}");
+        }
+
         public EffectDescription GetEffectDescription(
             BaseDefinition definition,
             EffectDescription effectDescription,
             RulesetCharacter character,
             RulesetEffect rulesetEffect)
         {
-            character.TryGetConditionOfCategoryAndType(
-                AttributeDefinitions.TagEffect,
-                conditionDragonsBreath.Name,
-                out var activeCondition);
+            // the condition holds the slot level and the caster's DC; IsValid uses the same lookup, so this only
+            // fails if the condition was removed in between, and then the breath keeps its built-in values
+            if (!TryGetBreathCondition(character, out var activeCondition))
+            {
+                return effectDescription;
+            }
 
             //set upcast damage dice: 3 + ( slot Lv - base spell Lv(2) )
             effectDescription.FindFirstDamageForm().diceNumber = 1 + activeCondition.effectLevel;
@@ -1358,8 +1406,18 @@ internal static partial class SpellBuilders
             RulesetCharacter character,
             EffectDescription effectDescription)
         {
-            return character.HasConditionOfType(conditionDragonsBreath) &&
-                   definition == powerDragonsBreath;
+            // checks the condition in the same category GetEffectDescription reads it from (the one the spell's
+            // condition form applies it in); HasConditionOfType would also accept it in any other category
+            return definition == powerDragonsBreath &&
+                   TryGetBreathCondition(character, out _);
+        }
+
+        private bool TryGetBreathCondition(RulesetCharacter character, out RulesetCondition activeCondition)
+        {
+            return character.TryGetConditionOfCategoryAndType(
+                AttributeDefinitions.TagEffect,
+                conditionDragonsBreath.Name,
+                out activeCondition);
         }
     }
 

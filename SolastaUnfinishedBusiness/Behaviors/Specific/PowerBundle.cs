@@ -634,7 +634,9 @@ internal static class PowerBundle
         EffectDescription original,
         [NotNull] BaseDefinition definition)
     {
-        var caster = Global.CurrentCharacter;
+        // the character whose tooltip is being filled in (its Context, see TooltipFeatureBindPatcher); outside a
+        // tooltip, or for a tooltip with no character, the selected or inspected character
+        var caster = CustomUI.Tooltips.BindingCharacter ?? Global.CurrentCharacter;
 
         if (caster == null)
         {
