@@ -56,6 +56,8 @@ internal static class DiagnosticsContext
             .OrderBy(db => db.Key.FullName)
             .ToDictionary(v => v.Key, v => v.Value);
 
+        SaveDependencyClassifier.CacheOfficial(definitions.Values.SelectMany(x => x));
+
 #if DEBUG
         _taBaseDefinitions = _taBaseDefinitionsMap.Values
             .SelectMany(v => v)
@@ -104,6 +106,7 @@ internal static class DiagnosticsContext
         }
 
         _ceBaseDefinitionsMap = definitions.OrderBy(db => db.Key.FullName).ToDictionary(v => v.Key, v => v.Value);
+        SaveDependencyClassifier.CacheAdded(definitions.Values.SelectMany(x => x));
         _ceBaseDefinitions = _ceBaseDefinitionsMap.Values
             .SelectMany(v => v)
             .Where(x => Array.IndexOf(ExcludeFromExport, x.GetType().Name) < 0)

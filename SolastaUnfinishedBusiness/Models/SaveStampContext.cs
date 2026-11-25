@@ -58,9 +58,9 @@ internal static class SaveStampContext
         return SaveDependency.Unknown;
     }
 
-    internal static GZipStream Open(Stream output, CompressionMode mode)
+    internal static GZipStream Open(Stream output, CompressionMode mode, GameSerializationManager manager)
     {
-        var classification = Classify();
+        var classification = SaveDependencyClassifier.Classify(manager.cachedSaveMemoryStream);
         var token = classification switch
         {
             SaveDependency.Required => "required",
@@ -71,8 +71,6 @@ internal static class SaveStampContext
         var comment = Encoding.ASCII.GetBytes(Prefix + version + " " + token + "\0");
         return new GZipStream(new HeaderWriter(output, comment), mode);
     }
-
-    private static SaveDependency Classify() => SaveDependency.Unknown;
 
     // GZipStream owns compression and its original checksum/trailer. Buffer only its fixed header
     // even when split over writes, then stream the compressed payload directly into the game's file.

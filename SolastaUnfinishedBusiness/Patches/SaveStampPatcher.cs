@@ -18,6 +18,10 @@ internal static class SaveStampPatcher
         {
             if (instruction.opcode == OpCodes.Newobj && Equals(instruction.operand, constructor))
             {
+                var manager = new CodeInstruction(OpCodes.Ldarg_0);
+                manager.labels.AddRange(instruction.labels);
+                instruction.labels.Clear();
+                yield return manager;
                 instruction.opcode = OpCodes.Call;
                 instruction.operand = AccessTools.Method(typeof(SaveStampContext), nameof(SaveStampContext.Open));
             }
