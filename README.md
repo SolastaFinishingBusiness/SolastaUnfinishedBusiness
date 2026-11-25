@@ -18,6 +18,13 @@ Finishing Business replaces Unfinished Business; don't install both. Both use th
 
 The original mod's [installation guide](https://github.com/EnderWiggin/SolastaUnfinishedBusiness/wiki/Install) has more detail on Unity Mod Manager.
 
+## Finding a save in vanilla Solasta
+
+Save by Location is off by default. When enabled, it puts saves in campaign or location subfolders.
+Vanilla Solasta lists only `.sav` files directly inside its `Saves` folder. To list a subfolder save
+in vanilla, copy it to the top-level folder using a filename that is free there. The copy still needs
+any mod content used by that save.
+
 # How to report issues
 
 *  The versions of Solasta and this mod.

@@ -1,2 +1,4 @@
 - Each hero switches between spell slots and spell points after a completed long rest. Heroes using slots no longer carry the hidden spell-point pool.
-- Save compatibility, rest transitions and multiplayer have not been tested in game.
+- A stock level-two Monk's Patient Defense class grant uses its vanilla power name on disk. Finishing Business restores its wrapper on load.
+- Saves record the writing version and a dependency classification. Dungeon Maker commands require an explicit choice saved by the author.
+- Vanilla loading, rest transitions, Dungeon Maker commands and multiplayer have not been tested in game.
