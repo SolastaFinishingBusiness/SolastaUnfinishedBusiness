@@ -1540,11 +1540,32 @@ public static class RulesetCharacterHeroPatcher
     [UsedImplicitly]
     public static class SerializeElements_Patch
     {
+        // The writer enumerates activeFeatures at IL_03f6, directly after writing its count.
+        // On read the game clears and repopulates the live dictionary. Leave those accesses intact.
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var code = instructions.ToList();
+            var field = AccessTools.Field(typeof(RulesetCharacterHero), "activeFeatures");
+            var enumerate = AccessTools.Method(typeof(Dictionary<string, List<FeatureDefinition>>), "GetEnumerator");
+            for (var i = 0; i < code.Count; i++)
+            {
+                yield return code[i];
+                if (code[i].opcode == OpCodes.Ldfld && Equals(code[i].operand, field) &&
+                    i + 1 < code.Count && code[i + 1].Calls(enumerate))
+                {
+                    yield return new CodeInstruction(OpCodes.Ldarg_1);
+                    yield return new CodeInstruction(OpCodes.Call,
+                        AccessTools.Method(typeof(PatientDefenseSaveContext), nameof(PatientDefenseSaveContext.ForWrite)));
+                }
+            }
+        }
+
         [UsedImplicitly]
         public static void Postfix(RulesetCharacterHero __instance, IElementsSerializer serializer)
         {
             LevelDownContext.SerializeHistory(__instance, serializer);
             SpellPointsContext.SerializeMode(__instance, serializer);
+            PatientDefenseSaveContext.SerializeMarker(__instance, serializer);
         }
     }
 
