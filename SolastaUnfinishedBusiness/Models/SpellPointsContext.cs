@@ -23,13 +23,15 @@ internal static class SpellPointsContext
     private const string ModeElement = "FbUsesSpellPoints";
     private sealed class HeroMode
     {
-        internal bool Points;
+        internal bool? Points;
+        internal bool Waiting;
     }
 
     // Heroes can be recreated by loading a character or receiving it from another peer.
     // Keep the live choice with its owner without retaining discarded character objects.
     private static readonly ConditionalWeakTable<RulesetCharacterHero, HeroMode> Modes = new();
     private static readonly ConditionalWeakTable<RulesetSpellRepertoire, HeroMode> RepertoireModes = new();
+    private static readonly List<WeakReference<RulesetCharacterHero>> WaitingHeroes = [];
 
     internal static readonly List<int> SpellCostByLevel = [0, 2, 3, 5, 6, 7, 9, 10, 11, 13];
 
@@ -102,7 +104,7 @@ internal static class SpellPointsContext
     internal static List<SlotsByLevelDuplet> GetCapacityTable(FeatureDefinitionCastSpell feature,
         RulesetSpellRepertoire repertoire)
     {
-        if (RepertoireModes.TryGetValue(repertoire, out var mode) && mode.Points &&
+        if (RepertoireModes.TryGetValue(repertoire, out var mode) && mode.Points == true &&
             !UsesLevelOneProgression(feature.Name))
         {
             foreach (var (name, _, points) in FeatureDefinitionCastSpellTab)
@@ -140,7 +142,7 @@ internal static class SpellPointsContext
 
     internal static bool IsSpellPointsEnabled(this RulesetCharacter character)
     {
-        return character is RulesetCharacterHero hero && Modes.TryGetValue(hero, out var mode) && mode.Points;
+        return character is RulesetCharacterHero hero && Modes.TryGetValue(hero, out var mode) && mode.Points == true;
     }
 
     // The stock object reader seeks to the end of the hero after reading its known elements.
@@ -156,26 +158,66 @@ internal static class SpellPointsContext
         var mode = Modes.GetOrCreateValue(hero);
         if (serializer.Mode == Serializer.SerializationMode.Read)
         {
-            mode.Points = binary.persistentContext && !LevelDownContext.IsNextElement(binary, ModeElement)
-                ? MultiplayerSessionContext.WantedSpellPoints
-                : serializer.SerializeElement(ModeElement, false);
-            ApplyMode(hero, mode.Points);
+            if (binary.persistentContext)
+            {
+                mode.Points = LevelDownContext.IsNextElement(binary, ModeElement)
+                    ? serializer.SerializeElement(ModeElement, false) : null;
+            }
+            else
+            {
+                // A joining client can send a legacy character before receiving the host's settings.
+                // Transmit that absence explicitly and preserve its original pool until migration.
+                var wire = serializer.SerializeElement(ModeElement, -1);
+                mode.Points = wire < 0 ? null : wire != 0;
+            }
+            InitializeMode(hero);
         }
-        else
+        else if (!binary.persistentContext)
         {
-            serializer.SerializeElement(ModeElement, mode.Points);
+            serializer.SerializeElement(ModeElement, mode.Points.HasValue ? mode.Points.Value ? 1 : 0 : -1);
+        }
+        else if (mode.Points.HasValue)
+        {
+            serializer.SerializeElement(ModeElement, mode.Points.Value);
         }
     }
 
     internal static void InitializeMode(RulesetCharacterHero hero)
     {
-        if (!Modes.TryGetValue(hero, out var mode))
+        var mode = Modes.GetOrCreateValue(hero);
+        mode.Points ??= MultiplayerSessionContext.WantedSpellPoints;
+        if (mode.Points is bool points)
         {
-            mode = Modes.GetOrCreateValue(hero);
-            mode.Points = MultiplayerSessionContext.WantedSpellPoints;
+            ApplyMode(hero, points);
         }
+        else if (!mode.Waiting)
+        {
+            mode.Waiting = true;
+            WaitingHeroes.Add(new WeakReference<RulesetCharacterHero>(hero));
+        }
+    }
 
-        ApplyMode(hero, mode.Points);
+    internal static void ResolveWaitingHeroes(bool points)
+    {
+        foreach (var weak in WaitingHeroes)
+        {
+            if (!weak.TryGetTarget(out var hero) || !Modes.TryGetValue(hero, out var mode)) { continue; }
+            mode.Waiting = false;
+            if (mode.Points.HasValue) { continue; }
+            mode.Points = points;
+            ApplyMode(hero, points);
+            hero.RefreshSpellRepertoires();
+        }
+        WaitingHeroes.Clear();
+    }
+
+    internal static void ForgetWaitingHeroes()
+    {
+        foreach (var weak in WaitingHeroes)
+        {
+            if (weak.TryGetTarget(out var hero) && Modes.TryGetValue(hero, out var mode)) { mode.Waiting = false; }
+        }
+        WaitingHeroes.Clear();
     }
 
     // The campaign and location rest wrappers call the real recovery, before RestCompleted can
@@ -183,14 +225,14 @@ internal static class SpellPointsContext
     internal static void FinishRest(RulesetCharacter character, RestType restType)
     {
         if (restType != RestType.LongRest || character is not RulesetCharacterHero hero ||
-            hero.IsSpellPointsEnabled() == MultiplayerSessionContext.WantedSpellPoints)
+            MultiplayerSessionContext.WantedSpellPoints is not bool points || hero.IsSpellPointsEnabled() == points)
         {
             return;
         }
 
         var mode = Modes.GetOrCreateValue(hero);
-        mode.Points = MultiplayerSessionContext.WantedSpellPoints;
-        ApplyMode(hero, mode.Points);
+        mode.Points = points;
+        ApplyMode(hero, points);
         hero.RefreshSpellRepertoires();
     }
 

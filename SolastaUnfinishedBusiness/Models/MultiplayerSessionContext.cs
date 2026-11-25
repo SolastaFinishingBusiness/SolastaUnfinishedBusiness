@@ -43,9 +43,15 @@ internal static class MultiplayerSessionContext
     private static bool? _roomCastingMode;
     private static bool? _publishedCastingMode;
 
-    internal static bool WantedSpellPoints => IsOnlineRoom
-        ? _roomCastingMode ?? Main.Settings.UseAlternateSpellPointsSystem
+    internal static bool? WantedSpellPoints => IsOnlineRoom
+        ? _roomCastingMode
         : Main.Settings.UseAlternateSpellPointsSystem;
+
+    private static void SetRoomCastingMode(bool points)
+    {
+        _roomCastingMode = points;
+        SpellPointsContext.ResolveWaitingHeroes(points);
+    }
 
     // The lobby settings snapshot initializes joining players. Once playing, changes enter the same
     // ordered command queue as rests, including on the host, so an asynchronous settings notification
@@ -66,7 +72,7 @@ internal static class MultiplayerSessionContext
         }
         else
         {
-            _roomCastingMode = points;
+            SetRoomCastingMode(points);
         }
 
         _publishedCastingMode = points;
@@ -84,7 +90,7 @@ internal static class MultiplayerSessionContext
 
         IEnumerator ApplyMode()
         {
-            _roomCastingMode = name == PointsCommand;
+            SetRoomCastingMode(name == PointsCommand);
             yield break;
         }
     }
@@ -167,6 +173,7 @@ internal static class MultiplayerSessionContext
     {
         _publishedCastingMode = null;
         _roomCastingMode = null;
+        SpellPointsContext.ForgetWaitingHeroes();
         _publishedPing = -1;
         _nextPingPublishTime = 0;
         MultiplayerFpsContext.Reset();
@@ -504,7 +511,7 @@ internal static class MultiplayerSessionContext
         Main.UseSettings(hostSettings);
         if (!_roomCastingMode.HasValue || Gui.Game == null)
         {
-            _roomCastingMode = hostSettings.UseAlternateSpellPointsSystem;
+            SetRoomCastingMode(hostSettings.UseAlternateSpellPointsSystem);
         }
         ReapplyDefinitionSwitches();
         Main.Info($"using the host's settings ({hash}) while in this room");
