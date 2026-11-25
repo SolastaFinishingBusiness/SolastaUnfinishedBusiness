@@ -140,9 +140,9 @@ internal static class DungeonMakerClockContext
     // makes the one check. (The commands have no off switch, so a skip that has begun is always taken to its end
     // and the timers are never left held with the skip stopped.)
     internal static bool HoldTimers =>
-        _job != null ||
+        CampaignRequirement.CommandsEnabled && (_job != null ||
         (ServiceRepository.GetService<IGameVariableService>() is { } variables &&
-         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName) > 0);
+         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName) > 0));
 
     private static bool BattleInProgress =>
         ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
@@ -244,6 +244,7 @@ internal static class DungeonMakerClockContext
     // done unless the minute changed, which is once every few seconds of play, not every frame.
     internal static void OnTimeUpdated(GameTime time, int minutesBefore)
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         var info = time?.TimeInfo;
 
         if (info == null)

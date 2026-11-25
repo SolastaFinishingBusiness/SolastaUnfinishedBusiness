@@ -67,7 +67,9 @@ internal static class DungeonMakerStampContext
 
     // Replaces JsonUtility.ToJson(object) in SaveUserCampaign and SaveUserLocation: the same text, with the mod's
     // field first. Whatever goes wrong, the game's own text is returned.
-    public static string StampedJson(object content)
+    public static string StampedJson(object content) => StampedJson(content, false);
+
+    internal static string StampedJson(object content, bool session)
     {
         var json = ToJson(content);
 
@@ -82,7 +84,8 @@ internal static class DungeonMakerStampContext
                 return json;
             }
 
-            return FieldStart + version + "\"," + json.Substring(1);
+            var flag = content is UserCampaign campaign ? CampaignRequirement.FieldJson(campaign, session) : "";
+            return FieldStart + version + "\"," + flag + json.Substring(1);
         }
         catch (Exception)
         {
@@ -171,19 +174,20 @@ internal static class DungeonMakerStampContext
     {
         var version = UpdateContext.LoadedBuildVersion ?? Main.ModVersion;
 
-        if (campaign?.Title == null || string.IsNullOrEmpty(version) || !StartsWithStamp(path, version))
+        if (campaign?.Title == null || string.IsNullOrEmpty(version) || !StartsWithStamp(path, version, campaign))
         {
             return;
         }
 
         CampaignStamps[campaign.Title] = version;
+        CampaignRequirement.Saved(campaign);
         _savedSinceRead = campaign;
     }
 
     // whether the file at path starts with the mod's field holding this version (only its first characters are read)
-    private static bool StartsWithStamp(string path, string version)
+    private static bool StartsWithStamp(string path, string version, UserCampaign campaign)
     {
-        var expected = FieldStart + version + "\"";
+        var expected = FieldStart + version + "\"," + CampaignRequirement.FieldJson(campaign, false);
 
         try
         {

@@ -42,6 +42,7 @@ internal sealed class SaveDependencyClassifier(byte[] bytes)
     {
         try
         {
+            if (CampaignRequirement.CommandsEnabled) { return SaveDependency.Required; }
             if (!_ready || !payload.TryGetBuffer(out var segment)) { return SaveDependency.Unknown; }
             var scan = new SaveDependencyClassifier(segment.Array);
             scan.Elements(segment.Offset, segment.Offset + segment.Count, 0, "");
@@ -116,6 +117,9 @@ internal sealed class SaveDependencyClassifier(byte[] bytes)
             }
 
             if (depth == 0) { _game |= name == "Game"; _session |= name == "Session"; }
+            // Level history is a trailing hero extension. Some of its entries use the game's
+            // unprefixed Item.N reference names. Its following mode and alias markers are metadata.
+            if (name == "UbLevelHistoryCount") { return; }
             if (!name.StartsWith("UbLevel", StringComparison.Ordinal))
             {
                 Attributes(at + 8, attrEnd, depth);
