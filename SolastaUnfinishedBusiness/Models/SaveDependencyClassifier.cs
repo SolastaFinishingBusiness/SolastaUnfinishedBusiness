@@ -145,7 +145,12 @@ internal sealed class SaveDependencyClassifier(byte[] bytes)
                 }
                 else { _uncertain = true; }
             }
-            else { Scalar(key, "", at, next); }
+            else if (key != "PortraitPhoto" && !Scalar(key, "", at, next) && next - at > 16)
+            {
+                // Opaque attributes can embed another snapshot, as GameLocationsData does.
+                // Only the hero snapshot portrait is known to contain purely image bytes.
+                _uncertain = true;
+            }
             at = next;
         }
     }
@@ -153,6 +158,25 @@ internal sealed class SaveDependencyClassifier(byte[] bytes)
     private void Body(string name, string parent, int at, int end, int depth)
     {
         if (at == end) { return; }
+        if (name is "ClassesAndLevels" or "ClassesAndSubclasses")
+        {
+            // Hero class maps are packed (raw name/int or name/name), unlike ClassesHistory's
+            // framed string items. A stock base class can independently carry a mod-only subclass.
+            while (at < end)
+            {
+                if (!Text(ref at, end, 512, out var className) || className.Length == 0) { _uncertain = true; return; }
+                DefinitionName(className);
+                if (name == "ClassesAndLevels")
+                {
+                    if (end - at < 4) { _uncertain = true; return; }
+                    if (BitConverter.ToInt32(bytes, at) > 16) { _required = true; }
+                    at += 4;
+                }
+                else if (Text(ref at, end, 512, out var subclassName)) { DefinitionName(subclassName); }
+                else { _uncertain = true; return; }
+            }
+            return;
+        }
         // The embedded campaign's compressed asset JSON may contain references outside the ruleset
         // database. Without a complete audit of that asset, its negative classification is unknown.
         if (name == "UCJson") { _uncertain = true; return; }
