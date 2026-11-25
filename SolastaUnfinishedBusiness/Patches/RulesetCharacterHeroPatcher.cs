@@ -1544,6 +1544,7 @@ public static class RulesetCharacterHeroPatcher
         public static void Postfix(RulesetCharacterHero __instance, IElementsSerializer serializer)
         {
             LevelDownContext.SerializeHistory(__instance, serializer);
+            SpellPointsContext.SerializeMode(__instance, serializer);
         }
     }
 

@@ -1,0 +1,2 @@
+- Each hero switches between spell slots and spell points after a completed long rest. Heroes using slots no longer carry the hidden spell-point pool.
+- Save compatibility, rest transitions and multiplayer have not been tested in game.

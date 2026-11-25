@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api;
@@ -15,6 +17,39 @@ namespace SolastaUnfinishedBusiness.Patches;
 [UsedImplicitly]
 public static class RulesetSpellRepertoirePatcher
 {
+    [HarmonyPatch]
+    private static class CapacityTablePatch
+    {
+        private static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(RulesetSpellRepertoire), nameof(RulesetSpellRepertoire.ComputeSpellSlots));
+            yield return AccessTools.Method(typeof(RulesetSpellRepertoire), nameof(RulesetSpellRepertoire.GetMaxSlotsNumberOfAllLevels));
+            yield return AccessTools.Method(typeof(RulesetSpellRepertoire), nameof(RulesetSpellRepertoire.AutoPrepareSpells));
+        }
+
+        // The vanilla getter takes only the shared definition. Pass the repertoire at the capacity
+        // reads so another caster of the same class can independently keep ordinary spell slots.
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var getter = AccessTools.PropertyGetter(typeof(FeatureDefinitionCastSpell), nameof(FeatureDefinitionCastSpell.SlotsPerLevels));
+            var replacement = AccessTools.Method(typeof(SpellPointsContext), nameof(SpellPointsContext.GetCapacityTable));
+            foreach (var instruction in instructions)
+            {
+                if (instruction.Calls(getter))
+                {
+                    var owner = new CodeInstruction(OpCodes.Ldarg_0);
+                    owner.labels.AddRange(instruction.labels);
+                    yield return owner;
+                    yield return new CodeInstruction(OpCodes.Call, replacement);
+                }
+                else
+                {
+                    yield return instruction;
+                }
+            }
+        }
+    }
+
     private static bool FormatTitle(RulesetSpellRepertoire __instance, ref string __result)
     {
         if (__instance.SpellCastingClass
@@ -119,7 +154,7 @@ public static class RulesetSpellRepertoirePatcher
             // handle single caster scenarios both alternate system and vanilla
             if (!SharedSpellsContext.IsMulticaster(hero))
             {
-                if (Main.Settings.UseAlternateSpellPointsSystem &&
+                if (hero.IsSpellPointsEnabled() &&
                     warlockSpellRepertoire == null)
                 {
                     SpellPointsContext.ConsumeSlotsAtLevelsPointsCannotCastAnymore(hero, __instance, slotLevel);
@@ -141,7 +176,7 @@ public static class RulesetSpellRepertoirePatcher
                              .Where(x => x.SpellCastingFeature.SpellCastingOrigin !=
                                          FeatureDefinitionCastSpell.CastingOrigin.Race))
                 {
-                    if (Main.Settings.UseAlternateSpellPointsSystem)
+                    if (hero.IsSpellPointsEnabled())
                     {
                         SpellPointsContext.ConsumeSlotsAtLevelsPointsCannotCastAnymore(
                             character, spellRepertoire, slotLevel, consume, true);
@@ -231,7 +266,7 @@ public static class RulesetSpellRepertoirePatcher
                              .Where(x => x.SpellCastingFeature.SpellCastingOrigin !=
                                          FeatureDefinitionCastSpell.CastingOrigin.Race))
                 {
-                    if (Main.Settings.UseAlternateSpellPointsSystem)
+                    if (hero.IsSpellPointsEnabled())
                     {
                         SpellPointsContext.ConsumeSlotsAtLevelsPointsCannotCastAnymore(
                             hero, spellRepertoire, slotLevel, consume, true);

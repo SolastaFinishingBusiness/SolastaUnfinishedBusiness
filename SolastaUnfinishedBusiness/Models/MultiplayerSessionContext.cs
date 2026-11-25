@@ -38,6 +38,56 @@ internal static class MultiplayerSessionContext
     private static HashSet<string> _restartOnlySettings;
     private static float _nextPingPublishTime;
     private static int _publishedPing = -1;
+    private const string SlotsCommand = "FbCastingMode:Slots";
+    private const string PointsCommand = "FbCastingMode:Points";
+    private static bool? _roomCastingMode;
+    private static bool? _publishedCastingMode;
+
+    internal static bool WantedSpellPoints => IsOnlineRoom
+        ? _roomCastingMode ?? Main.Settings.UseAlternateSpellPointsSystem
+        : Main.Settings.UseAlternateSpellPointsSystem;
+
+    // The lobby settings snapshot initializes joining players. Once playing, changes enter the same
+    // ordered command queue as rests, including on the host, so an asynchronous settings notification
+    // cannot switch a hero on a different rest from the other peers.
+    private static void PublishCastingMode()
+    {
+        var points = Main.Settings.UseAlternateSpellPointsSystem;
+        if (_publishedCastingMode == points)
+        {
+            return;
+        }
+
+        if (Gui.Game != null &&
+            ServiceRepository.GetService<INetworkingService>() is NetworkingManager { view: not null } networking)
+        {
+            networking.view.RPC(nameof(NetworkingManager.AssignClassLevelRPC), RpcTarget.AllViaServer,
+                networking.CommandTick, 0L, points ? PointsCommand : SlotsCommand, false);
+        }
+        else
+        {
+            _roomCastingMode = points;
+        }
+
+        _publishedCastingMode = points;
+    }
+
+    internal static bool TryHandleCastingMode(string name, ref IEnumerator result)
+    {
+        if (name != SlotsCommand && name != PointsCommand)
+        {
+            return false;
+        }
+
+        result = ApplyMode();
+        return true;
+
+        IEnumerator ApplyMode()
+        {
+            _roomCastingMode = name == PointsCommand;
+            yield break;
+        }
+    }
 
     internal static bool IsUsingHostSettings => _localSettings != null;
     internal static bool IsUsingHostSettingsForThisLaunch { get; private set; }
@@ -115,6 +165,8 @@ internal static class MultiplayerSessionContext
 
     internal static void OnLeftRoom()
     {
+        _publishedCastingMode = null;
+        _roomCastingMode = null;
         _publishedPing = -1;
         _nextPingPublishTime = 0;
         MultiplayerFpsContext.Reset();
@@ -402,6 +454,7 @@ internal static class MultiplayerSessionContext
         {
             var data = Serialize(Main.Settings);
 
+            PublishCastingMode();
             room.SetCustomProperties(new Hashtable { { SettingsKey, data }, { SettingsHashKey, Hash(data) } });
         }
         catch (Exception ex)
@@ -449,6 +502,10 @@ internal static class MultiplayerSessionContext
         _localSettings = localSettings;
         _appliedSettingsHash = hash;
         Main.UseSettings(hostSettings);
+        if (!_roomCastingMode.HasValue || Gui.Game == null)
+        {
+            _roomCastingMode = hostSettings.UseAlternateSpellPointsSystem;
+        }
         ReapplyDefinitionSwitches();
         Main.Info($"using the host's settings ({hash}) while in this room");
 

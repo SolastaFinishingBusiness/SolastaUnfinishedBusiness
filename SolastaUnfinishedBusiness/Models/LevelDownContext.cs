@@ -331,7 +331,7 @@ internal static class LevelDownContext
     }
 
     // compares the next element name without reading it; a persistent element starts with its 7-bit length name
-    private static bool IsNextElement(BinarySerializer binary, string elementName)
+    internal static bool IsNextElement(BinarySerializer binary, string elementName)
     {
         var stream = binary.binaryReader?.BaseStream;
 
