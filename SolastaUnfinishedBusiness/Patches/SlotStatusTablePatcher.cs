@@ -101,8 +101,9 @@ public static class SlotStatusTablePatcher
                 __instance,
                 (Global.InspectedHero != null && spellRepertoire.spellCastingClass == Warlock) ||
                 (Global.InspectedHero == null &&
+                 // the hero's own casting mode, which follows the setting only from its next long rest
                  !(Main.Settings.DisplayPactSlotsOnSpellSelectionPanel &&
-                   !Main.Settings.UseAlternateSpellPointsSystem)));
+                   !hero.IsSpellPointsEnabled())));
         }
     }
 

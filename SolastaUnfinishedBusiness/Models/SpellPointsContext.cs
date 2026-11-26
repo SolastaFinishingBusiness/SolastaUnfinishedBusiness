@@ -435,9 +435,11 @@ internal static class SpellPointsContext
         }
     }
 
-    internal static void RefreshActionPanelAfterFlexibleCastingItem()
+    // Refreshes the cast-spell action items when a flexible-casting choice closes, so the costs shown on them
+    // match the new balance. Only a caster whose own mode is spell points shows those costs.
+    internal static void RefreshActionPanelAfterFlexibleCastingItem(RulesetCharacter caster)
     {
-        if (!Main.Settings.UseAlternateSpellPointsSystem)
+        if (caster == null || !caster.IsSpellPointsEnabled())
         {
             return;
         }

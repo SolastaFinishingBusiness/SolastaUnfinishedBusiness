@@ -42,9 +42,11 @@ public static class GuiCharacterPatcher
             // need to check for not null hero as we don't wanna these slots displayed under WS
             var hero = __instance.RulesetCharacterHero;
 
+            // The hero's own casting mode decides, not the setting: a changed setting only reaches the hero
+            // at its next completed long rest.
             if (hero != null &&
                 !(Main.Settings.DisplayPactSlotsOnSpellSelectionPanel &&
-                  !Main.Settings.UseAlternateSpellPointsSystem))
+                  !hero.IsSpellPointsEnabled()))
             {
                 return;
             }
