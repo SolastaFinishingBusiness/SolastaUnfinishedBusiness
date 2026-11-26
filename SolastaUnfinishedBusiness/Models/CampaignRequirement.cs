@@ -92,6 +92,27 @@ internal static class CampaignRequirement
 
     private static string SessionJson(object content) => DungeonMakerStampContext.StampedJson(content, true);
 
+    // The game rarely keeps the campaign object it read: the campaign editor edits a clone (Show), keeps clones for
+    // undo (NotifyBeforeModification), and the pool stores a clone of every campaign it saves (SaveUserCampaign). The
+    // choice is keyed by object, so each clone takes over its source's choice; otherwise an editor save would write
+    // null and drop the author's choice.
+    [HarmonyPatch(typeof(UserCampaign), nameof(UserCampaign.Clone))]
+    private static class ClonePatch
+    {
+        private static void Postfix(UserCampaign __instance, UserCampaign __result)
+        {
+            if (__result == null || !Choices.TryGetValue(__instance, out var source))
+            {
+                return;
+            }
+
+            var copy = Choices.GetOrCreateValue(__result);
+
+            copy.Editor = source.Editor;
+            copy.Saved = source.Saved;
+        }
+    }
+
     [HarmonyPatch]
     private static class CampaignJsonPatch
     {
