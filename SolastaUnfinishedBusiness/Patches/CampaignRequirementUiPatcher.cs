@@ -33,6 +33,19 @@ public static class CampaignRequirementUiPatcher
         }
     }
 
+    //PATCH: drops the requirement question when another message takes over the message window
+    [HarmonyPatch(typeof(MessageModal), nameof(MessageModal.Show))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class MessageModal_Show_Patch
+    {
+        [UsedImplicitly]
+        public static void Prefix(MessageModal __instance)
+        {
+            CampaignRequirementUi.OnMessageShown(__instance);
+        }
+    }
+
     //PATCH: asks the author once whether a campaign with command-like variables requires the mod
     [HarmonyPatch(typeof(UserCampaignEditorScreen), nameof(UserCampaignEditorScreen.OnSaveCb))]
     [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]

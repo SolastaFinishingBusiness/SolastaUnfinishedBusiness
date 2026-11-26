@@ -1,3 +1,4 @@
+using System.Collections;
 using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -124,19 +125,37 @@ internal static class CampaignRequirementUi
             return true;
         }
 
+        var modal = Gui.GuiService.GetScreen<MessageModal>();
+
+        // MessageModal.Show returns without showing anything while the current message can't be replaced. The
+        // save then goes ahead with no choice recorded, and the question comes back at the next save.
+        if (!modal || (modal.Visible && modal.cannotBeOverriden))
+        {
+            return true;
+        }
+
         _asking = true;
+        _showing = true;
 
-        Gui.GuiService.ShowMessage(
-            MessageModal.Severity.Informative1,
-            PromptTitle,
-            // Two blank lines leave room under the text for the row added by AddDontAsk.
-            Gui.Localize(PromptDescription) + "\n\n",
-            "Message/&MessageYesTitle",
-            "Message/&MessageNoTitle",
-            () => Answer(screen, true),
-            () => Answer(screen, false));
+        try
+        {
+            Gui.GuiService.ShowMessage(
+                MessageModal.Severity.Informative1,
+                PromptTitle,
+                // Two blank lines leave room under the text for the row added by AddDontAsk (the window sizes
+                // itself to its text).
+                Gui.Localize(PromptDescription) + "\n\n",
+                "Message/&MessageYesTitle",
+                "Message/&MessageNoTitle",
+                () => Answer(screen, true),
+                () => Answer(screen, false));
+        }
+        finally
+        {
+            _showing = false;
+        }
 
-        AddDontAsk(screen);
+        AddDontAsk(screen, modal);
 
         return false;
     }
@@ -144,12 +163,14 @@ internal static class CampaignRequirementUi
     private static Toggle _dontAsk;
     private static GameObject _dontAskHeader;
 
+    // set while this question's own ShowMessage runs, so OnMessageShown can tell it from a message replacing it
+    private static bool _showing;
+
     // The game's message window has only its two buttons, so a copy of the editor's toggle row is put in the
     // window's bottom-left corner for this question and removed with the answer.
-    private static void AddDontAsk(UserCampaignEditorScreen screen)
+    private static void AddDontAsk(UserCampaignEditorScreen screen, MessageModal modal)
     {
-        var modal = Gui.GuiService.GetScreen<MessageModal>();
-        var panel = modal ? modal.transform.Find("MessagePanel") : null;
+        var panel = modal.transform.Find("MessagePanel");
         var header = panel ? CopyMapHeader(screen, panel, DontAskName) : null;
 
         if (!header)
@@ -171,13 +192,8 @@ internal static class CampaignRequirementUi
         _dontAsk.SetIsOnWithoutNotify(false);
     }
 
-    private static void Answer(UserCampaignEditorScreen screen, bool required)
+    private static void RemoveDontAsk()
     {
-        if (_dontAsk && _dontAsk.isOn)
-        {
-            CampaignRequirement.SuppressPrompt = true;
-        }
-
         if (_dontAskHeader)
         {
             Object.Destroy(_dontAskHeader);
@@ -185,21 +201,64 @@ internal static class CampaignRequirementUi
 
         _dontAsk = null;
         _dontAskHeader = null;
+    }
 
-        try
+    // MessageModal.Show, before it runs. Another message shown while the question is open takes over the window
+    // and its callbacks, so the question is dropped: its row is removed and no choice is recorded (the next save
+    // asks again).
+    internal static void OnMessageShown(MessageModal modal)
+    {
+        if (_showing || !_asking || modal.cannotBeOverriden)
         {
-            if (!screen || screen.UserCampaign == null)
-            {
-                return;
-            }
-
-            CampaignRequirement.Set(screen.UserCampaign, required);
-            Refresh(screen);
-            screen.OnSaveCb();
+            return;
         }
-        finally
+
+        RemoveDontAsk();
+        _asking = false;
+    }
+
+    private static void Answer(UserCampaignEditorScreen screen, bool required)
+    {
+        if (_dontAsk && _dontAsk.isOn)
         {
-            _asking = false;
+            CampaignRequirement.SuppressPrompt = true;
+        }
+
+        RemoveDontAsk();
+        _asking = false;
+
+        if (!screen || screen.UserCampaign == null)
+        {
+            return;
+        }
+
+        // An undo step and the modified mark, as for the toggle, so a save that ends up cancelled (the overwrite
+        // question) still leaves an undoable, unsaved change.
+        screen.NotifyBeforeModification();
+        CampaignRequirement.Set(screen.UserCampaign, required);
+        screen.RefreshNow();
+        screen.StartCoroutine(SaveAfterHide(screen));
+    }
+
+    // The answer arrives while the message window is hiding (its OnEndHide calls the callbacks). OnSaveCb can open
+    // another message in that same window (the overwrite question), which the hide would then close, so the save
+    // runs again only once the window has finished hiding.
+    private static IEnumerator SaveAfterHide(UserCampaignEditorScreen screen)
+    {
+        var modal = Gui.GuiService.GetScreen<MessageModal>();
+        var waited = 0f;
+
+        yield return null;
+
+        while (modal && modal.Visible && waited < 5f)
+        {
+            waited += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (screen && screen.Visible && screen.UserCampaign != null)
+        {
+            screen.OnSaveCb();
         }
     }
 }

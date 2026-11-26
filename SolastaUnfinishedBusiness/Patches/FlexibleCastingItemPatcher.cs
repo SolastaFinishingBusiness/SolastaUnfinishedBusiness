@@ -56,7 +56,9 @@ public static class FlexibleCastingItemPatcher
             var flexibleCastingModal = __instance.GetComponentInParent<FlexibleCastingModal>();
 
             SpellPointsContext.RefreshActionPanelAfterFlexibleCastingItem(
-                flexibleCastingModal ? flexibleCastingModal.caster.GetOriginalHero() : null);
+                flexibleCastingModal && flexibleCastingModal.caster != null
+                    ? flexibleCastingModal.caster.GetOriginalHero()
+                    : null);
 
             //PATCH: ensures slot colors are white before getting back to pool (MULTICLASS)
             MulticlassGameUi.PaintSlotsWhite(__instance.slotStatusTable);

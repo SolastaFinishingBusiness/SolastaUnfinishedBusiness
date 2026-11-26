@@ -52,8 +52,29 @@ internal static class CampaignRequirement
         }
     }
 
-    internal static void Saved(UserCampaign campaign) =>
-        Choices.GetOrCreateValue(campaign).Saved = Get(campaign);
+    // Called once the file is confirmed written with the running version. When the title was already in the pool,
+    // SaveUserCampaign stored a clone of the campaign there before this runs, so that clone carries the choice from
+    // before the save; starting the campaign later in this session plays that clone. It is brought up to date too.
+    internal static void Saved(UserCampaign campaign)
+    {
+        var choice = Choices.GetOrCreateValue(campaign);
+
+        choice.Saved = choice.Editor;
+
+        if (campaign.Title == null ||
+            ServiceRepository.GetService<IUserCampaignPoolService>() is not UserCampaignPoolManager manager ||
+            manager.pool == null ||
+            !manager.pool.TryGetValue(campaign.Title, out var cached) ||
+            ReferenceEquals(cached, campaign) || cached == null)
+        {
+            return;
+        }
+
+        var copy = Choices.GetOrCreateValue(cached);
+
+        copy.Editor = choice.Editor;
+        copy.Saved = choice.Saved;
+    }
 
     internal static string FieldJson(UserCampaign campaign, bool session)
     {
