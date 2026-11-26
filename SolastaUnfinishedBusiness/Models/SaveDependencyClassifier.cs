@@ -178,7 +178,11 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             case ("GameSaveDescriptor", "A", "LocationDefinitionName"): return "@LocationDefinition";
             case ("$", "E", "VersionNumber"): return "8";
             case ("GameCampaignMap", "E", "AllElementIds"): return "L:text";
-            case ("RulesetCharacterHero", "E", "FbUsesSpellPoints"): return "bool";
+            // The mod's per-hero spell system: true means the hero casts from the mod's spell-point pool.
+            case ("RulesetCharacterHero", "E", "FbUsesSpellPoints"): return "modflag";
+            // Marks a Monk whose stock Patient Defense grant is saved under the game's own name; the game skips the
+            // element on load, so it is no dependency either way.
+            case ("RulesetCharacterHero", "E", "FbMonkPatientDefenseClassGrant"): return "bool";
             case ("$", "E", "GameLocation"): return "GameLocation";
             case ("$", "E", "Session"): case ("$", "E", "Game"): case ("$", "E", "GameSaveDescriptor"): return field;
             case ("GameLocationManager", "A", "GameLocationsData"): return "cache";
@@ -448,7 +452,7 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
     private bool Member(string shape, string side, ref int at, int end, string field, int depth) =>
         IsScalar(shape) ? Scalar(shape, ref at, end, field) : Element(ref at, end, field, side, shape, depth + 1);
 
-    private static bool IsScalar(string shape) => shape is "bool" or "text" or "bits" or "guid" or "level" or "char" ||
+    private static bool IsScalar(string shape) => shape is "bool" or "modflag" or "text" or "bits" or "guid" or "level" or "char" ||
         shape[0] is >= '0' and <= '9' or '@' || shape.StartsWith("ref:", StringComparison.Ordinal);
 
     private bool Scalar(string shape, ref int at, int end, string field)
@@ -485,9 +489,11 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             at += size;
             return true;
         }
-        if (shape == "bool")
+        // "modflag" is a bool written by the mod itself, where true is a dependency on the mod.
+        if (shape is "bool" or "modflag")
         {
             if (at == end || bytes[at] > 1) { return false; }
+            if (shape == "modflag" && bytes[at] == 1) { _required = true; }
             at++;
             return true;
         }
