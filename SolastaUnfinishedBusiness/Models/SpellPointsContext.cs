@@ -426,19 +426,37 @@ internal static class SpellPointsContext
                 return 0;
             }
 
-            var characterLevel = hero.TryGetAttributeValue(AttributeDefinitions.CharacterLevel);
+            // Only the casting class's levels count, as for spell slots: a Cleric 10 / Barbarian 2 has the pool of a
+            // level 10 caster, not of level 12.
+            var classLevel = GetCastingClassLevel(hero, spellRepertoire);
             var casterType = SharedSpellsContext.GetCasterTypeForClassOrSubclass(
                 spellRepertoire.SpellCastingClass?.Name, spellRepertoire.SpellCastingSubclass?.Name);
 
             return casterType switch
             {
-                CasterProgression.Full => characterLevel,
-                CasterProgression.Half when characterLevel <= 1 => 0,
-                CasterProgression.Half => (characterLevel + 1) / 2,
-                CasterProgression.HalfRoundUp => (characterLevel + 1) / 2,
-                CasterProgression.OneThird => (characterLevel + 2) / 3,
+                CasterProgression.Full => classLevel,
+                CasterProgression.Half when classLevel <= 1 => 0,
+                CasterProgression.Half => (classLevel + 1) / 2,
+                CasterProgression.HalfRoundUp => (classLevel + 1) / 2,
+                CasterProgression.OneThird => (classLevel + 2) / 3,
                 _ => 0
             };
+        }
+
+        // The levels of the class the repertoire casts for. A class repertoire names its class; a subclass
+        // repertoire (an Arcane Trickster's, an Eldritch Knight's) names only the subclass, so its class is the one
+        // the hero took that subclass in.
+        private static int GetCastingClassLevel(RulesetCharacterHero hero, RulesetSpellRepertoire repertoire)
+        {
+            var castingClass = repertoire.SpellCastingClass;
+
+            if (!castingClass && repertoire.SpellCastingSubclass)
+            {
+                castingClass = hero.ClassesAndSubclasses
+                    .FirstOrDefault(x => x.Value == repertoire.SpellCastingSubclass).Key;
+            }
+
+            return castingClass && hero.ClassesAndLevels.TryGetValue(castingClass, out var level) ? level : 0;
         }
     }
 }
