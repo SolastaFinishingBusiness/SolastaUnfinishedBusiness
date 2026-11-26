@@ -1,0 +1,2 @@
+- Spell points: a hero with one spellcasting class now gets the spell point pool for that class's levels only, as spell slots do. A Cleric 10 / Barbarian 2 has 64 points, not the 73 of a level 12 caster (issue #124). A hero saved with the larger pool keeps the points it has left until its next long rest, which refills it to the new size.
+- Not tested in game.
