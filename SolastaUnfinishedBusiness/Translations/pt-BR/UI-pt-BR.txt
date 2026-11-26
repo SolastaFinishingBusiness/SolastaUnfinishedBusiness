@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Cobertura
 UI/&TrendSourceFeature=Característica
 UI/&TrendSourceOther=Outro
 UI/&UnidentifiedItemFormat={0} (não identificado)
+UI/&SaveDependencyClearDescription=Este jogo salvo não tem dependência conhecida de conteúdo modificado. Provavelmente é compatível com Solasta sem o %ModName%.
+UI/&SaveDependencyRequiredDescription=Este jogo salvo usa conteúdo do %ModName%. Não é recomendado carregá-lo sem o %ModName%.

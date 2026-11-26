@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Укрытие
 UI/&TrendSourceFeature=Умение
 UI/&TrendSourceOther=Прочее
 UI/&UnidentifiedItemFormat={0} (не опознано)
+UI/&SaveDependencyClearDescription=У этого сохранения нет известной зависимости от модифицированного содержимого. Вероятно, оно совместимо с Solasta без %ModName%.
+UI/&SaveDependencyRequiredDescription=Это сохранение использует содержимое %ModName%. Загружать его без %ModName% не рекомендуется.

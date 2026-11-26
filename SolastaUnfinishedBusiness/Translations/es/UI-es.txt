@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Cobertura
 UI/&TrendSourceFeature=Rasgo
 UI/&TrendSourceOther=Otro
 UI/&UnidentifiedItemFormat={0} (sin identificar)
+UI/&SaveDependencyClearDescription=Esta partida guardada no tiene ninguna dependencia conocida de contenido modificado. Probablemente sea compatible con Solasta sin %ModName%.
+UI/&SaveDependencyRequiredDescription=Esta partida guardada usa contenido de %ModName%. No se recomienda cargarla sin %ModName%.

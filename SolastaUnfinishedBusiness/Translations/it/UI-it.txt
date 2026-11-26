@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Copertura
 UI/&TrendSourceFeature=Privilegio
 UI/&TrendSourceOther=Altro
 UI/&UnidentifiedItemFormat={0} (non identificato)
+UI/&SaveDependencyClearDescription=Questo salvataggio non ha dipendenze note da contenuti modificati. È probabilmente compatibile con Solasta senza %ModName%.
+UI/&SaveDependencyRequiredDescription=Questo salvataggio usa contenuti di %ModName%. Caricarlo senza %ModName% è sconsigliato.

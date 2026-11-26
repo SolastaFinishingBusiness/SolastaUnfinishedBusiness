@@ -36,3 +36,5 @@ UI/&TrendSourceCover=엄폐
 UI/&TrendSourceFeature=특성
 UI/&TrendSourceOther=기타
 UI/&UnidentifiedItemFormat=미감정 {0}
+UI/&SaveDependencyClearDescription=이 저장 파일은 모드 콘텐츠에 대한 알려진 의존성이 없습니다. %ModName% 없이 Solasta에서도 호환될 가능성이 높습니다.
+UI/&SaveDependencyRequiredDescription=이 저장 파일은 %ModName% 콘텐츠를 사용합니다. %ModName% 없이 불러오는 것은 권장하지 않습니다.

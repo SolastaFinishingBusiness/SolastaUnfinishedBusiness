@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Cover
 UI/&TrendSourceFeature=Feature
 UI/&TrendSourceOther=Other
 UI/&UnidentifiedItemFormat=Unidentified {0}
+UI/&SaveDependencyClearDescription=This save has no known dependency on modded content. It is likely compatible with Solasta without %ModName%.
+UI/&SaveDependencyRequiredDescription=This save uses %ModName% content. Loading without %ModName% is not recommended.

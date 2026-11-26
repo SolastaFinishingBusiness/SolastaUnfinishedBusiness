@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Deckung
 UI/&TrendSourceFeature=Merkmal
 UI/&TrendSourceOther=Sonstiges
 UI/&UnidentifiedItemFormat={0} (nicht identifiziert)
+UI/&SaveDependencyClearDescription=Dieser Spielstand hat keine bekannte Abhängigkeit von Mod-Inhalten. Er ist wahrscheinlich mit Solasta ohne %ModName% kompatibel.
+UI/&SaveDependencyRequiredDescription=Dieser Spielstand verwendet Inhalte von %ModName%. Das Laden ohne %ModName% wird nicht empfohlen.

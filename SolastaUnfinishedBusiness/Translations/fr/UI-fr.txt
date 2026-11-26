@@ -36,3 +36,5 @@ UI/&TrendSourceCover=Abri
 UI/&TrendSourceFeature=Aptitude
 UI/&TrendSourceOther=Autre
 UI/&UnidentifiedItemFormat={0} (non identifié)
+UI/&SaveDependencyClearDescription=Cette sauvegarde n'a aucune dépendance connue à du contenu moddé. Elle est probablement compatible avec Solasta sans %ModName%.
+UI/&SaveDependencyRequiredDescription=Cette sauvegarde utilise du contenu de %ModName%. Il est déconseillé de la charger sans %ModName%.
