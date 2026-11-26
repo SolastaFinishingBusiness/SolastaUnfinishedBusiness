@@ -134,6 +134,9 @@ internal static class CampaignRequirementUi
             return true;
         }
 
+        // the campaign the question is about; the answer applies only while the editor still shows it
+        var campaign = screen.UserCampaign;
+
         _asking = true;
         _showing = true;
 
@@ -147,8 +150,8 @@ internal static class CampaignRequirementUi
                 Gui.Localize(PromptDescription) + "\n\n",
                 "Message/&MessageYesTitle",
                 "Message/&MessageNoTitle",
-                () => Answer(screen, true),
-                () => Answer(screen, false));
+                () => Answer(screen, campaign, true),
+                () => Answer(screen, campaign, false));
         }
         finally
         {
@@ -217,7 +220,13 @@ internal static class CampaignRequirementUi
         _asking = false;
     }
 
-    private static void Answer(UserCampaignEditorScreen screen, bool required)
+    // Whether the editor is open and still editing that campaign. Unbind clears the editor's campaign list, and the
+    // UserCampaign getter reads its first entry, so the list is checked before the getter.
+    private static bool StillEditing(UserCampaignEditorScreen screen, UserCampaign campaign) =>
+        screen && screen.Visible && screen.modificationsList is { Count: > 0 } &&
+        ReferenceEquals(screen.UserCampaign, campaign);
+
+    private static void Answer(UserCampaignEditorScreen screen, UserCampaign campaign, bool required)
     {
         if (_dontAsk && _dontAsk.isOn)
         {
@@ -227,7 +236,7 @@ internal static class CampaignRequirementUi
         RemoveDontAsk();
         _asking = false;
 
-        if (!screen || screen.UserCampaign == null)
+        if (!StillEditing(screen, campaign))
         {
             return;
         }
@@ -235,28 +244,30 @@ internal static class CampaignRequirementUi
         // An undo step and the modified mark, as for the toggle, so a save that ends up cancelled (the overwrite
         // question) still leaves an undoable, unsaved change.
         screen.NotifyBeforeModification();
-        CampaignRequirement.Set(screen.UserCampaign, required);
+        CampaignRequirement.Set(campaign, required);
         screen.RefreshNow();
-        screen.StartCoroutine(SaveAfterHide(screen));
+        screen.StartCoroutine(SaveAfterHide(screen, campaign));
     }
 
     // The answer arrives while the message window is hiding (its OnEndHide calls the callbacks). OnSaveCb can open
     // another message in that same window (the overwrite question), which the hide would then close, so the save
-    // runs again only once the window has finished hiding.
-    private static IEnumerator SaveAfterHide(UserCampaignEditorScreen screen)
+    // runs again only once the window has finished hiding. If the window is still showing after that (another
+    // message took it over), the save is left to the author: the choice is already recorded on the campaign, and
+    // saving now could replace that message.
+    private static IEnumerator SaveAfterHide(UserCampaignEditorScreen screen, UserCampaign campaign)
     {
         var modal = Gui.GuiService.GetScreen<MessageModal>();
         var waited = 0f;
 
         yield return null;
 
-        while (modal && modal.Visible && waited < 5f)
+        while (modal && modal.Visible && waited < 2f)
         {
             waited += Time.unscaledDeltaTime;
             yield return null;
         }
 
-        if (screen && screen.Visible && screen.UserCampaign != null)
+        if ((!modal || !modal.Visible) && StillEditing(screen, campaign))
         {
             screen.OnSaveCb();
         }

@@ -52,20 +52,24 @@ internal static class CampaignRequirement
         }
     }
 
-    // Called once the file is confirmed written with the running version. When the title was already in the pool,
-    // SaveUserCampaign stored a clone of the campaign there before this runs, so that clone carries the choice from
-    // before the save; starting the campaign later in this session plays that clone. It is brought up to date too.
+    // The pool entry the running SaveUserCampaign call put in place of the title's old one (a clone of the saved
+    // campaign), set by that method's postfix around NoteCampaignSaved; null when the save left the pool alone, such
+    // as the rewrites made while reading a campaign, which don't update the pool.
+    internal static UserCampaign InstalledBySave;
+
+    // Called once the file is confirmed written with the running version. A clone the save installed in the pool
+    // was made before this runs, so it carries the choice from before the save; starting the campaign later in
+    // this session plays that clone, so it is brought up to date too. Only that entry: another campaign with the
+    // same title already in the pool keeps its own choice.
     internal static void Saved(UserCampaign campaign)
     {
         var choice = Choices.GetOrCreateValue(campaign);
 
         choice.Saved = choice.Editor;
 
-        if (campaign.Title == null ||
-            ServiceRepository.GetService<IUserCampaignPoolService>() is not UserCampaignPoolManager manager ||
-            manager.pool == null ||
-            !manager.pool.TryGetValue(campaign.Title, out var cached) ||
-            ReferenceEquals(cached, campaign) || cached == null)
+        var cached = InstalledBySave;
+
+        if (cached == null || ReferenceEquals(cached, campaign))
         {
             return;
         }
