@@ -1,4 +1,8 @@
-- Each hero switches between spell slots and spell points after a completed long rest. Heroes using slots no longer carry the hidden spell-point pool.
-- A stock level-two Monk's Patient Defense class grant uses its vanilla power name on disk. Finishing Business restores its wrapper on load.
-- Saves record the writing version and a dependency classification. Dungeon Maker commands require an explicit choice saved by the author.
-- Vanilla loading, rest transitions, Dungeon Maker commands and multiplayer have not been tested in game.
+- Saves made with Finishing Business can load in Solasta without the mod, as long as they use nothing the mod adds (issue #38).
+- Spell points: each hero switches between spell slots and spell points at its next completed long rest after the setting changes, and only then. A hero using slots keeps no spell-point pool, so its save stays loadable without the mod. Saves from older versions follow the current setting on their first load.
+- A Monk's Patient Defense from level 2 is saved under the game's own name, so a stock Monk's save loads without the mod; the mod restores its version on load.
+- The Save and Load screens show a small badge on each save made with this version: the Finishing Business medallion when the save needs the mod, a Solasta emblem when no dependency on modded content was found, and nothing when it can't tell (older saves, and saves in Dungeon Maker campaigns unless they need the mod). Hover for details.
+- Dungeon Maker: a "Requires Finishing Business" toggle on the campaign editor. The mod's campaign commands run only in campaigns saved with this toggle on in this version or later; elsewhere those variables are ordinary variables. Saving a campaign that has command-like variables asks once, with a "Don't ask again" box. Saves made in such a campaign need the mod.
+- The title screen's Finishing Business badge has a new look.
+- Saves made in Save by Location folders aren't listed by the game without the mod; move them to the main save folder first.
+- Not tested in game: any of the above, loading in Solasta without the mod, two computers, and a gamepad.
