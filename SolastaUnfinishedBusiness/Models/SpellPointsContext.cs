@@ -111,16 +111,33 @@ internal static class SpellPointsContext
         return rulesetCharacter.GetMaxUsesOfPower(usablePower);
     }
 
-    internal static int GetRemainingSpellPoints(this RulesetCharacter rulesetCharacter)
+    // The hero's spell point pool, with its remaining points lowered to the pool's size when they are above it.
+    // A save keeps the remaining points, so a pool that became smaller (a hero saved before the caster level counted
+    // only casting class levels, or a level down) would otherwise keep spending points above its size until the next
+    // long rest. Points never legitimately exceed the size: AddSpellPoints caps them there too.
+    private static RulesetUsablePower GetPool(RulesetCharacter rulesetCharacter)
     {
         var usablePower = PowerProvider.Get(PowerSpellPoints, rulesetCharacter);
+        var max = rulesetCharacter.GetMaxUsesOfPower(usablePower);
+
+        if (usablePower.remainingUses > max)
+        {
+            usablePower.remainingUses = max;
+        }
+
+        return usablePower;
+    }
+
+    internal static int GetRemainingSpellPoints(this RulesetCharacter rulesetCharacter)
+    {
+        var usablePower = GetPool(rulesetCharacter);
 
         return rulesetCharacter.GetRemainingUsesOfPower(usablePower);
     }
 
     internal static void AddSpellPoints(this RulesetCharacter rulesetCharacter, int points)
     {
-        var usablePower = PowerProvider.Get(PowerSpellPoints, rulesetCharacter);
+        var usablePower = GetPool(rulesetCharacter);
         usablePower.remainingUses = Math.Min(usablePower.remainingUses + points, rulesetCharacter.GetMaxSpellPoints());
     }
 
@@ -241,7 +258,7 @@ internal static class SpellPointsContext
         int slotLevel, bool consume = true, bool isMulticaster = false)
     {
         // consume points
-        var usablePower = PowerProvider.Get(PowerSpellPoints, character);
+        var usablePower = GetPool(character);
 
         if (consume)
         {
