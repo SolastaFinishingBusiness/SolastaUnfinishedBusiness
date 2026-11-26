@@ -127,11 +127,18 @@ internal static class CampaignRequirementUi
         screen.RefreshNow();
     }
 
-    // UserCampaignEditorScreen.OnSaveCb, before it runs. Returns false when the question was opened instead; the
-    // answer then records the choice and runs the save again.
+    // UserCampaignEditorScreen.OnSaveCb, before it runs. Returns false when the question was opened instead (the
+    // answer then records the choice and runs the save again) or when the editor holds no campaign.
     internal static bool BeforeSave(UserCampaignEditorScreen screen)
     {
-        if (_asking || !HasCampaign(screen) || !CampaignRequirement.ShouldPromptOnAuthorSave(screen.UserCampaign))
+        // Without a campaign in the editor the game's save would index an empty list (OnSaveCb and DoSave read
+        // modificationsList[0]), so it is skipped.
+        if (!HasCampaign(screen))
+        {
+            return false;
+        }
+
+        if (_asking || !CampaignRequirement.ShouldPromptOnAuthorSave(screen.UserCampaign))
         {
             return true;
         }
