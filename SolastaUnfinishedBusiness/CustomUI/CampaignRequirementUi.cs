@@ -93,11 +93,22 @@ internal static class CampaignRequirementUi
         Refresh(screen);
     }
 
-    // The editor's current campaign is the head of its undo list, so the toggle reads it again on every refresh
-    // (undo and redo replace it with a clone that carries its own choice).
+    // The editor's current campaign is the head of its undo list (the UserCampaign getter indexes slot zero). That list
+    // is empty while the editor opens: Show shows the panel (OnBeginShow) before adding the campaign, then calls
+    // RefreshNow, and Unbind clears it on close.
+    private static bool HasCampaign(UserCampaignEditorScreen screen) =>
+        screen && screen.modificationsList is { Count: > 0 } && screen.UserCampaign != null;
+
+    // The toggle reads the current campaign again on every refresh (undo and redo replace it with a clone that
+    // carries its own choice). Before the campaign is in place it shows off; the RefreshNow at the end of Show then
+    // sets it.
     internal static void Refresh(UserCampaignEditorScreen screen)
     {
-        if (_toggle)
+        if (_toggle && !HasCampaign(screen))
+        {
+            _toggle.SetIsOnWithoutNotify(false);
+        }
+        else if (_toggle)
         {
             _toggle.SetIsOnWithoutNotify(CampaignRequirement.Get(screen.UserCampaign) == true);
         }
@@ -105,7 +116,7 @@ internal static class CampaignRequirementUi
 
     private static void OnToggled(UserCampaignEditorScreen screen, bool value)
     {
-        if (!screen || screen.UserCampaign == null)
+        if (!HasCampaign(screen))
         {
             return;
         }
@@ -120,7 +131,7 @@ internal static class CampaignRequirementUi
     // answer then records the choice and runs the save again.
     internal static bool BeforeSave(UserCampaignEditorScreen screen)
     {
-        if (_asking || !CampaignRequirement.ShouldPromptOnAuthorSave(screen.UserCampaign))
+        if (_asking || !HasCampaign(screen) || !CampaignRequirement.ShouldPromptOnAuthorSave(screen.UserCampaign))
         {
             return true;
         }
