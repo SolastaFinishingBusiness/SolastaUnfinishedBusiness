@@ -28,6 +28,16 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
     // Set after a failed load, so a missing asset is logged once rather than on every line bind.
     private static bool _solastaIconFailed;
 
+    // The medallion's 64 px image is drawn at this size and offset from the thumbnail's bottom-left corner.
+    private const float BadgeSize = 36f;
+    private const float BadgeInset = 4f;
+
+    // Visible artwork (alpha above one half) inside each 64 px image, as x, y from the bottom-left, width, height.
+    // The two images leave different transparent margins, so drawing both at BadgeSize would make the Solasta icon's
+    // circle about 3% smaller and off-centre against the medallion's.
+    private static readonly Rect MedallionArtwork = new(2f, 1f, 61f, 61f);
+    private static readonly Rect SolastaIconArtwork = new(3f, 3f, 59f, 59f);
+
     private Image _image;
     private GuiTooltip _tooltip;
 
@@ -107,6 +117,7 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
         }
 
         _image.sprite = sprite;
+        PlaceArtwork(required ? MedallionArtwork : SolastaIconArtwork);
         _image.color = Color.white;
         _tooltip.Content = content;
         _image.gameObject.SetActive(true);
@@ -145,6 +156,22 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
         return _solastaIcon;
     }
 
+    // Sizes and moves the badge so the given image's visible artwork covers the same area on the thumbnail as the
+    // medallion's does at BadgeSize and BadgeInset. Lines are pooled, so this runs on every bind with an icon.
+    private void PlaceArtwork(Rect artwork)
+    {
+        const float ImageSize = 64f;
+
+        var target = BadgeSize / ImageSize;
+        var targetX = BadgeInset + (MedallionArtwork.x * target);
+        var targetY = BadgeInset + (MedallionArtwork.y * target);
+        var scale = MedallionArtwork.width * target / artwork.width;
+        var rect = (RectTransform)_image.transform;
+
+        rect.sizeDelta = new Vector2(ImageSize * scale, ImageSize * scale);
+        rect.anchoredPosition = new Vector2(targetX - (artwork.x * scale), targetY - (artwork.y * scale));
+    }
+
     private void ReleaseBackgroundTooltip(LoadSaveLine line)
     {
         var background = line.backgroundTooltip;
@@ -179,8 +206,8 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.zero;
         rect.pivot = Vector2.zero;
-        rect.anchoredPosition = new Vector2(4f, 4f);
-        rect.sizeDelta = new Vector2(36f, 36f);
+        rect.anchoredPosition = new Vector2(BadgeInset, BadgeInset);
+        rect.sizeDelta = new Vector2(BadgeSize, BadgeSize);
 
         _image = copy.GetComponent<Image>();
         _tooltip = copy.GetComponent<GuiTooltip>();
