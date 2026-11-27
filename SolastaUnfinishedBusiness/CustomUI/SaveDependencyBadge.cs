@@ -1,5 +1,7 @@
+using System;
 using SolastaUnfinishedBusiness.Models;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.UI;
 using Resources = SolastaUnfinishedBusiness.Properties.Resources;
 
@@ -15,6 +17,16 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
     private const string BadgeName = "FbSaveDependencyImage";
     internal const string RequiredTooltip = "UI/&SaveDependencyRequiredDescription";
     internal const string ClearTooltip = "UI/&SaveDependencyClearDescription";
+
+    // The game's own Solasta icon (Addressables asset Gui/Bitmaps/Logos/solasta_icon, a 64 x 64 sprite of the
+    // logo's ring around an "S"), loaded by its asset GUID from the game's catalog.
+    private const string SolastaIconGuid = "cd6ad5bcd8e9be74bbb4eaeea9492cb0";
+
+    // Loaded once and kept for the session: every badge shares it, so no line releases it on rebind.
+    private static Sprite _solastaIcon;
+
+    // Set after a failed load, so a missing asset is logged once rather than on every line bind.
+    private static bool _solastaIconFailed;
 
     private Image _image;
     private GuiTooltip _tooltip;
@@ -82,9 +94,19 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
         var required = dependency == SaveDependency.Required;
         var content = required ? RequiredTooltip : ClearTooltip;
 
-        _image.sprite = required
+        var sprite = required
             ? Sprites.GetOrCreateSprite("SaveDependencyRequired", Resources.ContentPack, 64)
-            : Sprites.GetOrCreateSprite("SaveDependencyClear", Resources.SolastaEmblem, 64);
+            : SolastaIcon();
+
+        if (!sprite)
+        {
+            // Without its icon the badge would show the copied Iron Man image, so it stays hidden instead.
+            _image.gameObject.SetActive(false);
+
+            return;
+        }
+
+        _image.sprite = sprite;
         _image.color = Color.white;
         _tooltip.Content = content;
         _image.gameObject.SetActive(true);
@@ -99,6 +121,28 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
             background.Content = content;
             _backgroundContent = content;
         }
+    }
+
+    // The game's synchronous Addressables load throws when the key is missing or the load fails; that is caught
+    // here so a missing icon only hides the "no known dependency" badge instead of breaking the line's bind.
+    private static Sprite SolastaIcon()
+    {
+        if (_solastaIcon || _solastaIconFailed)
+        {
+            return _solastaIcon;
+        }
+
+        try
+        {
+            _solastaIcon = Gui.LoadAssetSync<Sprite>(new AssetReferenceSprite(SolastaIconGuid));
+        }
+        catch (Exception e)
+        {
+            _solastaIconFailed = true;
+            Main.Error($"Save badge: the game's Solasta icon could not be loaded: {e.Message}");
+        }
+
+        return _solastaIcon;
     }
 
     private void ReleaseBackgroundTooltip(LoadSaveLine line)
