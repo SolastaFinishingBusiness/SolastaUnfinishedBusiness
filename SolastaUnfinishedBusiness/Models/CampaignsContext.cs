@@ -638,9 +638,9 @@ internal static class CampaignsContext
     ///     width, and the table sizes itself to its preferred width with a ContentSizeFitter, which the row tables
     ///     copied from it have too. A table wider than its lines would spread the extra width between them, as the
     ///     table's HorizontalLayoutGroup and the lines' own both have childForceExpandWidth on in the prefab, and
-    ///     a layout group with that setting counts as flexible for its parent, so only a table of exactly its
-    ///     preferred width leaves no gaps. The settings are applied on every call, so a holder that already exists
-    ///     has them as well.
+    ///     a layout group with that setting counts as flexible for its parent. At its preferred width a table has
+    ///     no extra width to spread and its lines keep their own preferred widths. The settings are applied on
+    ///     every call, so a holder that already exists has them as well.
     /// </summary>
     private static RectTransform GetRowHolder(RectTransform spellRepertoireLinesTable)
     {
