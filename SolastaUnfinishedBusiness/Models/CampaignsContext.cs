@@ -293,6 +293,8 @@ internal static class CampaignsContext
     ///     from those: no line without content, every offered level on exactly one line, and the slot box on the
     ///     list's first line only. With multi-line spell offering rows hold up to MultilineBoxesPerRow boxes;
     ///     without it the first row keeps the game's cutoff and each list's levels above it get a row of their own.
+    ///     A list's lines share out every spell level between them (TileLevels), so a level that starts to be
+    ///     offered while the panel is open shows on one of them when the line refreshes.
     /// </summary>
     internal static void SpellSelectionPanelRowsBind(
         SpellSelectionPanel __instance,
@@ -305,7 +307,8 @@ internal static class CampaignsContext
         var spellRepertoireLinesTable = __instance.spellRepertoireLinesTable;
         var spellRepertoireSecondaryLine = __instance.spellRepertoireSecondaryLine;
 
-        // take down what the game's Bind made; its secondary line isn't used, as every row is made here
+        // take down what the game's Bind made (from the same spell lists, see GetPanelRepertoires); its secondary
+        // line isn't used, as every row is made here
         foreach (var spellRepertoireLine in spellRepertoireLines)
         {
             spellRepertoireLine.Unbind();
@@ -325,6 +328,8 @@ internal static class CampaignsContext
         var rows = Main.Settings.DisableMultilineSpellOffering
             ? CompactRows(caster.RulesetCharacter, offers)
             : MultilineRows(offers);
+
+        TileLevels(rows);
 
         // the extra row tables are copies of the panel's table made while it is empty, so they hold no lines of
         // their own; each is put first in the holder's vertical layout, so later rows stand above earlier ones
@@ -405,8 +410,10 @@ internal static class CampaignsContext
     }
 
     // the spell lists the panel shows: not those whose casting feature is hidden, nor those with the mod's empty
-    // spell list (features that only add spells to the character, such as Touched)
-    private static List<RulesetSpellRepertoire> GetPanelRepertoires(RulesetCharacter character)
+    // spell list (features that only add spells to the character, such as Touched). The game's
+    // SpellSelectionPanel.Bind reads the same lists through this (its get_SpellRepertoires call is replaced), so it
+    // binds no line, and counts no box towards its cutoff, for a list the panel doesn't show.
+    internal static List<RulesetSpellRepertoire> GetPanelRepertoires(RulesetCharacter character)
     {
         return character.SpellRepertoires
             .Where(repertoire =>
@@ -508,7 +515,10 @@ internal static class CampaignsContext
                 continue;
             }
 
-            firstRow.Add(SegmentOf(offer, 0, count, true));
+            // the line's share of the levels ends at the cutoff, not at its highest offered level below it
+            firstRow.Add(count == 0
+                ? SegmentOf(offer, 0, 0, true)
+                : new RowSegment(offer.Repertoire, 0, cutoff, true));
             onFirstRow.Add(offer.Repertoire);
         }
 
@@ -532,8 +542,63 @@ internal static class CampaignsContext
         return rows;
     }
 
+    /// <summary>
+    ///     Gives each line its final level range, so that a spell list's lines together cover every spell level
+    ///     exactly once. A line keeps its range for as long as it is bound: SpellRepertoireLine.Refresh, run when
+    ///     its list raises RepertoireRefreshed, binds it again with the range it was given, and a level outside
+    ///     every line's range would stay off the panel however many spells it gained. So, in row order, a list's
+    ///     first line with levels starts at level 0, each later one starts right above the one before it, and the
+    ///     list's last line has no upper end; the rows' builders only set where a line that isn't the last ends.
+    ///     A line that only holds the slot box keeps the empty range, which binds no level box, when another line
+    ///     of its list follows (that one then starts at level 0); as a list's only line it takes every level.
+    ///     Lines only bind the levels they find spells for, so a range wider than the offered levels adds no
+    ///     box until a level in it gets a spell; a row can then hold more boxes than it was laid out for. A list
+    ///     with no line at all (nothing offered and no slot box) gets none until the panel is bound again.
+    /// </summary>
+    private static void TileLevels(List<List<RowSegment>> rows)
+    {
+        // how many lines of each list are still to be given a range
+        var linesLeftOf = new Dictionary<RulesetSpellRepertoire, int>();
+
+        foreach (var segment in rows.SelectMany(row => row))
+        {
+            linesLeftOf.TryGetValue(segment.Repertoire, out var lines);
+            linesLeftOf[segment.Repertoire] = lines + 1;
+        }
+
+        // the lowest level no earlier line of the list covers; 0 for a list with no such line yet
+        var nextLevelOf = new Dictionary<RulesetSpellRepertoire, int>();
+
+        foreach (var row in rows)
+        {
+            for (var i = 0; i < row.Count; i++)
+            {
+                var segment = row[i];
+                var isLast = --linesLeftOf[segment.Repertoire] == 0;
+
+                if (isLast)
+                {
+                    nextLevelOf.TryGetValue(segment.Repertoire, out var fromLevel);
+                    row[i] = new RowSegment(segment.Repertoire, fromLevel, int.MaxValue, segment.Primary);
+
+                    continue;
+                }
+
+                // a slot box only line with more lines of its list to come
+                if (segment.MaxLevel < segment.MinLevel)
+                {
+                    continue;
+                }
+
+                nextLevelOf.TryGetValue(segment.Repertoire, out var minLevel);
+                row[i] = new RowSegment(segment.Repertoire, minLevel, segment.MaxLevel, segment.Primary);
+                nextLevelOf[segment.Repertoire] = segment.MaxLevel + 1;
+            }
+        }
+    }
+
     // a line for count of the list's offered levels from levelIndex on; with none (a line for the slot box only)
-    // it gets the empty range 0 to -1, which binds no level box
+    // it gets the empty range 0 to -1, which binds no level box. TileLevels widens these ranges afterwards.
     private static RowSegment SegmentOf(PanelOffer offer, int levelIndex, int count, bool primary)
     {
         return count == 0
@@ -589,7 +654,8 @@ internal static class CampaignsContext
         internal bool HasSlotBox { get; } = hasSlotBox;
     }
 
-    // one line on a row: a spell list's levels MinLevel to MaxLevel; a primary line also shows the list's slot box
+    // one line on a row: a spell list's levels MinLevel to MaxLevel (none when MaxLevel is below MinLevel); a
+    // primary line also shows the list's slot box
     private readonly struct RowSegment(RulesetSpellRepertoire repertoire, int minLevel, int maxLevel, bool primary)
     {
         internal RulesetSpellRepertoire Repertoire { get; } = repertoire;
