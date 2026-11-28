@@ -120,7 +120,7 @@ ModUi/&EnemySpellcastersDropScribedSpellbooks=Enemy spellcasters drop scribed sp
 ModUi/&AddToStore=Add {0} 
 ModUi/&Advanced=<color=#F0DAA0>Advanced:</color> <b><i><color=#C04040E0>[Requires Restart]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENTION:</color></b> These settings will require the player to have this mod installed
-ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>WARNING:</color></b> Starting Solasta without this mod permanently removes the rooms, props and gadgets this mod adds (Dungeon Maker Pro) from every Dungeon Maker campaign and location on this computer that uses them. The game does this while it starts, without opening or saving them. Back up the UserContent folder before playing without the mod.
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>WARNING:</color></b> Back up your UserContent folder before starting Solasta without this mod. When the game reads one of your own Dungeon Maker files, it removes the rooms, props and gadgets that use blueprints added by this mod (Dungeon Maker Pro, flat rooms included) and writes the change to disk. For campaigns this happens at startup, and for standalone locations when the game lists them, even if you never open them in the editor or click Save.
 ModUi/&AllMagicThrownReturn=All magic thrown weapons return to the thrower <b><i><color=#C04040E0>[Requires Restart To Remove]</color></i></b>
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Allow all players on narrative sequences</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=Keep the game's order for parties of 4 or fewer in cutscenes <i><color=#F0DAA0>[otherwise every party stands by height, the shortest at the centre of the front row]</color></i>
