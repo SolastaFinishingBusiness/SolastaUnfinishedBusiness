@@ -79,7 +79,7 @@ internal sealed class SaveDependencyBadge : MonoBehaviour
         var path = service?.BuildFilenameWithPathAndExtension(line.SaveDescriptor.Filename);
         var dependency = string.IsNullOrEmpty(path)
             ? SaveDependency.Unknown
-            : SaveStampContext.Read(path, out _);
+            : SaveStampContext.Read(path);
 
         if (dependency == SaveDependency.Unknown)
         {

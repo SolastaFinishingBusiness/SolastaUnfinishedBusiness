@@ -28,11 +28,15 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private bool _required, _uncertain, _game, _session;
     private string _path;
-    private static bool _ready;
+    private static bool _ready, _layoutsLoaded;
     private readonly Action<string, string, string> _note = note;
 
-    static SaveDependencyClassifier()
+    // Parsed on the first classification, inside its try/catch, so a bad table makes saves unknown rather than
+    // failing the game's save.
+    private static void LoadLayouts()
     {
+        if (_layoutsLoaded) { return; }
+        _layoutsLoaded = true;
         foreach (var row in SaveDependencyLayouts.Rows.Split('\n'))
         {
             var f = row.TrimEnd('\r').Split('|');
@@ -71,6 +75,7 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
         try
         {
             if (CampaignRequirement.CommandsEnabled) { return SaveDependency.Required; }
+            LoadLayouts();
             if (!_ready || !payload.TryGetBuffer(out var segment)) { return SaveDependency.Unknown; }
             return new SaveDependencyClassifier(segment.Array).Walk(segment.Offset, segment.Offset + segment.Count);
         }
@@ -177,6 +182,13 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             case ("GameSaveDescriptor", "A", "CampaignDefinitionName"): return "@CampaignDefinition";
             case ("GameSaveDescriptor", "A", "LocationDefinitionName"): return "@LocationDefinition";
             case ("$", "E", "VersionNumber"): return "8";
+            // Present only in Dungeon Maker saves. A standalone location's save holds no copy of the location
+            // (no UCJson), and the game rebuilds it from the location's own file, whose rooms and gadgets may be
+            // the mod's, so a named user location or campaign makes the save unknown.
+            case ("Session", "E", "UserCampaignName"):
+            case ("Session", "E", "UserLocationName"):
+            case ("GameSaveDescriptor", "A", "UserCampaignName"):
+            case ("GameSaveDescriptor", "A", "UserLocationName"): return "usercontent";
             case ("GameCampaignMap", "E", "AllElementIds"): return "L:text";
             // The mod's per-hero spell system: true means the hero casts from the mod's spell-point pool.
             case ("RulesetCharacterHero", "E", "FbUsesSpellPoints"): return "modflag";
@@ -205,6 +217,13 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
                 return "D:@FeatureDefinitionRegeneration:4";
             }
             if (current == "RulesetCharacter" && kind == "E" && field == "MorphotypeElements") { return "D:text:@MorphotypeElementDefinition"; }
+            // Effect names the game looks up by name in its databases (an effect proxy tries spells, then
+            // features). Each is matched against every database; a name in none of them is plain text.
+            if ((current, kind, field) is ("RulesetCharacterEffectProxy", "E", "EffectDefinitionName") or
+                ("RulesetCondition", "E", "EffectDefinitionName") or ("GameLocationEffect", "A", "EffectSourceName"))
+            {
+                return "anyname";
+            }
             if (Fields.TryGetValue(current + "|" + kind + "|" + pattern, out var shape)) { return shape; }
             Bases.TryGetValue(current, out current);
         }
@@ -392,6 +411,13 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             var dynamicList = siblings != null && ((owner == "GameSector" && field == "AllGadgetNames") ||
                                                      (owner == "GameCampaignMap" && field == "AllElementIds"));
             var names = dynamicList ? new HashSet<string>(StringComparer.Ordinal) : null;
+            // Solasta without the mod has one class per hero and stops at level 16, so a second class, or a class
+            // history (one entry per level gained) longer than 16, needs the mod.
+            if (owner == "RulesetCharacterHero" &&
+                ((field == "ClassesAndLevels" && count > 1) || (field == "ClassesHistory" && count > 16)))
+            {
+                _required = true;
+            }
             if (!Collection(shape, field, body, next, count, depth, names))
             {
                 // A prefix of a malformed packed run cannot establish a dependency.
@@ -452,7 +478,7 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
     private bool Member(string shape, string side, ref int at, int end, string field, int depth) =>
         IsScalar(shape) ? Scalar(shape, ref at, end, field) : Element(ref at, end, field, side, shape, depth + 1);
 
-    private static bool IsScalar(string shape) => shape is "bool" or "modflag" or "text" or "bits" or "guid" or "level" or "char" ||
+    private static bool IsScalar(string shape) => shape is "bool" or "modflag" or "text" or "usercontent" or "anyname" or "bits" or "guid" or "level" or "char" ||
         shape[0] is >= '0' and <= '9' or '@' || shape.StartsWith("ref:", StringComparison.Ordinal);
 
     private bool Scalar(string shape, ref int at, int end, string field)
@@ -468,6 +494,18 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             if (guid ? Official.Ids.Contains(value) : Official.Contains(db, value)) { return true; }
             if (guid ? Added.Ids.Contains(value) : Added.Contains(db, value)) { _required = true; }
             else { Unknown(guid ? "GUID" : db, value, at); }
+            return true;
+        }
+        if (shape is "usercontent" or "anyname")
+        {
+            if (!Text(ref at, end, out var value)) { return false; }
+            if (value.Length == 0) { return true; }
+            if (shape == "usercontent") { Unknown("UserContent", field, at); return true; }
+            _note?.Invoke(_path + "|" + field, "any", value);
+            if (!Official.Contains(nameof(BaseDefinition), value) && Added.Contains(nameof(BaseDefinition), value))
+            {
+                _required = true;
+            }
             return true;
         }
         if (shape == "bits")

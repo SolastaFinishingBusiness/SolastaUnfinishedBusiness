@@ -14,9 +14,8 @@ internal static class SaveStampContext
 
     // Listing reads at most the ten-byte fixed header and a bounded comment. The FB writer emits
     // FCOMMENT alone. Other gzip variants, malformed stamps and old or vanilla saves are unknown.
-    internal static SaveDependency Read(string path, out string version)
+    internal static SaveDependency Read(string path)
     {
-        version = null;
         try
         {
             using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -42,7 +41,6 @@ internal static class SaveStampContext
                 if (!stamp.StartsWith(Prefix, StringComparison.Ordinal)) { break; }
                 var fields = stamp.Substring(Prefix.Length).Split(' ');
                 if (fields.Length != 2 || fields[0].Length == 0) { break; }
-                version = fields[0];
                 return fields[1] switch
                 {
                     "required" => SaveDependency.Required,
