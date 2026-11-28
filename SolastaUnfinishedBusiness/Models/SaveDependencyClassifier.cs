@@ -28,23 +28,35 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private bool _required, _uncertain, _game, _session;
     private string _path;
-    private static bool _ready, _layoutsLoaded;
+    private static bool _ready;
+    private static volatile bool _layoutsLoaded;
+    private static readonly object LayoutsLock = new();
     private readonly Action<string, string, string> _note = note;
 
     // Parsed on the first classification, inside its try/catch, so a bad table makes saves unknown rather than
-    // failing the game's save.
+    // failing the game's save. The rows are parsed into new dictionaries and copied into the shared ones only
+    // once all of them parsed, under a lock, so no classification walks a partly filled table; a failed parse
+    // leaves the tables empty and is tried again on the next save.
     private static void LoadLayouts()
     {
         if (_layoutsLoaded) { return; }
-        _layoutsLoaded = true;
-        foreach (var row in SaveDependencyLayouts.Rows.Split('\n'))
+        lock (LayoutsLock)
         {
-            var f = row.TrimEnd('\r').Split('|');
-            if (f.Length != 4) { continue; }
-            if (f[1] == "B") { Bases[f[0]] = f[3]; continue; }
-            var key = f[0] + "|" + f[1] + "|" + f[2];
-            // Multiple incompatible declarations at the same site cannot identify a wire layout.
-            Fields[key] = Fields.TryGetValue(key, out var existing) && existing != f[3] ? "?" : f[3];
+            if (_layoutsLoaded) { return; }
+            var fields = new Dictionary<string, string>(StringComparer.Ordinal);
+            var bases = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var row in SaveDependencyLayouts.Rows.Split('\n'))
+            {
+                var f = row.TrimEnd('\r').Split('|');
+                if (f.Length != 4) { continue; }
+                if (f[1] == "B") { bases[f[0]] = f[3]; continue; }
+                var key = f[0] + "|" + f[1] + "|" + f[2];
+                // Multiple incompatible declarations at the same site cannot identify a wire layout.
+                fields[key] = fields.TryGetValue(key, out var existing) && existing != f[3] ? "?" : f[3];
+            }
+            foreach (var pair in fields) { Fields[pair.Key] = pair.Value; }
+            foreach (var pair in bases) { Bases[pair.Key] = pair.Value; }
+            _layoutsLoaded = true;
         }
     }
 
@@ -217,10 +229,16 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
                 return "D:@FeatureDefinitionRegeneration:4";
             }
             if (current == "RulesetCharacter" && kind == "E" && field == "MorphotypeElements") { return "D:text:@MorphotypeElementDefinition"; }
-            // Effect names the game looks up by name in its databases (an effect proxy tries spells, then
-            // features). Each is matched against every database; a name in none of them is plain text.
-            if ((current, kind, field) is ("RulesetCharacterEffectProxy", "E", "EffectDefinitionName") or
-                ("RulesetCondition", "E", "EffectDefinitionName") or ("GameLocationEffect", "A", "EffectSourceName"))
+            // Effect names the game looks up by name in its databases. Each is matched against every database.
+            // An effect proxy's name is always its source definition's (spells, then features, are searched when it
+            // is used), so a name in no database makes the save unknown; the other two may hold other text, which
+            // is ignored.
+            if ((current, kind, field) is ("RulesetCharacterEffectProxy", "E", "EffectDefinitionName"))
+            {
+                return "sourcename";
+            }
+            if ((current, kind, field) is ("RulesetCondition", "E", "EffectDefinitionName") or
+                ("GameLocationEffect", "A", "EffectSourceName"))
             {
                 return "anyname";
             }
@@ -478,7 +496,7 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
     private bool Member(string shape, string side, ref int at, int end, string field, int depth) =>
         IsScalar(shape) ? Scalar(shape, ref at, end, field) : Element(ref at, end, field, side, shape, depth + 1);
 
-    private static bool IsScalar(string shape) => shape is "bool" or "modflag" or "text" or "usercontent" or "anyname" or "bits" or "guid" or "level" or "char" ||
+    private static bool IsScalar(string shape) => shape is "bool" or "modflag" or "text" or "usercontent" or "anyname" or "sourcename" or "bits" or "guid" or "level" or "char" ||
         shape[0] is >= '0' and <= '9' or '@' || shape.StartsWith("ref:", StringComparison.Ordinal);
 
     private bool Scalar(string shape, ref int at, int end, string field)
@@ -496,16 +514,15 @@ internal sealed partial class SaveDependencyClassifier(byte[] bytes, Action<stri
             else { Unknown(guid ? "GUID" : db, value, at); }
             return true;
         }
-        if (shape is "usercontent" or "anyname")
+        if (shape is "usercontent" or "anyname" or "sourcename")
         {
             if (!Text(ref at, end, out var value)) { return false; }
             if (value.Length == 0) { return true; }
             if (shape == "usercontent") { Unknown("UserContent", field, at); return true; }
             _note?.Invoke(_path + "|" + field, "any", value);
-            if (!Official.Contains(nameof(BaseDefinition), value) && Added.Contains(nameof(BaseDefinition), value))
-            {
-                _required = true;
-            }
+            if (Official.Contains(nameof(BaseDefinition), value)) { return true; }
+            if (Added.Contains(nameof(BaseDefinition), value)) { _required = true; }
+            else if (shape == "sourcename") { Unknown(nameof(BaseDefinition), value, at); }
             return true;
         }
         if (shape == "bits")
