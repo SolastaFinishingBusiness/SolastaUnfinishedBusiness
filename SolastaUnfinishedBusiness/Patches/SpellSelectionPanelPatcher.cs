@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
@@ -23,10 +22,25 @@ public static class SpellSelectionPanelPatcher
     {
         [UsedImplicitly]
         public static void Prefix(
+            SpellSelectionPanel __instance,
             GuiCharacter caster,
             ref bool cantripOnly,
             ActionDefinitions.ActionType actionType)
         {
+            //PATCH: takes down the previous binding when the panel is bound again without an Unbind in between.
+            //The game's Bind only clears spellRepertoireLines and binds the pooled lines again, and each
+            //SpellRepertoireLine.Bind adds a RepertoireRefreshed handler to its spell list, so a line would keep
+            //a handler on the list it was bound to before. Unbinding here, while the lines still know their
+            //lists, removes those handlers; the extra row tables go with their lines. After the panel's own
+            //Unbind the list is empty and this does nothing.
+            foreach (var spellRepertoireLine in __instance.spellRepertoireLines)
+            {
+                spellRepertoireLine.Unbind();
+            }
+
+            __instance.spellRepertoireLines.Clear();
+            CampaignsContext.SpellSelectionPanelRowsUnbind();
+
             //PATCH: supports `IReplaceAttackWithCantrip`
             var gameLocationCaster = caster.GameLocationCharacter;
 
@@ -47,7 +61,10 @@ public static class SpellSelectionPanelPatcher
             ActionDefinitions.ActionType actionType,
             bool cantripOnly)
         {
-            CampaignsContext.SpellSelectionPanelMultilineBind(
+            //PATCH: lays out the panel's spell rows from what each spell list offers on it (empty lines left out,
+            //every offered level shown, the Warlock's pact slots on its list's first line), with or without
+            //multi-line spell offering
+            CampaignsContext.SpellSelectionPanelRowsBind(
                 __instance, caster, spellCastEngaged, actionType, cantripOnly);
         }
 
@@ -55,37 +72,16 @@ public static class SpellSelectionPanelPatcher
         [UsedImplicitly]
         public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
         {
-            //PATCH: hide spell panels for repertoires that have hidden spell casting feature
+            //PATCH: the game's Bind only visits the spell lists the panel shows. It binds a line for every list
+            //it is given, and SpellRepertoireLine.Bind hands the list's own KnownCantrips to
+            //FindAndSortRelevantSpells, whose prefix in this mod removes spells from the list it gets; a hidden
+            //spell list must not be changed by a panel that never shows it.
             var getRepertoires = typeof(RulesetCharacter).GetMethod("get_SpellRepertoires");
-            var getVisibleRepertoires = new Func<RulesetCharacter, List<RulesetSpellRepertoire>>(GetRepertoires).Method;
+            var getPanelRepertoires =
+                new Func<RulesetCharacter, List<RulesetSpellRepertoire>>(CampaignsContext.GetPanelRepertoires).Method;
 
             return instructions.ReplaceCalls(getRepertoires, "SpellSelectionPanel.Bind",
-                new CodeInstruction(OpCodes.Call, getVisibleRepertoires));
-        }
-
-        private static List<RulesetSpellRepertoire> GetRepertoires(RulesetCharacter character)
-        {
-            var repertoires = character.SpellRepertoires
-                .Where(r => !r.SpellCastingFeature.GuiPresentation.Hidden)
-                .ToList();
-
-            //PATCH: the vanilla single line offering shows the levels that don't fit on a line from the last
-            //repertoire only. Feats like Magic Initiate add a repertoire after the class one, which hid the class's
-            //higher spell levels (e.g. a level 5 wizard lost level 3 spells). Keep the repertoire with the highest
-            //spell level last and everything else in its original order.
-            var highest = repertoires
-                .OrderByDescending(r =>
-                    r.SpellCastingFeature.SpellCastingOrigin is not FeatureDefinitionCastSpell.CastingOrigin.Race)
-                .ThenByDescending(r => Math.Max(r.MaxSpellLevelOfSpellCastingLevel, r.GetMaxExtraSpellLevel()))
-                .FirstOrDefault();
-
-            if (highest != null && repertoires[repertoires.Count - 1] != highest)
-            {
-                repertoires.Remove(highest);
-                repertoires.Add(highest);
-            }
-
-            return repertoires;
+                new CodeInstruction(OpCodes.Call, getPanelRepertoires));
         }
     }
 
@@ -97,7 +93,7 @@ public static class SpellSelectionPanelPatcher
         [UsedImplicitly]
         public static void Postfix()
         {
-            CampaignsContext.SpellSelectionPanelMultilineUnbind();
+            CampaignsContext.SpellSelectionPanelRowsUnbind();
         }
     }
 }
