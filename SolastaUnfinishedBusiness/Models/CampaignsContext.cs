@@ -295,6 +295,10 @@ internal static class CampaignsContext
     ///     without it the first row keeps the game's cutoff and each list's levels above it get a row of their own.
     ///     A list's lines share out every spell level between them (TileLevels), so a level that starts to be
     ///     offered while the panel is open shows on one of them when the line refreshes.
+    ///     In both layouts a row is also kept within the width the panel has on screen (MaxRowWidth). A row's real
+    ///     width is only known once its lines are bound (a level box grows with its spells and its labels, and
+    ///     headers and the slot box add to it), so the rows are bound, measured, and bound again for as long as
+    ///     WrapWideRows finds a row to shorten.
     /// </summary>
     internal static void SpellSelectionPanelRowsBind(
         SpellSelectionPanel __instance,
@@ -309,14 +313,7 @@ internal static class CampaignsContext
 
         // take down what the game's Bind made (from the same spell lists, see GetPanelRepertoires); its secondary
         // line isn't used, as every row is made here
-        foreach (var spellRepertoireLine in spellRepertoireLines)
-        {
-            spellRepertoireLine.Unbind();
-        }
-
-        spellRepertoireLines.Clear();
-        Gui.ReleaseChildrenToPool(spellRepertoireLinesTable);
-        SpellSelectionPanelRowsUnbind();
+        TakeDownRows();
         spellRepertoireSecondaryLine.Unbind();
         spellRepertoireSecondaryLine.gameObject.SetActive(false);
 
@@ -325,64 +322,311 @@ internal static class CampaignsContext
         var offers = repertoires
             .Select(repertoire => OfferOf(__instance, caster, repertoire, actionType, cantripOnly))
             .ToList();
+        // the rows as their builders made them: a line's range here ends at its last offered level (or at the
+        // cutoff), which WrapWideRows needs to tell which offered levels a line holds; each binding works on a
+        // copy with the final ranges (TileLevels)
         var rows = Main.Settings.DisableMultilineSpellOffering
             ? CompactRows(caster.RulesetCharacter, offers)
             : MultilineRows(offers);
-
-        TileLevels(rows);
-
-        // the extra row tables are copies of the panel's table made while it is empty, so they hold no lines of
-        // their own; each is put first in the holder's vertical layout, so later rows stand above earlier ones
-        var tables = new List<RectTransform> { spellRepertoireLinesTable };
-
-        for (var i = 1; i < rows.Count; i++)
-        {
-            var table = Object.Instantiate(spellRepertoireLinesTable, holder);
-
-            table.localScale = spellRepertoireLinesTable.localScale;
-            table.SetAsFirstSibling();
-            SpellLineTables.Add(table);
-            tables.Add(table);
-        }
-
+        var maxRowWidth = MaxRowWidth(__instance);
         // the game shows a list's header only when the panel has more than one list
         var showHeader = repertoires.Count > 1;
+        var tables = new List<RectTransform>();
+        var lines = new List<List<SpellRepertoireLine>>();
 
-        for (var i = 0; i < rows.Count; i++)
+        BindRows();
+
+        // every pass that changes the rows adds a row, and no row is ever left without a line or a line without a
+        // level box or slot box, so the passes end at the latest with one box on each row
+        while (WrapWideRows(rows, tables, lines, offers, maxRowWidth))
         {
-            foreach (var segment in rows[i])
-            {
-                var line = Gui.GetPrefabFromPool(__instance.spellRepertoireLinePrefab, tables[i])
-                    .GetComponent<SpellRepertoireLine>();
-
-                line.gameObject.SetActive(true);
-                line.Bind(
-                    caster,
-                    segment.Repertoire,
-                    showHeader,
-                    spellCastEngaged,
-                    __instance.SlotAdvancementPanel,
-                    actionType,
-                    cantripOnly,
-                    segment.MinLevel,
-                    segment.MaxLevel,
-                    segment.Primary);
-                // the panel's controller navigation (SelectDefaultControlImpl) looks for spells in this list only
-                spellRepertoireLines.Add(line);
-            }
+            TakeDownRows();
+            BindRows();
         }
 
-        // the panel is as wide as its widest row, as the game makes it as wide as its one table
+        // the panel is as wide as its widest row, as the game makes it as wide as its one table. A table's own
+        // rect is only set by the holder's layout, so the width is read from what the table's layout asks for.
         var width = 0f;
 
         foreach (var table in tables)
         {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(table);
-            width = Math.Max(width, table.rect.width);
+            width = Math.Max(width, LayoutUtility.GetPreferredWidth(table));
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(holder);
         __instance.RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+
+        return;
+
+        // unbinds every line of the panel and destroys the extra row tables, leaving the panel's own table empty
+        void TakeDownRows()
+        {
+            foreach (var spellRepertoireLine in spellRepertoireLines)
+            {
+                spellRepertoireLine.Unbind();
+            }
+
+            spellRepertoireLines.Clear();
+            Gui.ReleaseChildrenToPool(spellRepertoireLinesTable);
+            SpellSelectionPanelRowsUnbind();
+        }
+
+        // makes a table for each row and binds the row's lines into it, then works out each table's layout, so
+        // that the preferred widths of the tables, lines and level boxes can be read
+        void BindRows()
+        {
+            var tiledRows = rows.Select(row => row.ToList()).ToList();
+
+            TileLevels(tiledRows);
+
+            // the extra row tables are copies of the panel's table made while it is empty, so they hold no lines
+            // of their own; each is put first in the holder's vertical layout, so later rows stand above earlier
+            // ones. They are registered in SpellLineTables, which SpellSelectionPanelRowsUnbind destroys.
+            tables.Clear();
+            tables.Add(spellRepertoireLinesTable);
+
+            for (var i = 1; i < tiledRows.Count; i++)
+            {
+                var table = Object.Instantiate(spellRepertoireLinesTable, holder);
+
+                table.localScale = spellRepertoireLinesTable.localScale;
+                table.SetAsFirstSibling();
+                SpellLineTables.Add(table);
+                tables.Add(table);
+            }
+
+            lines.Clear();
+
+            for (var i = 0; i < tiledRows.Count; i++)
+            {
+                var rowLines = new List<SpellRepertoireLine>();
+
+                foreach (var segment in tiledRows[i])
+                {
+                    var line = Gui.GetPrefabFromPool(__instance.spellRepertoireLinePrefab, tables[i])
+                        .GetComponent<SpellRepertoireLine>();
+
+                    line.gameObject.SetActive(true);
+                    line.Bind(
+                        caster,
+                        segment.Repertoire,
+                        showHeader,
+                        spellCastEngaged,
+                        __instance.SlotAdvancementPanel,
+                        actionType,
+                        cantripOnly,
+                        segment.MinLevel,
+                        segment.MaxLevel,
+                        segment.Primary);
+                    // the panel's controller navigation (SelectDefaultControlImpl) looks for spells in this list
+                    // only
+                    spellRepertoireLines.Add(line);
+                    rowLines.Add(line);
+                }
+
+                lines.Add(rowLines);
+            }
+
+            foreach (var table in tables)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(table);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     The widest a row can be, in the panel's own units, for the panel and its cancel button to end at the
+    ///     right edge of the screen; 0 when it can't be worked out, which turns the width check off. Read from the
+    ///     live objects, so it follows the resolution and the interface scale: the panel's rect starts at its left
+    ///     edge (pivot 0) and is made as wide as its widest row, and the cancel button (the panel's child
+    ///     "AbortButton", which the panel's layout ignores) is anchored to the panel's right edge and stands
+    ///     outside it, as wide as its label needs. So the room for a row is the distance from the panel's left edge
+    ///     to the right edge of the topmost canvas (the screen), less what the button reaches past the panel.
+    /// </summary>
+    private static float MaxRowWidth(SpellSelectionPanel panel)
+    {
+        var panelRect = panel.RectTransform;
+        Canvas rootCanvas = null;
+
+        // walked by hand, as GetComponentInParent skips inactive objects
+        for (var parent = panelRect.parent; parent; parent = parent.parent)
+        {
+            var canvas = parent.GetComponent<Canvas>();
+
+            if (canvas)
+            {
+                rootCanvas = canvas;
+            }
+        }
+
+        var scale = panelRect.lossyScale.x;
+
+        if (!rootCanvas || scale <= 0)
+        {
+            return 0;
+        }
+
+        // world corners: bottom left, top left, top right, bottom right
+        var canvasCorners = new Vector3[4];
+
+        ((RectTransform)rootCanvas.transform).GetWorldCorners(canvasCorners);
+
+        var panelLeft = panelRect.TransformPoint(new Vector3(panelRect.rect.xMin, 0)).x;
+        var maxWidth = (canvasCorners[2].x - panelLeft) / scale;
+        var abortButton = panelRect.Find("AbortButton") as RectTransform;
+
+        // NOTE: don't use abortButton?. which bypasses Unity object lifetime check
+        if (!abortButton || !abortButton.gameObject.activeSelf)
+        {
+            return maxWidth;
+        }
+
+        // the button sizes itself to its label
+        LayoutRebuilder.ForceRebuildLayoutImmediate(abortButton);
+
+        // the button's right edge in the panel's space, less the panel's right edge: the same whatever width the
+        // panel has at this moment, as the button's position follows that edge
+        var reach = abortButton.localPosition.x + (abortButton.rect.xMax * abortButton.localScale.x) -
+                    panelRect.rect.xMax;
+
+        return maxWidth - Math.Max(0, reach);
+    }
+
+    /// <summary>
+    ///     Shortens every bound row that is wider than maxRowWidth, in rows (the rows before TileLevels), and
+    ///     returns whether it changed any; the caller then binds the rows again. Widths are the preferred widths
+    ///     of the bound tables and lines, as their layout groups worked them out.
+    ///     A row with several lines keeps the lines that fit, at least the first, and the others move, in the same
+    ///     order, to a new row right after it, which stands right above it; without multi-line spell offering the
+    ///     first row so stays the cutoff row. A row with one line that is still too wide is split between two
+    ///     lines of the same list: the first keeps the slot box and the level boxes that fit (at least one box),
+    ///     the rest go to a line on a new row right after it. Rows are only ever split, so a row holds no more
+    ///     boxes than its builder gave it, and what TileLevels relies on stays true: a list's lines keep their
+    ///     level order, the first stays the primary one, and none is left without a level box or slot box.
+    ///     A row that is one box wide can't be shortened and is left as it is.
+    /// </summary>
+    private static bool WrapWideRows(
+        List<List<RowSegment>> rows,
+        List<RectTransform> tables,
+        List<List<SpellRepertoireLine>> lines,
+        List<PanelOffer> offers,
+        float maxRowWidth)
+    {
+        if (maxRowWidth <= 0)
+        {
+            return false;
+        }
+
+        var changed = false;
+
+        // from the last row down, so that a row added after row i doesn't move the rows still to be checked
+        for (var i = rows.Count - 1; i >= 0; i--)
+        {
+            var row = rows[i];
+            var rowWidth = LayoutUtility.GetPreferredWidth(tables[i]);
+
+            if (rowWidth <= maxRowWidth)
+            {
+                continue;
+            }
+
+            if (row.Count == 1)
+            {
+                var segment = row[0];
+                var offer = offers.First(x => x.Repertoire == segment.Repertoire);
+
+                if (SplitLine(segment, lines[i][0], offer, rowWidth, maxRowWidth, out var first, out var rest))
+                {
+                    row[0] = first;
+                    rows.Insert(i + 1, [rest]);
+                    changed = true;
+                }
+
+                continue;
+            }
+
+            var tableLayout = tables[i].GetComponent<HorizontalLayoutGroup>();
+            var width = tableLayout.padding.horizontal +
+                        LayoutUtility.GetPreferredWidth((RectTransform)lines[i][0].transform);
+            var kept = 1;
+
+            // the row was measured too wide as a whole, so its last line never stays
+            while (kept < row.Count - 1)
+            {
+                width += tableLayout.spacing +
+                         LayoutUtility.GetPreferredWidth((RectTransform)lines[i][kept].transform);
+
+                if (width > maxRowWidth)
+                {
+                    break;
+                }
+
+                kept++;
+            }
+
+            rows.Insert(i + 1, row.GetRange(kept, row.Count - kept));
+            row.RemoveRange(kept, row.Count - kept);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    ///     Splits a line that is too wide as the only line of its row: first keeps the line's slot box and as many
+    ///     of its level boxes, from the lowest level, as fit in maxRowWidth, and rest takes the levels above them.
+    ///     At least one box stays on first (the slot box, or else the lowest level) and at least the highest level
+    ///     goes to rest. False when the line holds one box only. The ranges are still those of the rows' builders:
+    ///     first ends at its last kept level and rest ends where the line ended, so TileLevels gives the two
+    ///     lines together the levels the one line had.
+    /// </summary>
+    private static bool SplitLine(
+        RowSegment segment,
+        SpellRepertoireLine line,
+        PanelOffer offer,
+        float lineWidth,
+        float maxRowWidth,
+        out RowSegment first,
+        out RowSegment rest)
+    {
+        first = segment;
+        rest = segment;
+
+        // the offered levels the line holds; the line binds a box for each, in the same order
+        var levels = offer.Levels
+            .Where(level => level >= segment.MinLevel && level <= segment.MaxLevel)
+            .ToList();
+        var hasSlotBox = segment.Primary && offer.HasSlotBox;
+        var leastKept = hasSlotBox ? 0 : 1;
+
+        if (levels.Count <= leastKept)
+        {
+            return false;
+        }
+
+        var boxes = line.SpellsByLevelBoxes;
+        var boxSpacing = line.levelsTable.GetComponent<HorizontalLayoutGroup>().spacing;
+        var kept = levels.Count - 1;
+
+        // takes level boxes off the end for as long as the line is too wide. Should the bound boxes not match the
+        // levels, only the last level is moved; the next pass measures the line again.
+        if (boxes.Count == levels.Count)
+        {
+            lineWidth -= boxes[kept].RectTransform.rect.width + boxSpacing;
+
+            while (kept > leastKept && lineWidth > maxRowWidth)
+            {
+                kept--;
+                lineWidth -= boxes[kept].RectTransform.rect.width + boxSpacing;
+            }
+        }
+
+        first = kept == 0
+            ? new RowSegment(segment.Repertoire, 0, -1, segment.Primary)
+            : new RowSegment(segment.Repertoire, segment.MinLevel, levels[kept - 1], segment.Primary);
+        rest = new RowSegment(segment.Repertoire, levels[kept], segment.MaxLevel, false);
+
+        return true;
     }
 
     // the vertical layout that stacks the row tables, made once around the panel's own table
@@ -501,7 +745,13 @@ internal static class CampaignsContext
     // (NativeCutoffLevel) and its slot box, then each list's levels above the cutoff get a row of their own
     private static List<List<RowSegment>> CompactRows(RulesetCharacter character, List<PanelOffer> offers)
     {
-        var cutoff = NativeCutoffLevel(character, offers.Select(offer => offer.Repertoire));
+        // a list that gets no line (nothing offered and no slot box) takes no room on the first row, so it
+        // doesn't lower the cutoff either
+        var cutoff = NativeCutoffLevel(
+            character,
+            offers
+                .Where(offer => offer.Levels.Count > 0 || offer.HasSlotBox)
+                .Select(offer => offer.Repertoire));
         var rows = new List<List<RowSegment>>();
         var firstRow = new List<RowSegment>();
         var onFirstRow = new HashSet<RulesetSpellRepertoire>();
@@ -608,10 +858,10 @@ internal static class CampaignsContext
     }
 
     /// <summary>
-    ///     The highest level the game's SpellSelectionPanel.Bind puts on its first row: 5, less one for each racial
-    ///     spell list, and for every other list one if it has cantrips at its casting level and one if it has its
-    ///     own slot box (UniqueLevelSlots). The casting level is the feature's own for a monster's list, otherwise
-    ///     the character's level.
+    ///     The highest level the game's SpellSelectionPanel.Bind would put on its first row if the panel had only
+    ///     the given spell lists: 5, less one for each racial spell list, and for every other list one if it has
+    ///     cantrips at its casting level and one if it has its own slot box (UniqueLevelSlots). The casting level
+    ///     is the feature's own for a monster's list, otherwise the character's level.
     /// </summary>
     private static int NativeCutoffLevel(
         RulesetCharacter character,
