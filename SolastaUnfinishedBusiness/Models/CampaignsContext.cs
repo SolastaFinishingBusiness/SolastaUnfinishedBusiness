@@ -10,6 +10,7 @@ using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.Patches;
+using SolastaUnfinishedBusiness.Subclasses;
 using TA;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -320,18 +321,22 @@ internal static class CampaignsContext
         {
             var startLevel = 0;
             var maxLevel = rulesetSpellRepertoire.MaxSpellLevelOfSpellCastingLevel;
+            // levels of this repertoire waiting for a line; spellLevelsOnLine also counts the levels other
+            // repertoires already put on the current row, so it can't tell whether this repertoire has any
+            var repertoireLevelsOnLine = 0;
 
             SharedSpellsContext.FactorMysticArcanum(caster.RulesetCharacterHero, rulesetSpellRepertoire,
                 ref maxLevel);
 
             for (var level = startLevel; level <= maxLevel; level++)
             {
-                if (!IsLevelActive(rulesetSpellRepertoire, level, actionType))
+                if (!IsLevelActive(caster.RulesetCharacter, rulesetSpellRepertoire, level, actionType))
                 {
                     continue;
                 }
 
                 spellLevelsOnLine++;
+                repertoireLevelsOnLine++;
 
                 if (spellLevelsOnLine < 4) // Main.Settings.MaxSpellLevelsPerLine)
                 {
@@ -357,11 +362,14 @@ internal static class CampaignsContext
                 startLevel = level + 1;
                 lineIndex++;
                 spellLevelsOnLine = 0;
+                repertoireLevelsOnLine = 0;
                 needNewLine = true;
                 indexOfLine = 0;
             }
 
-            if (spellLevelsOnLine == 0)
+            // no line for a repertoire with nothing left to offer: an empty line still draws its header, and the
+            // game's line prefab lays it out with no height, so it lands on top of the lines around it
+            if (repertoireLevelsOnLine == 0)
             {
                 continue;
             }
@@ -472,43 +480,78 @@ internal static class CampaignsContext
         return component;
     }
 
+    private static readonly List<SpellDefinition> LevelSpells = [];
+    private static readonly Dictionary<SpellDefinition, string> LevelExtraSpells = [];
+
+    /// <summary>
+    ///     Whether the panel's line for this repertoire will show at least one spell at this level, so the multi-line
+    ///     layout only counts, and only makes lines for, levels that the line fills. It gathers the level's spells as
+    ///     the game's SpellRepertoireLine.Bind does (cantrips and level 0 extras only when the spell list has
+    ///     cantrips; otherwise the prepared spells of a prepared caster, or the known and auto-prepared spells of an
+    ///     always-ready one, plus the extra spells that aren't ritual-only), then keeps the ones its
+    ///     FindAndSortRelevantSpells offers, with this mod's patches to it (SpellRepertoireLinePatcher).
+    /// </summary>
     private static bool IsLevelActive(
-        RulesetSpellRepertoire spellRepertoire, int level,
+        RulesetCharacter caster,
+        RulesetSpellRepertoire spellRepertoire,
+        int level,
         ActionDefinitions.ActionType actionType)
     {
-        var spellActivationTime = actionType switch
-        {
-            ActionDefinitions.ActionType.Bonus => ActivationTime.BonusAction,
-            ActionDefinitions.ActionType.Main => ActivationTime.Action,
-            ActionDefinitions.ActionType.Reaction => ActivationTime.Reaction,
-            ActionDefinitions.ActionType.NoCost => ActivationTime.NoCost,
-            _ => ActivationTime.Action
-        };
+        LevelSpells.Clear();
+        LevelExtraSpells.Clear();
+        spellRepertoire.EnumerateExtraSpellsOfLevel(level, LevelExtraSpells);
 
         if (level == 0)
         {
-            // changed to support game v1.3.44 and allow ancestry cantrips to display off battle
-            return actionType == ActionDefinitions.ActionType.None ||
-                   spellRepertoire.KnownCantrips.Any(cantrip => cantrip.ActivationTime == spellActivationTime) ||
-                   (spellRepertoire.ExtraSpellsByTag.TryGetValue("BonusCantrips", out var bonusCantrips) &&
-                    bonusCantrips.Any(cantrip => cantrip.ActivationTime == spellActivationTime));
-        }
-
-        switch (spellRepertoire.SpellCastingFeature.SpellReadyness)
-        {
-            case SpellReadyness.Prepared when spellRepertoire.PreparedSpells
-                .Any(spellDefinition =>
-                    spellDefinition.SpellLevel == level
-                    && spellDefinition.ActivationTime == spellActivationTime):
-            case SpellReadyness.AllKnown
-                when spellRepertoire.KnownSpells.Any(spellDefinition => spellDefinition.SpellLevel == level)
-                     || spellRepertoire.ExtraSpellsByTag.Any(x => x.Value.Any(s => s.SpellLevel == level)):
-
-                return true;
-
-            default:
+            if (!spellRepertoire.SpellCastingFeature.SpellListDefinition.HasCantrips)
+            {
                 return false;
+            }
+
+            LevelSpells.AddRange(spellRepertoire.KnownCantrips);
+            LevelSpells.AddRange(LevelExtraSpells.Keys);
         }
+        else
+        {
+            switch (spellRepertoire.SpellCastingFeature.SpellReadyness)
+            {
+                case SpellReadyness.Prepared:
+                    LevelSpells.AddRange(spellRepertoire.PreparedSpells.Where(spell => spell.SpellLevel == level));
+                    break;
+                case SpellReadyness.AllKnown:
+                    LevelSpells.AddRange(spellRepertoire.KnownSpells.Where(spell => spell.SpellLevel == level));
+                    LevelSpells.AddRange(
+                        spellRepertoire.AutoPreparedSpells.Where(spell => spell.SpellLevel == level));
+                    break;
+            }
+
+            LevelSpells.AddRange(LevelExtraSpells
+                .Where(extraSpell => !extraSpell.Value.Contains("Ritual"))
+                .Select(extraSpell => extraSpell.Key));
+        }
+
+        // the mod's prefix on FindAndSortRelevantSpells takes reaction and on-hit spells off the panel
+        LevelSpells.RemoveAll(spell =>
+            spell.ActivationTime is ActivationTime.Reaction or ActivationTime.OnAttackHit);
+
+        if (LevelSpells.Any(spell => IsOfferedForAction(spell, actionType)))
+        {
+            return true;
+        }
+
+        // the mod's postfix lets features add spells whose casting time doesn't match (Blast Reload)
+        return caster.GetSubFeaturesByType<PatronEldritchSurge.IQualifySpellToRepertoireLine>()
+            .Any(feature => LevelSpells.Any(spell => feature.QualifiesSpell(caster, actionType, spell)));
+    }
+
+    // the game's FindAndSortRelevantSpells: outside a battle every spell is offered; in a battle only the spells
+    // whose casting time is the panel's action type
+    private static bool IsOfferedForAction(SpellDefinition spell, ActionDefinitions.ActionType actionType)
+    {
+        return Gui.Battle == null
+               || (ActionDefinitions.CastingTimeToActionDefinition.TryGetValue(spell.ActivationTime,
+                       out var spellActionType)
+                   && spellActionType == actionType);
     }
 
     internal static void SetTeleporterGadgetActiveAnimation(WorldGadget worldGadget, bool visibility = false)

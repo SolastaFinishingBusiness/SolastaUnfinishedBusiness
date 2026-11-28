@@ -258,6 +258,11 @@ public class PatronEldritchSurge : AbstractSubclass
     internal interface IQualifySpellToRepertoireLine
     {
         void QualifySpells(RulesetCharacter character, SpellRepertoireLine line, List<SpellDefinition> spells);
+
+        // whether the casting panel opened for actionType offers this spell although its casting time doesn't match
+        // the panel's action; QualifySpells adds exactly these spells, and the multi-line panel layout
+        // (CampaignsContext.IsLevelActive) asks the same question before it builds its rows
+        bool QualifiesSpell(RulesetCharacter character, ActionType actionType, SpellDefinition spell);
     }
 
     private sealed class BlastReloadCustom :
@@ -321,24 +326,28 @@ public class PatronEldritchSurge : AbstractSubclass
             SpellRepertoireLine spellRepertoireLine,
             List<SpellDefinition> spells)
         {
-            if (spellRepertoireLine.actionType != ActionType.Bonus
-                || !BlastReloadSupportRulesetCondition.GetCustomConditionFromCharacter(
-                    rulesetCharacter, out var supportCondition))
+            if (spellRepertoireLine.actionType != ActionType.Bonus)
             {
                 return;
             }
 
-            if (supportCondition.SpellAsMain)
+            spellRepertoireLine.relevantSpells.AddRange(spells.FindAll(x =>
+                QualifiesSpell(rulesetCharacter, ActionType.Bonus, x)));
+        }
+
+        // Blast Reload: after a leveled spell as the action this turn, action cantrips can be cast as the bonus
+        // action; after a cantrip as the action, action spells of 1st level and higher can
+        public bool QualifiesSpell(RulesetCharacter rulesetCharacter, ActionType actionType, SpellDefinition spell)
+        {
+            if (actionType != ActionType.Bonus
+                || spell.ActivationTime != ActivationTime.Action
+                || !BlastReloadSupportRulesetCondition.GetCustomConditionFromCharacter(
+                    rulesetCharacter, out var supportCondition))
             {
-                spellRepertoireLine.relevantSpells.AddRange(spells.FindAll(x =>
-                    x.ActivationTime == ActivationTime.Action && x.SpellLevel == 0));
+                return false;
             }
 
-            if (supportCondition.CantripAsMain)
-            {
-                spellRepertoireLine.relevantSpells.AddRange(spells.FindAll(x =>
-                    x.ActivationTime == ActivationTime.Action && x.SpellLevel > 0));
-            }
+            return spell.SpellLevel == 0 ? supportCondition.SpellAsMain : supportCondition.CantripAsMain;
         }
     }
 
