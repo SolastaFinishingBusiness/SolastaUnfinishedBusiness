@@ -137,12 +137,12 @@ internal static class DungeonMakerClockContext
     // skip runs, or while one kept in Clock_SkipRemainingSeconds waits to go on: between a save's load (when each
     // timer's PostLoad checks it) and the location being ready, between two locations, or with the clock paused.
     // Checkpoint keeps that variable above 0 for as long as a skip lasts, and EndJob sets it to 0, then CheckTimers
-    // makes the one check. (The commands have no off switch, so a skip that has begun is always taken to its end
-    // and the timers are never left held with the skip stopped.)
+    // makes the one check. The hold only applies while the campaign's commands are enabled
+    // (CampaignRequirement.CommandsEnabled).
     internal static bool HoldTimers =>
-        _job != null ||
+        CampaignRequirement.CommandsEnabled && (_job != null ||
         (ServiceRepository.GetService<IGameVariableService>() is { } variables &&
-         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName) > 0);
+         DungeonMakerCommandsContext.IntValueOf(variables, SkipRemainingName) > 0));
 
     private static bool BattleInProgress =>
         ServiceRepository.GetService<IGameLocationBattleService>() is { IsBattleInProgress: true };
@@ -244,6 +244,7 @@ internal static class DungeonMakerClockContext
     // done unless the minute changed, which is once every few seconds of play, not every frame.
     internal static void OnTimeUpdated(GameTime time, int minutesBefore)
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         var info = time?.TimeInfo;
 
         if (info == null)

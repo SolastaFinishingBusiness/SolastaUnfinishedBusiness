@@ -7,8 +7,8 @@ example from an Area Activator's Variable Operation.
 - You create the variables yourself in the campaign's variable list. Names are case-sensitive. A variable you don't
   create is ignored, so use only the ones you need.
 - Players need the mod for any of this to work. Without it the variables are ordinary variables and nothing happens.
-- There is no setting to switch this off: the commands work in every campaign while the mod is installed. A campaign
-  that doesn't create these variables is not affected.
+- Command processing requires an explicit **Requires Finishing Business** choice saved with the campaign.
+  In campaigns with an unset or disabled choice, these variables keep their ordinary Dungeon Maker behaviour.
 - The mod writes what it does, and why a command failed, to the mod's log.
 
 Adapted from BlackguardRogue's Dungeon Maker tools.

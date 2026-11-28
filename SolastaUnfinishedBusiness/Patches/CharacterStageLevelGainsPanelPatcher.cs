@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.Helpers;
+using SolastaUnfinishedBusiness.Models;
 
 namespace SolastaUnfinishedBusiness.Patches;
 
@@ -85,6 +86,32 @@ public static class CharacterStageLevelGainPanelPatcher
             return instructions.ReplaceCalls(spellRepertoiresMethod,
                 "CharacterStageLevelGainPanel.RefreshSpellcastingFeatures",
                 new CodeInstruction(OpCodes.Call, filteredSpellRepertoiresMethod));
+        }
+    }
+
+    //PATCH: shows the slot gains of the repertoire's own casting mode (SPELL_POINTS)
+    // The game reads the gained slots per spell level from the shared definition table, which always holds the
+    // ordinary slot table. A hero casting with spell points has its own capacity table, so the read takes the
+    // repertoire (the method's first argument) and gets that hero's table instead.
+    [HarmonyPatch(typeof(CharacterStageLevelGainsPanel),
+        nameof(CharacterStageLevelGainsPanel.FillSpellcastingGains))]
+    [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Patch")]
+    [UsedImplicitly]
+    public static class FillSpellcastingGains_Patch
+    {
+        [NotNull]
+        [UsedImplicitly]
+        public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
+        {
+            var slotsPerLevels = AccessTools.PropertyGetter(
+                typeof(FeatureDefinitionCastSpell), nameof(FeatureDefinitionCastSpell.SlotsPerLevels));
+            var capacityTable = AccessTools.Method(
+                typeof(SpellPointsContext), nameof(SpellPointsContext.GetCapacityTable));
+
+            return instructions.ReplaceCalls(slotsPerLevels,
+                "CharacterStageLevelGainPanel.FillSpellcastingGains",
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, capacityTable));
         }
     }
 }

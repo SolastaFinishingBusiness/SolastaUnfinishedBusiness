@@ -183,7 +183,6 @@ internal static class RulesDisplay
         if (UI.Toggle(Gui.Localize("ModUi/&UseAlternateSpellPointsSystem"), ref toggle, UI.AutoWidth()))
         {
             Main.Settings.UseAlternateSpellPointsSystem = toggle;
-            SpellPointsContext.SwitchFeatureDefinitionCastSpellSlots();
         }
 
         if (Main.Settings.UseAlternateSpellPointsSystem)

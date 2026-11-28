@@ -297,8 +297,8 @@ public static class CharacterBuildingManagerPatcher
                         buildingData, AttributeDefinitions.TagBackground, featureDefinitionCastSpell);
                 }
 
-                //PATCH: grants the power spell points to any created hero including pre-gen ones (SPELL_POINTS)
-                SpellPointsContext.GrantPowerSpellPoints(hero);
+                // New and pregenerated heroes start with the selected casting mode.
+                SpellPointsContext.InitializeMode(hero);
             }
 
             //PATCH: grants repertoire and selected cantrips from Blessed Warrior if not there yet

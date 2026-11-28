@@ -126,6 +126,7 @@ ModUi/&AddPickPocketableLoot=Adicionar saque que pode ser roubado <i><color=#F0D
 ModUi/&AddToStore=Adicionar {0}
 ModUi/&Advanced=<color=#F0DAA0>Avançado:</color> <b><i><color=#C04040E0>[Requer reinicialização]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATENÇÃO:</color></b> Essas configurações exigirão que o jogador tenha este mod instalado
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>AVISO:</color></b> Faça uma cópia da sua pasta UserContent antes de iniciar o Solasta sem este mod. Quando o jogo lê um dos seus próprios arquivos do Dungeon Maker, ele remove as salas, objetos de cenário e dispositivos que usam plantas adicionadas por este mod (Dungeon Maker Pro, incluindo salas planas) e grava a alteração no disco. Nas campanhas isso acontece ao iniciar o jogo, e nos locais independentes quando o jogo os lista, mesmo que você nunca os abra no editor nem clique em Salvar.
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Permitir todos os jogadores em sequências narrativas</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=Manter a ordem do jogo para grupos de 4 ou menos nas cenas <i><color=#F0DAA0>[caso contrário, cada grupo fica por altura, os mais baixos no centro da fileira da frente]</color></i>
 ModUi/&DevCutsceneHeroLimit=Versão de desenvolvimento: heróis nas cenas <i><color=#F0DAA0>[só os primeiros N membros do grupo participam; 0 = todos; não é salvo]</color></i>

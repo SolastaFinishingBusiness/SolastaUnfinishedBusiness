@@ -126,6 +126,7 @@ ModUi/&AddPickPocketableLoot=Aggiungi bottino borseggiabile <i><color=#F0DAA0>[s
 ModUi/&AddToStore=Aggiungi {0}
 ModUi/&Advanced=<color=#F0DAA0>Avanzato:</color> <b><i><color=#C04040E0>[Richiede riavvio]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENZIONE:</color></b> Queste impostazioni richiederanno che il giocatore abbia installato questa mod
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>AVVISO:</color></b> Fai una copia della tua cartella UserContent prima di avviare Solasta senza questa mod. Quando il gioco legge uno dei tuoi file del Dungeon Maker, rimuove le stanze, gli oggetti di scena e i congegni che usano progetti aggiunti da questa mod (Dungeon Maker Pro, stanze piatte comprese) e scrive la modifica su disco. Per le campagne succede all'avvio, per i luoghi indipendenti quando il gioco li elenca, anche se non li apri mai nell'editor né fai clic su Salva.
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Consenti a tutti i giocatori di partecipare alle sequenze narrative</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=Mantieni l'ordine del gioco per i gruppi di 4 o meno nelle scene <i><color=#F0DAA0>[altrimenti ogni gruppo si dispone per altezza, i più bassi al centro della prima fila]</color></i>
 ModUi/&DevCutsceneHeroLimit=Versione di sviluppo: eroi nelle scene <i><color=#F0DAA0>[partecipano solo i primi N membri del gruppo; 0 = tutti; non salvato]</color></i>

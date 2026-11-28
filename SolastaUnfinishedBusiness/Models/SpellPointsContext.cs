@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
@@ -19,10 +20,21 @@ namespace SolastaUnfinishedBusiness.Models;
 
 internal static class SpellPointsContext
 {
+    private const string ModeElement = "FbUsesSpellPoints";
+    private sealed class HeroMode
+    {
+        internal bool Points;
+    }
+
+    // Heroes can be recreated by loading a character or receiving it from another peer.
+    // Keep the live choice with its owner without retaining discarded character objects.
+    private static readonly ConditionalWeakTable<RulesetCharacterHero, HeroMode> Modes = new();
+    private static readonly ConditionalWeakTable<RulesetSpellRepertoire, HeroMode> RepertoireModes = new();
+
     internal static readonly List<int> SpellCostByLevel = [0, 2, 3, 5, 6, 7, 9, 10, 11, 13];
 
     internal static readonly List<SlotsByLevelDuplet> SpellPointsFullCastingSlots = [];
-    internal static readonly List<SlotsByLevelDuplet> SpellPointsHalfCastingSlots = [];
+    private static readonly List<SlotsByLevelDuplet> SpellPointsHalfCastingSlots = [];
     private static readonly List<SlotsByLevelDuplet> SpellPointsHalfRoundUpCastingSlots = [];
     private static readonly List<SlotsByLevelDuplet> SpellPointsOneThirdCastingSlots = [];
 
@@ -70,25 +82,52 @@ internal static class SpellPointsContext
     {
         var db = DatabaseRepository.GetDatabase<FeatureDefinitionCastSpell>();
 
-        foreach (var (name, slotsVanilla, slotsSpellPoints) in FeatureDefinitionCastSpellTab)
+        foreach (var (name, slotsVanilla, _) in FeatureDefinitionCastSpellTab)
         {
             var featureCastSpell = db.GetElement(name);
-            var finalSlotsVanilla = slotsVanilla;
-            var finalSlotsSpellsPoints = slotsSpellPoints;
+            featureCastSpell.slotsPerLevels = UsesLevelOneProgression(name)
+                ? SharedSpellsContext.HalfRoundUpCastingSlots
+                : slotsVanilla;
+        }
+    }
 
-            if (Main.Settings.EnablePaladinSpellCastingAtLevel1 && name == CastSpellPaladin.Name)
-            {
-                finalSlotsVanilla = SharedSpellsContext.HalfRoundUpCastingSlots;
-                finalSlotsSpellsPoints = SharedSpellsContext.HalfRoundUpCastingSlots;
-            }
-            else if (Main.Settings.EnableRangerSpellCastingAtLevel1 && name == CastSpellRanger.Name)
-            {
-                finalSlotsVanilla = SharedSpellsContext.HalfRoundUpCastingSlots;
-                finalSlotsSpellsPoints = SharedSpellsContext.HalfRoundUpCastingSlots;
-            }
+    private static bool UsesLevelOneProgression(string name) =>
+        (Main.Settings.EnablePaladinSpellCastingAtLevel1 && name == CastSpellPaladin.Name) ||
+        (Main.Settings.EnableRangerSpellCastingAtLevel1 && name == CastSpellRanger.Name);
 
-            featureCastSpell.slotsPerLevels =
-                Main.Settings.UseAlternateSpellPointsSystem ? finalSlotsSpellsPoints : finalSlotsVanilla;
+    // ComputeSpellSlots writes capacity counts and GetMaxSlotsNumberOfAllLevels sums those counts.
+    // AutoPrepareSpells also uses the numerical capacities when distributing prepared spells.
+    // The spell-learning methods only need the unlocked levels, identical in both tables.
+    // Leave definitions shared and select a capacity table only for a repertoire with a known owner.
+    internal static List<SlotsByLevelDuplet> GetCapacityTable(FeatureDefinitionCastSpell feature,
+        RulesetSpellRepertoire repertoire)
+    {
+        if (RepertoireModes.TryGetValue(repertoire, out var mode) && mode.Points &&
+            !UsesLevelOneProgression(feature.Name))
+        {
+            foreach (var (name, _, points) in FeatureDefinitionCastSpellTab)
+            {
+                if (feature.Name == name)
+                {
+                    return points;
+                }
+            }
+        }
+
+        return feature.SlotsPerLevels;
+    }
+
+    internal static void BindRepertoires(RulesetCharacterHero hero)
+    {
+        if (!Modes.TryGetValue(hero, out var mode))
+        {
+            return;
+        }
+
+        foreach (var repertoire in hero.SpellRepertoires)
+        {
+            RepertoireModes.Remove(repertoire);
+            RepertoireModes.Add(repertoire, mode);
         }
     }
 
@@ -101,7 +140,64 @@ internal static class SpellPointsContext
 
     internal static bool IsSpellPointsEnabled(this RulesetCharacter character)
     {
-        return Main.Settings.UseAlternateSpellPointsSystem && character is RulesetCharacterHero;
+        return character is RulesetCharacterHero hero && Modes.TryGetValue(hero, out var mode) && mode.Points;
+    }
+
+    // The stock object reader seeks to the end of the hero after reading its known elements.
+    // An absent disk field identifies a legacy hero. In multiplayer the host loads the saved party
+    // and resolves that choice before sharing it. Peers read the explicit mode from the network.
+    internal static void SerializeMode(RulesetCharacterHero hero, IElementsSerializer serializer)
+    {
+        if (serializer is not BinarySerializer binary)
+        {
+            return;
+        }
+
+        var mode = Modes.GetOrCreateValue(hero);
+        if (serializer.Mode == Serializer.SerializationMode.Read)
+        {
+            mode.Points = binary.persistentContext && !LevelDownContext.IsNextElement(binary, ModeElement)
+                ? Main.Settings.UseAlternateSpellPointsSystem
+                : serializer.SerializeElement(ModeElement, false);
+
+            // Only drop the pool here. A points-mode hero missing its pool gets one in PostLoad
+            // (InitializeMode), once the hero is complete enough to compute the pool's size.
+            if (!mode.Points)
+            {
+                ApplyMode(hero, false);
+            }
+        }
+        else
+        {
+            serializer.SerializeElement(ModeElement, mode.Points);
+        }
+    }
+
+    internal static void InitializeMode(RulesetCharacterHero hero)
+    {
+        if (!Modes.TryGetValue(hero, out var mode))
+        {
+            mode = Modes.GetOrCreateValue(hero);
+            mode.Points = MultiplayerSessionContext.WantedSpellPoints;
+        }
+
+        ApplyMode(hero, mode.Points);
+    }
+
+    // The campaign and location rest wrappers call the real recovery, before RestCompleted can
+    // trigger an autosave. The character pool importer and the rest preview bypass both wrappers.
+    internal static void FinishRest(RulesetCharacter character, RestType restType)
+    {
+        if (restType != RestType.LongRest || character is not RulesetCharacterHero hero ||
+            hero.IsSpellPointsEnabled() == MultiplayerSessionContext.WantedSpellPoints)
+        {
+            return;
+        }
+
+        var mode = Modes.GetOrCreateValue(hero);
+        mode.Points = MultiplayerSessionContext.WantedSpellPoints;
+        ApplyMode(hero, mode.Points);
+        hero.RefreshSpellRepertoires();
     }
 
     internal static int GetMaxSpellPoints(this RulesetCharacter rulesetCharacter)
@@ -209,30 +305,39 @@ internal static class SpellPointsContext
             spellsAtLevel < 2 ? cost : Gui.Format("Screen/&SpellAlternatePointsCostTooltip", cost);
     }
 
-    internal static void GrantPowerSpellPoints(RulesetCharacter character)
+    private static void ApplyMode(RulesetCharacterHero hero, bool points)
     {
-        if (character.HasAnyFeature(PowerSpellPoints))
+        BindRepertoires(hero);
+        // A legacy save can contain either or both references. Preserve the deserialized instance
+        // (including zero remaining uses) and initialize a rested pool only if it is absent.
+        if (!points)
         {
+            foreach (var features in hero.ActiveFeatures.Values)
+            {
+                features.RemoveAll(x => x == PowerSpellPoints);
+            }
+
+            hero.UsablePowers.RemoveAll(x => x.PowerDefinition == PowerSpellPoints);
             return;
         }
 
-        switch (character)
+        if (!hero.ActiveFeatures.TryGetValue(AttributeDefinitions.TagRace, out var raceFeatures))
         {
-            case RulesetCharacterHero hero:
-                hero.ActiveFeatures[AttributeDefinitions.TagRace].Add(PowerSpellPoints);
-                break;
-            case RulesetCharacterMonster monster:
-                monster.ActiveFeatures.Add(PowerSpellPoints);
-                break;
-            default:
-                return;
+            raceFeatures = [];
+            hero.ActiveFeatures.Add(AttributeDefinitions.TagRace, raceFeatures);
         }
 
-        var usablePower = PowerProvider.Get(PowerSpellPoints, character);
-        var poolSize = character.GetMaxUsesOfPower(usablePower);
+        if (!raceFeatures.Contains(PowerSpellPoints))
+        {
+            raceFeatures.Add(PowerSpellPoints);
+        }
 
-        usablePower.remainingUses = poolSize;
-        character.UsablePowers.Add(usablePower);
+        if (hero.UsablePowers.All(x => x.PowerDefinition != PowerSpellPoints))
+        {
+            var usablePower = PowerProvider.Get(PowerSpellPoints, hero);
+            usablePower.remainingUses = hero.GetMaxUsesOfPower(usablePower);
+            hero.UsablePowers.Add(usablePower);
+        }
     }
 
     internal static void ConsumeSlotsAtLevelsPointsCannotCastAnymore(
@@ -330,9 +435,11 @@ internal static class SpellPointsContext
         }
     }
 
-    internal static void RefreshActionPanelAfterFlexibleCastingItem()
+    // Refreshes the cast-spell action items when a flexible-casting choice closes, so the costs shown on them
+    // match the new balance. Only a caster whose own mode is spell points shows those costs.
+    internal static void RefreshActionPanelAfterFlexibleCastingItem(RulesetCharacter caster)
     {
-        if (!Main.Settings.UseAlternateSpellPointsSystem)
+        if (caster == null || !caster.IsSpellPointsEnabled())
         {
             return;
         }

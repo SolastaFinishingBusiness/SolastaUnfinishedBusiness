@@ -1678,8 +1678,12 @@ public static class RulesetCharacterPatcher
         {
             var hero = __instance.GetOriginalHero();
 
-            if (hero != null &&
-                Main.Settings.UseAlternateSpellPointsSystem)
+            if (hero != null)
+            {
+                SpellPointsContext.BindRepertoires(hero);
+            }
+
+            if (hero.IsSpellPointsEnabled())
             {
                 SpellPointsContext.ConvertAdditionalSlotsIntoSpellPointsBeforeRefreshSpellRepertoire(
                     __instance.GetOriginalHero());
@@ -2540,8 +2544,8 @@ public static class RulesetCharacterPatcher
                     .TryAdd(Tabletop2024Context.FeatureWeaponMasteryBehavior);
             }
 
-            //PATCH: support adding required power to keep a tab on spell points (SPELL_POINTS)
-            SpellPointsContext.GrantPowerSpellPoints(hero);
+            // Reconcile the pool before missing-power repair enumerates the hero's active features.
+            SpellPointsContext.InitializeMode(hero);
 
             //PATCH: support for 2024 Smite spells
             Tabletop2024Context.UpdatePaladinSmite(hero);

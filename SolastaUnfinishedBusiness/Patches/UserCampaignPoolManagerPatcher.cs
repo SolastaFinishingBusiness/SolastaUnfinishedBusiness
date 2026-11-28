@@ -42,13 +42,45 @@ public static class UserCampaignPoolManagerPatcher
                     new CodeInstruction(OpCodes.Call, stampedJsonMethod));
         }
 
+        // The pool's entry for the title before the save, so the postfix can tell whether this save put a new
+        // entry there (a clone of the saved campaign, when the title was already in the pool and the pool is updated).
         [UsedImplicitly]
-        public static void Postfix(UserCampaignPoolManager __instance, UserCampaign userCampaign)
+        public static void Prefix(UserCampaignPoolManager __instance, UserCampaign userCampaign,
+            out UserCampaign __state)
+        {
+            __state = null;
+
+            if (userCampaign?.Title != null && __instance.pool != null)
+            {
+                __instance.pool.TryGetValue(userCampaign.Title, out __state);
+            }
+        }
+
+        [UsedImplicitly]
+        public static void Postfix(UserCampaignPoolManager __instance, UserCampaign userCampaign,
+            UserCampaign __state)
         {
             // the file the game wrote (or tried to): the method's own file name for this title
             var path = userCampaign?.Title == null ? null : __instance.BuildUserCampaignFilename(userCampaign.Title);
+            UserCampaign installed = null;
 
-            DungeonMakerStampContext.NoteCampaignSaved(userCampaign, path);
+            if (userCampaign?.Title != null && __instance.pool != null &&
+                __instance.pool.TryGetValue(userCampaign.Title, out var entry) &&
+                !ReferenceEquals(entry, __state) && !ReferenceEquals(entry, userCampaign))
+            {
+                installed = entry;
+            }
+
+            CampaignRequirement.InstalledBySave = installed;
+
+            try
+            {
+                DungeonMakerStampContext.NoteCampaignSaved(userCampaign, path);
+            }
+            finally
+            {
+                CampaignRequirement.InstalledBySave = null;
+            }
         }
     }
 

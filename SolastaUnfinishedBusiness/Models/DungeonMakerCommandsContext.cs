@@ -381,6 +381,7 @@ internal static class DungeonMakerCommandsContext
     // one, then starts what only runs once the location is ready.
     internal static void OnLocationReady()
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         if (!ReferenceEquals(_preparedLocation, CurrentLocation))
         {
             PrepareLocation();
@@ -412,6 +413,12 @@ internal static class DungeonMakerCommandsContext
     {
         _preparedLocation = CurrentLocation;
 
+        if (!CampaignRequirement.CommandsEnabled)
+        {
+            if (_subscribedTo != null) { _subscribedTo.VariableValueChanged -= OnVariableChanged; }
+            _subscribedTo = null;
+            return;
+        }
         Guarded("location set-up", PrepareLocationState);
     }
 
@@ -1363,6 +1370,7 @@ internal static class DungeonMakerCommandsContext
     // GameLocation.UpdateGadgets, after the game updated its gadgets: work on the requests.
     internal static void Tick()
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         if (ServiceRepository.GetService<IGameLocationService>() is not { LocationIsReady: true })
         {
             return;
@@ -1418,6 +1426,7 @@ internal static class DungeonMakerCommandsContext
     // the in-game hour changed (from the clock's update): automatic torches may have to switch
     internal static void NoteHourChanged()
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         // day and night of the automatic layer: a switch is a change of Torches_Auto's decision everywhere
         var lit = AutoLitPeriod();
 
@@ -1437,7 +1446,7 @@ internal static class DungeonMakerCommandsContext
     // the game's "variable value changed" event: any variable, written by anything
     private static void OnVariableChanged(GameVariable variable)
     {
-        if (_writing > 0 || variable?.Name == null || CurrentLocation == null)
+        if (!CampaignRequirement.CommandsEnabled || _writing > 0 || variable?.Name == null || CurrentLocation == null)
         {
             return;
         }
@@ -1490,6 +1499,7 @@ internal static class DungeonMakerCommandsContext
     // that doesn't). Returns whether it did, so that the patch knows to call AfterVariablesSaved.
     internal static bool BeforeVariablesSaved()
     {
+        if (!CampaignRequirement.CommandsEnabled) { return false; }
         try
         {
             var variables = ServiceRepository.GetService<IGameVariableService>();
@@ -3223,6 +3233,7 @@ internal static class DungeonMakerCommandsContext
     // variable works), only this class does not take them as requests.
     internal static void WriteInt(string name, int value)
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
         if (variables == null || !variables.TryFindVariable(name, out var variable) || variable is not
@@ -3247,6 +3258,7 @@ internal static class DungeonMakerCommandsContext
 
     internal static void WriteString(string name, string value)
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
         if (variables == null || !variables.TryFindVariable(name, out var variable) || variable is not
@@ -3283,6 +3295,7 @@ internal static class DungeonMakerCommandsContext
     // campaign variable like the author's: one scoped to the location would be dropped on leaving it.
     internal static void EnsureInt(string name)
     {
+        if (!CampaignRequirement.CommandsEnabled) { return; }
         var variables = ServiceRepository.GetService<IGameVariableService>();
 
         if (variables == null || variables.IsVariableRegistered(name))

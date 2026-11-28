@@ -9,6 +9,20 @@ namespace SolastaUnfinishedBusiness.Patches;
 [UsedImplicitly]
 public static class GameRestingManagerPatcher
 {
+    [HarmonyPatch(typeof(GameLocationCharacter), nameof(GameLocationCharacter.ApplyRest))]
+    private static class LocationRestPatch
+    {
+        private static void Postfix(GameLocationCharacter __instance, RestType restType) =>
+            SpellPointsContext.FinishRest(__instance.RulesetCharacter, restType);
+    }
+
+    [HarmonyPatch(typeof(GameCampaignCharacter), nameof(GameCampaignCharacter.ApplyRest))]
+    private static class CampaignRestPatch
+    {
+        private static void Postfix(GameCampaignCharacter __instance, RestType restType) =>
+            SpellPointsContext.FinishRest(__instance.RulesetCharacter, restType);
+    }
+
     private const string PartyTooSpreadOut = "Failure/&FailureFlagPartyTooSpreadOut";
 
     // set while the rest screen checks or starts a rest; other rests started by functors keep the game's host-only

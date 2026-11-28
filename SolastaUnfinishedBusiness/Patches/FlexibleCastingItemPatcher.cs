@@ -52,7 +52,13 @@ public static class FlexibleCastingItemPatcher
         public static void Prefix(FlexibleCastingItem __instance)
         {
             //PATCH: support alternate spell system to ensure points display is refreshed (SPELL_POINTS)
-            SpellPointsContext.RefreshActionPanelAfterFlexibleCastingItem();
+            // The modal's caster decides whether its points display needs a refresh.
+            var flexibleCastingModal = __instance.GetComponentInParent<FlexibleCastingModal>();
+
+            SpellPointsContext.RefreshActionPanelAfterFlexibleCastingItem(
+                flexibleCastingModal && flexibleCastingModal.caster != null
+                    ? flexibleCastingModal.caster.GetOriginalHero()
+                    : null);
 
             //PATCH: ensures slot colors are white before getting back to pool (MULTICLASS)
             MulticlassGameUi.PaintSlotsWhite(__instance.slotStatusTable);

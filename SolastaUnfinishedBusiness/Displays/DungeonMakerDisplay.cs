@@ -170,6 +170,7 @@ internal static class DungeonMakerDisplay
         UI.Label(Gui.Localize("ModUi/&Advanced"));
         UI.Label();
         UI.Label(Gui.Localize("ModUi/&AdvancedHelp"));
+        UI.Label(Gui.Localize("ModUi/&DungeonMakerUninstallWarning"));
         UI.Label();
 
         toggle = Main.Settings.AddNewWeaponsAndRecipesToEditor;
