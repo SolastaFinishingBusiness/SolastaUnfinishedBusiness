@@ -328,6 +328,10 @@ internal static class CampaignsContext
             SharedSpellsContext.FactorMysticArcanum(caster.RulesetCharacterHero, rulesetSpellRepertoire,
                 ref maxLevel);
 
+            // the game's SpellRepertoireLine.Bind also reaches the highest level of the repertoire's extra spells
+            // (granted spells above its casting level), so the rows count and bind those levels too
+            maxLevel = Math.Max(maxLevel, rulesetSpellRepertoire.GetMaxExtraSpellLevel());
+
             for (var level = startLevel; level <= maxLevel; level++)
             {
                 if (!IsLevelActive(caster.RulesetCharacter, rulesetSpellRepertoire, level, actionType))
