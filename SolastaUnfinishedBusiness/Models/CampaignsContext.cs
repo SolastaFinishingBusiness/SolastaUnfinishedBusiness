@@ -440,8 +440,10 @@ internal static class CampaignsContext
     ///     live objects, so it follows the resolution and the interface scale: the panel's rect starts at its left
     ///     edge (pivot 0) and is made as wide as its widest row, and the cancel button (the panel's child
     ///     "AbortButton", which the panel's layout ignores) is anchored to the panel's right edge and stands
-    ///     outside it, as wide as its label needs. So the room for a row is the distance from the panel's left edge
-    ///     to the right edge of the topmost canvas (the screen), less what the button reaches past the panel.
+    ///     outside it, at the width its own rect has. So the room for a row is the distance from the panel's left
+    ///     edge to the right edge of the topmost canvas (the screen), less what the button reaches past the panel.
+    ///     It is worked out when the panel binds only: a canvas that narrows while the panel is open, or a line
+    ///     that grows when it refreshes, isn't wrapped again until the panel binds again.
     /// </summary>
     private static float MaxRowWidth(SpellSelectionPanel panel)
     {
@@ -481,7 +483,7 @@ internal static class CampaignsContext
             return maxWidth;
         }
 
-        // the button sizes itself to its label
+        // brings the button's rect up to date before it is read
         LayoutRebuilder.ForceRebuildLayoutImmediate(abortButton);
 
         // the button's right edge in the panel's space, less the panel's right edge: the same whatever width the
