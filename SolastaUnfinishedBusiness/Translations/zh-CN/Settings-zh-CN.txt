@@ -126,6 +126,7 @@ ModUi/&AddPickPocketableLoot=添加可扒窃的战利品<i><color=#F0DAA0>[建�
 ModUi/&AddToStore=添加 {0}
 ModUi/&Advanced=<color=#F0DAA0>高级：</color> <b><i><color=#C04040E0>[需要重启]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>注意：</color></b>这些设置需要玩家安装此模组
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>警告：</color></b>在没有此模组的情况下启动 Solasta，会将此模组添加的房间、道具和机关（Dungeon Maker Pro）从本电脑上所有使用它们的地下城编辑器战役和地点中永久移除。游戏在启动时就会这样做，无需打开或保存它们。在不使用此模组游玩之前，请备份 UserContent 文件夹。
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ 允许所有玩家参与叙事序列</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=过场动画中4人或更少的队伍保持游戏原有顺序 <i><color=#F0DAA0>[否则所有队伍按身高站位，最矮的站在前排中间]</color></i>
 ModUi/&DevCutsceneHeroLimit=开发版本：过场动画英雄 <i><color=#F0DAA0>[只有队伍中前N名成员参与过场动画；0 = 全部；不保存]</color></i>

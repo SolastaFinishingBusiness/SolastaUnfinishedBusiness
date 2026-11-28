@@ -126,6 +126,7 @@ ModUi/&AddPickPocketableLoot=Beute, die durch Taschendiebstahl gestohlen werden 
 ModUi/&AddToStore={0} hinzufügen
 ModUi/&Advanced=<color=#F0DAA0>Erweitert:</color> <b><i><color=#C04040E0>[Neustart erforderlich]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ACHTUNG:</color></b> Diese Einstellungen erfordern, dass der Spieler diesen Mod installiert hat
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>WARNUNG:</color></b> Wird Solasta ohne diesen Mod gestartet, entfernt das Spiel die Räume, Requisiten und Gadgets dieses Mods (Dungeon Maker Pro) dauerhaft aus jeder Dungeon-Maker-Kampagne und jedem Ort auf diesem Computer, der sie verwendet. Das geschieht beim Start, ohne dass sie geöffnet oder gespeichert werden. Sichere den Ordner UserContent, bevor du ohne den Mod spielst.
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Alle Spieler in Erzählsequenzen zulassen</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=Bei Gruppen mit 4 oder weniger Helden in Zwischensequenzen die Reihenfolge des Spiels beibehalten <i><color=#F0DAA0>[sonst steht jede Gruppe nach Größe, die Kleinsten in der Mitte der vorderen Reihe]</color></i>
 ModUi/&DevCutsceneHeroLimit=Entwicklungsversion: Helden in Zwischensequenzen <i><color=#F0DAA0>[nur die ersten N Gruppenmitglieder nehmen teil; 0 = alle; wird nicht gespeichert]</color></i>

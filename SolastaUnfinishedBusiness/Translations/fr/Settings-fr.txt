@@ -126,6 +126,7 @@ ModUi/&AddPickPocketableLoot=Ajouter un butin pouvant être volé à la tire <i>
 ModUi/&AddToStore=Ajouter {0}
 ModUi/&Advanced=<color=#F0DAA0>Avancé :</color> <b><i><color=#C04040E0>[Nécessite un redémarrage]</color></i></b>
 ModUi/&AdvancedHelp=• <b><color=#C04040E0>ATTENTION :</color></b> Ces paramètres nécessiteront que le joueur ait installé ce mod
+ModUi/&DungeonMakerUninstallWarning=• <b><color=#C04040E0>AVERTISSEMENT :</color></b> Lancer Solasta sans ce mod supprime définitivement les salles, décors et gadgets ajoutés par ce mod (Dungeon Maker Pro) de toutes les campagnes et lieux du Dungeon Maker de cet ordinateur qui les utilisent. Le jeu le fait au démarrage, sans les ouvrir ni les enregistrer. Sauvegardez le dossier UserContent avant de jouer sans le mod.
 ModUi/&AllowAllPlayersOnNarrativeSequences=<i>+ Autoriser tous les joueurs sur les séquences narratives</i>
 ModUi/&DisableCutsceneHeightOrderSmallParties=Conserver l'ordre du jeu pour les groupes de 4 ou moins dans les cinématiques <i><color=#F0DAA0>[sinon, chaque groupe se place par taille, les plus petits au centre du premier rang]</color></i>
 ModUi/&DevCutsceneHeroLimit=Version de développement : héros des cinématiques <i><color=#F0DAA0>[seuls les N premiers membres du groupe y participent ; 0 = tous ; non enregistré]</color></i>
