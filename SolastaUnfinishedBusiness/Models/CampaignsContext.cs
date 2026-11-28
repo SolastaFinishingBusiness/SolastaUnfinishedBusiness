@@ -344,8 +344,9 @@ internal static class CampaignsContext
             BindRows();
         }
 
-        // the panel is as wide as its widest row, as the game makes it as wide as its one table. A table's own
-        // rect is only set by the holder's layout, so the width is read from what the table's layout asks for.
+        // the panel is as wide as its widest row, as the game makes it as wide as its one table. The width is
+        // read from what each table's layout asks for, which is also the width the table's fitter gives it
+        // (GetRowHolder).
         var width = 0f;
 
         foreach (var table in tables)
@@ -631,28 +632,54 @@ internal static class CampaignsContext
         return true;
     }
 
-    // the vertical layout that stacks the row tables, made once around the panel's own table
+    /// <summary>
+    ///     The vertical layout that stacks the row tables, made once around the panel's own table. Each row is as
+    ///     wide as its own content and starts at the holder's left edge: the holder doesn't set its children's
+    ///     width, and the table sizes itself to its preferred width with a ContentSizeFitter, which the row tables
+    ///     copied from it have too. A table wider than its lines would spread the extra width between them, as the
+    ///     table's HorizontalLayoutGroup and the lines' own both have childForceExpandWidth on in the prefab, and
+    ///     a layout group with that setting counts as flexible for its parent, so only a table of exactly its
+    ///     preferred width leaves no gaps. The settings are applied on every call, so a holder that already exists
+    ///     has them as well.
+    /// </summary>
     private static RectTransform GetRowHolder(RectTransform spellRepertoireLinesTable)
     {
         var parent = spellRepertoireLinesTable.parent;
+        var vertGroup = parent.GetComponent<VerticalLayoutGroup>();
 
-        if (parent.GetComponent<VerticalLayoutGroup>())
+        if (!vertGroup)
         {
-            return (RectTransform)parent;
+            GameObject spellLineHolder = new();
+
+            vertGroup = spellLineHolder.AddComponent<VerticalLayoutGroup>();
+            vertGroup.spacing = 10;
+            spellLineHolder.AddComponent<ContentSizeFitter>();
+            spellLineHolder.transform.SetParent(parent, true);
+            spellLineHolder.transform.SetAsFirstSibling();
+            spellLineHolder.transform.localScale = Vector3.one;
+            spellRepertoireLinesTable.SetParent(spellLineHolder.transform);
         }
 
-        GameObject spellLineHolder = new();
+        // a new VerticalLayoutGroup controls and force-expands its children's width, which would make every row
+        // as wide as the widest one; without control it only places each child, at its own width, by this
+        // alignment, and takes the widest child's width as its own minimum and preferred width
+        vertGroup.childControlWidth = false;
+        vertGroup.childForceExpandWidth = false;
+        vertGroup.childAlignment = TextAnchor.UpperLeft;
 
-        var vertGroup = spellLineHolder.AddComponent<VerticalLayoutGroup>();
+        var fitter = spellRepertoireLinesTable.GetComponent<ContentSizeFitter>();
 
-        vertGroup.spacing = 10;
-        spellLineHolder.AddComponent<ContentSizeFitter>();
-        spellLineHolder.transform.SetParent(parent, true);
-        spellLineHolder.transform.SetAsFirstSibling();
-        spellLineHolder.transform.localScale = Vector3.one;
-        spellRepertoireLinesTable.SetParent(spellLineHolder.transform);
+        if (!fitter)
+        {
+            fitter = spellRepertoireLinesTable.gameObject.AddComponent<ContentSizeFitter>();
+        }
 
-        return spellLineHolder.GetComponent<RectTransform>();
+        // keeps the table at its lines' width, also when a line is bound again while the panel is open; the
+        // height stays with the holder's layout
+        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        return (RectTransform)vertGroup.transform;
     }
 
     // the spell lists the panel shows: not those whose casting feature is hidden, nor those with the mod's empty
