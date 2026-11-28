@@ -288,10 +288,11 @@ internal static class CampaignsContext
     /// <summary>
     ///     Replaces the rows the game's SpellSelectionPanel.Bind made. The game puts every spell list on one row up
     ///     to a cutoff level and the levels above it on a second row for the last spell list only, and binds a
-    ///     list's line even when it has nothing to show there. Here each visible spell list is asked which levels
-    ///     its line offers on this panel and whether it shows its own slot box (OfferOf), and rows are made only
-    ///     from those: no line without content, every offered level on exactly one line, and the slot box on the
-    ///     list's first line only. With multi-line spell offering rows hold up to MultilineBoxesPerRow boxes;
+    ///     list's line even when it has nothing to show there. Here what each visible spell list offers on this
+    ///     panel, its levels with spells and whether it shows its own slot box, is read from the line the game
+    ///     bound for it (OfferOf), and rows are made only from those: no line without content, every offered level
+    ///     on exactly one line, and the slot box on the list's first line only. With multi-line spell offering
+    ///     rows hold up to MultilineBoxesPerRow boxes;
     ///     without it the first row keeps the game's cutoff and each list's levels above it get a row of their own.
     ///     A list's lines share out every spell level between them (TileLevels), so a level that starts to be
     ///     offered while the panel is open shows on one of them when the line refreshes.
@@ -311,17 +312,17 @@ internal static class CampaignsContext
         var spellRepertoireLinesTable = __instance.spellRepertoireLinesTable;
         var spellRepertoireSecondaryLine = __instance.spellRepertoireSecondaryLine;
 
-        // take down what the game's Bind made (from the same spell lists, see GetPanelRepertoires); its secondary
-        // line isn't used, as every row is made here
+        // the game's Bind has just bound one primary line for each spell list the panel shows (those of
+        // GetPanelRepertoires, in that order) and put them, and nothing else, in spellRepertoireLines; what each
+        // list offers is read from them while they are still bound
+        var offers = spellRepertoireLines.Select(OfferOf).ToList();
+
+        // take down what the game's Bind made; its secondary line isn't used, as every row is made here
         TakeDownRows();
         spellRepertoireSecondaryLine.Unbind();
         spellRepertoireSecondaryLine.gameObject.SetActive(false);
 
         var holder = GetRowHolder(spellRepertoireLinesTable);
-        var repertoires = GetPanelRepertoires(caster.RulesetCharacter);
-        var offers = repertoires
-            .Select(repertoire => OfferOf(__instance, caster, repertoire, actionType, cantripOnly))
-            .ToList();
         // the rows as their builders made them: a line's range here ends at its last offered level (or at the
         // cutoff), which WrapWideRows needs to tell which offered levels a line holds; each binding works on a
         // copy with the final ranges (TileLevels)
@@ -330,7 +331,7 @@ internal static class CampaignsContext
             : MultilineRows(offers);
         var maxRowWidth = MaxRowWidth(__instance);
         // the game shows a list's header only when the panel has more than one list
-        var showHeader = repertoires.Count > 1;
+        var showHeader = offers.Count > 1;
         var tables = new List<RectTransform>();
         var lines = new List<List<SpellRepertoireLine>>();
 
@@ -696,35 +697,22 @@ internal static class CampaignsContext
     }
 
     /// <summary>
-    ///     What a spell list's line offers on this panel, read from the game's own line. Bound with the empty level
-    ///     range 0 to -1, a line still gathers its spells per level (SpellRepertoireLine.relevantSpellsByLevel, with
-    ///     the panel's action type filter and this mod's patches to it, such as Blast Reload) but binds no box; bound
-    ///     as a primary line it shows the list's slot box if it has one (GuiCharacter.DisplayUniqueLevelSpellSlots,
-    ///     with this mod's multiclass rules). A level is offered when the line would show at least one spell there;
-    ///     spells the panel disables (leveled spells on a cantrip-only panel) still count, as the line shows them.
+    ///     What a spell list offers on this panel, read from the primary line the game's SpellSelectionPanel.Bind
+    ///     bound for it. Whatever level range a line is bound with, it first gathers its list's spells per level
+    ///     (SpellRepertoireLine.relevantSpellsByLevel, with the panel's action type filter and this mod's patches
+    ///     to it, such as Blast Reload) and only then binds boxes for the levels in its range, so the gathered
+    ///     levels are all the list offers, not only those up to the game's cutoff; a primary line also shows the
+    ///     list's slot box if it has one (GuiCharacter.DisplayUniqueLevelSpellSlots, with this mod's multiclass
+    ///     rules). A level is offered when the line would show at least one spell there; spells the panel disables
+    ///     (leveled spells on a cantrip-only panel) still count, as the line shows them. The levels are copied, as
+    ///     the line clears its own collection when it is bound again.
     /// </summary>
-    private static PanelOffer OfferOf(
-        SpellSelectionPanel panel,
-        GuiCharacter caster,
-        RulesetSpellRepertoire repertoire,
-        ActionDefinitions.ActionType actionType,
-        bool cantripOnly)
+    private static PanelOffer OfferOf(SpellRepertoireLine primaryLine)
     {
-        var probe = Gui.GetPrefabFromPool(panel.spellRepertoireLinePrefab, panel.spellRepertoireLinesTable)
-            .GetComponent<SpellRepertoireLine>();
-
-        probe.Bind(caster, repertoire, false, null, panel.SlotAdvancementPanel, actionType, cantripOnly, 0, -1,
-            true);
-
-        var offer = new PanelOffer(
-            repertoire,
-            probe.relevantSpellsByLevel.Keys.OrderBy(level => level).ToList(),
-            probe.uniqueLevelSlotsGroup.gameObject.activeSelf);
-
-        probe.Unbind();
-        Gui.ReleaseChildrenToPool(panel.spellRepertoireLinesTable);
-
-        return offer;
+        return new PanelOffer(
+            primaryLine.spellRepertoire,
+            primaryLine.relevantSpellsByLevel.Keys.OrderBy(level => level).ToList(),
+            primaryLine.uniqueLevelSlotsGroup.gameObject.activeSelf);
     }
 
     // multi-line spell offering: each list's boxes in order (its slot box before its levels) packed into rows of
