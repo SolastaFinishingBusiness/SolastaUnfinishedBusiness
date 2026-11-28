@@ -10,7 +10,6 @@ using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Builders;
 using SolastaUnfinishedBusiness.Builders.Features;
 using SolastaUnfinishedBusiness.Patches;
-using SolastaUnfinishedBusiness.Subclasses;
 using TA;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -247,17 +246,37 @@ internal static class CampaignsContext
         }
     }
 
-    internal static void SpellSelectionPanelMultilineUnbind()
-    {
-        if (Main.Settings.DisableMultilineSpellOffering)
-        {
-            return;
-        }
+    #region Casting panel rows
 
-        foreach (var spellTable in SpellLineTables
-                     .Where(spellTable =>
-                         spellTable && spellTable.gameObject.activeSelf && spellTable.childCount > 0))
+    // most boxes a row holds with multi-line spell offering; a spell list's own slot box (the Warlock's pact
+    // slots) counts as one box
+    private const int MultilineBoxesPerRow = 4;
+
+    /// <summary>
+    ///     Destroys the row tables made besides the panel's own spellRepertoireLinesTable. Their lines go back to
+    ///     the prefab pool unbound, so none keeps listening to its repertoire.
+    /// </summary>
+    internal static void SpellSelectionPanelRowsUnbind()
+    {
+        foreach (var spellTable in SpellLineTables)
         {
+            // NOTE: don't use spellTable?. which bypasses Unity object lifetime check
+            if (!spellTable)
+            {
+                continue;
+            }
+
+            foreach (Transform child in spellTable)
+            {
+                var line = child.GetComponent<SpellRepertoireLine>();
+
+                // Unbind is safe on an already unbound line: it only releases what is still bound
+                if (line)
+                {
+                    line.Unbind();
+                }
+            }
+
             Gui.ReleaseChildrenToPool(spellTable);
             spellTable.SetParent(null);
             Object.Destroy(spellTable.gameObject);
@@ -266,23 +285,27 @@ internal static class CampaignsContext
         SpellLineTables.Clear();
     }
 
-    internal static void SpellSelectionPanelMultilineBind(
+    /// <summary>
+    ///     Replaces the rows the game's SpellSelectionPanel.Bind made. The game puts every spell list on one row up
+    ///     to a cutoff level and the levels above it on a second row for the last spell list only, and binds a
+    ///     list's line even when it has nothing to show there. Here each visible spell list is asked which levels
+    ///     its line offers on this panel and whether it shows its own slot box (OfferOf), and rows are made only
+    ///     from those: no line without content, every offered level on exactly one line, and the slot box on the
+    ///     list's first line only. With multi-line spell offering rows hold up to MultilineBoxesPerRow boxes;
+    ///     without it the first row keeps the game's cutoff and each list's levels above it get a row of their own.
+    /// </summary>
+    internal static void SpellSelectionPanelRowsBind(
         SpellSelectionPanel __instance,
         GuiCharacter caster,
         SpellsByLevelBox.SpellCastEngagedHandler spellCastEngaged,
         ActionDefinitions.ActionType actionType,
         bool cantripOnly)
     {
-        if (Main.Settings.DisableMultilineSpellOffering)
-        {
-            return;
-        }
-
         var spellRepertoireLines = __instance.spellRepertoireLines;
-        var spellRepertoireSecondaryLine = __instance.spellRepertoireSecondaryLine;
         var spellRepertoireLinesTable = __instance.spellRepertoireLinesTable;
-        var slotAdvancementPanel = __instance.SlotAdvancementPanel;
+        var spellRepertoireSecondaryLine = __instance.spellRepertoireSecondaryLine;
 
+        // take down what the game's Bind made; its secondary line isn't used, as every row is made here
         foreach (var spellRepertoireLine in spellRepertoireLines)
         {
             spellRepertoireLine.Unbind();
@@ -290,274 +313,292 @@ internal static class CampaignsContext
 
         spellRepertoireLines.Clear();
         Gui.ReleaseChildrenToPool(spellRepertoireLinesTable);
+        SpellSelectionPanelRowsUnbind();
         spellRepertoireSecondaryLine.Unbind();
         spellRepertoireSecondaryLine.gameObject.SetActive(false);
 
-        if (!spellRepertoireLinesTable.parent.GetComponent<VerticalLayoutGroup>())
+        var holder = GetRowHolder(spellRepertoireLinesTable);
+        var repertoires = GetPanelRepertoires(caster.RulesetCharacter);
+        var offers = repertoires
+            .Select(repertoire => OfferOf(__instance, caster, repertoire, actionType, cantripOnly))
+            .ToList();
+        var rows = Main.Settings.DisableMultilineSpellOffering
+            ? CompactRows(caster.RulesetCharacter, offers)
+            : MultilineRows(offers);
+
+        // the extra row tables are copies of the panel's table made while it is empty, so they hold no lines of
+        // their own; each is put first in the holder's vertical layout, so later rows stand above earlier ones
+        var tables = new List<RectTransform> { spellRepertoireLinesTable };
+
+        for (var i = 1; i < rows.Count; i++)
         {
-            GameObject spellLineHolder = new();
+            var table = Object.Instantiate(spellRepertoireLinesTable, holder);
 
-            var vertGroup = spellLineHolder.AddComponent<VerticalLayoutGroup>();
-
-            vertGroup.spacing = 10;
-            spellLineHolder.AddComponent<ContentSizeFitter>();
-            spellLineHolder.transform.SetParent(spellRepertoireLinesTable.parent, true);
-            spellLineHolder.transform.SetAsFirstSibling();
-            spellLineHolder.transform.localScale = Vector3.one;
-            spellRepertoireLinesTable.SetParent(spellLineHolder.transform);
+            table.localScale = spellRepertoireLinesTable.localScale;
+            table.SetAsFirstSibling();
+            SpellLineTables.Add(table);
+            tables.Add(table);
         }
 
-        var spellRepertoires = __instance.Caster.RulesetCharacter.SpellRepertoires
-            .Where(r => r.SpellCastingFeature.SpellListDefinition != SpellsContext.EmptySpellList)
-            .ToArray();
+        // the game shows a list's header only when the panel has more than one list
+        var showHeader = repertoires.Count > 1;
 
-        var needNewLine = true;
-        var lineIndex = 0;
-        var indexOfLine = 0;
-        var spellLevelsOnLine = 0;
-        var curTable = spellRepertoireLinesTable;
-
-        foreach (var rulesetSpellRepertoire in spellRepertoires)
+        for (var i = 0; i < rows.Count; i++)
         {
-            var startLevel = 0;
-            var maxLevel = rulesetSpellRepertoire.MaxSpellLevelOfSpellCastingLevel;
-            // levels of this repertoire waiting for a line; spellLevelsOnLine also counts the levels other
-            // repertoires already put on the current row, so it can't tell whether this repertoire has any
-            var repertoireLevelsOnLine = 0;
-
-            SharedSpellsContext.FactorMysticArcanum(caster.RulesetCharacterHero, rulesetSpellRepertoire,
-                ref maxLevel);
-
-            // the game's SpellRepertoireLine.Bind scans up to the higher of the casting level's maximum and the
-            // highest level among the repertoire's extra spells, so a granted spell above the casting level still
-            // gets counted and bound
-            maxLevel = Math.Max(maxLevel, rulesetSpellRepertoire.GetMaxExtraSpellLevel());
-
-            for (var level = startLevel; level <= maxLevel; level++)
+            foreach (var segment in rows[i])
             {
-                if (!IsLevelActive(caster.RulesetCharacter, rulesetSpellRepertoire, level, actionType))
-                {
-                    continue;
-                }
+                var line = Gui.GetPrefabFromPool(__instance.spellRepertoireLinePrefab, tables[i])
+                    .GetComponent<SpellRepertoireLine>();
 
-                spellLevelsOnLine++;
-                repertoireLevelsOnLine++;
-
-                if (spellLevelsOnLine < 4) // Main.Settings.MaxSpellLevelsPerLine)
-                {
-                    continue;
-                }
-
-                curTable = AddActiveSpellsToLine(
-                    __instance,
+                line.gameObject.SetActive(true);
+                line.Bind(
+                    caster,
+                    segment.Repertoire,
+                    showHeader,
                     spellCastEngaged,
+                    __instance.SlotAdvancementPanel,
                     actionType,
                     cantripOnly,
-                    spellRepertoireLines,
-                    curTable,
-                    slotAdvancementPanel,
-                    spellRepertoires,
-                    needNewLine,
-                    lineIndex,
-                    indexOfLine,
-                    rulesetSpellRepertoire,
-                    startLevel,
-                    level);
-
-                startLevel = level + 1;
-                lineIndex++;
-                spellLevelsOnLine = 0;
-                repertoireLevelsOnLine = 0;
-                needNewLine = true;
-                indexOfLine = 0;
+                    segment.MinLevel,
+                    segment.MaxLevel,
+                    segment.Primary);
+                // the panel's controller navigation (SelectDefaultControlImpl) looks for spells in this list only
+                spellRepertoireLines.Add(line);
             }
+        }
 
-            // no line for a repertoire with nothing left to offer: an empty line still draws its header, and the
-            // game's line prefab lays it out with no height, so it lands on top of the lines around it
-            if (repertoireLevelsOnLine == 0)
+        // the panel is as wide as its widest row, as the game makes it as wide as its one table
+        var width = 0f;
+
+        foreach (var table in tables)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(table);
+            width = Math.Max(width, table.rect.width);
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(holder);
+        __instance.RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+    }
+
+    // the vertical layout that stacks the row tables, made once around the panel's own table
+    private static RectTransform GetRowHolder(RectTransform spellRepertoireLinesTable)
+    {
+        var parent = spellRepertoireLinesTable.parent;
+
+        if (parent.GetComponent<VerticalLayoutGroup>())
+        {
+            return (RectTransform)parent;
+        }
+
+        GameObject spellLineHolder = new();
+
+        var vertGroup = spellLineHolder.AddComponent<VerticalLayoutGroup>();
+
+        vertGroup.spacing = 10;
+        spellLineHolder.AddComponent<ContentSizeFitter>();
+        spellLineHolder.transform.SetParent(parent, true);
+        spellLineHolder.transform.SetAsFirstSibling();
+        spellLineHolder.transform.localScale = Vector3.one;
+        spellRepertoireLinesTable.SetParent(spellLineHolder.transform);
+
+        return spellLineHolder.GetComponent<RectTransform>();
+    }
+
+    // the spell lists the panel shows: not those whose casting feature is hidden, nor those with the mod's empty
+    // spell list (features that only add spells to the character, such as Touched)
+    private static List<RulesetSpellRepertoire> GetPanelRepertoires(RulesetCharacter character)
+    {
+        return character.SpellRepertoires
+            .Where(repertoire =>
+                !repertoire.SpellCastingFeature.GuiPresentation.Hidden
+                && repertoire.SpellCastingFeature.SpellListDefinition != SpellsContext.EmptySpellList)
+            .ToList();
+    }
+
+    /// <summary>
+    ///     What a spell list's line offers on this panel, read from the game's own line. Bound with the empty level
+    ///     range 0 to -1, a line still gathers its spells per level (SpellRepertoireLine.relevantSpellsByLevel, with
+    ///     the panel's action type filter and this mod's patches to it, such as Blast Reload) but binds no box; bound
+    ///     as a primary line it shows the list's slot box if it has one (GuiCharacter.DisplayUniqueLevelSpellSlots,
+    ///     with this mod's multiclass rules). A level is offered when the line would show at least one spell there;
+    ///     spells the panel disables (leveled spells on a cantrip-only panel) still count, as the line shows them.
+    /// </summary>
+    private static PanelOffer OfferOf(
+        SpellSelectionPanel panel,
+        GuiCharacter caster,
+        RulesetSpellRepertoire repertoire,
+        ActionDefinitions.ActionType actionType,
+        bool cantripOnly)
+    {
+        var probe = Gui.GetPrefabFromPool(panel.spellRepertoireLinePrefab, panel.spellRepertoireLinesTable)
+            .GetComponent<SpellRepertoireLine>();
+
+        probe.Bind(caster, repertoire, false, null, panel.SlotAdvancementPanel, actionType, cantripOnly, 0, -1,
+            true);
+
+        var offer = new PanelOffer(
+            repertoire,
+            probe.relevantSpellsByLevel.Keys.OrderBy(level => level).ToList(),
+            probe.uniqueLevelSlotsGroup.gameObject.activeSelf);
+
+        probe.Unbind();
+        Gui.ReleaseChildrenToPool(panel.spellRepertoireLinesTable);
+
+        return offer;
+    }
+
+    // multi-line spell offering: each list's boxes in order (its slot box before its levels) packed into rows of
+    // MultilineBoxesPerRow boxes; a list that doesn't fit continues on a line of its own on the next row
+    private static List<List<RowSegment>> MultilineRows(List<PanelOffer> offers)
+    {
+        var rows = new List<List<RowSegment>>();
+        var row = new List<RowSegment>();
+        var boxesOnRow = 0;
+
+        foreach (var offer in offers)
+        {
+            var levelIndex = 0;
+            var primary = true;
+            // the slot box is the first box of the list's first line
+            var slotBoxPending = offer.HasSlotBox;
+
+            while (slotBoxPending || levelIndex < offer.Levels.Count)
+            {
+                if (boxesOnRow == MultilineBoxesPerRow)
+                {
+                    rows.Add(row);
+                    row = [];
+                    boxesOnRow = 0;
+                }
+
+                var slotBoxes = slotBoxPending ? 1 : 0;
+                var take = Math.Min(MultilineBoxesPerRow - boxesOnRow - slotBoxes, offer.Levels.Count - levelIndex);
+
+                row.Add(SegmentOf(offer, levelIndex, take, primary));
+                boxesOnRow += slotBoxes + take;
+                levelIndex += take;
+                slotBoxPending = false;
+                primary = false;
+            }
+        }
+
+        if (row.Count > 0)
+        {
+            rows.Add(row);
+        }
+
+        return rows;
+    }
+
+    // without multi-line spell offering: the first row holds every list's levels up to the game's cutoff
+    // (NativeCutoffLevel) and its slot box, then each list's levels above the cutoff get a row of their own
+    private static List<List<RowSegment>> CompactRows(RulesetCharacter character, List<PanelOffer> offers)
+    {
+        var cutoff = NativeCutoffLevel(character, offers.Select(offer => offer.Repertoire));
+        var rows = new List<List<RowSegment>>();
+        var firstRow = new List<RowSegment>();
+        var onFirstRow = new HashSet<RulesetSpellRepertoire>();
+
+        foreach (var offer in offers)
+        {
+            var count = offer.Levels.Count(level => level <= cutoff);
+
+            if (count == 0 && !offer.HasSlotBox)
             {
                 continue;
             }
 
-            curTable = AddActiveSpellsToLine(
-                __instance,
-                spellCastEngaged,
-                actionType,
-                cantripOnly,
-                spellRepertoireLines,
-                curTable,
-                slotAdvancementPanel,
-                spellRepertoires,
-                needNewLine,
-                lineIndex,
-                indexOfLine,
-                rulesetSpellRepertoire,
-                startLevel,
-                maxLevel);
-
-            needNewLine = false;
-            indexOfLine++;
+            firstRow.Add(SegmentOf(offer, 0, count, true));
+            onFirstRow.Add(offer.Repertoire);
         }
 
-        LayoutRebuilder.ForceRebuildLayoutImmediate(curTable);
-        __instance.RectTransform.SetSizeWithCurrentAnchors(
-            RectTransform.Axis.Horizontal,
-            spellRepertoireLinesTable.rect.width);
-    }
-
-    private static RectTransform AddActiveSpellsToLine(
-        SpellSelectionPanel __instance,
-        SpellsByLevelBox.SpellCastEngagedHandler spellCastEngaged,
-        ActionDefinitions.ActionType actionType,
-        bool cantripOnly,
-        ICollection<SpellRepertoireLine> spellRepertoireLines,
-        RectTransform spellRepertoireLinesTable,
-        SlotAdvancementPanel slotAdvancementPanel,
-        RulesetSpellRepertoire[] spellRepertoires,
-        bool needNewLine,
-        int lineIndex,
-        int indexOfLine,
-        RulesetSpellRepertoire rulesetSpellRepertoire,
-        int startLevel,
-        int level)
-    {
-        if (needNewLine)
+        if (firstRow.Count > 0)
         {
-            var previousTable = spellRepertoireLinesTable;
+            rows.Add(firstRow);
+        }
 
-            LayoutRebuilder.ForceRebuildLayoutImmediate(previousTable);
+        foreach (var offer in offers)
+        {
+            var start = offer.Levels.Count(level => level <= cutoff);
+            var count = offer.Levels.Count - start;
 
-            if (lineIndex > 0)
+            // a list with nothing on the first row shows its slot box here (it has none, or it would be there)
+            if (count > 0)
             {
-                // instantiate new table
-                spellRepertoireLinesTable =
-                    Object.Instantiate(spellRepertoireLinesTable, previousTable.parent.transform);
-                // clear it of children
-                spellRepertoireLinesTable.DetachChildren();
-                //spellRepertoireLinesTable.SetParent(previousTable.parent.transform, true);
-                spellRepertoireLinesTable.localScale = previousTable.localScale;
-                spellRepertoireLinesTable.transform.SetAsFirstSibling();
-                SpellLineTables.Add(spellRepertoireLinesTable);
+                rows.Add([SegmentOf(offer, start, count, !onFirstRow.Contains(offer.Repertoire))]);
             }
         }
 
-        var curLine = SetUpNewLine(indexOfLine, spellRepertoireLinesTable, spellRepertoireLines, __instance);
-
-        curLine.Bind(
-            __instance.Caster,
-            rulesetSpellRepertoire,
-            spellRepertoires.Length > 1,
-            spellCastEngaged,
-            slotAdvancementPanel,
-            actionType,
-            cantripOnly,
-            startLevel,
-            level,
-            false);
-
-        return spellRepertoireLinesTable;
+        return rows;
     }
 
-    private static SpellRepertoireLine SetUpNewLine(
-        int index,
-        Transform spellRepertoireLinesTable,
-        ICollection<SpellRepertoireLine> spellRepertoireLines,
-        SpellSelectionPanel __instance)
+    // a line for count of the list's offered levels from levelIndex on; with none (a line for the slot box only)
+    // it gets the empty range 0 to -1, which binds no level box
+    private static RowSegment SegmentOf(PanelOffer offer, int levelIndex, int count, bool primary)
     {
-        GameObject newLine;
-
-        if (spellRepertoireLinesTable.childCount <= index)
-        {
-            newLine = Gui.GetPrefabFromPool(__instance.spellRepertoireLinePrefab,
-                spellRepertoireLinesTable);
-        }
-        else
-        {
-            newLine = spellRepertoireLinesTable.GetChild(index).gameObject;
-        }
-
-        newLine.SetActive(true);
-
-        var component = newLine.GetComponent<SpellRepertoireLine>();
-
-        spellRepertoireLines.Add(component);
-
-        return component;
+        return count == 0
+            ? new RowSegment(offer.Repertoire, 0, -1, primary)
+            : new RowSegment(offer.Repertoire, offer.Levels[levelIndex], offer.Levels[levelIndex + count - 1],
+                primary);
     }
-
-    private static readonly List<SpellDefinition> LevelSpells = [];
-    private static readonly Dictionary<SpellDefinition, string> LevelExtraSpells = [];
 
     /// <summary>
-    ///     Whether the panel's line for this repertoire will show at least one spell at this level, so the multi-line
-    ///     layout only counts, and only makes lines for, levels that the line fills. It gathers the level's spells as
-    ///     the game's SpellRepertoireLine.Bind does (cantrips and level 0 extras only when the spell list has
-    ///     cantrips; otherwise the prepared spells of a prepared caster, or the known and auto-prepared spells of an
-    ///     always-ready one, plus the extra spells that aren't ritual-only), then keeps the ones its
-    ///     FindAndSortRelevantSpells offers, with this mod's patches to it (SpellRepertoireLinePatcher).
+    ///     The highest level the game's SpellSelectionPanel.Bind puts on its first row: 5, less one for each racial
+    ///     spell list, and for every other list one if it has cantrips at its casting level and one if it has its
+    ///     own slot box (UniqueLevelSlots). The casting level is the feature's own for a monster's list, otherwise
+    ///     the character's level.
     /// </summary>
-    private static bool IsLevelActive(
-        RulesetCharacter caster,
-        RulesetSpellRepertoire spellRepertoire,
-        int level,
-        ActionDefinitions.ActionType actionType)
+    private static int NativeCutoffLevel(
+        RulesetCharacter character,
+        IEnumerable<RulesetSpellRepertoire> repertoires)
     {
-        LevelSpells.Clear();
-        LevelExtraSpells.Clear();
-        spellRepertoire.EnumerateExtraSpellsOfLevel(level, LevelExtraSpells);
+        var cutoff = 5;
 
-        if (level == 0)
+        foreach (var feature in repertoires.Select(repertoire => repertoire.SpellCastingFeature))
         {
-            if (!spellRepertoire.SpellCastingFeature.SpellListDefinition.HasCantrips)
+            if (feature.SpellCastingOrigin == FeatureDefinitionCastSpell.CastingOrigin.Race)
             {
-                return false;
+                cutoff--;
+                continue;
             }
 
-            LevelSpells.AddRange(spellRepertoire.KnownCantrips);
-            LevelSpells.AddRange(LevelExtraSpells.Keys);
-        }
-        else
-        {
-            switch (spellRepertoire.SpellCastingFeature.SpellReadyness)
+            var castingLevel = feature.SpellCastingOrigin == FeatureDefinitionCastSpell.CastingOrigin.Monster
+                ? feature.SpellCastingLevel
+                : character.TryGetAttributeValue(AttributeDefinitions.CharacterLevel);
+
+            if (feature.HasCantrips(castingLevel))
             {
-                case SpellReadyness.Prepared:
-                    LevelSpells.AddRange(spellRepertoire.PreparedSpells.Where(spell => spell.SpellLevel == level));
-                    break;
-                case SpellReadyness.AllKnown:
-                    LevelSpells.AddRange(spellRepertoire.KnownSpells.Where(spell => spell.SpellLevel == level));
-                    LevelSpells.AddRange(
-                        spellRepertoire.AutoPreparedSpells.Where(spell => spell.SpellLevel == level));
-                    break;
+                cutoff--;
             }
 
-            LevelSpells.AddRange(LevelExtraSpells
-                .Where(extraSpell => !extraSpell.Value.Contains("Ritual"))
-                .Select(extraSpell => extraSpell.Key));
+            if (feature.UniqueLevelSlots)
+            {
+                cutoff--;
+            }
         }
 
-        // the mod's prefix on FindAndSortRelevantSpells takes reaction and on-hit spells off the panel
-        LevelSpells.RemoveAll(spell =>
-            spell.ActivationTime is ActivationTime.Reaction or ActivationTime.OnAttackHit);
-
-        if (LevelSpells.Any(spell => IsOfferedForAction(spell, actionType)))
-        {
-            return true;
-        }
-
-        // the mod's postfix lets features add spells whose casting time doesn't match (Blast Reload)
-        return caster.GetSubFeaturesByType<PatronEldritchSurge.IQualifySpellToRepertoireLine>()
-            .Any(feature => LevelSpells.Any(spell => feature.QualifiesSpell(caster, actionType, spell)));
+        return cutoff;
     }
 
-    // the game's FindAndSortRelevantSpells: outside a battle every spell is offered; in a battle only the spells
-    // whose casting time is the panel's action type
-    private static bool IsOfferedForAction(SpellDefinition spell, ActionDefinitions.ActionType actionType)
+    // what a spell list's line offers on the panel: its levels with at least one spell, in ascending order, and
+    // whether it shows its own slot box
+    private readonly struct PanelOffer(RulesetSpellRepertoire repertoire, List<int> levels, bool hasSlotBox)
     {
-        return Gui.Battle == null
-               || (ActionDefinitions.CastingTimeToActionDefinition.TryGetValue(spell.ActivationTime,
-                       out var spellActionType)
-                   && spellActionType == actionType);
+        internal RulesetSpellRepertoire Repertoire { get; } = repertoire;
+        internal List<int> Levels { get; } = levels;
+        internal bool HasSlotBox { get; } = hasSlotBox;
     }
+
+    // one line on a row: a spell list's levels MinLevel to MaxLevel; a primary line also shows the list's slot box
+    private readonly struct RowSegment(RulesetSpellRepertoire repertoire, int minLevel, int maxLevel, bool primary)
+    {
+        internal RulesetSpellRepertoire Repertoire { get; } = repertoire;
+        internal int MinLevel { get; } = minLevel;
+        internal int MaxLevel { get; } = maxLevel;
+        internal bool Primary { get; } = primary;
+    }
+
+    #endregion
 
     internal static void SetTeleporterGadgetActiveAnimation(WorldGadget worldGadget, bool visibility = false)
     {

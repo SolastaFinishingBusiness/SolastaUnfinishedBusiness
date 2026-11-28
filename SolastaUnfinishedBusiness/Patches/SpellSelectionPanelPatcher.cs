@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection.Emit;
+﻿using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SolastaUnfinishedBusiness.Api.GameExtensions;
-using SolastaUnfinishedBusiness.Api.Helpers;
 using SolastaUnfinishedBusiness.Behaviors;
 using SolastaUnfinishedBusiness.Behaviors.Specific;
 using SolastaUnfinishedBusiness.Models;
@@ -47,45 +42,11 @@ public static class SpellSelectionPanelPatcher
             ActionDefinitions.ActionType actionType,
             bool cantripOnly)
         {
-            CampaignsContext.SpellSelectionPanelMultilineBind(
+            //PATCH: lays out the panel's spell rows from what each spell list offers on it (empty lines left out,
+            //every offered level shown, the Warlock's pact slots on its list's first line), with or without
+            //multi-line spell offering
+            CampaignsContext.SpellSelectionPanelRowsBind(
                 __instance, caster, spellCastEngaged, actionType, cantripOnly);
-        }
-
-        [NotNull]
-        [UsedImplicitly]
-        public static IEnumerable<CodeInstruction> Transpiler([NotNull] IEnumerable<CodeInstruction> instructions)
-        {
-            //PATCH: hide spell panels for repertoires that have hidden spell casting feature
-            var getRepertoires = typeof(RulesetCharacter).GetMethod("get_SpellRepertoires");
-            var getVisibleRepertoires = new Func<RulesetCharacter, List<RulesetSpellRepertoire>>(GetRepertoires).Method;
-
-            return instructions.ReplaceCalls(getRepertoires, "SpellSelectionPanel.Bind",
-                new CodeInstruction(OpCodes.Call, getVisibleRepertoires));
-        }
-
-        private static List<RulesetSpellRepertoire> GetRepertoires(RulesetCharacter character)
-        {
-            var repertoires = character.SpellRepertoires
-                .Where(r => !r.SpellCastingFeature.GuiPresentation.Hidden)
-                .ToList();
-
-            //PATCH: the vanilla single line offering shows the levels that don't fit on a line from the last
-            //repertoire only. Feats like Magic Initiate add a repertoire after the class one, which hid the class's
-            //higher spell levels (e.g. a level 5 wizard lost level 3 spells). Keep the repertoire with the highest
-            //spell level last and everything else in its original order.
-            var highest = repertoires
-                .OrderByDescending(r =>
-                    r.SpellCastingFeature.SpellCastingOrigin is not FeatureDefinitionCastSpell.CastingOrigin.Race)
-                .ThenByDescending(r => Math.Max(r.MaxSpellLevelOfSpellCastingLevel, r.GetMaxExtraSpellLevel()))
-                .FirstOrDefault();
-
-            if (highest != null && repertoires[repertoires.Count - 1] != highest)
-            {
-                repertoires.Remove(highest);
-                repertoires.Add(highest);
-            }
-
-            return repertoires;
         }
     }
 
@@ -97,7 +58,7 @@ public static class SpellSelectionPanelPatcher
         [UsedImplicitly]
         public static void Postfix()
         {
-            CampaignsContext.SpellSelectionPanelMultilineUnbind();
+            CampaignsContext.SpellSelectionPanelRowsUnbind();
         }
     }
 }
